@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>20 Business Fundamentals Every Tech Founder Must Know</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; padding: 40px 20px; color: #111827; }
+  .page { width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 55%, #818cf8 100%);
+    border-radius: 24px; padding: 44px 56px; color: white; position: relative; overflow: hidden;
+  }
+  .hero::before { content:''; position:absolute; right:-60px; top:-60px; width:300px; height:300px; border-radius:50%; background:rgba(255,255,255,0.06); }
+  .hero::after { content:''; position:absolute; left:-40px; bottom:-80px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .hero-tag { display:inline-block; background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; padding:5px 14px; border-radius:20px; margin-bottom:14px; }
+  .hero h1 { font-size:34px; font-weight:900; letter-spacing:-1px; line-height:1.1; margin-bottom:10px; }
+  .hero-sub { font-size:14px; opacity:0.75; line-height:1.6; max-width:540px; }
+  .hero-badge { position:absolute; right:52px; top:36px; font-size:88px; font-weight:900; color:rgba(255,255,255,0.06); line-height:1; }
+
+  /* ── Section header ── */
+  .section-label {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 22px; background: #fff;
+    border: 1.5px solid #e5e7eb; border-radius: 16px;
+  }
+  .section-label h2 { font-size: 13px; font-weight: 900; color: #111827; }
+  .section-label p { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+  .section-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Grid of cards ── */
+  .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .card {
+    background: #fff; border-radius: 16px; overflow: hidden;
+    border: 1.5px solid #e5e7eb;
+  }
+  .card-top {
+    padding: 15px 18px 13px;
+    display: flex; align-items: flex-start; gap: 11px;
+    border-bottom: 1.5px solid;
+  }
+  .card-num {
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 900; margin-top: 1px;
+  }
+  .card-meta { flex: 1; }
+  .card-tag { font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+  .card-title { font-size: 13px; font-weight: 900; line-height: 1.25; }
+  .card-body { padding: 12px 18px 14px; }
+  .card-hook { font-size: 11.5px; font-weight: 700; margin-bottom: 9px; line-height: 1.4; }
+  .pts { display: flex; flex-direction: column; gap: 4px; }
+  .pt { display: flex; gap: 7px; font-size: 11.5px; color: #374151; font-weight: 500; line-height: 1.45; }
+  .pt-dot { width: 16px; height: 16px; border-radius: 4px; font-size: 9px; font-weight: 900; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .signal { border-radius: 8px; padding: 8px 10px; margin-top: 9px; display: flex; gap: 7px; align-items: flex-start; }
+  .signal-text { font-size: 11px; font-weight: 700; line-height: 1.4; }
+
+  /* ── Summary strip ── */
+  .summary { background: #fff; border: 1.5px solid #e5e7eb; border-radius: 18px; padding: 22px 28px; }
+  .summary h3 { font-size: 14px; font-weight: 900; color: #111827; margin-bottom: 14px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .s-item { border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 13px 10px; text-align: center; }
+  .s-icon { font-size: 22px; margin-bottom: 5px; }
+  .s-label { font-size: 10.5px; font-weight: 800; color: #374151; line-height: 1.35; }
+
+  /* ── footer ── */
+  .footer { background: #fff; border: 1.5px solid #e5e7eb; border-radius: 14px; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .footer-brand { font-size: 13px; font-weight: 900; color: #4338ca; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">Business Fundamentals</div>
+    <div class="hero-badge">20</div>
+    <h1>20 Business Concepts<br>Every Tech Founder Must Know</h1>
+    <p class="hero-sub">From market sizing and valuation to term sheets and exit strategies — the business vocabulary that separates founders who raise and scale from those who don't.</p>
+  </div>
+
+  <!-- SECTION A: MONEY & MARKETS -->
+  <div class="section-label">
+    <div class="section-dot" style="background:#6366f1;"></div>
+    <div>
+      <h2>Money & Markets</h2>
+      <p>Understanding the numbers behind your business</p>
+    </div>
+  </div>
+  <div class="cards-grid">
+
+    <!-- 01 TAM SAM SOM -->
+    <div class="card">
+      <div class="card-top" style="background:#eff6ff;border-color:#bfdbfe;">
+        <div class="card-num" style="background:#dbeafe;color:#1d4ed8;">01</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#1d4ed8;">Market sizing</div>
+          <div class="card-title" style="color:#1e3a8a;">TAM, SAM & SOM</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#1e40af;">Investors want to know the size of the prize. Wrong sizing kills deals before they start.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#dbeafe;color:#1d4ed8;">T</div>TAM (Total Addressable Market): everyone who could ever buy this</div>
+          <div class="pt"><div class="pt-dot" style="background:#dbeafe;color:#1d4ed8;">S</div>SAM (Serviceable Addressable Market): who you can realistically reach</div>
+          <div class="pt"><div class="pt-dot" style="background:#dbeafe;color:#1d4ed8;">S</div>SOM (Serviceable Obtainable Market): who you'll actually win in 3–5 years</div>
+        </div>
+        <div class="signal" style="background:#eff6ff;border:1.5px solid #bfdbfe;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#1e3a8a;">Investors fund SOM, not TAM. Know all three and be able to defend your SOM number.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 02 Revenue Models -->
+    <div class="card">
+      <div class="card-top" style="background:#f0fdf4;border-color:#86efac;">
+        <div class="card-num" style="background:#dcfce7;color:#15803d;">02</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#15803d;">Monetisation</div>
+          <div class="card-title" style="color:#14532d;">Revenue Models</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#166534;">How you charge determines your growth curve, CAC, and LTV. It's a strategic choice, not a default.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#dcfce7;color:#15803d;">→</div>SaaS subscription: predictable MRR, high retention value</div>
+          <div class="pt"><div class="pt-dot" style="background:#dcfce7;color:#15803d;">→</div>Usage-based: scales with customer success, hard to forecast</div>
+          <div class="pt"><div class="pt-dot" style="background:#dcfce7;color:#15803d;">→</div>Marketplace/transaction: takes a % of GMV, needs volume</div>
+        </div>
+        <div class="signal" style="background:#f0fdf4;border:1.5px solid #86efac;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#14532d;">Match your revenue model to your customer's buying behaviour, not what sounds good in a pitch.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 Unit Economics -->
+    <div class="card">
+      <div class="card-top" style="background:#fff7ed;border-color:#fdba74;">
+        <div class="card-num" style="background:#fed7aa;color:#c2410c;">03</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#c2410c;">Core metrics</div>
+          <div class="card-title" style="color:#7c2d12;">Unit Economics</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#9a3412;">CAC, LTV, and payback period: if these don't work, no amount of growth will save you.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#fed7aa;color:#c2410c;">$</div>CAC: all acquisition spend ÷ new customers acquired</div>
+          <div class="pt"><div class="pt-dot" style="background:#fed7aa;color:#c2410c;">$</div>LTV: avg revenue per user × gross margin × avg lifespan</div>
+          <div class="pt"><div class="pt-dot" style="background:#fed7aa;color:#c2410c;">$</div>LTV:CAC should be 3:1 minimum. Below 1 = burning money</div>
+        </div>
+        <div class="signal" style="background:#fff7ed;border:1.5px solid #fdba74;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#7c2d12;">Know your payback period: how many months until one customer pays back their acquisition cost?</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 04 Valuation -->
+    <div class="card">
+      <div class="card-top" style="background:#fdf4ff;border-color:#f0abfc;">
+        <div class="card-num" style="background:#fae8ff;color:#a21caf;">04</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#a21caf;">Fundraising</div>
+          <div class="card-title" style="color:#701a75;">Startup Valuation</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#86198f;">Valuation is a negotiation, not a calculation. It's based on traction, team, market, and narrative.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#fae8ff;color:#a21caf;">→</div>Pre-revenue: story, team, and market size drive valuation</div>
+          <div class="pt"><div class="pt-dot" style="background:#fae8ff;color:#a21caf;">→</div>Post-revenue: multiples of ARR (typically 5–15× at Series A)</div>
+          <div class="pt"><div class="pt-dot" style="background:#fae8ff;color:#a21caf;">→</div>Pre-money vs post-money: know which you're discussing</div>
+        </div>
+        <div class="signal" style="background:#fdf4ff;border:1.5px solid #f0abfc;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#701a75;">The best way to raise at a higher valuation is to not need the money. Traction is your leverage.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 05 Bootstrapping -->
+    <div class="card">
+      <div class="card-top" style="background:#fef9c3;border-color:#fde047;">
+        <div class="card-num" style="background:#fef08a;color:#a16207;">05</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#a16207;">Funding</div>
+          <div class="card-title" style="color:#713f12;">Bootstrapping</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#854d0e;">Growing with your own revenue keeps you in control and forces the discipline investors can't teach you.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#fef08a;color:#a16207;">✓</div>No dilution — you keep 100% equity until you choose otherwise</div>
+          <div class="pt"><div class="pt-dot" style="background:#fef08a;color:#a16207;">✓</div>Customer revenue as validation: if they pay, you're solving something real</div>
+          <div class="pt"><div class="pt-dot" style="background:#fef08a;color:#a16207;">✓</div>Slow but sustainable — you control pace, direction, and exit</div>
+        </div>
+        <div class="signal" style="background:#fef9c3;border:1.5px solid #fde047;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#713f12;">Bootstrapping to PMF, then raising, maximises your valuation and negotiating power.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 06 Angel Investing -->
+    <div class="card">
+      <div class="card-top" style="background:#ecfeff;border-color:#67e8f9;">
+        <div class="card-num" style="background:#cffafe;color:#0e7490;">06</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#0e7490;">Funding</div>
+          <div class="card-title" style="color:#164e63;">Angel Investing</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#155e75;">Angels are high-net-worth individuals who invest personal capital in early startups, often for equity.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#cffafe;color:#0e7490;">→</div>Typical cheque: £10k–£150k. Less due diligence than VCs</div>
+          <div class="pt"><div class="pt-dot" style="background:#cffafe;color:#0e7490;">→</div>Best angels bring domain expertise and warm introductions</div>
+          <div class="pt"><div class="pt-dot" style="background:#cffafe;color:#0e7490;">→</div>Find via AngelList, Sifted, Founder network, YC alumni</div>
+        </div>
+        <div class="signal" style="background:#ecfeff;border:1.5px solid #67e8f9;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#164e63;">The best angels have operated before. Their introductions and advice are worth more than their cheque.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SECTION B: DEALS & LEGAL -->
+  <div class="section-label">
+    <div class="section-dot" style="background:#dc2626;"></div>
+    <div>
+      <h2>Deals & Legal</h2>
+      <p>What you sign when money changes hands</p>
+    </div>
+  </div>
+  <div class="cards-grid">
+
+    <!-- 07 Term Sheets -->
+    <div class="card">
+      <div class="card-top" style="background:#fef2f2;border-color:#fca5a5;">
+        <div class="card-num" style="background:#fee2e2;color:#dc2626;">07</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#dc2626;">Legal</div>
+          <div class="card-title" style="color:#7f1d1d;">Term Sheets</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#991b1b;">A term sheet sets out the key economics and governance of an investment. Read every word.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#fee2e2;color:#dc2626;">!</div>Valuation cap: maximum company value used to convert notes</div>
+          <div class="pt"><div class="pt-dot" style="background:#fee2e2;color:#dc2626;">!</div>Liquidation preferences: who gets paid first in a sale</div>
+          <div class="pt"><div class="pt-dot" style="background:#fee2e2;color:#dc2626;">!</div>Pro-rata rights: investor's right to join future rounds</div>
+        </div>
+        <div class="signal" style="background:#fef2f2;border:1.5px solid #fca5a5;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#7f1d1d;">Valuation and board control matter most. Don't accept 1× non-participating preference without understanding it.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 08 Stock Options & Equity -->
+    <div class="card">
+      <div class="card-top" style="background:#f5f3ff;border-color:#ddd6fe;">
+        <div class="card-num" style="background:#ede9fe;color:#7c3aed;">08</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#7c3aed;">Equity</div>
+          <div class="card-title" style="color:#4c1d95;">Stock Options & ESOPs</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#5b21b6;">Equity is how you compete with big companies for talent. Structure it right or lose your best people.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#ede9fe;color:#7c3aed;">→</div>ESOP pool: typically 10–20% reserved for employee equity</div>
+          <div class="pt"><div class="pt-dot" style="background:#ede9fe;color:#7c3aed;">→</div>Vesting: 4 years with 1-year cliff is the standard schedule</div>
+          <div class="pt"><div class="pt-dot" style="background:#ede9fe;color:#7c3aed;">→</div>Options vs shares: options give the right to buy at a strike price</div>
+        </div>
+        <div class="signal" style="background:#f5f3ff;border:1.5px solid #ddd6fe;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#4c1d95;">Create the ESOP pool at incorporation. Doing it at Series A dilutes founders, not investors.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 09 Equity Splits & Cap Tables -->
+    <div class="card">
+      <div class="card-top" style="background:#f0f9ff;border-color:#7dd3fc;">
+        <div class="card-num" style="background:#e0f2fe;color:#0369a1;">09</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#0369a1;">Equity</div>
+          <div class="card-title" style="color:#0c4a6e;">Equity Splits & Cap Tables</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#075985;">How equity is divided between founders shapes incentives, conflict, and your ability to attract investors.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#e0f2fe;color:#0369a1;">→</div>Equal splits work best when all founders are full-time from day 1</div>
+          <div class="pt"><div class="pt-dot" style="background:#e0f2fe;color:#0369a1;">→</div>Cap table: who owns what — founders, angels, VCs, ESOP pool</div>
+          <div class="pt"><div class="pt-dot" style="background:#e0f2fe;color:#0369a1;">→</div>Dilution: each funding round reduces your % but grows total value</div>
+        </div>
+        <div class="signal" style="background:#f0f9ff;border:1.5px solid #7dd3fc;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#0c4a6e;">Use a cap table tool from day 1. Mismanaged equity is one of the top reasons co-founder splits happen.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10 Negotiation -->
+    <div class="card">
+      <div class="card-top" style="background:#f8fafc;border-color:#cbd5e1;">
+        <div class="card-num" style="background:#e2e8f0;color:#334155;">10</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#475569;">Deals</div>
+          <div class="card-title" style="color:#0f172a;">Negotiation Skills</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#334155;">Every founder negotiates constantly: with investors, hires, customers, and co-founders. Most are underprepared.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#e2e8f0;color:#334155;">→</div>BATNA: know your best alternative before any negotiation</div>
+          <div class="pt"><div class="pt-dot" style="background:#e2e8f0;color:#334155;">→</div>Silence is a tool: don't fill the pause after making an offer</div>
+          <div class="pt"><div class="pt-dot" style="background:#e2e8f0;color:#334155;">→</div>Anchor high: the first number sets the range in both parties' minds</div>
+        </div>
+        <div class="signal" style="background:#f8fafc;border:1.5px solid #cbd5e1;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#0f172a;">Create competition: "We're in conversations with others" shifts the power dynamic even if it's early.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11 Types of Investors -->
+    <div class="card">
+      <div class="card-top" style="background:#fdf4ff;border-color:#f0abfc;">
+        <div class="card-num" style="background:#fae8ff;color:#a21caf;">11</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#a21caf;">Fundraising</div>
+          <div class="card-title" style="color:#701a75;">Types of Investors</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#86198f;">Not all money is the same. Who you take money from shapes your company's direction for years.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#fae8ff;color:#a21caf;">→</div>Angels: personal capital, early stage, less control</div>
+          <div class="pt"><div class="pt-dot" style="background:#fae8ff;color:#a21caf;">→</div>Seed/Micro VCs: £100k–£2M, Series Seed, niche expertise</div>
+          <div class="pt"><div class="pt-dot" style="background:#fae8ff;color:#a21caf;">→</div>VCs: large funds, board seats, high growth expectations</div>
+        </div>
+        <div class="signal" style="background:#fdf4ff;border:1.5px solid #f0abfc;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#701a75;">Strategic investors (corporates) can open enterprise doors but move slowly. Know the trade-off.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 12 Legal Basics -->
+    <div class="card">
+      <div class="card-top" style="background:#fef9c3;border-color:#fde047;">
+        <div class="card-num" style="background:#fef08a;color:#a16207;">12</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#a16207;">Legal</div>
+          <div class="card-title" style="color:#713f12;">Legal Basics for Startups</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#854d0e;">Wrong legal structure or missed IP protection can kill a deal or destroy a company. Get this right early.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#fef08a;color:#a16207;">!</div>Incorporate early: Ltd/C-Corp protects you personally from day 1</div>
+          <div class="pt"><div class="pt-dot" style="background:#fef08a;color:#a16207;">!</div>IP assignment: all code and designs must be assigned to the company</div>
+          <div class="pt"><div class="pt-dot" style="background:#fef08a;color:#a16207;">!</div>Founder vesting: legally protect all co-founders with signed agreements</div>
+        </div>
+        <div class="signal" style="background:#fef9c3;border:1.5px solid #fde047;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#713f12;">Spend £500 on a lawyer at incorporation. It saves £50,000 in disputes later.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SECTION C: STRATEGY & GROWTH -->
+  <div class="section-label">
+    <div class="section-dot" style="background:#059669;"></div>
+    <div>
+      <h2>Strategy & Growth</h2>
+      <p>How startups survive, adapt, and accelerate</p>
+    </div>
+  </div>
+  <div class="cards-grid">
+
+    <!-- 13 Go-to-Market Strategy -->
+    <div class="card">
+      <div class="card-top" style="background:#ecfdf5;border-color:#6ee7b7;">
+        <div class="card-num" style="background:#d1fae5;color:#065f46;">13</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#065f46;">Growth</div>
+          <div class="card-title" style="color:#064e3b;">Go-to-Market Strategy</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#047857;">A GTM strategy answers: who buys this, how do we reach them, and what do we say to make them care?</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#d1fae5;color:#065f46;">→</div>ICP (Ideal Customer Profile): name the company, role, and pain</div>
+          <div class="pt"><div class="pt-dot" style="background:#d1fae5;color:#065f46;">→</div>Channel: outbound, content, community, partnerships, or paid</div>
+          <div class="pt"><div class="pt-dot" style="background:#d1fae5;color:#065f46;">→</div>Message: how do you describe the problem in the customer's language?</div>
+        </div>
+        <div class="signal" style="background:#ecfdf5;border:1.5px solid #6ee7b7;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#064e3b;">Pick one channel and go deep before trying another. Channel dilution kills early-stage GTM.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 14 Growth Hacking -->
+    <div class="card">
+      <div class="card-top" style="background:#f0fdf4;border-color:#86efac;">
+        <div class="card-num" style="background:#dcfce7;color:#15803d;">14</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#15803d;">Growth</div>
+          <div class="card-title" style="color:#14532d;">Growth Hacking</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#166534;">Growth hacking is systematic, data-driven experimentation to find scalable ways to acquire and retain users.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#dcfce7;color:#15803d;">→</div>AARRR funnel: Acquisition → Activation → Retention → Referral → Revenue</div>
+          <div class="pt"><div class="pt-dot" style="background:#dcfce7;color:#15803d;">→</div>Run 10 experiments a month: most fail, but you only need one to work</div>
+          <div class="pt"><div class="pt-dot" style="background:#dcfce7;color:#15803d;">→</div>Viral loops: does the product generate referrals organically?</div>
+        </div>
+        <div class="signal" style="background:#f0fdf4;border:1.5px solid #86efac;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#14532d;">Fix retention before growth. A leaky bucket filled faster just empties faster.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 15 Pivoting -->
+    <div class="card">
+      <div class="card-top" style="background:#fff7ed;border-color:#fdba74;">
+        <div class="card-num" style="background:#fed7aa;color:#c2410c;">15</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#c2410c;">Strategy</div>
+          <div class="card-title" style="color:#7c2d12;">Pivoting</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#9a3412;">A pivot is a structured course correction — changing strategy while maintaining your mission and learnings.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#fed7aa;color:#c2410c;">→</div>Customer segment pivot: same product, different buyer</div>
+          <div class="pt"><div class="pt-dot" style="background:#fed7aa;color:#c2410c;">→</div>Problem pivot: same customer, different pain point to solve</div>
+          <div class="pt"><div class="pt-dot" style="background:#fed7aa;color:#c2410c;">→</div>Technology pivot: use what you built to solve a different problem</div>
+        </div>
+        <div class="signal" style="background:#fff7ed;border:1.5px solid #fdba74;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#7c2d12;">Pivot on strategy, not when things are just hard. Know the difference between a problem and an insight.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 16 Product Roadmap -->
+    <div class="card">
+      <div class="card-top" style="background:#eff6ff;border-color:#bfdbfe;">
+        <div class="card-num" style="background:#dbeafe;color:#1d4ed8;">16</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#1d4ed8;">Product</div>
+          <div class="card-title" style="color:#1e3a8a;">Product Roadmap</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#1e40af;">A roadmap is not a feature list. It's a prioritised set of bets, each tied to a business outcome.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#dbeafe;color:#1d4ed8;">→</div>Now / Next / Later: a 3-horizon framework that avoids over-committing</div>
+          <div class="pt"><div class="pt-dot" style="background:#dbeafe;color:#1d4ed8;">→</div>Every item on the roadmap should have: outcome, owner, and evidence</div>
+          <div class="pt"><div class="pt-dot" style="background:#dbeafe;color:#1d4ed8;">→</div>Kill features that customers don't use — they have a maintenance cost</div>
+        </div>
+        <div class="signal" style="background:#eff6ff;border:1.5px solid #bfdbfe;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#1e3a8a;">Say no to 80% of feature requests. The 20% you ship define your product's character.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 17 Competitive Moats -->
+    <div class="card">
+      <div class="card-top" style="background:#f5f3ff;border-color:#ddd6fe;">
+        <div class="card-num" style="background:#ede9fe;color:#7c3aed;">17</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#7c3aed;">Strategy</div>
+          <div class="card-title" style="color:#4c1d95;">Competitive Moats</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#5b21b6;">A moat is a durable competitive advantage. Without one, every big company can eventually copy you.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#ede9fe;color:#7c3aed;">→</div>Network effects: product gets more valuable as more people use it</div>
+          <div class="pt"><div class="pt-dot" style="background:#ede9fe;color:#7c3aed;">→</div>Data moats: proprietary data that improves with usage</div>
+          <div class="pt"><div class="pt-dot" style="background:#ede9fe;color:#7c3aed;">→</div>Switching costs: deep integrations that make leaving painful</div>
+        </div>
+        <div class="signal" style="background:#f5f3ff;border:1.5px solid #ddd6fe;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#4c1d95;">Brand and community are underrated moats for early-stage companies. Start building them now.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 18 Exit Strategies -->
+    <div class="card">
+      <div class="card-top" style="background:#ecfeff;border-color:#67e8f9;">
+        <div class="card-num" style="background:#cffafe;color:#0e7490;">18</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#0e7490;">Endgame</div>
+          <div class="card-title" style="color:#164e63;">Exit Strategies</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#155e75;">Investors expect exits. Founders should understand the paths before signing a term sheet.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#cffafe;color:#0e7490;">→</div>Acquisition: a larger company buys you. Most common startup exit</div>
+          <div class="pt"><div class="pt-dot" style="background:#cffafe;color:#0e7490;">→</div>IPO: public listing. Requires scale, profitability path, and reporting capability</div>
+          <div class="pt"><div class="pt-dot" style="background:#cffafe;color:#0e7490;">→</div>Secondary: founders or early investors sell shares to later-stage investors</div>
+        </div>
+        <div class="signal" style="background:#ecfeff;border:1.5px solid #67e8f9;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#164e63;">Build relationships with potential acquirers before you need them. M&A is a relationship business.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SECTION D: PEOPLE & RESILIENCE -->
+  <div class="section-label">
+    <div class="section-dot" style="background:#d97706;"></div>
+    <div>
+      <h2>People & Resilience</h2>
+      <p>The human side of building a company</p>
+    </div>
+  </div>
+  <div class="cards-grid">
+
+    <!-- 19 Conflict Resolution -->
+    <div class="card">
+      <div class="card-top" style="background:#fdf2f8;border-color:#f9a8d4;">
+        <div class="card-num" style="background:#fce7f3;color:#be185d;">19</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#be185d;">People</div>
+          <div class="card-title" style="color:#831843;">Conflict Resolution</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#9d174d;">Co-founder conflict is the #2 startup killer. Most disputes are about unspoken expectations — resolve them before they become crises.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#fce7f3;color:#be185d;">→</div>Name the issue early. Ignored conflict compounds like bad debt</div>
+          <div class="pt"><div class="pt-dot" style="background:#fce7f3;color:#be185d;">→</div>Separate people from positions: what do they actually need?</div>
+          <div class="pt"><div class="pt-dot" style="background:#fce7f3;color:#be185d;">→</div>Get a neutral third party for equity or role disputes</div>
+        </div>
+        <div class="signal" style="background:#fdf2f8;border:1.5px solid #f9a8d4;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#831843;">Write down roles, decision rights, and expectations at incorporation — before any conflict exists.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 20 Founder Mental Health -->
+    <div class="card">
+      <div class="card-top" style="background:#fff7ed;border-color:#fdba74;">
+        <div class="card-num" style="background:#fed7aa;color:#c2410c;">20</div>
+        <div class="card-meta">
+          <div class="card-tag" style="color:#c2410c;">Resilience</div>
+          <div class="card-title" style="color:#7c2d12;">Founder Mental Health</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-hook" style="color:#9a3412;">Founders face loneliness, pressure, and uncertainty at a level few jobs match. Sustainability is a strategy.</div>
+        <div class="pts">
+          <div class="pt"><div class="pt-dot" style="background:#fed7aa;color:#c2410c;">✓</div>Separate self-worth from company performance — they are not the same</div>
+          <div class="pt"><div class="pt-dot" style="background:#fed7aa;color:#c2410c;">✓</div>Build a peer group of other founders — they understand in a way investors don't</div>
+          <div class="pt"><div class="pt-dot" style="background:#fed7aa;color:#c2410c;">✓</div>Protect recovery time: burnout is a threat to the company, not a badge of honour</div>
+        </div>
+        <div class="signal" style="background:#fff7ed;border:1.5px solid #fdba74;">
+          <span style="font-size:13px;">🎯</span>
+          <div class="signal-text" style="color:#7c2d12;">The longest-lasting founders treat their energy as a resource to manage, not a cost to ignore.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SUMMARY ROW -->
+  <div class="summary">
+    <h3>📌 The 20 fundamentals at a glance</h3>
+    <div class="summary-grid">
+      <div class="s-item"><div class="s-icon">📊</div><div class="s-label">TAM SAM SOM</div></div>
+      <div class="s-item"><div class="s-icon">💳</div><div class="s-label">Revenue Models</div></div>
+      <div class="s-item"><div class="s-icon">📉</div><div class="s-label">Unit Economics</div></div>
+      <div class="s-item"><div class="s-icon">🎯</div><div class="s-label">Valuation</div></div>
+      <div class="s-item"><div class="s-icon">🌱</div><div class="s-label">Bootstrapping</div></div>
+      <div class="s-item"><div class="s-icon">👼</div><div class="s-label">Angel Investing</div></div>
+      <div class="s-item"><div class="s-icon">📄</div><div class="s-label">Term Sheets</div></div>
+      <div class="s-item"><div class="s-icon">📋</div><div class="s-label">Stock Options</div></div>
+      <div class="s-item"><div class="s-icon">🥧</div><div class="s-label">Cap Tables</div></div>
+      <div class="s-item"><div class="s-icon">🤝</div><div class="s-label">Negotiation</div></div>
+      <div class="s-item"><div class="s-icon">💼</div><div class="s-label">Types of Investors</div></div>
+      <div class="s-item"><div class="s-icon">⚖️</div><div class="s-label">Legal Basics</div></div>
+      <div class="s-item"><div class="s-icon">🚀</div><div class="s-label">Go-to-Market</div></div>
+      <div class="s-item"><div class="s-icon">⚡</div><div class="s-label">Growth Hacking</div></div>
+      <div class="s-item"><div class="s-icon">🔄</div><div class="s-label">Pivoting</div></div>
+      <div class="s-item"><div class="s-icon">🗺</div><div class="s-label">Product Roadmap</div></div>
+      <div class="s-item"><div class="s-icon">🏰</div><div class="s-label">Moats</div></div>
+      <div class="s-item"><div class="s-icon">🏁</div><div class="s-label">Exit Strategies</div></div>
+      <div class="s-item"><div class="s-icon">🤜</div><div class="s-label">Conflict Resolution</div></div>
+      <div class="s-item"><div class="s-icon">🧠</div><div class="s-label">Mental Health</div></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <span class="footer-brand">MVP Club</span>
+    <span style="font-size:12px;color:#9ca3af;font-style:italic;">From idea to launched — one step at a time.</span>
+    <span style="font-size:11px;color:#9ca3af;font-weight:600;letter-spacing:0.5px;">BUSINESS FUNDAMENTALS · ORIGINAL CONTENT</span>
+  </div>
+
+</div>
+</body>
+</html>

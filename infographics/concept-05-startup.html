@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Start a Startup</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; padding: 40px 20px; color: #111827; }
+  .page { width: 900px; margin: 0 auto; background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 40px rgba(0,0,0,0.08); }
+
+  .header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 60%, #6366f1 100%);
+    padding: 44px 52px 40px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; right:-60px; top:-60px; width:280px; height:280px; border-radius:50%; background:rgba(255,255,255,0.06); }
+  .tag { display:inline-block; background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; padding:5px 12px; border-radius:20px; margin-bottom:14px; }
+  .header h1 { font-size:36px; font-weight:900; letter-spacing:-1px; line-height:1.1; margin-bottom:10px; }
+  .header p { font-size:15px; opacity:0.78; line-height:1.6; max-width:480px; }
+  .header-badge { position:absolute; right:52px; top:36px; font-size:80px; font-weight:900; color:rgba(255,255,255,0.07); line-height:1; }
+
+  .body { padding: 36px 52px 40px; }
+  .section-label { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#9ca3af; margin-bottom:20px; }
+
+  /* Phase header */
+  .phase-header {
+    display:flex; align-items:center; gap:12px;
+    margin-bottom:14px; margin-top:8px;
+  }
+  .phase-pill { display:inline-flex; align-items:center; gap:6px; border-radius:20px; padding:5px 14px; font-size:11px; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; }
+  .phase-line { flex:1; height:2px; border-radius:1px; }
+
+  /* Stage cards in a row */
+  .stage-row { display:flex; gap:0; position:relative; margin-bottom:8px; }
+  .stage-card {
+    flex:1; border-radius:14px; padding:16px; position:relative;
+    border: 1.5px solid;
+  }
+  .stage-arrow {
+    display:flex; align-items:center; justify-content:center;
+    padding:0 4px; color:#d1d5db; font-size:16px; font-weight:700; flex-shrink:0;
+  }
+  .stage-icon { font-size:22px; margin-bottom:8px; }
+  .stage-title { font-size:13px; font-weight:900; margin-bottom:5px; line-height:1.2; }
+  .stage-desc { font-size:11px; line-height:1.55; margin-bottom:8px; }
+  .stage-action { display:flex; align-items:flex-start; gap:5px; font-size:11px; font-weight:700; line-height:1.4; }
+  .action-bullet { width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:900; flex-shrink:0; margin-top:1px; }
+
+  /* Timeline row for "Get it done" */
+  .timeline { display:flex; flex-direction:column; gap:0; margin-bottom:0; position:relative; }
+  .timeline::before { content:''; position:absolute; left:24px; top:24px; bottom:24px; width:2px; background:#e5e7eb; }
+  .tl-item { display:flex; gap:16px; position:relative; }
+  .tl-dot { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; position:relative; z-index:1; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  .tl-body { flex:1; padding:6px 0 20px; }
+  .tl-label { font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:3px; }
+  .tl-title { font-size:15px; font-weight:900; margin-bottom:4px; }
+  .tl-desc { font-size:12px; color:#4b5563; line-height:1.6; }
+  .tl-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+  .chip { background:#f3f4f6; border:1px solid #e5e7eb; border-radius:20px; padding:3px 10px; font-size:10px; font-weight:700; color:#374151; }
+
+  /* First customer box */
+  .first-customer { background:linear-gradient(135deg,#fef9c3,#fefce8); border:2px solid #fde047; border-radius:18px; padding:22px 24px; margin-bottom:24px; display:flex; gap:16px; align-items:center; }
+  .fc-icon { font-size:44px; }
+  .fc-content h4 { font-size:16px; font-weight:900; color:#713f12; margin-bottom:6px; }
+  .fc-content p { font-size:13px; color:#78350f; line-height:1.6; }
+
+  /* The truth box */
+  .truth { background:linear-gradient(135deg,#eef2ff,#f5f3ff); border:1.5px solid #c7d2fe; border-radius:16px; padding:22px 24px; display:flex; gap:14px; }
+  .truth .icon { font-size:26px; flex-shrink:0; }
+  .truth h4 { font-size:14px; font-weight:800; color:#4338ca; margin-bottom:5px; }
+  .truth p { font-size:13px; color:#374151; line-height:1.6; }
+
+  .footer { background:#f8fafc; border-top:1px solid #f3f4f6; padding:18px 52px; display:flex; align-items:center; justify-content:space-between; }
+  .footer-brand { font-size:13px; font-weight:900; color:#6366f1; }
+  .footer-label { font-size:11px; color:#9ca3af; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="tag">Complete Guide</div>
+    <div class="header-badge">🚀</div>
+    <h1>How to Start<br>a Startup</h1>
+    <p>From zero to your first paying customer — the exact path, with no fluff. Five phases. Dozens of traps to avoid. One outcome: a real business.</p>
+  </div>
+
+  <div class="body">
+
+    <!-- Phase 1: Think -->
+    <div class="phase-header">
+      <div class="phase-pill" style="background:#fdf4ff;color:#a21caf;">🧠 Phase 1 — Think</div>
+      <div class="phase-line" style="background:#f0abfc;"></div>
+    </div>
+
+    <div class="stage-row">
+      <div class="stage-card" style="background:#fdf4ff;border-color:#f0abfc;">
+        <div class="stage-icon">💡</div>
+        <div class="stage-title" style="color:#701a75;">Find the right problem</div>
+        <div class="stage-desc" style="color:#86198f;">Start with a problem you or others face repeatedly — not a solution you fell in love with. The best startup ideas come from frustration with something broken.</div>
+        <div class="stage-action"><div class="action-bullet" style="background:#fae8ff;color:#a21caf;">✓</div><span style="color:#701a75;">Write down 3 problems you've faced this month that don't have a great solution</span></div>
+      </div>
+      <div class="stage-arrow">→</div>
+      <div class="stage-card" style="background:#fdf4ff;border-color:#f0abfc;">
+        <div class="stage-icon">🎯</div>
+        <div class="stage-title" style="color:#701a75;">Pick your target customer</div>
+        <div class="stage-desc" style="color:#86198f;">Who has this problem most acutely? Who loses the most money or time from it? Define them in one sentence: "25-40yo freelancers who invoice 5+ clients per month."</div>
+        <div class="stage-action"><div class="action-bullet" style="background:#fae8ff;color:#a21caf;">✓</div><span style="color:#701a75;">Write a single sentence that describes your exact target customer</span></div>
+      </div>
+    </div>
+
+    <!-- Phase 2: Talk -->
+    <div class="phase-header" style="margin-top:16px;">
+      <div class="phase-pill" style="background:#eff6ff;color:#1d4ed8;">🗣 Phase 2 — Talk</div>
+      <div class="phase-line" style="background:#93c5fd;"></div>
+    </div>
+
+    <div class="stage-row">
+      <div class="stage-card" style="background:#eff6ff;border-color:#93c5fd;">
+        <div class="stage-icon">📞</div>
+        <div class="stage-title" style="color:#1e3a8a;">Run customer discovery</div>
+        <div class="stage-desc" style="color:#1e40af;">Talk to 10 strangers who match your target customer. Ask about their life, their problem, and how they deal with it today. Don't pitch. Just listen.</div>
+        <div class="stage-action"><div class="action-bullet" style="background:#dbeafe;color:#1d4ed8;">✓</div><span style="color:#1e3a8a;">Book 2 calls this week. LinkedIn, Reddit, warm intros — doesn't matter how you find them.</span></div>
+      </div>
+      <div class="stage-arrow">→</div>
+      <div class="stage-card" style="background:#eff6ff;border-color:#93c5fd;">
+        <div class="stage-icon">📝</div>
+        <div class="stage-title" style="color:#1e3a8a;">Find your insight</div>
+        <div class="stage-desc" style="color:#1e40af;">After 10 interviews, patterns emerge. What do people say over and over? What workaround are they all using? That recurring pain is your opportunity.</div>
+        <div class="stage-action"><div class="action-bullet" style="background:#dbeafe;color:#1d4ed8;">✓</div><span style="color:#1e3a8a;">List the top 3 insights from your interviews. The most surprising one is often the most valuable.</span></div>
+      </div>
+    </div>
+
+    <!-- Phase 3: Plan -->
+    <div class="phase-header" style="margin-top:16px;">
+      <div class="phase-pill" style="background:#fff7ed;color:#c2410c;">📐 Phase 3 — Plan</div>
+      <div class="phase-line" style="background:#fdba74;"></div>
+    </div>
+
+    <div class="stage-row">
+      <div class="stage-card" style="background:#fff7ed;border-color:#fdba74;">
+        <div class="stage-icon">🗺</div>
+        <div class="stage-title" style="color:#7c2d12;">Define your MVP scope</div>
+        <div class="stage-desc" style="color:#9a3412;">What's the absolute minimum version that delivers value to your first 10 customers? Not the ideal product. The bare bones that solves the core problem.</div>
+        <div class="stage-action"><div class="action-bullet" style="background:#fed7aa;color:#c2410c;">✓</div><span style="color:#7c2d12;">Write 3 features. Cross out all but 1. That's your v1.</span></div>
+      </div>
+      <div class="stage-arrow">→</div>
+      <div class="stage-card" style="background:#fff7ed;border-color:#fdba74;">
+        <div class="stage-icon">💰</div>
+        <div class="stage-title" style="color:#7c2d12;">Decide how you'll charge</div>
+        <div class="stage-desc" style="color:#9a3412;">What's your revenue model? Monthly subscription? One-time fee? Per use? Decide before you build. Your pricing tells you whether you have a business.</div>
+        <div class="stage-action"><div class="action-bullet" style="background:#fed7aa;color:#c2410c;">✓</div><span style="color:#7c2d12;">State your price out loud. Try to get 3 people to pre-pay before you build anything.</span></div>
+      </div>
+    </div>
+
+    <!-- Phase 4: Build -->
+    <div class="phase-header" style="margin-top:16px;">
+      <div class="phase-pill" style="background:#f0fdf4;color:#15803d;">🔨 Phase 4 — Build</div>
+      <div class="phase-line" style="background:#86efac;"></div>
+    </div>
+
+    <div class="stage-row" style="margin-bottom:16px;">
+      <div class="stage-card" style="background:#f0fdf4;border-color:#86efac;">
+        <div class="stage-icon">⚡</div>
+        <div class="stage-title" style="color:#14532d;">Build the smallest version</div>
+        <div class="stage-desc" style="color:#166534;">Time-box it: set a hard deadline of 2–4 weeks. Use the simplest stack. Cut every non-essential feature. Speed of learning beats perfection of execution.</div>
+        <div class="stage-action"><div class="action-bullet" style="background:#dcfce7;color:#15803d;">✓</div><span style="color:#14532d;">Set a ship date. Tell 3 potential customers: "I'm launching on [date]. Will you be my first user?"</span></div>
+      </div>
+      <div class="stage-arrow">→</div>
+      <div class="stage-card" style="background:#f0fdf4;border-color:#86efac;">
+        <div class="stage-icon">🚢</div>
+        <div class="stage-title" style="color:#14532d;">Launch — even if it's not ready</div>
+        <div class="stage-desc" style="color:#166534;">Done is better than perfect. Launch to your 10 discovery interviews first. Get real users into a rough product and iterate based on what you see.</div>
+        <div class="stage-action"><div class="action-bullet" style="background:#dcfce7;color:#15803d;">✓</div><span style="color:#14532d;">Share the link. Watch users use it. Take notes. Don't explain — just observe.</span></div>
+      </div>
+    </div>
+
+    <!-- First customer spotlight -->
+    <div class="first-customer">
+      <div class="fc-icon">🏆</div>
+      <div class="fc-content">
+        <h4>Phase 5 — Get your first customer (this is the real goal)</h4>
+        <p>Everything before this is preparation. Your first paying customer is proof of concept. It doesn't have to be big money — even £1 is validation. Focus obsessively on earning that first payment. Ask every early user: "Would you pay for this? How much?" Then ask them to pay today.</p>
+      </div>
+    </div>
+
+    <!-- The real path (timeline) -->
+    <div class="section-label">What a realistic first 90 days looks like</div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot" style="background:#fdf4ff;">🧠</div>
+        <div class="tl-body">
+          <div class="tl-label" style="color:#a21caf;">Week 1–2</div>
+          <div class="tl-title" style="color:#701a75;">Problem & Customer Definition</div>
+          <div class="tl-desc">Articulate the problem. Define your exact customer. Write it all down.</div>
+          <div class="tl-chips"><span class="chip">Problem statement</span><span class="chip">Target customer</span><span class="chip">Initial thesis</span></div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot" style="background:#eff6ff;">🗣</div>
+        <div class="tl-body">
+          <div class="tl-label" style="color:#1d4ed8;">Week 3–4</div>
+          <div class="tl-title" style="color:#1e3a8a;">Customer Discovery</div>
+          <div class="tl-desc">Run 10 interviews. Find the pattern. Write up your key insight.</div>
+          <div class="tl-chips"><span class="chip">10 interviews</span><span class="chip">Pattern recognition</span><span class="chip">Validated problem</span></div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot" style="background:#fff7ed;">📐</div>
+        <div class="tl-body">
+          <div class="tl-label" style="color:#c2410c;">Week 5–6</div>
+          <div class="tl-title" style="color:#7c2d12;">MVP Scoping & Pre-selling</div>
+          <div class="tl-desc">Define the smallest version. Try to get pre-orders or letters of intent.</div>
+          <div class="tl-chips"><span class="chip">MVP spec</span><span class="chip">Pricing decided</span><span class="chip">Pre-sell attempts</span></div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot" style="background:#f0fdf4;">🔨</div>
+        <div class="tl-body">
+          <div class="tl-label" style="color:#15803d;">Week 7–10</div>
+          <div class="tl-title" style="color:#14532d;">Build & Ship</div>
+          <div class="tl-desc">Build v1 with a hard deadline. Launch to your discovery interviews first.</div>
+          <div class="tl-chips"><span class="chip">MVP built</span><span class="chip">First 10 users</span><span class="chip">Live product</span></div>
+        </div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot" style="background:#fef9c3;border:2px solid #fde047;">🏆</div>
+        <div class="tl-body">
+          <div class="tl-label" style="color:#d97706;">Week 11–12</div>
+          <div class="tl-title" style="color:#78350f;">First Customer</div>
+          <div class="tl-desc">Iterate on feedback. Ask for payment. Close your first paying customer.</div>
+          <div class="tl-chips"><span class="chip" style="background:#fef9c3;border-color:#fde047;color:#92400e;">First revenue</span><span class="chip" style="background:#fef9c3;border-color:#fde047;color:#92400e;">Real validation</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:24px;"></div>
+
+    <div class="truth">
+      <div class="icon">🔑</div>
+      <div>
+        <h4>The one thing that separates successful founders from everyone else</h4>
+        <p>They ship. They're not smarter. They didn't have a better idea. They didn't have more connections or money. They just kept moving when everyone else got paralysed by fear, perfectionism, or planning. The world rewards founders who act — not those who think the best thoughts. Start now. Refine later.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span class="footer-brand">MVP Club</span>
+    <span style="font-size:12px;color:#9ca3af;font-style:italic;">From idea to launched — one step at a time.</span>
+    <span class="footer-label">COMPLETE GUIDE · HOW TO START</span>
+  </div>
+
+</div>
+</body>
+</html>

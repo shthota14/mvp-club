@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MVP Club</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --black:#000;--white:#fff;
+  --g50:#f5f5f7;--g100:#e8e8ed;--g300:#b0b0b8;--g500:#6e6e73;--g700:#3a3a3c;
+  --idea:#5856d6;--hone:#0066cc;--validate:#34c759;--shape:#ff9500;--done:#ff3b30;
+  --dark:#0a0a0a;--dark2:#141414;--dark3:#1e1e1e;
+  --r:18px;--rs:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif;background:var(--white);color:var(--black);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* ─── UTILS ─── */
+.hidden{opacity:0;pointer-events:none;}
+.screen{display:none;min-height:100vh;padding-top:52px;animation:fadeUp .3s ease;}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── NAV ─── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(255,255,255,.88);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,0,0,.08);}
+.nav-logo{font-size:16px;font-weight:700;letter-spacing:-.3px;}
+.nav-tabs{display:flex;gap:2px;background:var(--g50);border-radius:10px;padding:3px;}
+.nav-tab{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;color:var(--g500);border:none;background:none;font-family:inherit;transition:all .2s;}
+.nav-tab.active{background:var(--white);color:var(--black);box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.nav-avatar{width:28px;height:28px;border-radius:50%;background:var(--black);display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:700;cursor:pointer;}
+
+/* ─── HERO ─── */
+.hero-page{position:fixed;inset:0;background:var(--dark);z-index:400;overflow-y:auto;transition:opacity .4s;}
+.hero-nav{display:flex;align-items:center;justify-content:space-between;padding:20px 40px;position:sticky;top:0;background:rgba(10,10,10,.9);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06);z-index:10;}
+.hero-nav-logo{font-size:17px;font-weight:700;color:white;}
+.hn-links{display:flex;gap:10px;align-items:center;}
+.hn-signin{padding:8px 18px;border-radius:100px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:rgba(255,255,255,.08);color:white;border:1px solid rgba(255,255,255,.12);transition:background .15s;}
+.hn-signin:hover{background:rgba(255,255,255,.14);}
+.hn-join{padding:8px 18px;border-radius:100px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;background:white;color:black;border:none;transition:opacity .15s;}
+.hn-join:hover{opacity:.88;}
+
+/* HERO BODY */
+.hero-body{padding:80px 40px 60px;text-align:center;max-width:900px;margin:0 auto;}
+.hero-free-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(52,199,89,.15);border:1px solid rgba(52,199,89,.3);border-radius:100px;font-size:12px;font-weight:700;color:#34c759;letter-spacing:.3px;margin-bottom:28px;}
+.hero-h1{font-size:72px;font-weight:800;letter-spacing:-3px;line-height:1.0;color:white;margin-bottom:20px;}
+.hero-h1 em{font-style:normal;background:linear-gradient(135deg,var(--idea),var(--hone));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:19px;color:rgba(255,255,255,.45);line-height:1.6;max-width:480px;margin:0 auto 48px;}
+
+/* FLOWCHART ─── THE MAIN HERO VISUAL */
+.hero-flow{position:relative;margin:0 auto 60px;max-width:780px;}
+.flow-row{display:flex;align-items:center;justify-content:center;gap:0;}
+.flow-node{display:flex;flex-direction:column;align-items:center;gap:10px;flex:1;position:relative;z-index:1;}
+.flow-circle{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;position:relative;box-shadow:0 0 0 8px rgba(255,255,255,.04);}
+.flow-node-label{font-size:12px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.3px;}
+.flow-node-q{font-size:10px;color:rgba(255,255,255,.3);text-align:center;max-width:80px;line-height:1.4;}
+.flow-arrow{flex-shrink:0;display:flex;align-items:center;padding-bottom:40px;z-index:0;}
+.flow-arrow svg{opacity:.4;}
+
+/* CTA ROW */
+.hero-cta-row{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;}
+.hero-btn-primary{padding:17px 44px;background:white;color:black;border-radius:100px;font-size:17px;font-weight:700;font-family:inherit;cursor:pointer;border:none;display:flex;align-items:center;gap:8px;transition:transform .15s,opacity .15s;}
+.hero-btn-primary:hover{transform:scale(1.02);opacity:.9;}
+.hero-btn-ghost{padding:16px 28px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);border-radius:100px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;border:1px solid rgba(255,255,255,.1);transition:background .15s;}
+.hero-btn-ghost:hover{background:rgba(255,255,255,.1);}
+.hero-free-note{text-align:center;margin-top:14px;font-size:12px;color:rgba(255,255,255,.2);}
+
+/* STATS STRIP */
+.hero-stats{display:flex;justify-content:center;gap:0;margin:60px auto 0;max-width:600px;border:1px solid rgba(255,255,255,.08);border-radius:var(--r);overflow:hidden;}
+.hero-stat{flex:1;padding:24px 20px;text-align:center;border-right:1px solid rgba(255,255,255,.08);}
+.hero-stat:last-child{border-right:none;}
+.hero-stat-num{font-size:36px;font-weight:800;color:white;letter-spacing:-1.5px;line-height:1;}
+.hero-stat-label{font-size:11px;color:rgba(255,255,255,.3);margin-top:6px;font-weight:500;letter-spacing:.2px;}
+
+/* COMMUNITY SECTION */
+.hero-community{padding:80px 40px;max-width:900px;margin:0 auto;}
+.section-eyebrow{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.3);text-align:center;margin-bottom:14px;}
+.section-title{font-size:42px;font-weight:800;letter-spacing:-1.5px;color:white;text-align:center;margin-bottom:10px;line-height:1.1;}
+.section-sub{font-size:16px;color:rgba(255,255,255,.35);text-align:center;margin-bottom:40px;}
+
+.live-tick{background:rgba(52,199,89,.1);border:1px solid rgba(52,199,89,.25);border-radius:var(--r);padding:16px 22px;display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#34c759;box-shadow:0 0 8px #34c759;flex-shrink:0;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.live-text{font-size:14px;font-weight:600;color:white;}
+.live-time{margin-left:auto;font-size:12px;color:rgba(255,255,255,.25);}
+
+.community-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.c-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:20px;transition:border-color .2s;}
+.c-card:hover{border-color:rgba(255,255,255,.15);}
+.c-card-top{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.c-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0;}
+.c-name{font-size:13px;font-weight:700;color:white;}
+.c-stage-badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.2px;margin-top:2px;}
+.c-body{font-size:13px;color:rgba(255,255,255,.55);line-height:1.6;margin-bottom:14px;}
+.c-actions{display:flex;gap:6px;}
+.c-btn{padding:5px 12px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);font-family:inherit;transition:all .15s;}
+.c-btn:hover{background:rgba(255,255,255,.1);color:white;}
+.community-join{text-align:center;margin-top:28px;font-size:15px;color:rgba(255,255,255,.3);}
+.community-join a{color:white;font-weight:700;cursor:pointer;text-decoration:none;}
+
+/* PATH STRIP */
+.hero-path-strip{background:rgba(255,255,255,.03);border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);padding:48px 40px;}
+.path-strip-inner{max-width:860px;margin:0 auto;}
+.path-nodes{display:flex;align-items:flex-start;justify-content:space-between;position:relative;}
+.path-nodes::before{content:'';position:absolute;top:32px;left:32px;right:32px;height:2px;background:linear-gradient(to right,var(--idea),var(--hone),var(--validate),var(--shape),var(--done));z-index:0;border-radius:2px;}
+.path-node{display:flex;flex-direction:column;align-items:center;gap:10px;flex:1;position:relative;z-index:1;}
+.path-icon-wrap{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;border:2px solid rgba(255,255,255,.1);}
+.path-node-name{font-size:12px;font-weight:700;color:white;}
+.path-node-desc{font-size:10px;color:rgba(255,255,255,.3);text-align:center;max-width:80px;line-height:1.4;}
+
+/* ─── AUTH ─── */
+.auth-overlay{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:24px;transition:opacity .4s;}
+.auth-overlay.visible{display:flex;}
+.auth-box{width:100%;max-width:400px;}
+.auth-logo{font-size:18px;font-weight:700;letter-spacing:-.3px;margin-bottom:44px;}
+.auth-step{display:none;}
+.auth-step.active{display:block;}
+.auth-h{font-size:32px;font-weight:700;letter-spacing:-.8px;line-height:1.1;margin-bottom:8px;}
+.auth-p{font-size:15px;line-height:1.5;margin-bottom:32px;}
+.auth-field{margin-bottom:12px;}
+.auth-lbl{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:7px;display:block;}
+.auth-input{width:100%;padding:15px 16px;font-size:15px;font-family:inherit;border-radius:var(--rs);outline:none;transition:border-color .2s,box-shadow .2s;}
+.auth-btn{width:100%;padding:16px;border-radius:100px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;border:none;margin-top:8px;transition:opacity .15s,transform .15s;}
+.auth-btn:hover{opacity:.85;}
+.auth-btn:active{transform:scale(.98);}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:18px 0;font-size:12px;}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;}
+.auth-magic{width:100%;padding:14px;border-radius:100px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;}
+.auth-switch{text-align:center;margin-top:22px;font-size:13px;}
+.auth-switch a{font-weight:700;cursor:pointer;}
+
+/* LIGHT AUTH (steps 1+2) */
+.auth-light .auth-logo{color:var(--black);}
+.auth-light .auth-h{color:var(--black);}
+.auth-light .auth-p{color:var(--g500);}
+.auth-light .auth-lbl{color:var(--g500);}
+.auth-light .auth-input{background:var(--g50);border:1.5px solid var(--g100);color:var(--black);}
+.auth-light .auth-input:focus{border-color:var(--idea);box-shadow:0 0 0 3px rgba(88,86,214,.12);background:white;}
+.auth-light .auth-input::placeholder{color:var(--g300);}
+.auth-light .auth-btn{background:var(--black);color:white;}
+.auth-light .auth-divider{color:var(--g300);}
+.auth-light .auth-divider::before,.auth-light .auth-divider::after{background:var(--g100);}
+.auth-light .auth-magic{background:white;color:var(--black);border:1.5px solid var(--g100);}
+.auth-light .auth-magic:hover{background:var(--g50);}
+.auth-light .auth-switch{color:var(--g500);}
+.auth-light .auth-switch a{color:var(--idea);}
+
+/* DARK AUTH (info, tips, step3) */
+.auth-dark .auth-logo{color:white;}
+.auth-dark .auth-h{color:white;}
+.auth-dark .auth-p{color:rgba(255,255,255,.4);}
+.auth-dark .auth-lbl{color:rgba(255,255,255,.35);}
+.auth-dark .auth-input{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);color:white;}
+.auth-dark .auth-input:focus{border-color:rgba(88,86,214,.7);box-shadow:0 0 0 3px rgba(88,86,214,.15);}
+.auth-dark .auth-input::placeholder{color:rgba(255,255,255,.2);}
+.auth-dark .auth-btn{background:white;color:black;}
+.auth-dark .auth-divider{color:rgba(255,255,255,.2);}
+.auth-dark .auth-divider::before,.auth-dark .auth-divider::after{background:rgba(255,255,255,.1);}
+.auth-dark .auth-magic{background:rgba(255,255,255,.07);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.1);}
+.auth-dark .auth-magic:hover{background:rgba(255,255,255,.12);}
+.auth-dark .auth-switch{color:rgba(255,255,255,.35);}
+.auth-dark .auth-switch a{color:white;}
+
+/* INFO SCREEN */
+.info-path-row{display:flex;align-items:center;justify-content:space-between;position:relative;margin-bottom:36px;}
+.info-path-row::before{content:'';position:absolute;top:30px;left:30px;right:30px;height:2px;background:linear-gradient(to right,var(--idea),var(--hone),var(--validate),var(--shape),var(--done));z-index:0;}
+.info-node{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;position:relative;z-index:1;}
+.info-bubble{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid rgba(255,255,255,.08);}
+.info-label{font-size:11px;font-weight:700;color:white;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px;}
+.info-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px 14px;text-align:center;}
+.info-card-icon{font-size:28px;margin-bottom:10px;}
+.info-card-title{font-size:13px;font-weight:700;color:white;margin-bottom:4px;}
+.info-card-desc{font-size:11px;color:rgba(255,255,255,.35);line-height:1.5;}
+.info-quote{background:linear-gradient(135deg,rgba(88,86,214,.2),rgba(0,102,204,.2));border:1px solid rgba(88,86,214,.25);border-radius:14px;padding:20px;text-align:center;margin-bottom:24px;}
+.info-quote-text{font-size:16px;font-weight:700;color:white;line-height:1.4;}
+
+/* TIPS SCREEN */
+.tip-card{display:flex;align-items:flex-start;gap:14px;padding:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;}
+.tip-num{font-size:10px;font-weight:800;min-width:18px;margin-top:2px;}
+.tip-title{font-size:13px;font-weight:700;color:white;margin-bottom:3px;}
+.tip-desc{font-size:11px;color:rgba(255,255,255,.38);line-height:1.5;}
+
+/* STAGE CARDS (one more thing) */
+.stage-pick{display:flex;align-items:center;gap:12px;padding:13px 14px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.07);border-radius:14px;cursor:pointer;transition:all .15s;}
+.stage-pick:hover{background:rgba(255,255,255,.08);transform:translateX(3px);}
+.stage-pick.sel{background:rgba(88,86,214,.2);border-color:rgba(88,86,214,.6);}
+.stage-pick-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.stage-pick-name{font-size:13px;font-weight:700;color:white;}
+.stage-pick-desc{font-size:11px;color:rgba(255,255,255,.35);}
+.stage-pick-chk{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;margin-left:auto;transition:all .15s;}
+.stage-pick.sel .stage-pick-chk{background:var(--idea);border-color:var(--idea);color:white;}
+
+/* ─── PROFILE PANEL ─── */
+.pp-backdrop{position:fixed;inset:0;z-index:299;display:none;}
+.pp-backdrop.open{display:block;}
+.profile-panel{position:fixed;top:0;right:0;bottom:0;width:310px;background:white;box-shadow:-8px 0 40px rgba(0,0,0,.12);z-index:300;padding:28px 22px;transform:translateX(100%);transition:transform .3s ease;overflow-y:auto;}
+.profile-panel.open{transform:translateX(0);}
+.pp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+.pp-close{width:30px;height:30px;border-radius:50%;border:none;background:var(--g50);cursor:pointer;font-size:15px;}
+.pp-avatar{width:64px;height:64px;border-radius:50%;background:var(--black);display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:700;margin:0 auto 12px;}
+.pp-name{font-size:19px;font-weight:700;text-align:center;margin-bottom:4px;}
+.pp-email{font-size:13px;color:var(--g500);text-align:center;margin-bottom:24px;}
+.pp-stats{display:flex;gap:8px;margin-bottom:24px;}
+.pp-stat{flex:1;background:var(--g50);border-radius:var(--rs);padding:12px;text-align:center;}
+.pp-stat-n{font-size:20px;font-weight:700;}
+.pp-stat-l{font-size:10px;color:var(--g500);margin-top:2px;}
+.pp-field{background:var(--g50);border-radius:var(--rs);padding:13px 15px;margin-bottom:8px;border:1.5px solid transparent;}
+.pp-field:focus-within{border-color:var(--idea);}
+.pp-field-lbl{font-size:10px;font-weight:700;color:var(--g500);margin-bottom:3px;letter-spacing:.2px;}
+.pp-field input,.pp-field select{width:100%;border:none;background:transparent;font-size:14px;font-weight:500;font-family:inherit;color:var(--black);outline:none;}
+.pp-save{width:100%;padding:14px;background:var(--black);color:white;border:none;border-radius:100px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:16px;}
+.pp-logout{width:100%;padding:13px;background:transparent;color:var(--g500);border:1.5px solid var(--g100);border-radius:100px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:8px;}
+
+/* ─── SCREEN 1: JOURNEY ─── */
+.journey-wrap{max-width:580px;margin:0 auto;padding:48px 24px 80px;}
+
+/* STAGE HERO */
+.stage-hero{background:var(--black);border-radius:24px;padding:32px;margin-bottom:20px;position:relative;overflow:hidden;}
+.stage-hero::after{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.03);}
+.sh-eyebrow{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.sh-live{width:7px;height:7px;border-radius:50%;background:#34c759;box-shadow:0 0 6px #34c759;animation:pulse 2s infinite;}
+.sh-stage-name{font-size:13px;font-weight:700;color:white;letter-spacing:.3px;}
+.sh-headline{font-size:32px;font-weight:800;letter-spacing:-1px;color:white;line-height:1.15;margin-bottom:8px;}
+.sh-sub{font-size:15px;color:rgba(255,255,255,.5);line-height:1.5;margin-bottom:28px;}
+.sh-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:white;color:black;border-radius:100px;font-size:15px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:opacity .15s;}
+.sh-btn:hover{opacity:.88;}
+
+/* IDEA CARD */
+.idea-card{border:1.5px solid var(--g100);border-radius:var(--r);padding:20px 22px;margin-bottom:20px;transition:border-color .2s,box-shadow .2s;}
+.idea-card:focus-within{border-color:var(--idea);box-shadow:0 0 0 3px rgba(88,86,214,.1);}
+.idea-lbl{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--g500);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.idea-dot{width:6px;height:6px;border-radius:50%;background:var(--idea);}
+.idea-input{width:100%;border:none;outline:none;font-size:17px;font-weight:500;font-family:inherit;color:var(--black);background:transparent;resize:none;line-height:1.4;}
+.idea-input::placeholder{color:var(--g300);}
+.idea-hint{font-size:11px;color:var(--g300);margin-top:8px;display:none;}
+.idea-card:focus-within .idea-hint{display:block;}
+
+/* PIPELINE INFOGRAPHIC */
+.pipeline{background:var(--g50);border-radius:var(--r);padding:24px 20px;margin-bottom:20px;}
+.pipeline-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:20px;}
+.pipeline-row{display:flex;align-items:center;}
+.pip-stage{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative;}
+.pip-stage:not(:last-child)::after{content:'';position:absolute;top:20px;left:60%;right:-40%;height:2px;z-index:0;}
+.pip-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;position:relative;z-index:1;transition:all .3s;}
+.pip-label{font-size:10px;font-weight:700;text-align:center;letter-spacing:.1px;}
+
+/* NEXT STEP CARD */
+.next-step{background:white;border:1.5px solid var(--g100);border-radius:var(--r);padding:22px;display:flex;gap:16px;align-items:flex-start;}
+.ns-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.ns-text{flex:1;}
+.ns-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:6px;}
+.ns-title{font-size:16px;font-weight:700;color:var(--black);margin-bottom:4px;letter-spacing:-.3px;}
+.ns-desc{font-size:13px;color:var(--g500);line-height:1.5;}
+.ns-action{margin-top:14px;}
+.ns-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:var(--black);color:white;border-radius:100px;font-size:13px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
+
+/* ─── SCREEN 2: DO THE WORK ─── */
+.work-wrap{max-width:600px;margin:0 auto;padding:32px 24px 80px;}
+.work-stage-switcher{display:flex;gap:6px;background:var(--g50);border-radius:12px;padding:4px;margin-bottom:28px;}
+.wss-btn{flex:1;padding:9px 0;border-radius:9px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
+.wss-btn.active{background:white;color:var(--black);box-shadow:0 1px 3px rgba(0,0,0,.1);}
+.wss-btn:not(.active){background:transparent;color:var(--g500);}
+.work-eyebrow{font-size:12px;font-weight:700;color:var(--idea);display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+.work-h1{font-size:30px;font-weight:800;letter-spacing:-.8px;margin-bottom:8px;}
+.work-sub{font-size:16px;color:var(--g500);margin-bottom:28px;line-height:1.5;}
+
+/* ESSENCE FIELDS */
+.ef{background:var(--g50);border-radius:var(--rs);padding:15px 16px;border:1.5px solid transparent;transition:all .2s;}
+.ef:focus-within{border-color:var(--idea);box-shadow:0 0 0 3px rgba(88,86,214,.08);background:white;}
+.ef-lbl{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--g500);margin-bottom:5px;}
+.ef-input{width:100%;border:none;outline:none;background:transparent;font-size:16px;font-weight:500;font-family:inherit;color:var(--black);}
+.ef-input::placeholder{color:var(--g300);}
+.ef-connector{font-size:12px;font-weight:700;color:var(--g500);padding:4px 16px;}
+
+/* ESSENCE PREVIEW */
+.essence-preview{background:var(--black);border-radius:var(--r);padding:22px;margin-top:24px;}
+.ep-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.3);margin-bottom:10px;}
+.ep-text{font-size:16px;font-weight:500;color:white;line-height:1.7;}
+.ep-text em{font-style:normal;color:#60a5fa;}
+.ep-text .ph{color:rgba(255,255,255,.25);font-style:italic;}
+.ep-copy{display:inline-flex;align-items:center;gap:5px;margin-top:14px;padding:7px 14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:100px;color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+
+/* PROBE CARDS */
+.probe{background:var(--g50);border-radius:var(--rs);padding:13px 16px;cursor:pointer;border:1.5px solid transparent;transition:all .15s;}
+.probe:hover{border-color:var(--idea);background:rgba(88,86,214,.05);}
+.probe-q{font-size:13px;font-weight:600;color:var(--black);margin-bottom:2px;}
+.probe-h{font-size:11px;color:var(--g500);}
+.probe:hover .probe-h{color:var(--idea);}
+
+/* VALIDATE STEPS */
+.vstep-pills{display:flex;gap:8px;margin-bottom:24px;}
+.vstep-pill{padding:8px 16px;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--g100);background:white;color:var(--g500);font-family:inherit;transition:all .15s;}
+.vstep-pill.active{background:var(--black);color:white;border-color:var(--black);}
+.model-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.mchip{padding:7px 13px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--g100);background:white;color:var(--g700);font-family:inherit;transition:all .15s;}
+.mchip.sel{background:var(--black);color:white;border-color:var(--black);}
+.biz-result{font-size:14px;font-weight:600;color:var(--g500);margin-top:8px;min-height:22px;}
+.biz-result.ready{color:#1d8348;}
+
+/* SNAPSHOT */
+.snapshot{background:var(--black);border-radius:var(--r);padding:22px;}
+.snap-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.3);margin-bottom:12px;}
+.snap-body{font-size:14px;color:white;line-height:2.0;}
+.snap-body em{font-style:normal;color:#60a5fa;}
+.snap-body b{display:block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.25);margin:10px 0 2px;}
+
+/* WORK ACTIONS */
+.work-actions{display:flex;gap:10px;margin-top:24px;}
+.btn-primary{flex:1;padding:15px;background:var(--black);color:white;border-radius:100px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:opacity .15s;}
+.btn-primary:hover{opacity:.85;}
+.btn-secondary{padding:15px 22px;background:var(--g50);color:var(--black);border-radius:100px;font-size:15px;font-weight:600;border:none;cursor:pointer;font-family:inherit;}
+.guidance-box{background:rgba(88,86,214,.07);border-radius:var(--rs);padding:14px;margin-top:10px;display:none;}
+.guidance-box.on{display:block;}
+.guidance-box p{font-size:13px;color:var(--idea);line-height:1.6;}
+.guidance-toggle{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;color:var(--idea);cursor:pointer;background:none;border:none;font-family:inherit;margin-top:10px;}
+.example-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.ex-chip{padding:7px 14px;background:white;border:1px solid var(--g100);border-radius:100px;font-size:12px;color:var(--g700);cursor:pointer;transition:all .15s;}
+.ex-chip:hover{border-color:var(--idea);color:var(--idea);}
+.input-card{background:var(--g50);border-radius:var(--r);padding:20px;}
+.work-input{width:100%;background:white;border:1px solid var(--g100);border-radius:var(--rs);padding:14px;font-size:15px;font-family:inherit;color:var(--black);outline:none;resize:none;min-height:110px;line-height:1.5;}
+.work-input:focus{border-color:var(--idea);box-shadow:0 0 0 3px rgba(88,86,214,.1);}
+.work-input::placeholder{color:var(--g300);}
+
+/* ─── SCREEN 3: COMMUNITY ─── */
+.comm-wrap{max-width:600px;margin:0 auto;padding:36px 24px 80px;}
+.comm-h1{font-size:30px;font-weight:800;letter-spacing:-.8px;margin-bottom:6px;}
+.comm-sub{font-size:15px;color:var(--g500);margin-bottom:24px;}
+
+.win-banner{background:var(--black);border-radius:var(--r);padding:18px 20px;display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+.win-ico{font-size:24px;}
+.win-body strong{display:block;font-size:14px;font-weight:700;color:white;margin-bottom:2px;}
+.win-body span{font-size:12px;color:rgba(255,255,255,.4);}
+
+.filter-row{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+.fpill{padding:7px 15px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--g100);background:white;color:var(--g500);font-family:inherit;transition:all .15s;}
+.fpill.active{background:var(--black);color:white;border-color:var(--black);}
+
+.new-post{background:var(--g50);border-radius:var(--r);padding:16px;display:flex;gap:10px;margin-bottom:20px;}
+.np-input{flex:1;background:white;border:1px solid var(--g100);border-radius:var(--rs);padding:12px 14px;font-size:14px;font-family:inherit;color:var(--black);outline:none;resize:none;min-height:52px;}
+.np-input:focus{border-color:var(--idea);}
+.np-input::placeholder{color:var(--g300);}
+.np-btn{padding:10px 18px;background:var(--black);color:white;border:none;border-radius:100px;font-size:13px;font-weight:700;cursor:pointer;align-self:flex-end;font-family:inherit;}
+
+.post{background:white;border:1px solid var(--g100);border-radius:var(--r);padding:20px;margin-bottom:10px;transition:box-shadow .2s;}
+.post:hover{box-shadow:0 4px 20px rgba(0,0,0,.06);}
+.post-top{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.p-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0;}
+.p-name{font-size:13px;font-weight:700;color:var(--black);}
+.p-badge{display:inline-block;padding:2px 8px;background:var(--g50);border-radius:100px;font-size:10px;font-weight:700;color:var(--g700);}
+.p-body{font-size:15px;line-height:1.55;color:var(--black);margin-bottom:14px;}
+.p-actions{display:flex;gap:6px;}
+.p-act{display:flex;align-items:center;gap:4px;padding:6px 12px;border-radius:100px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--g100);background:white;color:var(--g700);font-family:inherit;transition:all .15s;}
+.p-act:hover{background:var(--g50);}
+.p-act.on{background:var(--black);color:white;border-color:var(--black);}
+
+/* COMPLETE OVERLAY */
+.complete-overlay{position:fixed;inset:0;background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;color:white;text-align:center;padding:24px;}
+.complete-overlay.on{opacity:1;pointer-events:all;}
+.co-icon{font-size:60px;margin-bottom:20px;}
+.co-h{font-size:34px;font-weight:800;letter-spacing:-1px;margin-bottom:10px;}
+.co-p{font-size:17px;color:rgba(255,255,255,.5);margin-bottom:36px;}
+.co-btn{padding:15px 40px;background:white;color:black;border-radius:100px;font-size:16px;font-weight:700;border:none;cursor:pointer;font-family:inherit;}
+
+@media(max-width:480px){
+  .hero-h1{font-size:44px;letter-spacing:-1.5px;}
+  .community-cards{grid-template-columns:1fr;}
+  .info-grid{grid-template-columns:1fr 1fr;}
+  .hero-stats{flex-direction:column;}
+  .hero-stat{border-right:none;border-bottom:1px solid rgba(255,255,255,.08);}
+  .hero-stat:last-child{border-bottom:none;}
+}
+
+/* ─── VALIDATION SOURCE CARDS ─── */
+.vsrc-card{position:relative;padding:14px 10px;border-radius:16px;border:1.5px solid var(--g100);background:white;text-align:center;cursor:pointer;transition:all .18s;}
+.vsrc-card:hover{border-color:var(--g300);}
+.vsrc-card.active{border-color:var(--black);background:var(--black);}
+.vsrc-card.active div{color:white!important;}
+.vsrc-badge{position:absolute;top:8px;right:8px;min-width:18px;height:18px;border-radius:9px;background:#34c759;color:white;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;display:none;}
+.vsrc-badge.has-data{display:flex;}
+
+/* ─── HELP CHIPS ─── */
+.help-chip{padding:12px 14px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:rgba(255,255,255,.55);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;line-height:1.3;}
+.help-chip.sel{background:rgba(52,199,89,.18);border-color:rgba(52,199,89,.5);color:#34c759;}
+
+/* ─── IDEA LIST ITEM ─── */
+.idea-list-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1.5px solid #e8e8ed;background:white;margin-bottom:8px;cursor:pointer;transition:all .15s;}
+.idea-list-item:hover,.idea-list-item.active{border-color:#5856d6;background:rgba(88,86,214,.04);}
+.idea-list-item .ili-dot{width:10px;height:10px;border-radius:50%;background:#5856d6;flex-shrink:0;}
+.idea-list-item .ili-name{font-size:14px;font-weight:700;color:#0a0a0a;flex:1;}
+.idea-list-item .ili-badge{font-size:10px;font-weight:700;color:#5856d6;background:rgba(88,86,214,.1);padding:2px 8px;border-radius:20px;}
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<div id="hero-page" class="hero-page">
+  <nav class="hero-nav">
+    <div class="hero-nav-logo">MVP Club</div>
+    <div class="hn-links">
+      <button class="hn-signin" onclick="goAuth(1)">Sign in</button>
+      <button class="hn-join" onclick="goAuth(2)">Get started — it's free</button>
+    </div>
+  </nav>
+
+  <div class="hero-body">
+    <div class="hero-free-pill">✦ Free to join · No credit card needed</div>
+    <h1 class="hero-h1">Idea<em> → </em>Startup.</h1>
+    <p class="hero-sub">One clear next step, every day. From your first idea to your first customer.</p>
+
+    <!-- FLOWCHART HERO VISUAL -->
+    <div class="hero-flow">
+      <div class="flow-row">
+
+        <div class="flow-node">
+          <div class="flow-circle" style="background:rgba(88,86,214,.2);border-color:rgba(88,86,214,.4);">💡</div>
+          <div class="flow-node-label">IDEA</div>
+          <div class="flow-node-q">What are you building?</div>
+        </div>
+
+        <div class="flow-arrow">
+          <svg width="32" height="16" viewBox="0 0 32 16"><path d="M0 8h28M22 2l8 6-8 6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </div>
+
+        <div class="flow-node">
+          <div class="flow-circle" style="background:rgba(0,102,204,.2);border-color:rgba(0,102,204,.4);">🎯</div>
+          <div class="flow-node-label">HONE</div>
+          <div class="flow-node-q">What's the real problem?</div>
+        </div>
+
+        <div class="flow-arrow">
+          <svg width="32" height="16" viewBox="0 0 32 16"><path d="M0 8h28M22 2l8 6-8 6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </div>
+
+        <div class="flow-node">
+          <div class="flow-circle" style="background:rgba(52,199,89,.2);border-color:rgba(52,199,89,.4);">🧪</div>
+          <div class="flow-node-label">VALIDATE</div>
+          <div class="flow-node-q">Do people want this?</div>
+        </div>
+
+        <div class="flow-arrow">
+          <svg width="32" height="16" viewBox="0 0 32 16"><path d="M0 8h28M22 2l8 6-8 6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </div>
+
+        <div class="flow-node">
+          <div class="flow-circle" style="background:rgba(255,149,0,.2);border-color:rgba(255,149,0,.4);">🔨</div>
+          <div class="flow-node-label">SHAPE</div>
+          <div class="flow-node-q">What exactly to build?</div>
+        </div>
+
+        <div class="flow-arrow">
+          <svg width="32" height="16" viewBox="0 0 32 16"><path d="M0 8h28M22 2l8 6-8 6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </div>
+
+        <div class="flow-node">
+          <div class="flow-circle" style="background:rgba(255,59,48,.2);border-color:rgba(255,59,48,.4);">🚀</div>
+          <div class="flow-node-label">SHIP</div>
+          <div class="flow-node-q">Launch. Get customers.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="hero-cta-row">
+      <button class="hero-btn-primary" onclick="goAuth(2)">Start for free <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="hero-btn-ghost" onclick="goAuth(1)">I have an account</button>
+    </div>
+    <div class="hero-free-note">Free to join · No credit card · 200+ founders already building</div>
+
+    <!-- STATS -->
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="hero-stat-num">200+</div><div class="hero-stat-label">Active founders</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">5</div><div class="hero-stat-label">Clear stages</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">1</div><div class="hero-stat-label">Next step, always</div></div>
+      <div class="hero-stat"><div class="hero-stat-num">$0</div><div class="hero-stat-label">To get started</div></div>
+    </div>
+  </div>
+
+  <!-- COMMUNITY SECTION -->
+  <div class="hero-community">
+    <div class="section-eyebrow">The community</div>
+    <h2 class="section-title">You're not alone.</h2>
+    <p class="section-sub">Founders at every stage — sharing wins, moving forward together.</p>
+
+    <div class="live-tick">
+      <div class="live-dot"></div>
+      <div class="live-text">Priya just got her first "I'd pay for this" — Validate stage</div>
+      <div class="live-time">2 min ago</div>
+    </div>
+
+    <div class="community-cards">
+      <div class="c-card">
+        <div class="c-card-top">
+          <div class="c-avatar" style="background:#5856d6;">A</div>
+          <div><div class="c-name">Aisha T.</div><span class="c-stage-badge" style="background:rgba(52,199,89,.15);color:#34c759;">🧪 Validate</span></div>
+        </div>
+        <p class="c-body">"Talked to 5 people. 4 out of 5 said they use a spreadsheet for this. That's the signal I needed."</p>
+        <div class="c-actions"><button class="c-btn" onclick="this.classList.toggle('on')">👍 14</button><button class="c-btn">🔍 Ask how</button></div>
+      </div>
+      <div class="c-card">
+        <div class="c-card-top">
+          <div class="c-avatar" style="background:#ff6b35;">J</div>
+          <div><div class="c-name">James K.</div><span class="c-stage-badge" style="background:rgba(255,149,0,.15);color:#ff9500;">🔨 Shape</span></div>
+        </div>
+        <p class="c-body">"Cut my feature list from 12 to 3. Scary but the community helped me see that's exactly right."</p>
+        <div class="c-actions"><button class="c-btn">👍 22</button><button class="c-btn">💬 3</button></div>
+      </div>
+      <div class="c-card">
+        <div class="c-card-top">
+          <div class="c-avatar" style="background:#34c759;">M</div>
+          <div><div class="c-name">Marcus O.</div><span class="c-stage-badge" style="background:rgba(255,59,48,.15);color:#ff3b30;">🚀 Done</span></div>
+        </div>
+        <p class="c-body">"Shipped my landing page. First signup 20 minutes later. 6 weeks ago I just had a note in my phone."</p>
+        <div class="c-actions"><button class="c-btn">👍 61</button><button class="c-btn">💬 9</button></div>
+      </div>
+    </div>
+    <div class="community-join">Join them → <a onclick="goAuth(2)">Start free</a></div>
+  </div>
+
+  <!-- PATH STRIP -->
+  <div class="hero-path-strip">
+    <div class="path-strip-inner">
+      <div class="section-eyebrow" style="margin-bottom:28px;">The path</div>
+      <div class="path-nodes">
+        <div class="path-node"><div class="path-icon-wrap" style="background:rgba(88,86,214,.2);">💡</div><div class="path-node-name">Idea</div><div class="path-node-desc">Capture what you're building</div></div>
+        <div class="path-node"><div class="path-icon-wrap" style="background:rgba(0,102,204,.2);">🎯</div><div class="path-node-name">Hone</div><div class="path-node-desc">Define the essence</div></div>
+        <div class="path-node"><div class="path-icon-wrap" style="background:rgba(52,199,89,.2);">🧪</div><div class="path-node-name">Validate</div><div class="path-node-desc">Prove problem & model</div></div>
+        <div class="path-node"><div class="path-icon-wrap" style="background:rgba(255,149,0,.2);">🔨</div><div class="path-node-name">Shape</div><div class="path-node-desc">Define what to build</div></div>
+        <div class="path-node"><div class="path-icon-wrap" style="background:rgba(255,59,48,.2);">🚀</div><div class="path-node-name">Ship</div><div class="path-node-desc">Launch & get customers</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AUTH ═══ -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-box" id="auth-box">
+    <div class="auth-logo">MVP Club</div>
+
+    <!-- SIGN IN -->
+    <div class="auth-step active" id="auth-step-1">
+      <h1 class="auth-h">Welcome back.</h1>
+      <p class="auth-p">Sign in to continue your founder journey.</p>
+      <div class="auth-field"><label class="auth-lbl">Email</label><input class="auth-input" id="a-email" type="email" placeholder="you@example.com"/></div>
+      <div class="auth-field"><label class="auth-lbl">Password</label><input class="auth-input" id="a-pass" type="password" placeholder="••••••••"/></div>
+      <button class="auth-btn" onclick="doSignIn()">Sign in →</button>
+      <div class="auth-divider">or</div>
+      <button class="auth-magic" onclick="doMagic()">✦ Send me a magic link</button>
+      <div class="auth-switch">New here? <a onclick="goAuth(2)">Create an account</a></div>
+    </div>
+
+    <!-- SIGN UP -->
+    <div class="auth-step" id="auth-step-2">
+      <h1 class="auth-h">Let's get you started.</h1>
+      <p class="auth-p">Create your founder profile.</p>
+      <div class="auth-field"><label class="auth-lbl">Full name</label><input class="auth-input" id="r-name" type="text" placeholder="Sam Thota"/></div>
+      <div class="auth-field"><label class="auth-lbl">Email</label><input class="auth-input" id="r-email" type="email" placeholder="you@example.com"/></div>
+      <div class="auth-field"><label class="auth-lbl">Password</label><input class="auth-input" id="r-pass" type="password" placeholder="••••••••"/></div>
+      <button class="auth-btn" onclick="showStep('info')">Continue →</button>
+      <div class="auth-switch">Already have an account? <a onclick="goAuth(1)">Sign in</a></div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="auth-step" id="auth-step-info" style="padding:0;">
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px;">How it works</div>
+        <h1 style="font-size:34px;font-weight:800;letter-spacing:-1px;color:white;margin-bottom:8px;">One path.<br>One step at a time.</h1>
+        <p style="font-size:14px;color:rgba(255,255,255,.4);line-height:1.5;">Here's exactly what MVP Club does for you.</p>
+      </div>
+      <div class="info-path-row">
+        <div class="info-node"><div class="info-bubble" style="background:rgba(88,86,214,.25);">💡</div><div class="info-label">Idea</div></div>
+        <div class="info-node"><div class="info-bubble" style="background:rgba(0,102,204,.25);">🎯</div><div class="info-label">Hone</div></div>
+        <div class="info-node"><div class="info-bubble" style="background:rgba(52,199,89,.25);">🧪</div><div class="info-label">Validate</div></div>
+        <div class="info-node"><div class="info-bubble" style="background:rgba(255,149,0,.25);">🔨</div><div class="info-label">Shape</div></div>
+        <div class="info-node"><div class="info-bubble" style="background:rgba(255,59,48,.25);">🚀</div><div class="info-label">Ship</div></div>
+      </div>
+      <div class="info-grid">
+        <div class="info-card"><div class="info-card-icon">📍</div><div class="info-card-title">Know where you are</div><div class="info-card-desc">Your stage + one next action. Always clear.</div></div>
+        <div class="info-card"><div class="info-card-icon">✏️</div><div class="info-card-title">Do the work</div><div class="info-card-desc">Guided prompts. Think clearly. Move forward.</div></div>
+        <div class="info-card"><div class="info-card-icon">🤝</div><div class="info-card-title">Community proof</div><div class="info-card-desc">See founders at your stage shipping.</div></div>
+      </div>
+      <div class="info-quote"><div class="info-quote-text">"Clarity creates movement.<br>Movement creates founders."</div></div>
+      <button class="auth-btn" onclick="showStep('tips')">Got it — next →</button>
+    </div>
+
+    <!-- 10 TIPS -->
+    <div class="auth-step" id="auth-step-tips" style="padding:0;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px;">Before you begin</div>
+        <h1 style="font-size:32px;font-weight:800;letter-spacing:-1px;color:white;margin-bottom:8px;">The founder mindset.</h1>
+        <p style="font-size:13px;color:rgba(255,255,255,.35);">10 things to keep with you every step of the way.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;">
+        <div class="tip-card"><div class="tip-num" style="color:rgba(255,255,255,.2);">01</div><div><div class="tip-title">Have an open mind</div><div class="tip-desc">Your first idea will change. That's not failure — that's learning.</div></div></div>
+        <div class="tip-card"><div class="tip-num" style="color:rgba(255,255,255,.2);">02</div><div><div class="tip-title">Be open to criticism and scrutiny</div><div class="tip-desc">Harsh feedback early saves months of wasted effort.</div></div></div>
+        <div class="tip-card"><div class="tip-num" style="color:rgba(255,255,255,.2);">03</div><div><div class="tip-title">It's a rough world out there</div><div class="tip-desc">Building is hard. The founders who make it keep going anyway.</div></div></div>
+        <div class="tip-card" style="background:rgba(88,86,214,.15);border-color:rgba(88,86,214,.3);"><div class="tip-num" style="color:rgba(88,86,214,.7);">04</div><div><div class="tip-title">Don't build before you validate</div><div class="tip-desc">Talk to real people first. Then — only then — write code.</div></div></div>
+        <div class="tip-card" style="background:rgba(88,86,214,.15);border-color:rgba(88,86,214,.3);"><div class="tip-num" style="color:rgba(88,86,214,.7);">05</div><div><div class="tip-title">Sell before you spend money</div><div class="tip-desc">Get a "yes, I'd pay" before investing anything.</div></div></div>
+        <div class="tip-card"><div class="tip-num" style="color:rgba(255,255,255,.2);">06</div><div><div class="tip-title">Fall in love with the problem</div><div class="tip-desc">Your solution will change. The problem stays constant.</div></div></div>
+        <div class="tip-card"><div class="tip-num" style="color:rgba(255,255,255,.2);">07</div><div><div class="tip-title">Done beats perfect, every time</div><div class="tip-desc">Ship it rough. Momentum matters more than polish.</div></div></div>
+        <div class="tip-card"><div class="tip-num" style="color:rgba(255,255,255,.2);">08</div><div><div class="tip-title">Talk to strangers, not just friends</div><div class="tip-desc">Friends are polite. Strangers are honest. You need honesty.</div></div></div>
+        <div class="tip-card" style="background:rgba(52,199,89,.12);border-color:rgba(52,199,89,.25);"><div class="tip-num" style="color:rgba(52,199,89,.7);">09</div><div><div class="tip-title">This community is here to help you</div><div class="tip-desc">Ask questions. Share honestly. Lift others when you can.</div></div></div>
+        <div class="tip-card" style="background:rgba(52,199,89,.12);border-color:rgba(52,199,89,.25);"><div class="tip-num" style="color:rgba(52,199,89,.7);">10</div><div><div class="tip-title">Stay positive — it compounds</div><div class="tip-desc">Optimism is a strategy. Positive founders move faster.</div></div></div>
+      </div>
+      <button class="auth-btn" onclick="showStep(3)" style="background:white;color:black;">I'm ready. Let's go →</button>
+    </div>
+
+    <!-- ONE MORE THING -->
+    <div class="auth-step" id="auth-step-3" style="padding:0;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div style="width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#5856d6,#0066cc);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 18px;box-shadow:0 0 0 8px rgba(88,86,214,.1),0 0 0 16px rgba(88,86,214,.05);">🌱</div>
+        <h1 style="font-size:30px;font-weight:800;letter-spacing:-.8px;color:white;margin-bottom:8px;">One more thing.</h1>
+        <p style="font-size:14px;color:rgba(255,255,255,.4);line-height:1.5;max-width:280px;margin:0 auto;">Tell us where you are. We'll personalise your experience from day one.</p>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px;">🏷️ Give your idea a name</div>
+        <div style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;" id="idea-name-wrap">
+          <input id="reg-idea-name" type="text" placeholder="e.g. Project Phoenix, FounderOS, ShipFast" style="width:100%;background:transparent;border:none;outline:none;font-size:16px;font-weight:700;color:white;font-family:inherit;letter-spacing:-.2px;" onfocus="document.getElementById('idea-name-wrap').style.borderColor='rgba(88,86,214,.7)'" onblur="document.getElementById('idea-name-wrap').style.borderColor='rgba(255,255,255,.1)'"/>
+        </div>
+        <div style="font-size:10px;color:rgba(255,255,255,.18);margin-top:5px;">A short name so you can track multiple ideas later.</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px;">💡 What is it? (one line)</div>
+        <div style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;" id="idea-wrap">
+          <input id="reg-idea" type="text" placeholder="e.g. Helping founders ship faster with less overwhelm" style="width:100%;background:transparent;border:none;outline:none;font-size:14px;font-weight:500;color:white;font-family:inherit;" onfocus="document.getElementById('idea-wrap').style.borderColor='rgba(88,86,214,.7)'" onblur="document.getElementById('idea-wrap').style.borderColor='rgba(255,255,255,.1)'"/>
+        </div>
+      </div>
+      <div style="margin-bottom:24px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px;">📍 Where are you right now?</div>
+        <div style="display:flex;flex-direction:column;gap:7px;" id="stage-cards">
+          <div class="stage-pick" onclick="pickStage(this,'idea')"><div class="stage-pick-ico" style="background:rgba(88,86,214,.2);">💡</div><div><div class="stage-pick-name">Just an idea</div><div class="stage-pick-desc">I haven't started yet</div></div><div class="stage-pick-chk">✓</div></div>
+          <div class="stage-pick" onclick="pickStage(this,'hone')"><div class="stage-pick-ico" style="background:rgba(0,102,204,.2);">🎯</div><div><div class="stage-pick-name">Sharpening it</div><div class="stage-pick-desc">Working out the real problem</div></div><div class="stage-pick-chk">✓</div></div>
+          <div class="stage-pick" onclick="pickStage(this,'validate')"><div class="stage-pick-ico" style="background:rgba(52,199,89,.2);">🧪</div><div><div class="stage-pick-name">Testing the waters</div><div class="stage-pick-desc">Talking to people, seeing if this resonates</div></div><div class="stage-pick-chk">✓</div></div>
+          <div class="stage-pick" onclick="pickStage(this,'shape')"><div class="stage-pick-ico" style="background:rgba(255,149,0,.2);">🔨</div><div><div class="stage-pick-name">Shaping what to build</div><div class="stage-pick-desc">Defining the MVP features</div></div><div class="stage-pick-chk">✓</div></div>
+          <div class="stage-pick" onclick="pickStage(this,'done')"><div class="stage-pick-ico" style="background:rgba(255,59,48,.2);">🚀</div><div><div class="stage-pick-name">Building or launched</div><div class="stage-pick-desc">Already in it</div></div><div class="stage-pick-chk">✓</div></div>
+        </div>
+        <input type="hidden" id="reg-stage" value=""/>
+      </div>
+      <button class="auth-btn" onclick="showStep('community')" style="background:linear-gradient(135deg,#5856d6,#0066cc);font-size:16px;font-weight:800;">Almost there →</button>
+      <div style="text-align:center;margin-top:12px;font-size:11px;color:rgba(255,255,255,.2);">You can update any of this from your profile later.</div>
+    </div>
+
+    <!-- COMMUNITY STEP -->
+    <div class="auth-step" id="auth-step-community" style="padding:0;">
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="width:88px;height:88px;border-radius:50%;background:linear-gradient(135deg,#34c759,#0066cc);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 18px;box-shadow:0 0 0 8px rgba(52,199,89,.1),0 0 0 16px rgba(52,199,89,.05);">🤝</div>
+        <h1 style="font-size:28px;font-weight:800;letter-spacing:-.8px;color:white;margin-bottom:8px;">You don't have to do this alone.</h1>
+        <p style="font-size:15px;color:rgba(255,255,255,.5);line-height:1.5;max-width:300px;margin:0 auto;">There are founders in this community at every stage. Want them in your corner?</p>
+      </div>
+
+      <!-- YES/NO toggle -->
+      <div style="display:flex;gap:12px;margin-bottom:28px;" id="comm-toggle">
+        <button id="comm-yes" onclick="setCommunityJoin(true)" style="flex:1;padding:18px;border-radius:16px;border:2px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;">
+          <div style="font-size:28px;margin-bottom:6px;">👋</div>
+          Yes, I'm in
+        </button>
+        <button id="comm-no" onclick="setCommunityJoin(false)" style="flex:1;padding:18px;border-radius:16px;border:2px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;">
+          <div style="font-size:28px;margin-bottom:6px;">🎧</div>
+          Maybe later
+        </button>
+      </div>
+
+      <!-- Help types (shown only if Yes) -->
+      <div id="comm-help-section" style="display:none;margin-bottom:28px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;">What kind of help are you looking for? <span style="font-weight:400;">(pick all that apply)</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="help-grid">
+          <div class="help-chip" onclick="toggleHelp(this,'feedback')" data-type="feedback">💬 Idea feedback</div>
+          <div class="help-chip" onclick="toggleHelp(this,'accountability')" data-type="accountability">🔁 Accountability</div>
+          <div class="help-chip" onclick="toggleHelp(this,'technical')" data-type="technical">🛠️ Technical help</div>
+          <div class="help-chip" onclick="toggleHelp(this,'cofounder')" data-type="cofounder">🤝 Co-founder</div>
+          <div class="help-chip" onclick="toggleHelp(this,'validation')" data-type="validation">🧪 Validation support</div>
+          <div class="help-chip" onclick="toggleHelp(this,'encouragement')" data-type="encouragement">💛 Encouragement</div>
+          <div class="help-chip" onclick="toggleHelp(this,'beta')" data-type="beta">🧑‍💻 Beta testers</div>
+          <div class="help-chip" onclick="toggleHelp(this,'brainstorm')" data-type="brainstorm">💡 Brainstorming</div>
+        </div>
+      </div>
+
+      <button class="auth-btn" onclick="completeSignup()" style="background:linear-gradient(135deg,#34c759,#0066cc);font-size:16px;font-weight:800;" id="comm-cta">Let's build something real →</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ PROFILE PANEL ═══ -->
+<div class="pp-backdrop" id="pp-backdrop" onclick="closeProfile()"></div>
+<div class="profile-panel" id="profile-panel">
+  <div class="pp-header"><span style="font-size:14px;font-weight:700;">Profile</span><button class="pp-close" onclick="closeProfile()">✕</button></div>
+  <div class="pp-avatar" id="pp-av">S</div>
+  <div class="pp-name" id="pp-name">Sam Thota</div>
+  <div class="pp-email" id="pp-email">sam@example.com</div>
+  <div class="pp-stats">
+    <div class="pp-stat"><div class="pp-stat-n">3</div><div class="pp-stat-l">Days active</div></div>
+    <div class="pp-stat"><div class="pp-stat-n">3</div><div class="pp-stat-l">Stage</div></div>
+    <div class="pp-stat"><div class="pp-stat-n">1</div><div class="pp-stat-l">Win posted</div></div>
+  </div>
+  <div class="pp-field"><div class="pp-field-lbl">Full name</div><input type="text" id="pf-name" value="Sam Thota" oninput="syncName()"/></div>
+  <div class="pp-field"><div class="pp-field-lbl">Email</div><input type="email" id="pf-email" value="sam@example.com"/></div>
+  <div class="pp-field"><div class="pp-field-lbl">Your idea</div><input type="text" id="pf-idea" value="A guided path to help founders ship their MVP"/></div>
+  <div class="pp-field"><div class="pp-field-lbl">Stage</div><select id="pf-stage"><option value="idea">💡 Idea</option><option value="hone">🎯 Hone</option><option value="validate" selected>🧪 Validate</option><option value="shape">🔨 Shape</option><option value="done">🚀 Done</option></select></div>
+  <button class="pp-save" onclick="saveProfile()">Save changes</button>
+  <button class="pp-logout" onclick="doLogout()">Sign out</button>
+</div>
+
+<!-- ═══ MAIN NAV ═══ -->
+<nav>
+  <div class="nav-logo">MVP Club</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showScreen('journey')">Journey</button>
+    <button class="nav-tab" onclick="showScreen('work')">Do the Work</button>
+    <button class="nav-tab" onclick="showScreen('community')">Community</button>
+  </div>
+  <div class="nav-avatar" id="nav-av" onclick="openProfile()" style="cursor:pointer;">S</div>
+</nav>
+
+<!-- ═══ SCREEN 1: JOURNEY ═══ -->
+<div class="screen active" id="screen-journey">
+  <div class="journey-wrap">
+
+    <!-- STAGE HERO -->
+    <div class="stage-hero">
+      <div class="sh-eyebrow"><div class="sh-live"></div><div class="sh-stage-name">🧪 Testing the waters</div></div>
+      <div class="sh-headline">Let's see if this resonates.</div>
+      <div class="sh-sub">A few honest conversations with the right people. That's all this takes.</div>
+      <button class="sh-btn" onclick="showScreen('work')">Up next: Have a chat <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+
+    <!-- IDEA CARD -->
+    <div class="idea-card" id="idea-card-main">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="idea-lbl"><div class="idea-dot"></div> My idea</div>
+        <button onclick="openIdeaSwitcher()" style="background:rgba(88,86,214,.12);border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#5856d6;cursor:pointer;font-family:inherit;letter-spacing:.2px;">Switch idea ▾</button>
+      </div>
+      <div id="idea-name-display" style="font-size:18px;font-weight:800;letter-spacing:-.4px;color:#0a0a0a;margin-bottom:4px;">MVP Club</div>
+      <div style="font-size:12px;color:var(--g500);margin-bottom:8px;font-weight:600;letter-spacing:.1px;">Idea #1 · Active</div>
+      <textarea class="idea-input" id="idea-desc-display" rows="2" placeholder="Describe your idea in one sentence…" onkeydown="if((event.metaKey||event.ctrlKey)&&event.key==='Enter'){saveCurrentIdea();}">A platform that helps early-stage founders go from idea to first customer, step by step.</textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+        <div class="idea-hint">⌘ + Enter to save</div>
+        <button onclick="addNewIdea()" style="background:none;border:none;font-size:12px;font-weight:700;color:#5856d6;cursor:pointer;font-family:inherit;">+ New idea</button>
+      </div>
+    </div>
+
+    <!-- IDEA SWITCHER DROPDOWN -->
+    <div id="idea-switcher" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;" onclick="closeIdeaSwitcher()">
+      <div onclick="event.stopPropagation()" style="position:absolute;bottom:0;left:0;right:0;background:white;border-radius:24px 24px 0 0;padding:24px 20px 40px;box-shadow:0 -8px 40px rgba(0,0,0,.15);">
+        <div style="width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 20px;"></div>
+        <div style="font-size:13px;font-weight:700;color:var(--g500);letter-spacing:.3px;text-transform:uppercase;margin-bottom:14px;">Your ideas</div>
+        <div id="idea-list-panel"></div>
+        <button onclick="addNewIdea();closeIdeaSwitcher();" style="width:100%;margin-top:12px;padding:14px;border-radius:14px;border:2px dashed rgba(88,86,214,.3);background:rgba(88,86,214,.04);color:#5856d6;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">+ Add a new idea</button>
+      </div>
+    </div>
+
+    <!-- ADD IDEA MODAL -->
+    <div id="add-idea-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center;">
+      <div style="background:white;border-radius:24px 24px 0 0;padding:28px 20px 40px;width:100%;max-width:500px;">
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.4px;margin-bottom:20px;">Name your idea</div>
+        <input id="new-idea-name-input" type="text" placeholder="e.g. Project Phoenix" style="width:100%;padding:14px 16px;border:1.5px solid #e0e0e0;border-radius:12px;font-size:16px;font-weight:700;outline:none;font-family:inherit;margin-bottom:12px;box-sizing:border-box;" onfocus="this.style.borderColor='#5856d6'" onblur="this.style.borderColor='#e0e0e0'"/>
+        <input id="new-idea-desc-input" type="text" placeholder="One sentence: what does it do?" style="width:100%;padding:14px 16px;border:1.5px solid #e0e0e0;border-radius:12px;font-size:14px;outline:none;font-family:inherit;margin-bottom:20px;box-sizing:border-box;" onfocus="this.style.borderColor='#5856d6'" onblur="this.style.borderColor='#e0e0e0'"/>
+        <div style="display:flex;gap:10px;">
+          <button onclick="closeAddIdea()" style="flex:1;padding:14px;border-radius:12px;border:1.5px solid #e0e0e0;background:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Cancel</button>
+          <button onclick="saveNewIdea()" style="flex:2;padding:14px;border-radius:12px;border:none;background:#5856d6;color:white;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Save idea</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PIPELINE INFOGRAPHIC -->
+    <div class="pipeline">
+      <div class="pipeline-lbl">Your founder path</div>
+      <div class="pipeline-row">
+        <div class="pip-stage">
+          <div class="pip-circle" style="background:#000;color:white;">✓</div>
+          <div class="pip-label" style="color:#000;">Idea</div>
+        </div>
+        <div class="pip-stage" style="">
+          <div class="pip-circle" style="background:#000;color:white;">✓</div>
+          <div class="pip-label" style="color:#000;">Hone</div>
+        </div>
+        <div class="pip-stage">
+          <div class="pip-circle" style="background:#0066cc;color:white;box-shadow:0 0 0 4px rgba(0,102,204,.15);">3</div>
+          <div class="pip-label" style="color:#0066cc;">Validate</div>
+        </div>
+        <div class="pip-stage">
+          <div class="pip-circle" style="background:var(--g100);color:var(--g500);">4</div>
+          <div class="pip-label" style="color:var(--g500);">Shape</div>
+        </div>
+        <div class="pip-stage">
+          <div class="pip-circle" style="background:var(--g100);color:var(--g500);">5</div>
+          <div class="pip-label" style="color:var(--g500);">Ship</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NEXT STEP CARD -->
+    <div class="next-step">
+      <div class="ns-icon" style="background:rgba(0,102,204,.1);">💬</div>
+      <div class="ns-text">
+        <div class="ns-eyebrow">Up next</div>
+        <div class="ns-title">Have a chat with 3 people this week</div>
+        <div class="ns-desc">Just find people who might relate to the problem. Informal is fine — coffee, a call, a voice note.</div>
+        <div class="ns-action"><button class="ns-btn" onclick="showScreen('work')">Get the script →</button></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ SCREEN 2: DO THE WORK ═══ -->
+<div class="screen" id="screen-work">
+  <div class="work-wrap">
+    <div class="work-stage-switcher">
+      <button class="wss-btn active" id="wss-hone" onclick="switchWork('hone')">🎯 Hone</button>
+      <button class="wss-btn" id="wss-validate" onclick="switchWork('validate')">🧪 Validate</button>
+    </div>
+
+    <!-- HONE -->
+    <div id="work-hone">
+      <div class="work-eyebrow">Hone Stage · Define your essence</div>
+      <h1 class="work-h1">What is this, really?</h1>
+      <p class="work-sub">Fill each piece — watch your platform's essence come together below.</p>
+
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+        <div class="ef"><div class="ef-lbl">I'm building</div><input class="ef-input" id="e-what" type="text" placeholder="a guided execution platform" oninput="updateEssence()"/></div>
+        <div class="ef-connector">for</div>
+        <div class="ef"><div class="ef-lbl">Who are they?</div><input class="ef-input" id="e-who" type="text" placeholder="early-stage founders" oninput="updateEssence()"/></div>
+        <div class="ef-connector">who struggle with</div>
+        <div class="ef"><div class="ef-lbl">The real problem</div><input class="ef-input" id="e-problem" type="text" placeholder="knowing what to do next" oninput="updateEssence()"/></div>
+        <div class="ef-connector">so they can</div>
+        <div class="ef"><div class="ef-lbl">The outcome they want</div><input class="ef-input" id="e-outcome" type="text" placeholder="ship their MVP and get their first customer" oninput="updateEssence()"/></div>
+      </div>
+
+      <div class="essence-preview">
+        <div class="ep-lbl">Your essence statement</div>
+        <div class="ep-text" id="ep-text">I'm building <em>a guided execution platform</em> for <em>early-stage founders</em> who struggle with <em>knowing what to do next</em> so they can <em>ship their MVP and get their first customer.</em></div>
+        <button class="ep-copy" onclick="copyEssence()"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h1" stroke="currentColor" stroke-width="1.5"/></svg> Copy</button>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:10px;">Push yourself further</div>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <div class="probe" onclick="focusF('e-problem')"><div class="probe-q">Why do they struggle with this right now?</div><div class="probe-h">Tap to sharpen your problem →</div></div>
+          <div class="probe" onclick="focusF('e-who')"><div class="probe-q">Can you name one real person who fits this exactly?</div><div class="probe-h">Tap to narrow your audience →</div></div>
+          <div class="probe" onclick="focusF('e-outcome')"><div class="probe-q">What does success look like for them in 30 days?</div><div class="probe-h">Tap to sharpen the outcome →</div></div>
+        </div>
+      </div>
+
+      <div class="work-actions" style="margin-top:28px;">
+        <button class="btn-primary" onclick="completeStep()">This feels right →</button>
+        <button class="btn-secondary" onclick="switchWork('validate')">Next stage</button>
+      </div>
+    </div>
+
+    <!-- VALIDATE -->
+    <div id="work-validate" style="display:none;">
+      <div class="work-eyebrow">Validate Stage · Problem + Business Model</div>
+      <h1 class="work-h1">Does this hold up?</h1>
+      <p class="work-sub">Validate two things: the problem is real, and people will pay.</p>
+
+      <div class="vstep-pills">
+        <button class="vstep-pill active" id="vp1" onclick="switchV(1)">1 · Problem</button>
+        <button class="vstep-pill" id="vp2" onclick="switchV(2)">2 · Business model</button>
+        <button class="vstep-pill" id="vp3" onclick="switchV(3)">3 · Snapshot</button>
+        <button class="vstep-pill" id="vp4" onclick="switchV(4)" style="border-color:rgba(0,119,181,.3);color:#0077b5;">🔗 Find validators</button>
+      </div>
+
+      <!-- V STEP 1 -->
+      <div id="vc1">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="ef"><div class="ef-lbl">Who will you speak to this week?</div><input class="ef-input" id="v-users" type="text" placeholder="3 specific people, not categories" oninput="updateSnap()"/></div>
+          <div class="ef"><div class="ef-lbl">What's your key question?</div><input class="ef-input" id="v-q" type="text" placeholder='e.g. "How do you currently handle X?"' oninput="updateSnap()"/></div>
+          <div class="ef"><div class="ef-lbl">What signal confirms the problem is real?</div><input class="ef-input" id="v-signal" type="text" placeholder="e.g. They bring it up before I do" oninput="updateSnap()"/></div>
+        </div>
+        <div style="margin-top:14px;">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:8px;">Prompts to steal</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div class="probe" onclick="setF('v-q','Walk me through the last time this was a problem for you.')"><div class="probe-q">"Walk me through the last time this was a problem for you."</div><div class="probe-h">Tap to use →</div></div>
+            <div class="probe" onclick="setF('v-q','What do you do today to solve this?')"><div class="probe-q">"What do you do today to solve this?"</div><div class="probe-h">Tap to use →</div></div>
+          </div>
+        </div>
+        <div class="work-actions"><button class="btn-primary" onclick="switchV(2)">Next: Business model →</button></div>
+      </div>
+
+      <!-- V STEP 2 -->
+      <div id="vc2" style="display:none;">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div class="ef">
+            <div class="ef-lbl">Revenue model</div>
+            <div class="model-chips">
+              <button class="mchip" onclick="selModel(this,'Subscription')">Subscription</button>
+              <button class="mchip" onclick="selModel(this,'One-time fee')">One-time</button>
+              <button class="mchip" onclick="selModel(this,'Cohort')">Cohort</button>
+              <button class="mchip" onclick="selModel(this,'Freemium')">Freemium</button>
+              <button class="mchip" onclick="selModel(this,'Marketplace %')">Marketplace %</button>
+            </div>
+            <input class="ef-input" id="v-model" type="text" placeholder="or describe your own…" style="margin-top:10px;" oninput="updateSnap()"/>
+          </div>
+          <div class="ef">
+            <div class="ef-lbl">Price per customer / month</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;font-weight:700;color:var(--g500);">$</span>
+              <input class="ef-input" id="v-price" type="number" placeholder="29" style="width:90px;" oninput="calcBiz();updateSnap()"/>
+              <span style="font-size:13px;color:var(--g500);">per month</span>
+            </div>
+          </div>
+          <div class="ef"><div class="ef-lbl">Customers needed to hit $5k/month</div><div class="biz-result" id="biz-result">Enter a price above</div></div>
+          <div class="ef"><div class="ef-lbl">Who pays?</div><input class="ef-input" id="v-buyer" type="text" placeholder="e.g. The founder pays, not their company" oninput="updateSnap()"/></div>
+          <div class="ef"><div class="ef-lbl">How will you reach first 10 customers?</div><input class="ef-input" id="v-channel" type="text" placeholder="e.g. Direct outreach in Indie Hackers" oninput="updateSnap()"/></div>
+        </div>
+        <div class="work-actions"><button class="btn-primary" onclick="switchV(3)">See snapshot →</button><button class="btn-secondary" onclick="switchV(1)">← Back</button></div>
+      </div>
+
+      <!-- V STEP 3 -->
+      <div id="vc3" style="display:none;">
+        <div class="snapshot">
+          <div class="snap-lbl">Validation snapshot</div>
+          <div class="snap-body" id="snap-body"></div>
+          <button class="ep-copy" onclick="copySnap()"><svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h1" stroke="currentColor" stroke-width="1.5"/></svg> Copy</button>
+        </div>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px;">
+          <div class="probe" onclick="switchV(1)"><div class="probe-q">Edit problem validation →</div><div class="probe-h">Back to step 1</div></div>
+          <div class="probe" onclick="switchV(2)"><div class="probe-q">Edit business model →</div><div class="probe-h">Back to step 2</div></div>
+        </div>
+        <div class="work-actions">
+          <button class="btn-primary" onclick="completeStep()">This validates ✓</button>
+          <button class="btn-secondary" onclick="switchV(4)" style="color:#0077b5;border-color:rgba(0,119,181,.3);">🔗 Find validators on LinkedIn →</button>
+        </div>
+      </div>
+
+      <!-- V STEP 4: VALIDATION HUB -->
+      <div id="vc4" style="display:none;">
+
+        <!-- Header -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:18px;font-weight:800;letter-spacing:-.4px;color:var(--black);margin-bottom:4px;">Get validation from 3 sources</div>
+          <div style="font-size:13px;color:var(--g500);line-height:1.5;">Real signal comes from real people. Reach out across your community, your professional network, and your personal contacts.</div>
+        </div>
+
+        <!-- Source selector cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px;">
+          <div class="vsrc-card active" id="vsrc-community" onclick="switchVSrc('community')">
+            <div style="font-size:22px;margin-bottom:6px;">🏘️</div>
+            <div style="font-size:12px;font-weight:800;color:var(--black);">MVP Club</div>
+            <div style="font-size:10px;color:var(--g500);margin-top:2px;">Community</div>
+            <div class="vsrc-badge" id="vsrc-badge-community">0</div>
+          </div>
+          <div class="vsrc-card" id="vsrc-linkedin" onclick="switchVSrc('linkedin')">
+            <div style="font-size:22px;margin-bottom:6px;">💼</div>
+            <div style="font-size:12px;font-weight:800;color:var(--black);">LinkedIn</div>
+            <div style="font-size:10px;color:var(--g500);margin-top:2px;">Professionals</div>
+            <div class="vsrc-badge" id="vsrc-badge-linkedin">0</div>
+          </div>
+          <div class="vsrc-card" id="vsrc-email" onclick="switchVSrc('email')">
+            <div style="font-size:22px;margin-bottom:6px;">✉️</div>
+            <div style="font-size:12px;font-weight:800;color:var(--black);">Email</div>
+            <div style="font-size:10px;color:var(--g500);margin-top:2px;">Personal contacts</div>
+            <div class="vsrc-badge" id="vsrc-badge-email">0</div>
+          </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div style="background:var(--g50);border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:14px;">
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <div style="font-size:11px;font-weight:700;color:var(--g500);">Validation responses</div>
+              <div style="font-size:11px;font-weight:700;color:var(--black);" id="val-progress-label">0 / 5 goal</div>
+            </div>
+            <div style="height:6px;background:var(--g100);border-radius:3px;overflow:hidden;">
+              <div id="val-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#34c759,#0066cc);border-radius:3px;transition:width .4s ease;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SOURCE: MVP CLUB COMMUNITY ── -->
+        <div id="vsrc-panel-community">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#34c759;box-shadow:0 0 0 3px rgba(52,199,89,.2);"></div>
+            <div style="font-size:13px;font-weight:700;color:var(--black);">Post a validation request to the community</div>
+          </div>
+
+          <!-- Post composer -->
+          <div style="background:var(--g50);border-radius:16px;padding:16px;margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:10px;">Your request post</div>
+            <textarea id="comm-post-text" rows="5" style="width:100%;background:white;border:1.5px solid var(--g100);border-radius:12px;padding:12px 14px;font-size:13px;font-family:inherit;color:var(--black);line-height:1.6;resize:none;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#34c759'" onblur="this.style.borderColor='var(--g100)'">👋 Looking for 5 minutes of your honest feedback.
+
+I'm validating an idea: a guided execution platform that helps founders go from idea to first customer, step by step.
+
+Would love to hear from anyone who has struggled with knowing what to do next as a founder. Does this problem sound familiar to you?
+
+Drop a comment or DM me 🙏</textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">
+              <div style="font-size:11px;color:var(--g300);">Visible to all MVP Club members at any stage</div>
+              <button onclick="postToCommunity()" style="padding:9px 18px;border-radius:10px;border:none;background:#34c759;color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;" id="comm-post-btn">Post to community →</button>
+            </div>
+          </div>
+
+          <!-- Community responses tracker -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:10px;">Responses from the community</div>
+          <div id="comm-responses">
+            <div style="border:1.5px dashed var(--g100);border-radius:14px;padding:20px;text-align:center;color:var(--g300);font-size:13px;">No responses yet — post above to start.</div>
+          </div>
+          <div id="comm-posted-note" style="display:none;margin-top:12px;padding:12px 14px;background:rgba(52,199,89,.08);border:1.5px solid rgba(52,199,89,.2);border-radius:12px;font-size:12px;color:#1d8348;font-weight:600;">
+            ✓ Posted to community. Responses will appear here as members reply.
+          </div>
+        </div>
+
+        <!-- ── SOURCE: LINKEDIN ── -->
+        <div id="vsrc-panel-linkedin" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#0077b5;box-shadow:0 0 0 3px rgba(0,119,181,.15);"></div>
+            <div style="font-size:13px;font-weight:700;color:var(--black);">Find and reach out to professionals on LinkedIn</div>
+          </div>
+
+          <!-- Target -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:10px;">① Who to search for</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+            <div class="ef">
+              <div class="ef-lbl">Job title / role</div>
+              <input class="ef-input" id="li-role" type="text" placeholder="e.g. Product Manager, Solo Founder, Head of Sales" oninput="buildLinkedInSearch()"/>
+            </div>
+            <div class="ef">
+              <div class="ef-lbl">Industry</div>
+              <input class="ef-input" id="li-industry" type="text" placeholder="e.g. SaaS, HealthTech, eCommerce" oninput="buildLinkedInSearch()"/>
+            </div>
+            <div class="ef">
+              <div class="ef-lbl">Keywords</div>
+              <input class="ef-input" id="li-keywords" type="text" placeholder="e.g. startup, bootstrapped, early-stage" oninput="buildLinkedInSearch()"/>
+            </div>
+          </div>
+
+          <div id="li-search-block" style="display:none;margin-bottom:20px;">
+            <div style="background:rgba(0,119,181,.06);border:1.5px solid rgba(0,119,181,.18);border-radius:14px;padding:14px 16px;">
+              <div style="font-size:11px;font-weight:700;color:#0077b5;letter-spacing:.3px;text-transform:uppercase;margin-bottom:5px;">LinkedIn search query</div>
+              <div id="li-search-text" style="font-size:13px;color:var(--black);font-weight:600;line-height:1.5;"></div>
+              <div style="margin-top:10px;display:flex;gap:8px;">
+                <a id="li-search-link" href="#" target="_blank" onclick="openLinkedIn(event)" style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#0077b5;color:white;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="white"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2" fill="white"/></svg>
+                  Open LinkedIn
+                </a>
+                <button onclick="copyLiSearch()" style="padding:8px 14px;border-radius:10px;border:1.5px solid rgba(0,119,181,.25);background:white;color:#0077b5;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;" id="li-copy-search-btn">Copy query</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- LinkedIn message -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:10px;">② Connection request message</div>
+          <div style="background:var(--g50);border-radius:14px;padding:14px;margin-bottom:20px;">
+            <textarea id="li-message" rows="7" style="width:100%;background:transparent;border:none;outline:none;font-size:13px;font-family:inherit;color:var(--black);line-height:1.6;resize:none;box-sizing:border-box;" onkeyup="markMsgEdited()">Hi [First Name],
+
+I'm building a platform to help early-stage founders go from idea to first customer — and I think your perspective in [their field] would be genuinely valuable.
+
+Would you be open to 15 minutes? No pitch, just honest research questions.
+
+[Your name]</textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+              <div style="font-size:10px;color:var(--g300);">Edit [brackets] before sending. 300 char limit on LinkedIn.</div>
+              <button onclick="copyLiMessage()" style="padding:6px 12px;border-radius:8px;border:1.5px solid var(--g100);background:white;font-size:11px;font-weight:700;color:var(--g700);cursor:pointer;font-family:inherit;" id="li-copy-btn">Copy</button>
+            </div>
+          </div>
+
+          <!-- LinkedIn access link -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:10px;">③ Share your validation link</div>
+          <div style="background:linear-gradient(135deg,rgba(0,119,181,.05),rgba(88,86,214,.05));border:1.5px solid rgba(0,119,181,.15);border-radius:14px;padding:14px 16px;margin-bottom:20px;">
+            <div style="font-size:12px;color:var(--black);font-weight:600;margin-bottom:8px;">Drop this in your message so validators can leave structured feedback:</div>
+            <div style="display:flex;align-items:center;gap:8px;background:white;border-radius:10px;padding:9px 13px;border:1.5px solid var(--g100);">
+              <div style="font-size:12px;color:#0077b5;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">mvpclub.app/validate/sam-abc123</div>
+              <button onclick="copyAccessLink('li')" style="padding:5px 10px;border-radius:8px;border:none;background:#0077b5;color:white;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;" id="li-link-btn">Copy</button>
+            </div>
+            <div style="font-size:11px;color:var(--g500);margin-top:6px;">Validators see your idea and leave feedback — no signup needed.</div>
+          </div>
+
+          <!-- LinkedIn outreach tracker -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:10px;">④ Track LinkedIn outreach</div>
+          <div style="background:white;border:1.5px solid var(--g100);border-radius:14px;overflow:hidden;">
+            <div style="padding:10px 12px;border-bottom:1px solid var(--g100);display:flex;gap:8px;align-items:center;">
+              <input id="li-tr-name" type="text" placeholder="Name" style="flex:1.2;padding:7px 11px;border:1.5px solid var(--g100);border-radius:9px;font-size:12px;font-family:inherit;outline:none;" onfocus="this.style.borderColor='#0077b5'" onblur="this.style.borderColor='var(--g100)'"/>
+              <input id="li-tr-role" type="text" placeholder="Role / company" style="flex:1.5;padding:7px 11px;border:1.5px solid var(--g100);border-radius:9px;font-size:12px;font-family:inherit;outline:none;" onfocus="this.style.borderColor='#0077b5'" onblur="this.style.borderColor='var(--g100)'"/>
+              <button onclick="addTrackerRow('linkedin')" style="padding:7px 13px;border-radius:9px;border:none;background:#0077b5;color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">+ Add</button>
+            </div>
+            <div id="tracker-rows-linkedin"><div style="padding:20px;text-align:center;color:var(--g300);font-size:13px;">No outreach logged yet.</div></div>
+          </div>
+        </div>
+
+        <!-- ── SOURCE: EMAIL ── -->
+        <div id="vsrc-panel-email" style="display:none;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#ff9500;box-shadow:0 0 0 3px rgba(255,149,0,.15);"></div>
+            <div style="font-size:13px;font-weight:700;color:var(--black);">Email your personal contacts for feedback</div>
+          </div>
+
+          <!-- Email subject + body -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:10px;">① Your email</div>
+          <div style="background:var(--g50);border-radius:16px;padding:14px;margin-bottom:16px;">
+            <div style="margin-bottom:10px;">
+              <div style="font-size:11px;font-weight:700;color:var(--g500);margin-bottom:4px;">Subject</div>
+              <input id="email-subject" type="text" value="Quick favour — 5 minutes of your honest opinion?" style="width:100%;padding:9px 12px;border:1.5px solid var(--g100);border-radius:10px;font-size:13px;font-family:inherit;font-weight:600;outline:none;box-sizing:border-box;background:white;" onfocus="this.style.borderColor='#ff9500'" onblur="this.style.borderColor='var(--g100)'"/>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--g500);margin-bottom:4px;">Body</div>
+              <textarea id="email-body" rows="9" style="width:100%;background:white;border:1.5px solid var(--g100);border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;color:var(--black);line-height:1.6;resize:none;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#ff9500'" onblur="this.style.borderColor='var(--g100)'">Hi [Name],
+
+I'm working on something new and would really value your opinion — you know me, so I trust you'll tell me honestly if this sounds dumb!
+
+The idea: a step-by-step platform that helps early-stage founders go from idea to first customer, without the confusion of not knowing what to do next.
+
+One question: Does this problem sound real to you? Would you or someone you know actually need this?
+
+No pressure at all, even a one-line reply helps enormously.
+
+Thanks so much,
+[Your name]
+
+P.S. You can leave feedback here too: mvpclub.app/validate/sam-abc123</textarea>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
+              <button onclick="copyEmail()" style="padding:8px 14px;border-radius:10px;border:1.5px solid var(--g100);background:white;font-size:12px;font-weight:700;color:var(--g700);cursor:pointer;font-family:inherit;" id="email-copy-btn">Copy email</button>
+              <button onclick="openMailto()" style="padding:8px 14px;border-radius:10px;border:none;background:#ff9500;color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Open in mail app →</button>
+            </div>
+          </div>
+
+          <!-- Who to email -->
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500);margin-bottom:10px;">② Who are you sending to?</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input id="em-tr-name" type="text" placeholder="Name" style="flex:1.2;padding:8px 12px;border:1.5px solid var(--g100);border-radius:10px;font-size:12px;font-family:inherit;outline:none;" onfocus="this.style.borderColor='#ff9500'" onblur="this.style.borderColor='var(--g100)'"/>
+              <input id="em-tr-email" type="email" placeholder="email@example.com" style="flex:1.8;padding:8px 12px;border:1.5px solid var(--g100);border-radius:10px;font-size:12px;font-family:inherit;outline:none;" onfocus="this.style.borderColor='#ff9500'" onblur="this.style.borderColor='var(--g100)'"/>
+              <button onclick="addTrackerRow('email')" style="padding:8px 13px;border-radius:9px;border:none;background:#ff9500;color:white;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">+ Add</button>
+            </div>
+          </div>
+
+          <!-- Email tracker -->
+          <div style="background:white;border:1.5px solid var(--g100);border-radius:14px;overflow:hidden;">
+            <div style="padding:8px 14px;background:var(--g50);display:grid;grid-template-columns:1.5fr 1.8fr 1fr auto;gap:0;">
+              <div style="font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.3px;">Name</div>
+              <div style="font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.3px;">Email</div>
+              <div style="font-size:10px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.3px;">Status</div>
+              <div></div>
+            </div>
+            <div id="tracker-rows-email"><div style="padding:20px;text-align:center;color:var(--g300);font-size:13px;">No contacts added yet.</div></div>
+          </div>
+        </div>
+
+        <div class="work-actions"><button class="btn-primary" onclick="completeStep()">Outreach done ✓</button><button class="btn-secondary" onclick="switchV(3)">← Snapshot</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 3: COMMUNITY ═══ -->
+<div class="screen" id="screen-community">
+  <div class="comm-wrap">
+    <h1 class="comm-h1">Community Proof</h1>
+    <p class="comm-sub">What founders at your stage are doing this week.</p>
+
+    <div class="win-banner">
+      <div class="win-ico">🎉</div>
+      <div class="win-body"><strong>Marcus shipped his landing page</strong><span>He moved from Shape → Done this morning</span></div>
+    </div>
+
+    <div class="filter-row">
+      <button class="fpill active" onclick="setFilter(this)">My stage</button>
+      <button class="fpill" onclick="setFilter(this)">All stages</button>
+      <button class="fpill" onclick="setFilter(this)">Recent wins</button>
+      <button class="fpill" onclick="setFilter(this)">Validate</button>
+    </div>
+
+    <div class="new-post">
+      <textarea class="np-input" placeholder="Share what you did today…"></textarea>
+      <button class="np-btn">Post</button>
+    </div>
+
+    <div class="post">
+      <div class="post-top"><div class="p-av" style="background:#5856d6;">A</div><div><div class="p-name">Aisha T.</div><span class="p-badge">🧪 Validate</span></div></div>
+      <div class="p-body">I talked to 5 potential users today. 4 out of 5 said they currently use a spreadsheet for this. That's the signal I needed.</div>
+      <div class="p-actions"><button class="p-act on" onclick="this.classList.toggle('on')">👍 12</button><button class="p-act">💬 Comment</button><button class="p-act">🔍 Ask how</button></div>
+    </div>
+
+    <div class="post">
+      <div class="post-top"><div class="p-av" style="background:#ff6b35;">J</div><div><div class="p-name">James K.</div><span class="p-badge">🧪 Validate</span></div></div>
+      <div class="p-body">Rejected by 3 people this morning. Adjusted my opening question and the next 2 conversations were much better.</div>
+      <div class="p-actions"><button class="p-act" onclick="this.classList.toggle('on')">👍 8</button><button class="p-act">💬 Comment</button><button class="p-act">🔍 Ask how</button></div>
+    </div>
+
+    <div class="post">
+      <div class="post-top"><div class="p-av" style="background:#34c759;">P</div><div><div class="p-name">Priya N.</div><span class="p-badge">🧪 Validate</span></div></div>
+      <div class="p-body">I got my first "I would pay for this" today. She said £20/month without me prompting. That's going on the landing page.</div>
+      <div class="p-actions"><button class="p-act" onclick="this.classList.toggle('on')">👍 31</button><button class="p-act">💬 Comment</button><button class="p-act">🔍 Ask how</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLETE OVERLAY -->
+<div class="complete-overlay" id="co">
+  <div class="co-icon">✦</div>
+  <div class="co-h">Step complete.</div>
+  <div class="co-p">You're moving. That's what matters.</div>
+  <button class="co-btn" onclick="dismissComplete()">Keep going →</button>
+</div>
+
+<script>
+// ── AUTH ──
+function goAuth(step) {
+  const hero = document.getElementById('hero-page');
+  const auth = document.getElementById('auth-overlay');
+  hero.style.opacity='0'; hero.style.pointerEvents='none';
+  setTimeout(()=>hero.style.display='none',400);
+  auth.style.display='flex';
+  setAuthTheme(step);
+  showStep(step);
+}
+
+function showStep(n) {
+  document.querySelectorAll('.auth-step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('auth-step-'+n).classList.add('active');
+  setAuthTheme(n);
+  window.scrollTo(0,0);
+}
+
+function setAuthTheme(n) {
+  const overlay = document.getElementById('auth-overlay');
+  const box = document.getElementById('auth-box');
+  const dark = (n==='info'||n==='tips'||n===3||n==='3'||n==='community');
+  overlay.style.background = dark ? '#0a0a0a' : '#ffffff';
+  overlay.style.alignItems = dark ? 'flex-start' : 'center';
+  overlay.style.overflowY = dark ? 'auto' : 'hidden';
+  overlay.style.padding = dark ? '48px 24px 64px' : '24px';
+  box.className = 'auth-box ' + (dark ? 'auth-dark' : 'auth-light');
+}
+
+function doSignIn() {
+  const email = document.getElementById('a-email').value || 'sam@example.com';
+  finishAuth(email, 'Sam');
+}
+
+function doMagic() {
+  const btn = event.target;
+  btn.textContent = '✓ Magic link sent — check your email';
+  btn.style.background='#e8f5e9'; btn.style.color='#1d8348'; btn.style.borderColor='#34c759';
+  setTimeout(()=>finishAuth('sam@example.com','Sam'), 1800);
+}
+
+// ── COMMUNITY STEP ──
+let communityJoin = null;
+let communityHelp = [];
+
+function setCommunityJoin(val) {
+  communityJoin = val;
+  const yes = document.getElementById('comm-yes');
+  const no = document.getElementById('comm-no');
+  const helpSec = document.getElementById('comm-help-section');
+  if(val) {
+    yes.style.background='rgba(52,199,89,.2)'; yes.style.borderColor='rgba(52,199,89,.6)'; yes.style.color='#34c759';
+    no.style.background='rgba(255,255,255,.05)'; no.style.borderColor='rgba(255,255,255,.12)'; no.style.color='rgba(255,255,255,.4)';
+    helpSec.style.display='block';
+  } else {
+    no.style.background='rgba(255,255,255,.15)'; no.style.borderColor='rgba(255,255,255,.3)'; no.style.color='white';
+    yes.style.background='rgba(255,255,255,.05)'; yes.style.borderColor='rgba(255,255,255,.12)'; yes.style.color='rgba(255,255,255,.4)';
+    helpSec.style.display='none';
+  }
+}
+
+function toggleHelp(el, type) {
+  el.classList.toggle('sel');
+  if(el.classList.contains('sel')) { communityHelp.push(type); }
+  else { communityHelp = communityHelp.filter(t=>t!==type); }
+}
+
+// ── MULTI-IDEA ──
+let ideas = [{name:'MVP Club', desc:'A platform that helps early-stage founders go from idea to first customer, step by step.', active:true}];
+let activeIdeaIdx = 0;
+
+function renderIdeaCard() {
+  const idea = ideas[activeIdeaIdx];
+  document.getElementById('idea-name-display').textContent = idea.name || 'Unnamed Idea';
+  document.getElementById('idea-desc-display').value = idea.desc || '';
+  const badge = document.getElementById('idea-name-display').nextElementSibling;
+  if(badge) badge.textContent = `Idea #${activeIdeaIdx+1} · Active`;
+}
+
+function saveCurrentIdea() {
+  ideas[activeIdeaIdx].desc = document.getElementById('idea-desc-display').value;
+  const hint = document.querySelector('.idea-hint');
+  if(hint){hint.textContent='✓ Saved!';setTimeout(()=>{hint.textContent='⌘ + Enter to save';},1500);}
+}
+
+function openIdeaSwitcher() {
+  const panel = document.getElementById('idea-list-panel');
+  panel.innerHTML = ideas.map((idea, i) => `
+    <div class="idea-list-item${i===activeIdeaIdx?' active':''}" onclick="switchIdea(${i})">
+      <div class="ili-dot" style="background:${i===activeIdeaIdx?'#5856d6':'#e0e0e0'}"></div>
+      <div>
+        <div class="ili-name">${idea.name||'Unnamed Idea'}</div>
+        <div style="font-size:11px;color:#6e6e73;margin-top:2px;">${(idea.desc||'').slice(0,50)}${(idea.desc||'').length>50?'…':''}</div>
+      </div>
+      ${i===activeIdeaIdx?'<div class="ili-badge">Active</div>':''}
+    </div>`).join('');
+  document.getElementById('idea-switcher').style.display='block';
+}
+
+function closeIdeaSwitcher() {
+  document.getElementById('idea-switcher').style.display='none';
+}
+
+function switchIdea(idx) {
+  activeIdeaIdx = idx;
+  renderIdeaCard();
+  closeIdeaSwitcher();
+}
+
+function addNewIdea() {
+  document.getElementById('new-idea-name-input').value='';
+  document.getElementById('new-idea-desc-input').value='';
+  document.getElementById('add-idea-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('new-idea-name-input').focus(),100);
+}
+
+function closeAddIdea() {
+  document.getElementById('add-idea-modal').style.display='none';
+}
+
+function saveNewIdea() {
+  const name = document.getElementById('new-idea-name-input').value.trim() || 'New Idea';
+  const desc = document.getElementById('new-idea-desc-input').value.trim();
+  ideas.push({name, desc, active:false});
+  activeIdeaIdx = ideas.length - 1;
+  renderIdeaCard();
+  closeAddIdea();
+}
+
+function completeSignup() {
+  const name = document.getElementById('r-name').value || 'Sam';
+  const email = document.getElementById('r-email').value || 'sam@example.com';
+  const ideaName = document.getElementById('reg-idea-name')?.value.trim();
+  const idea = document.getElementById('reg-idea').value;
+  // Seed idea from signup
+  if(ideaName || idea) {
+    ideas[0] = {name: ideaName || 'My First Idea', desc: idea, active:true};
+    renderIdeaCard();
+  }
+  finishAuth(email, name);
+}
+
+function finishAuth(email, name) {
+  const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('nav-av').textContent = initials;
+  document.getElementById('pp-av').textContent = initials;
+  document.getElementById('pp-name').textContent = name;
+  document.getElementById('pp-email').textContent = email;
+  document.getElementById('pf-name').value = name;
+  document.getElementById('pf-email').value = email;
+  const auth = document.getElementById('auth-overlay');
+  auth.style.opacity='0'; auth.style.transition='opacity .35s ease';
+  setTimeout(()=>{ auth.style.display='none'; auth.style.opacity=''; }, 380);
+  document.getElementById('hero-page').style.display='none';
+}
+
+function pickStage(el,val) {
+  document.querySelectorAll('.stage-pick').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('reg-stage').value = val;
+}
+
+// ── PROFILE ──
+function openProfile() { document.getElementById('profile-panel').classList.add('open'); document.getElementById('pp-backdrop').classList.add('open'); }
+function closeProfile() { document.getElementById('profile-panel').classList.remove('open'); document.getElementById('pp-backdrop').classList.remove('open'); }
+function syncName() {
+  const name = document.getElementById('pf-name').value;
+  const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('nav-av').textContent = initials;
+  document.getElementById('pp-av').textContent = initials;
+  document.getElementById('pp-name').textContent = name;
+}
+function saveProfile() { syncName(); document.getElementById('pp-email').textContent=document.getElementById('pf-email').value; const idea=document.getElementById('pf-idea').value; if(idea) document.querySelector('.idea-input').value=idea; closeProfile(); }
+function doLogout() { closeProfile(); document.getElementById('hero-page').style.display='block'; document.getElementById('hero-page').style.opacity='1'; document.getElementById('hero-page').style.pointerEvents=''; goAuth(1); }
+
+// ── SCREENS ──
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  const tabs=['journey','work','community'];
+  document.querySelectorAll('.nav-tab')[tabs.indexOf(name)].classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ── WORK ──
+function switchWork(stage) {
+  document.getElementById('work-hone').style.display = stage==='hone'?'block':'none';
+  document.getElementById('work-validate').style.display = stage==='validate'?'block':'none';
+  document.getElementById('wss-hone').className = 'wss-btn' + (stage==='hone'?' active':'');
+  document.getElementById('wss-validate').className = 'wss-btn' + (stage==='validate'?' active':'');
+}
+
+// ── ESSENCE ──
+function ev(id,ph) { const v=document.getElementById(id)?.value.trim(); return v?`<em>${v}</em>`:`<span class="ph">${ph}</span>`; }
+function updateEssence() {
+  const t = document.getElementById('ep-text');
+  if(!t) return;
+  t.innerHTML = `I'm building ${ev('e-what','a guided execution platform')} for ${ev('e-who','early-stage founders')} who struggle with ${ev('e-problem','knowing what to do next')} so they can ${ev('e-outcome','ship their MVP and get their first customer.')}`;
+}
+function focusF(id) { const el=document.getElementById(id); if(el){el.focus();el.select();} }
+function setF(id,val) { const el=document.getElementById(id); if(el){el.value=val;el.focus();updateSnap();} }
+function copyEssence() {
+  const parts=['e-what','e-who','e-problem','e-outcome'].map(id=>document.getElementById(id)?.value||'');
+  navigator.clipboard?.writeText(`I'm building ${parts[0]} for ${parts[1]} who struggle with ${parts[2]} so they can ${parts[3]}.`);
+  const btn=document.querySelector('.ep-copy'); if(btn){btn.textContent='✓ Copied';setTimeout(()=>btn.innerHTML='<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M11 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h1" stroke="currentColor" stroke-width="1.5"/></svg> Copy',1500);}
+}
+
+// ── VALIDATE ──
+function switchV(n) {
+  [1,2,3,4].forEach(i=>{
+    const vc = document.getElementById('vc'+i);
+    const vp = document.getElementById('vp'+i);
+    if(vc) vc.style.display = i===n ? 'block' : 'none';
+    if(vp) vp.className = 'vstep-pill' + (i===n?' active':'');
+  });
+  if(n===3) updateSnap();
+  if(n===4) generateLiMessage();
+}
+
+// ── VALIDATION HUB ──
+const trackerData = {linkedin:[], email:[]};
+let commPosted = false;
+
+function switchVSrc(src) {
+  ['community','linkedin','email'].forEach(s=>{
+    document.getElementById('vsrc-panel-'+s).style.display = s===src ? 'block' : 'none';
+    const card = document.getElementById('vsrc-'+s);
+    card.className = 'vsrc-card' + (s===src?' active':'');
+  });
+}
+
+function updateValProgress() {
+  const liReplied = trackerData.linkedin.filter(r=>['Replied','Call booked','Done'].includes(r.status)).length;
+  const emReplied = trackerData.email.filter(r=>['Replied','Done'].includes(r.status)).length;
+  const commCount = commPosted ? 1 : 0;
+  const total = liReplied + emReplied + commCount;
+  const pct = Math.min(100, (total/5)*100);
+  document.getElementById('val-progress-bar').style.width = pct+'%';
+  document.getElementById('val-progress-label').textContent = total+' / 5 goal';
+  // badges
+  const liTotal = trackerData.linkedin.length;
+  const emTotal = trackerData.email.length;
+  ['linkedin','email'].forEach(src=>{
+    const count = src==='linkedin'?liTotal:emTotal;
+    const badge = document.getElementById('vsrc-badge-'+src);
+    badge.textContent = count;
+    badge.className = 'vsrc-badge' + (count>0?' has-data':'');
+  });
+  const commBadge = document.getElementById('vsrc-badge-community');
+  commBadge.textContent = commPosted?'✓':'0';
+  commBadge.className = 'vsrc-badge' + (commPosted?' has-data':'');
+}
+
+// Community
+function postToCommunity() {
+  const btn = document.getElementById('comm-post-btn');
+  btn.textContent='Posted ✓'; btn.style.background='#1d8348'; btn.disabled=true;
+  commPosted = true;
+  document.getElementById('comm-posted-note').style.display='block';
+  // simulate a response
+  setTimeout(()=>{
+    document.getElementById('comm-responses').innerHTML=`
+      <div style="padding:14px;border:1.5px solid var(--g100);border-radius:12px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:#5856d6;color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;">AK</div>
+          <div><div style="font-size:12px;font-weight:700;">Alex K.</div><div style="font-size:10px;color:var(--g500);">Validate stage · just now</div></div>
+        </div>
+        <div style="font-size:13px;color:var(--black);line-height:1.5;">Yes! This is exactly what I struggled with. I had no idea whether to build a landing page or talk to users first. Would love to help validate.</div>
+      </div>`;
+    updateValProgress();
+  }, 2200);
+  updateValProgress();
+}
+
+// LinkedIn
+function buildLinkedInSearch() {
+  const role = document.getElementById('li-role')?.value.trim();
+  const industry = document.getElementById('li-industry')?.value.trim();
+  const kw = document.getElementById('li-keywords')?.value.trim();
+  const block = document.getElementById('li-search-block');
+  if(!role && !industry && !kw) { block.style.display='none'; return; }
+  const terms = [role, industry, kw].filter(Boolean);
+  const url = 'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent(terms.join(' '));
+  document.getElementById('li-search-text').textContent = terms.map(t=>`"${t}"`).join(' + ');
+  document.getElementById('li-search-link').href = url;
+  document.getElementById('li-search-link').dataset.url = url;
+  block.style.display='block';
+}
+
+function openLinkedIn(e) {
+  e.preventDefault();
+  window.open(e.currentTarget.dataset.url || e.currentTarget.href, '_blank', 'noopener');
+}
+
+function generateLiMessage() {
+  const idea = document.getElementById('idea-desc-display')?.value || document.getElementById('reg-idea')?.value || 'my product';
+  const ta = document.getElementById('li-message');
+  if(ta && !ta.dataset.edited) ta.value = `Hi [First Name],\n\nI'm building ${idea} — and I think your perspective would be genuinely valuable.\n\nWould you be open to 15 minutes? No pitch, just honest research questions.\n\n[Your name]`;
+}
+
+function markMsgEdited() { const ta=document.getElementById('li-message'); if(ta) ta.dataset.edited='1'; }
+
+function copyLiSearch() {
+  const txt = document.getElementById('li-search-text')?.textContent;
+  navigator.clipboard.writeText(txt||'').then(()=>{
+    const btn=document.getElementById('li-copy-search-btn'); btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy query',1500);
+  });
+}
+
+function copyLiMessage() {
+  const txt = document.getElementById('li-message')?.value;
+  navigator.clipboard.writeText(txt||'').then(()=>{
+    const btn=document.getElementById('li-copy-btn'); btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy',1500);
+  });
+}
+
+function copyAccessLink(src) {
+  const url='https://mvpclub.app/validate/sam-abc123';
+  navigator.clipboard.writeText(url).then(()=>{
+    const btn=document.getElementById((src||'li')+'-link-btn'); if(btn){btn.textContent='Copied!'; setTimeout(()=>btn.textContent='Copy',1500);}
+  });
+}
+
+// Email
+function copyEmail() {
+  const subj = document.getElementById('email-subject')?.value||'';
+  const body = document.getElementById('email-body')?.value||'';
+  navigator.clipboard.writeText('Subject: '+subj+'\n\n'+body).then(()=>{
+    const btn=document.getElementById('email-copy-btn'); btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent='Copy email',1500);
+  });
+}
+
+function openMailto() {
+  const subj = encodeURIComponent(document.getElementById('email-subject')?.value||'');
+  const body = encodeURIComponent(document.getElementById('email-body')?.value||'');
+  window.location.href = `mailto:?subject=${subj}&body=${body}`;
+}
+
+// Shared tracker
+const STATUS_OPTS = ['Not sent','Sent','Replied','Call booked','Done'];
+const EMAIL_STATUS_OPTS = ['Not sent','Sent','Replied','Done'];
+const STATUS_COLORS = {'Not sent':'var(--g300)','Sent':'#0077b5','Replied':'#ff9500','Call booked':'#34c759','Done':'#5856d6'};
+
+function addTrackerRow(src) {
+  if(src==='linkedin') {
+    const name=document.getElementById('li-tr-name').value.trim();
+    const role=document.getElementById('li-tr-role').value.trim();
+    if(!name){document.getElementById('li-tr-name').focus();return;}
+    trackerData.linkedin.push({name,role,status:'Not sent'});
+    document.getElementById('li-tr-name').value='';
+    document.getElementById('li-tr-role').value='';
+    renderTracker('linkedin');
+  } else {
+    const name=document.getElementById('em-tr-name').value.trim();
+    const email=document.getElementById('em-tr-email').value.trim();
+    if(!name){document.getElementById('em-tr-name').focus();return;}
+    trackerData.email.push({name,email,status:'Not sent'});
+    document.getElementById('em-tr-name').value='';
+    document.getElementById('em-tr-email').value='';
+    renderTracker('email');
+  }
+  updateValProgress();
+}
+
+function setTrackerStatus(src,idx,status) {
+  trackerData[src][idx].status=status;
+  renderTracker(src);
+  updateValProgress();
+}
+
+function removeTrackerRow(src,idx) {
+  trackerData[src].splice(idx,1);
+  renderTracker(src);
+  updateValProgress();
+}
+
+function renderTracker(src) {
+  const el=document.getElementById('tracker-rows-'+src);
+  const data=trackerData[src];
+  const opts=src==='email'?EMAIL_STATUS_OPTS:STATUS_OPTS;
+  const col2key=src==='email'?'email':'role';
+  if(!data.length){el.innerHTML=`<div style="padding:20px;text-align:center;color:var(--g300);font-size:13px;">No contacts added yet.</div>`;return;}
+  el.innerHTML=data.map((r,i)=>`
+    <div style="display:grid;grid-template-columns:1.5fr 1.8fr 1fr auto;gap:0;padding:9px 13px;border-bottom:1px solid var(--g50);align-items:center;">
+      <div style="font-size:13px;font-weight:700;color:var(--black);">${r.name}</div>
+      <div style="font-size:11px;color:var(--g500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r[col2key]||'—'}</div>
+      <div><select onchange="setTrackerStatus('${src}',${i},this.value)" style="padding:3px 7px;border-radius:8px;border:1.5px solid var(--g100);font-size:11px;font-weight:700;color:${STATUS_COLORS[r.status]||'var(--g700)'};font-family:inherit;outline:none;cursor:pointer;background:white;">
+        ${opts.map(s=>`<option value="${s}"${s===r.status?' selected':''}>${s}</option>`).join('')}
+      </select></div>
+      <button onclick="removeTrackerRow('${src}',${i})" style="background:none;border:none;color:var(--g300);cursor:pointer;font-size:13px;padding:4px 6px;">✕</button>
+    </div>`).join('');
+  const replied=data.filter(r=>['Replied','Call booked','Done'].includes(r.status)).length;
+  el.innerHTML+=`<div style="padding:9px 13px;background:var(--g50);display:flex;gap:16px;">
+    <div style="font-size:11px;color:var(--g500);">📤 <b style="color:var(--black);">${data.length}</b> contacted</div>
+    <div style="font-size:11px;color:var(--g500);">💬 <b style="color:var(--black);">${replied}</b> responded</div>
+  </div>`;
+}
+function selModel(el,val) { document.querySelectorAll('.mchip').forEach(c=>c.classList.remove('sel')); el.classList.add('sel'); document.getElementById('v-model').value=val; calcBiz(); updateSnap(); }
+function calcBiz() {
+  const price=parseFloat(document.getElementById('v-price')?.value);
+  const el=document.getElementById('biz-result');
+  if(!el) return;
+  if(!price||price<=0){el.textContent='Enter a price above';el.className='biz-result';}
+  else{el.textContent=`${Math.ceil(5000/price)} customers → $5k/month`;el.className='biz-result ready';}
+}
+function updateSnap() {
+  const el=document.getElementById('snap-body'); if(!el) return;
+  const g=id=>document.getElementById(id)?.value||'—';
+  const price=g('v-price'); const needed=price&&parseFloat(price)>0?Math.ceil(5000/parseFloat(price)):'?';
+  el.innerHTML=`<b>Problem</b>Talking to <em>${g('v-users')}</em><br>Asking: <em>"${g('v-q')}"</em><br>Signal: <em>${g('v-signal')}</em><b>Business model</b>Model: <em>${g('v-model')}</em>${price&&price!=='—'?` · <em>$${price}/mo</em>`:''}<br>Need <em>${needed} customers</em> for $5k/month<br>Who pays: <em>${g('v-buyer')}</em><br>Reach: <em>${g('v-channel')}</em>`;
+}
+function copySnap() {
+  const text=document.getElementById('snap-body')?.innerText||'';
+  navigator.clipboard?.writeText(text);
+}
+
+// ── COMPLETE ──
+function completeStep() { document.getElementById('co').classList.add('on'); }
+function dismissComplete() { document.getElementById('co').classList.remove('on'); showScreen('community'); }
+
+// ── COMMUNITY ──
+function setFilter(el) { document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); }
+
+// INIT
+setAuthTheme(1);
+document.getElementById('auth-overlay').style.display='none';
+</script>
+</body>
+</html>

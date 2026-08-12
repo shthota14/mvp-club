@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech Startup Founder's Playbook</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; padding: 40px 20px; color: #111827; }
+  .page { width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── Header ── */
+  .hero {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 55%, #6366f1 100%);
+    border-radius: 24px; padding: 48px 56px; color: white; position: relative; overflow: hidden;
+  }
+  .hero::before { content:''; position:absolute; right:-80px; top:-80px; width:360px; height:360px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .hero::after  { content:''; position:absolute; left:-40px; bottom:-60px; width:220px; height:220px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .hero-tag { display:inline-block; background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; padding:5px 14px; border-radius:20px; margin-bottom:16px; }
+  .hero h1 { font-size:40px; font-weight:900; letter-spacing:-1.5px; line-height:1.05; margin-bottom:12px; }
+  .hero-sub { font-size:15px; opacity:0.72; line-height:1.6; max-width:500px; margin-bottom:28px; }
+  .hero-path { display:flex; align-items:center; gap:0; flex-wrap:wrap; }
+  .hero-node { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); border-radius:10px; padding:8px 16px; font-size:12px; font-weight:800; letter-spacing:.3px; }
+  .hero-arrow { padding:0 8px; font-size:16px; opacity:0.5; }
+
+  /* ── Stage cards ── */
+  .stage {
+    background: #fff; border-radius: 20px; overflow: hidden;
+    border: 1.5px solid #e5e7eb; box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+  .stage-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 20px 28px; border-bottom: 1.5px solid;
+  }
+  .stage-num {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 900; flex-shrink: 0;
+  }
+  .stage-title { font-size: 17px; font-weight: 900; flex: 1; }
+  .stage-signal { font-size: 12px; font-weight: 700; opacity: 0.8; font-style: italic; }
+  .stage-body { padding: 20px 28px; display: grid; gap: 16px; }
+
+  /* flow column */
+  .flow-col { display: flex; flex-direction: column; gap: 0; }
+  .flow-item { display: flex; align-items: center; gap: 10px; }
+  .flow-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; flex-shrink: 0; }
+  .flow-label { font-size: 13px; font-weight: 700; color: #111827; }
+  .flow-connector { width: 28px; display: flex; justify-content: center; padding: 3px 0; }
+  .flow-line { width: 2px; height: 14px; background: #e5e7eb; border-radius: 1px; }
+
+  /* check/cross lists */
+  .list { display: flex; flex-direction: column; gap: 7px; }
+  .list-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; font-weight: 600; color: #374151; line-height: 1.45; }
+  .badge { width: 20px; height: 20px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
+
+  /* two-col layout inside stage body */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  .sub-card { background: #f8fafc; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 14px 16px; }
+  .sub-card-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .sub-card-title { font-size: 13px; font-weight: 800; margin-bottom: 5px; }
+
+  /* metrics table */
+  .metrics { width: 100%; border-collapse: collapse; }
+  .metrics th { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #4b5563; text-align: left; padding: 8px 12px; border-bottom: 1.5px solid #f3f4f6; }
+  .metrics td { font-size: 12px; font-weight: 600; color: #374151; padding: 9px 12px; border-bottom: 1px solid #f9fafb; line-height: 1.4; }
+  .metrics tr:last-child td { border-bottom: none; }
+  .metric-tag { display:inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 800; }
+
+  /* hire tags */
+  .tag-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tag { border-radius: 20px; padding: 6px 14px; font-size: 12px; font-weight: 700; }
+
+  /* principles */
+  .principles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .principle { display: flex; align-items: flex-start; gap: 10px; background: #f8fafc; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 12px 14px; }
+  .p-num { font-size: 18px; font-weight: 900; line-height: 1; flex-shrink: 0; }
+  .p-text { font-size: 12px; font-weight: 700; color: #374151; line-height: 1.45; }
+
+  /* formula */
+  .formula { background: linear-gradient(135deg, #1e1b4b, #4338ca); border-radius: 20px; padding: 32px 40px; color: white; text-align: center; }
+  .formula h3 { font-size: 16px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; opacity: 0.6; margin-bottom: 24px; }
+  .formula-row { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  .formula-term { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18); border-radius: 14px; padding: 14px 22px; font-size: 14px; font-weight: 800; }
+  .formula-op { font-size: 22px; font-weight: 900; opacity: 0.5; }
+  .formula-result { background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.4); border-radius: 14px; padding: 16px 28px; font-size: 16px; font-weight: 900; margin-top: 20px; display: inline-block; }
+
+  /* signal bar */
+  .signal { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; margin-top: 4px; }
+  .signal-icon { font-size: 16px; flex-shrink: 0; }
+  .signal-text { font-size: 12px; font-weight: 700; line-height: 1.4; }
+
+  .footer { background: #fff; border: 1.5px solid #e5e7eb; border-radius: 16px; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; }
+  .footer-brand { font-size: 14px; font-weight: 900; color: #6366f1; }
+  .footer-label { font-size: 11px; color: #4b5563; font-weight: 600; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── HERO ── -->
+  <div class="hero">
+    <div class="hero-tag">Original Founder Playbook</div>
+    <h1>Tech Startup<br>Founder's Playbook</h1>
+    <p class="hero-sub">6 stages. 10 principles. One formula. Built from first-principles founder experience — not theory.</p>
+    <div class="hero-path">
+      <div class="hero-node">💡 Validate</div>
+      <div class="hero-arrow">→</div>
+      <div class="hero-node">🛠 Build MVP</div>
+      <div class="hero-arrow">→</div>
+      <div class="hero-node">👥 First Customers</div>
+      <div class="hero-arrow">→</div>
+      <div class="hero-node">💰 Sustainable Business</div>
+      <div class="hero-arrow">→</div>
+      <div class="hero-node">🤝 Team</div>
+      <div class="hero-arrow">→</div>
+      <div class="hero-node">📈 Scale</div>
+    </div>
+  </div>
+
+  <!-- ── STAGE 1: VALIDATE ── -->
+  <div class="stage">
+    <div class="stage-header" style="background:#fdf4ff;border-color:#f0abfc;">
+      <div class="stage-num" style="background:#fae8ff;color:#a21caf;">1</div>
+      <div>
+        <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#a21caf;margin-bottom:2px;">Stage 1</div>
+        <div class="stage-title" style="color:#701a75;">🚀 Validate the Problem</div>
+      </div>
+      <div class="stage-signal" style="color:#86198f;">Ask before building</div>
+    </div>
+    <div class="stage-body">
+      <div class="two-col">
+        <!-- Decision flow -->
+        <div class="sub-card">
+          <div class="sub-card-label" style="color:#a21caf;">The 3 questions to answer first</div>
+          <div class="flow-col">
+            <div class="flow-item">
+              <div class="flow-dot" style="background:#fae8ff;color:#a21caf;">?</div>
+              <div class="flow-label">Do people have this problem?</div>
+            </div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item">
+              <div class="flow-dot" style="background:#fae8ff;color:#a21caf;">?</div>
+              <div class="flow-label">Do they care enough to solve it?</div>
+            </div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item">
+              <div class="flow-dot" style="background:#fae8ff;color:#a21caf;">?</div>
+              <div class="flow-label">Will they pay for a solution?</div>
+            </div>
+          </div>
+        </div>
+        <!-- Checklist -->
+        <div class="sub-card">
+          <div class="sub-card-label" style="color:#a21caf;">Founder checklist</div>
+          <div class="list">
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">✓</div>Interview 20–50 target users</div>
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">✓</div>Identify recurring pain points</div>
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">✓</div>Validate demand before writing code</div>
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">✓</div>Document exact customer language</div>
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">✓</div>Understand current workarounds</div>
+          </div>
+        </div>
+      </div>
+      <div class="signal" style="background:#fdf4ff;border:1.5px solid #f0abfc;">
+        <div class="signal-icon">🎯</div>
+        <div class="signal-text" style="color:#701a75;"><strong>Success signal:</strong> Customers describe the problem without being prompted — in words you didn't give them.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAGE 2: MVP ── -->
+  <div class="stage">
+    <div class="stage-header" style="background:#eff6ff;border-color:#93c5fd;">
+      <div class="stage-num" style="background:#dbeafe;color:#1d4ed8;">2</div>
+      <div>
+        <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#1d4ed8;margin-bottom:2px;">Stage 2</div>
+        <div class="stage-title" style="color:#1e3a8a;">🛠 Build the MVP That Matters</div>
+      </div>
+      <div class="stage-signal" style="color:#1e40af;">Simplest path to learning</div>
+    </div>
+    <div class="stage-body">
+      <div class="two-col">
+        <div class="sub-card">
+          <div class="sub-card-label" style="color:#1d4ed8;">One core outcome only</div>
+          <div class="flow-col">
+            <div class="flow-item">
+              <div class="flow-dot" style="background:#dbeafe;color:#1d4ed8;">P</div>
+              <div class="flow-label">Problem you're solving</div>
+            </div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item">
+              <div class="flow-dot" style="background:#dbeafe;color:#1d4ed8;">S</div>
+              <div class="flow-label">Simplest solution that works</div>
+            </div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item">
+              <div class="flow-dot" style="background:#dbeafe;color:#1d4ed8;">V</div>
+              <div class="flow-label">User gets the value</div>
+            </div>
+          </div>
+        </div>
+        <div class="sub-card">
+          <div class="sub-card-label" style="color:#15803d;margin-bottom:8px;">Include</div>
+          <div class="list" style="margin-bottom:12px;">
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">✓</div>Essential features only</div>
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">✓</div>Launch before it feels ready</div>
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">✓</div>Learning over perfection</div>
+          </div>
+          <div class="sub-card-label" style="color:#dc2626;margin-bottom:8px;">Exclude</div>
+          <div class="list">
+            <div class="list-item"><div class="badge" style="background:#fee2e2;color:#dc2626;">✕</div>Nice-to-have features</div>
+            <div class="list-item"><div class="badge" style="background:#fee2e2;color:#dc2626;">✕</div>Complex integrations</div>
+            <div class="list-item"><div class="badge" style="background:#fee2e2;color:#dc2626;">✕</div>Advanced customisation</div>
+          </div>
+        </div>
+      </div>
+      <div class="signal" style="background:#eff6ff;border:1.5px solid #93c5fd;">
+        <div class="signal-icon">🎯</div>
+        <div class="signal-text" style="color:#1e3a8a;"><strong>Success signal:</strong> Users achieve the intended outcome with minimal guidance — and come back without being asked.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAGE 3: FIRST CUSTOMERS ── -->
+  <div class="stage">
+    <div class="stage-header" style="background:#f0fdf4;border-color:#86efac;">
+      <div class="stage-num" style="background:#dcfce7;color:#15803d;">3</div>
+      <div>
+        <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#15803d;margin-bottom:2px;">Stage 3</div>
+        <div class="stage-title" style="color:#14532d;">👥 Get Your First 100 Customers</div>
+      </div>
+      <div class="stage-signal" style="color:#166534;">Manual before scalable</div>
+    </div>
+    <div class="stage-body">
+      <div class="two-col">
+        <div class="sub-card">
+          <div class="sub-card-label" style="color:#15803d;">Early acquisition funnel</div>
+          <div class="flow-col">
+            <div class="flow-item"><div class="flow-dot" style="background:#dcfce7;color:#15803d;">1</div><div class="flow-label">Outreach — find your people</div></div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item"><div class="flow-dot" style="background:#dcfce7;color:#15803d;">2</div><div class="flow-label">Conversation — learn the pain</div></div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item"><div class="flow-dot" style="background:#dcfce7;color:#15803d;">3</div><div class="flow-label">Demo — show the solution</div></div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item"><div class="flow-dot" style="background:#dcfce7;color:#15803d;">4</div><div class="flow-label">Trial — hands on the product</div></div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item"><div class="flow-dot" style="background:#fef9c3;color:#92400e;">★</div><div class="flow-label">Customer — they pay</div></div>
+          </div>
+        </div>
+        <div class="sub-card">
+          <div class="sub-card-label" style="color:#15803d;">Recommended channels</div>
+          <div class="list">
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">→</div>Personal network first</div>
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">→</div>Industry communities</div>
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">→</div>LinkedIn direct outreach</div>
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">→</div>Niche forums and subreddits</div>
+            <div class="list-item"><div class="badge" style="background:#dcfce7;color:#15803d;">→</div>Customer referrals</div>
+          </div>
+          <div style="margin-top:12px;padding:10px 12px;background:#fef9c3;border-radius:9px;font-size:12px;font-weight:700;color:#78350f;border:1px solid #fde68a;">
+            💡 First customers come from persistence, not scalable channels.
+          </div>
+        </div>
+      </div>
+      <div class="signal" style="background:#f0fdf4;border:1.5px solid #86efac;">
+        <div class="signal-icon">🎯</div>
+        <div class="signal-text" style="color:#14532d;"><strong>Success signal:</strong> Customers start arriving through recommendations you didn't engineer.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAGE 4: SUSTAINABLE BUSINESS ── -->
+  <div class="stage">
+    <div class="stage-header" style="background:#fffbeb;border-color:#fde68a;">
+      <div class="stage-num" style="background:#fef3c7;color:#d97706;">4</div>
+      <div>
+        <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#d97706;margin-bottom:2px;">Stage 4</div>
+        <div class="stage-title" style="color:#78350f;">💰 Build a Sustainable Business</div>
+      </div>
+      <div class="stage-signal" style="color:#92400e;">Measure outcomes not activity</div>
+    </div>
+    <div class="stage-body">
+      <table class="metrics">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Why it matters</th>
+            <th>Track it when</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="metric-tag" style="background:#dcfce7;color:#15803d;">MRR / ARR</span></td>
+            <td>Business viability — are you making money?</td>
+            <td>From first paying customer</td>
+          </tr>
+          <tr>
+            <td><span class="metric-tag" style="background:#dbeafe;color:#1d4ed8;">Retention</span></td>
+            <td>Product value — do people keep using it?</td>
+            <td>Week 2 after launch</td>
+          </tr>
+          <tr>
+            <td><span class="metric-tag" style="background:#fae8ff;color:#a21caf;">CAC</span></td>
+            <td>Growth efficiency — how much to acquire a customer?</td>
+            <td>When running paid channels</td>
+          </tr>
+          <tr>
+            <td><span class="metric-tag" style="background:#fff7ed;color:#c2410c;">LTV</span></td>
+            <td>Profit potential — how much is each customer worth?</td>
+            <td>Once retention is stable</td>
+          </tr>
+          <tr>
+            <td><span class="metric-tag" style="background:#fef9c3;color:#92400e;">Activation Rate</span></td>
+            <td>User adoption — are new users getting to value quickly?</td>
+            <td>From launch day</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="signal" style="background:#fffbeb;border:1.5px solid #fde68a;">
+        <div class="signal-icon">📊</div>
+        <div class="signal-text" style="color:#78350f;"><strong>Rule:</strong> Track a small set of metrics that influence decisions. Avoid vanity metrics that look good but tell you nothing.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STAGE 5 + 6 side by side ── -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+    <!-- STAGE 5: TEAM -->
+    <div class="stage">
+      <div class="stage-header" style="background:#f0f9ff;border-color:#7dd3fc;">
+        <div class="stage-num" style="background:#e0f2fe;color:#0369a1;">5</div>
+        <div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#0369a1;margin-bottom:2px;">Stage 5</div>
+          <div class="stage-title" style="color:#0c4a6e;font-size:15px;">🤝 Build the Team</div>
+        </div>
+      </div>
+      <div class="stage-body">
+        <div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4b5563;margin-bottom:10px;">Hire for</div>
+          <div class="tag-row">
+            <div class="tag" style="background:#e0f2fe;color:#0369a1;">🧠 Learning speed</div>
+            <div class="tag" style="background:#e0f2fe;color:#0369a1;">⚡ Ownership</div>
+            <div class="tag" style="background:#e0f2fe;color:#0369a1;">🎯 Mission alignment</div>
+            <div class="tag" style="background:#e0f2fe;color:#0369a1;">🗣 Communication</div>
+            <div class="tag" style="background:#e0f2fe;color:#0369a1;">🔄 Adaptability</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4b5563;margin-bottom:10px;">Avoid</div>
+          <div class="list">
+            <div class="list-item"><div class="badge" style="background:#fee2e2;color:#dc2626;">✕</div>CV-only hiring decisions</div>
+            <div class="list-item"><div class="badge" style="background:#fee2e2;color:#dc2626;">✕</div>Hiring faster than you can onboard</div>
+            <div class="list-item"><div class="badge" style="background:#fee2e2;color:#dc2626;">✕</div>Roles without clear ownership</div>
+          </div>
+        </div>
+        <div class="signal" style="background:#f0f9ff;border:1.5px solid #7dd3fc;">
+          <div class="signal-icon">🎯</div>
+          <div class="signal-text" style="color:#0c4a6e;font-size:11px;"><strong>Signal:</strong> Team solves problems without being told to.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAGE 6: SCALE -->
+    <div class="stage">
+      <div class="stage-header" style="background:#fdf2f8;border-color:#f9a8d4;">
+        <div class="stage-num" style="background:#fce7f3;color:#be185d;">6</div>
+        <div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#be185d;margin-bottom:2px;">Stage 6</div>
+          <div class="stage-title" style="color:#831843;font-size:15px;">📈 Scale Intentionally</div>
+        </div>
+      </div>
+      <div class="stage-body">
+        <div class="sub-card" style="background:#fdf2f8;border-color:#f9a8d4;">
+          <div class="sub-card-label" style="color:#be185d;">Growth framework</div>
+          <div class="flow-col">
+            <div class="flow-item"><div class="flow-dot" style="background:#fce7f3;color:#be185d;">1</div><div class="flow-label" style="font-size:12px;">Product-market fit confirmed</div></div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item"><div class="flow-dot" style="background:#fce7f3;color:#be185d;">2</div><div class="flow-label" style="font-size:12px;">Repeatable sales motion</div></div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item"><div class="flow-dot" style="background:#fce7f3;color:#be185d;">3</div><div class="flow-label" style="font-size:12px;">Processes documented</div></div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item"><div class="flow-dot" style="background:#fce7f3;color:#be185d;">4</div><div class="flow-label" style="font-size:12px;">Team expansion</div></div>
+            <div class="flow-item"><div class="flow-connector"><div class="flow-line"></div></div></div>
+            <div class="flow-item"><div class="flow-dot" style="background:#fef9c3;color:#92400e;">★</div><div class="flow-label" style="font-size:12px;font-weight:900;">Scale</div></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#4b5563;margin-bottom:8px;">Common mistakes</div>
+          <div class="list">
+            <div class="list-item"><div class="badge" style="background:#fee2e2;color:#dc2626;">✕</div>Expanding before PMF</div>
+            <div class="list-item"><div class="badge" style="background:#fee2e2;color:#dc2626;">✕</div>Hiring ahead of revenue</div>
+            <div class="list-item"><div class="badge" style="background:#fee2e2;color:#dc2626;">✕</div>Ignoring customer feedback at scale</div>
+          </div>
+        </div>
+        <div class="signal" style="background:#fdf2f8;border:1.5px solid #f9a8d4;">
+          <div class="signal-icon">🎯</div>
+          <div class="signal-text" style="color:#831843;font-size:11px;"><strong>Signal:</strong> Growth increases without operational chaos.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 10 PRINCIPLES ── -->
+  <div class="stage">
+    <div class="stage-header" style="background:#f8fafc;border-color:#e5e7eb;">
+      <div class="stage-num" style="background:#f3f4f6;color:#374151;">🔑</div>
+      <div>
+        <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#374151;margin-bottom:2px;">Always</div>
+        <div class="stage-title" style="color:#111827;">The 10 Founder Operating Principles</div>
+      </div>
+    </div>
+    <div class="stage-body">
+      <div class="principles-grid">
+        <div class="principle">
+          <div class="p-num" style="color:#6366f1;">01</div>
+          <div class="p-text">Customer conversations beat assumptions — always.</div>
+        </div>
+        <div class="principle">
+          <div class="p-num" style="color:#6366f1;">02</div>
+          <div class="p-text">Solve painful problems first. Interesting problems second.</div>
+        </div>
+        <div class="principle">
+          <div class="p-num" style="color:#6366f1;">03</div>
+          <div class="p-text">Launch before it feels comfortable. Perfection ships nothing.</div>
+        </div>
+        <div class="principle">
+          <div class="p-num" style="color:#6366f1;">04</div>
+          <div class="p-text">Learn faster than your competitors. Speed of learning is your moat.</div>
+        </div>
+        <div class="principle">
+          <div class="p-num" style="color:#6366f1;">05</div>
+          <div class="p-text">Retention comes before growth. Fix the leaky bucket first.</div>
+        </div>
+        <div class="principle">
+          <div class="p-num" style="color:#6366f1;">06</div>
+          <div class="p-text">Cash is strategic oxygen. Protect it until revenue is predictable.</div>
+        </div>
+        <div class="principle">
+          <div class="p-num" style="color:#6366f1;">07</div>
+          <div class="p-text">Focus creates momentum. Say no to almost everything.</div>
+        </div>
+        <div class="principle">
+          <div class="p-num" style="color:#6366f1;">08</div>
+          <div class="p-text">Data informs decisions. Gut instinct proposes; data disposes.</div>
+        </div>
+        <div class="principle">
+          <div class="p-num" style="color:#6366f1;">09</div>
+          <div class="p-text">Great teams compound results. One A-player beats three B-players.</div>
+        </div>
+        <div class="principle">
+          <div class="p-num" style="color:#6366f1;">10</div>
+          <div class="p-text">Value creation drives everything. Revenue follows value — not the other way around.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FORMULA ── -->
+  <div class="formula">
+    <h3>The Founder Success Formula</h3>
+    <div class="formula-row">
+      <div class="formula-term">🎯 Customer Problem</div>
+      <div class="formula-op">+</div>
+      <div class="formula-term">⚡ Rapid Learning</div>
+      <div class="formula-op">+</div>
+      <div class="formula-term">🎯 Focused Execution</div>
+      <div class="formula-op">+</div>
+      <div class="formula-term">💰 Financial Discipline</div>
+    </div>
+    <div class="formula-result">= Startup Growth</div>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <div class="footer">
+    <span class="footer-brand">MVP Club</span>
+    <span style="font-size:12px;color:#4b5563;font-style:italic;">From idea to launched — one step at a time.</span>
+    <span class="footer-label">FOUNDER PLAYBOOK · ORIGINAL CONTENT</span>
+  </div>
+
+</div>
+</body>
+</html>

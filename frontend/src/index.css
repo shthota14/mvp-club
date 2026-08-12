@@ -1,0 +1,71 @@
+/* ── Apple Design System ──────────────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg:          #f5f5f7;   /* page background — Apple off-white */
+  --surface:     #ffffff;   /* card / panel surface */
+  --surface-alt: #f5f5f7;   /* inset / secondary surface */
+
+  /* Text */
+  --text-primary:   #1d1d1f; /* Apple headline black */
+  --text-secondary: #6e6e73; /* Apple secondary label */
+  --text-tertiary:  #86868b; /* Apple tertiary label */
+  --text-link:      #0066cc; /* Apple blue link */
+
+  /* Separators */
+  --sep:      #d2d2d7; /* standard separator */
+  --sep-soft: #e8e8ed; /* softer separator */
+
+  /* Stage accent colours (unchanged) */
+  --idea:     #6366f1;
+  --hone:     #0066cc;
+  --validate: #34c759;
+  --shape:    #ff9500;
+  --done:     #ff3b30;
+
+  /* Legacy aliases — kept so existing pages don't break */
+  --black: #1d1d1f;
+  --white: #ffffff;
+  --g50:  #f5f5f7;
+  --g100: #d2d2d7;
+  --g300: #86868b;
+  --g500: #6e6e73;
+  --g700: #1d1d1f;
+  --dark: #1d1d1f;
+  --dark2: #2d2d2f;
+  --dark3: #3d3d3f;
+
+  /* Radius */
+  --r:  16px;
+  --rs: 10px;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+html { font-size: 16px; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+               'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+button  { font-family: inherit; cursor: pointer; }
+input, textarea, select { font-family: inherit; }
+a { text-decoration: none; color: inherit; }
+
+/* ── Scrollbar — Apple-thin ────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--sep); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }

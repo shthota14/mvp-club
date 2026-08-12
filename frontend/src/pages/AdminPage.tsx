@@ -1,0 +1,795 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { adminApi, messagesApi } from '@/api/client';
+import { STAGE_LABELS, STAGE_COLORS, type Stage } from '@/types';
+import { useApp } from '@/context/AppContext';
+import IdeaCanvasModal from '@/components/IdeaCanvasModal';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+interface AdminIdea {
+  id: string;
+  name: string;
+  description: string | null;
+  stage: Stage;
+  moderation_status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  author_name: string;
+  author_email: string;
+  avatar_initials: string;
+}
+
+interface AdminPost {
+  id: string;
+  content: string;
+  post_type: string;
+  moderation_status: 'visible' | 'flagged' | 'approved' | 'rejected' | 'held';
+  flag_reason: string | null;
+  created_at: string;
+  author_name: string;
+  author_email: string;
+  avatar_initials: string;
+  idea_name?: string | null;
+  idea_id?: string | null;
+}
+
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  current_stage: Stage;
+  is_admin: boolean;
+  suspended: boolean;
+  created_at: string;
+  idea_count: string;
+}
+
+interface Stats {
+  ideas: { pending: string; approved: string; rejected: string; total: string };
+  posts: { flagged: string; held: string; rejected: string; total: string };
+  users: { total: string };
+}
+
+type MainTab = 'ideas' | 'posts' | 'users' | 'tools';
+type IdeaFilter = 'all' | 'pending' | 'approved' | 'rejected';
+type PostFilter = 'all' | 'flagged' | 'held' | 'rejected' | 'approved';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function timeAgo(d: string) {
+  const diff = Date.now() - new Date(d).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+const IDEA_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  pending:  { label: 'Pending',  color: '#d97706', bg: '#fef3c7' },
+  approved: { label: 'Approved', color: '#15803d', bg: '#dcfce7' },
+  rejected: { label: 'Rejected', color: '#dc2626', bg: '#fee2e2' },
+};
+
+const POST_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  visible:  { label: 'Visible',  color: '#15803d', bg: '#dcfce7' },
+  approved: { label: 'Approved', color: '#15803d', bg: '#dcfce7' },
+  flagged:  { label: 'Flagged',  color: '#dc2626', bg: '#fee2e2' },
+  held:     { label: 'On Hold',  color: '#d97706', bg: '#fef3c7' },
+  rejected: { label: 'Rejected', color: '#6e6e73', bg: '#f3f4f6' },
+};
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+function Badge({ status, map }: { status: string; map: Record<string, { label: string; color: string; bg: string }> }) {
+  const s = map[status] ?? { label: status, color: '#6e6e73', bg: '#f3f4f6' };
+  return (
+    <span style={{ background: s.bg, color: s.color, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: 0.4, whiteSpace: 'nowrap' as const }}>
+      {s.label}
+    </span>
+  );
+}
+
+function Avatar({ initials, size = 32 }: { initials: string; size?: number }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: '50%', background: '#e2e8f0', color: '#475569', fontSize: size * 0.33, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, letterSpacing: -0.5 }}>
+      {(initials ?? '??').slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
+
+function Btn({ label, color, onClick, disabled, danger, filled }: { label: string; color?: string; onClick: () => void; disabled?: boolean; danger?: boolean; filled?: boolean }) {
+  const [hov, setHov] = useState(false);
+  const c = danger ? '#dc2626' : (color ?? '#374151');
+  const isFilled = filled || danger;
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer',
+        border: `1.5px solid ${isFilled ? c : `${c}40`}`,
+        background: isFilled ? (hov ? (danger ? '#b91c1c' : c) : c) : (hov ? `${c}12` : 'transparent'),
+        color: isFilled ? '#fff' : c,
+        opacity: disabled ? 0.4 : 1, transition: 'all .12s', whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function StatCard({ label, value, color }: { label: string; value: string | number; color: string }) {
+  return (
+    <div style={{ flex: 1, minWidth: 140, background: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #d2d2d7' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#86868b', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 30, fontWeight: 900, color, letterSpacing: -1 }}>{value}</div>
+    </div>
+  );
+}
+
+// ── Idea row with expandable post management ──────────────────────────────────
+function IdeaRow({ idea, onModerate, onDelete }: {
+  idea: AdminIdea;
+  onModerate: (id: string, status: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [expanded, setExpanded]           = useState(false);
+  const [posts, setPosts]                 = useState<AdminPost[]>([]);
+  const [postsLoading, setPostsLoading]   = useState(false);
+  const [acting, setActing]               = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showCanvas, setShowCanvas]       = useState(false);
+
+  const loadPosts = async () => {
+    if (posts.length) { setExpanded(e => !e); return; }
+    setExpanded(true);
+    setPostsLoading(true);
+    try {
+      const r = await adminApi.getIdeaPosts(idea.id);
+      setPosts(r.data.posts);
+    } catch {} finally { setPostsLoading(false); }
+  };
+
+  const moderatePost = async (postId: string, status: string) => {
+    setActing(postId);
+    try {
+      await adminApi.moderatePost(postId, status);
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, moderation_status: status as AdminPost['moderation_status'] } : p));
+    } catch {} finally { setActing(null); }
+  };
+
+  const stageColor = STAGE_COLORS[idea.stage];
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #d2d2d7', overflow: 'hidden' }}>
+      {/* ── Main row ── */}
+      <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        <Avatar initials={idea.avatar_initials} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+            <span style={{ fontWeight: 800, fontSize: 14, color: '#1d1d1f' }}>{idea.name}</span>
+            <span style={{ background: `${stageColor}15`, color: stageColor, borderRadius: 20, padding: '2px 9px', fontSize: 10, fontWeight: 800 }}>
+              {STAGE_LABELS[idea.stage]}
+            </span>
+            <Badge status={idea.moderation_status} map={IDEA_STATUS} />
+          </div>
+          {idea.description && (
+            <div style={{ fontSize: 12, color: '#6e6e73', lineHeight: 1.55, marginBottom: 6, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+              {idea.description}
+            </div>
+          )}
+          <div style={{ fontSize: 11, color: '#86868b' }}>
+            <strong style={{ color: '#6e6e73' }}>{idea.author_name}</strong> · {idea.author_email} · {timeAgo(idea.created_at)}
+          </div>
+        </div>
+
+        {/* Actions — stacked: moderation row + utility row */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, alignItems: 'flex-end' }}>
+          {/* Moderation buttons */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {idea.moderation_status !== 'approved' && (
+              <Btn label="✓ Approve" color="#15803d" filled onClick={async () => { setActing('idea'); await onModerate(idea.id, 'approved'); setActing(null); }} disabled={acting === 'idea'} />
+            )}
+            {idea.moderation_status !== 'rejected' && (
+              <Btn label="✕ Reject" color="#dc2626" onClick={async () => { setActing('idea'); await onModerate(idea.id, 'rejected'); setActing(null); }} disabled={acting === 'idea'} />
+            )}
+            {idea.moderation_status !== 'pending' && (
+              <Btn label="↩ Reset to pending" onClick={async () => { setActing('idea'); await onModerate(idea.id, 'pending'); setActing(null); }} disabled={acting === 'idea'} />
+            )}
+          </div>
+
+          {/* Utility row */}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <Btn label={expanded ? '▲ Hide comments' : '▾ View comments'} onClick={loadPosts} />
+            <button
+              onClick={() => setShowCanvas(true)}
+              style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: '1.5px solid #6366f130', background: '#eef2ff', color: '#6366f1', whiteSpace: 'nowrap', transition: 'all .12s' }}
+            >
+              ⬡ View BMC
+            </button>
+
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: '1.5px solid #fca5a5', background: '#fee2e2', color: '#dc2626', transition: 'all .12s', whiteSpace: 'nowrap' }}
+              >
+                🗑 Delete idea
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', background: '#fff7f7', border: '1.5px solid #fca5a5', borderRadius: 10, padding: '4px 10px' }}>
+                <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 700 }}>Permanently delete?</span>
+                <Btn label="Yes, delete" danger onClick={async () => { await onDelete(idea.id); }} />
+                <Btn label="Cancel" onClick={() => setConfirmDelete(false)} />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Posts panel ── */}
+      {expanded && (
+        <div style={{ borderTop: '1px solid #f3f4f6', background: '#f5f5f7' }}>
+          {postsLoading ? (
+            <div style={{ padding: '20px 24px', fontSize: 12, color: '#86868b' }}>Loading posts…</div>
+          ) : posts.length === 0 ? (
+            <div style={{ padding: '20px 24px', fontSize: 12, color: '#86868b' }}>No posts for this idea yet.</div>
+          ) : (
+            <div style={{ padding: '12px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#86868b', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>
+                {posts.length} comment{posts.length !== 1 ? 's' : ''}
+              </div>
+              {posts.map(post => (
+                <div key={post.id} style={{ background: '#fff', borderRadius: 12, border: `1px solid ${post.moderation_status === 'flagged' ? '#fecaca' : '#d2d2d7'}`, padding: '12px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <Avatar initials={post.avatar_initials} size={28} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#1d1d1f' }}>{post.author_name}</span>
+                        <span style={{ fontSize: 11, color: '#86868b' }}>{timeAgo(post.created_at)}</span>
+                        <Badge status={post.moderation_status} map={POST_STATUS} />
+                        {post.flag_reason && (
+                          <span style={{ fontSize: 10, color: '#dc2626', fontWeight: 700 }}>⚠ {post.flag_reason}</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.5, marginBottom: 10, whiteSpace: 'pre-wrap' }}>
+                        {post.content}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {post.moderation_status !== 'visible' && post.moderation_status !== 'approved' && (
+                          <Btn label="✓ Approve" color="#15803d" filled onClick={() => moderatePost(post.id, 'approved')} disabled={acting === post.id} />
+                        )}
+                        {post.moderation_status !== 'rejected' && (
+                          <Btn label="✕ Reject" danger onClick={() => moderatePost(post.id, 'rejected')} disabled={acting === post.id} />
+                        )}
+                        {post.moderation_status !== 'held' && (
+                          <Btn label="⏸ Hold" color="#d97706" onClick={() => moderatePost(post.id, 'held')} disabled={acting === post.id} />
+                        )}
+                        {(post.moderation_status === 'rejected' || post.moderation_status === 'held') && (
+                          <Btn label="↩ Restore" color="#6b7280" onClick={() => moderatePost(post.id, 'visible')} disabled={acting === post.id} />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── BMC modal ── */}
+      {showCanvas && (
+        <IdeaCanvasModal
+          idea={{ id: idea.id, name: idea.name, description: idea.description, stage: idea.stage, is_active: false, user_id: '', moderation_status: idea.moderation_status, created_at: idea.created_at, updated_at: idea.created_at }}
+          viewOnly
+          onClose={() => setShowCanvas(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── User row with management actions ─────────────────────────────────────────
+function UserRow({ user: u, onResetPassword, onSuspend, onDelete }: {
+  user: AdminUser;
+  onResetPassword: (id: string, pw: string) => Promise<void>;
+  onSuspend: (id: string, suspended: boolean) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [showReset, setShowReset]         = useState(false);
+  const [newPw, setNewPw]                 = useState('');
+  const [pwMsg, setPwMsg]                 = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [acting, setActing]               = useState(false);
+  const sc = STAGE_COLORS[u.current_stage];
+
+  const doReset = async () => {
+    if (newPw.length < 6) { setPwMsg('Min 6 characters'); return; }
+    setActing(true);
+    try {
+      await onResetPassword(u.id, newPw);
+      setPwMsg('✓ Password reset');
+      setNewPw('');
+      setTimeout(() => { setPwMsg(''); setShowReset(false); }, 2000);
+    } catch { setPwMsg('Error — try again'); }
+    finally { setActing(false); }
+  };
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, border: `1px solid ${u.suspended ? '#fecaca' : '#d2d2d7'}`, overflow: 'hidden' }}>
+      {/* Main row */}
+      <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <Avatar initials={(u.name ?? '??').slice(0, 2)} size={38} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, fontSize: 13, color: '#1d1d1f' }}>{u.name}</span>
+            {u.suspended && (
+              <span style={{ background: '#fee2e2', color: '#dc2626', borderRadius: 20, padding: '2px 8px', fontSize: 10, fontWeight: 800 }}>SUSPENDED</span>
+            )}
+            <span style={{ background: `${sc}15`, color: sc, borderRadius: 20, padding: '2px 9px', fontSize: 10, fontWeight: 700 }}>
+              {STAGE_LABELS[u.current_stage]}
+            </span>
+          </div>
+          <div style={{ fontSize: 11, color: '#86868b' }}>{u.email} · <strong style={{ color: '#6e6e73' }}>{u.idea_count}</strong> ideas · joined {timeAgo(u.created_at)}</div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <Btn label="🔑 Reset password" color="#6366f1" onClick={() => { setShowReset(s => !s); setPwMsg(''); }} />
+          {u.suspended
+            ? <Btn label="✓ Unsuspend" color="#15803d" filled onClick={async () => { setActing(true); await onSuspend(u.id, false); setActing(false); }} disabled={acting} />
+            : <Btn label="⏸ Suspend" color="#d97706" onClick={async () => { setActing(true); await onSuspend(u.id, true); setActing(false); }} disabled={acting} />
+          }
+          {!confirmDelete
+            ? <button onClick={() => setConfirmDelete(true)} style={{ padding: '5px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: '1.5px solid #fca5a5', background: '#fee2e2', color: '#dc2626', whiteSpace: 'nowrap' }}>
+                🗑 Delete member
+              </button>
+            : <div style={{ display: 'flex', gap: 6, alignItems: 'center', background: '#fff7f7', border: '1.5px solid #fca5a5', borderRadius: 10, padding: '4px 10px' }}>
+                <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 700 }}>Delete + all their data?</span>
+                <Btn label="Yes" danger onClick={async () => { setActing(true); await onDelete(u.id); }} disabled={acting} />
+                <Btn label="Cancel" onClick={() => setConfirmDelete(false)} />
+              </div>
+          }
+        </div>
+      </div>
+
+      {/* Password reset panel */}
+      {showReset && (
+        <div style={{ borderTop: '1px solid #f3f4f6', background: '#f5f5f7', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 12, color: '#6e6e73', fontWeight: 600, whiteSpace: 'nowrap' }}>New password for {u.name.split(' ')[0]}:</span>
+          <input
+            type="password"
+            value={newPw}
+            onChange={e => setNewPw(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && doReset()}
+            placeholder="min 6 characters"
+            style={{ flex: 1, padding: '7px 12px', borderRadius: 8, border: '1px solid #d2d2d7', fontSize: 13, outline: 'none', maxWidth: 260 }}
+          />
+          <Btn label={acting ? 'Saving…' : 'Set password'} color="#6366f1" filled onClick={doReset} disabled={acting} />
+          {pwMsg && <span style={{ fontSize: 12, color: pwMsg.startsWith('✓') ? '#15803d' : '#dc2626', fontWeight: 700 }}>{pwMsg}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main admin page ───────────────────────────────────────────────────────────
+export default function AdminPage() {
+  const { logout } = useApp();
+  const navigate = useNavigate();
+  const [unread, setUnread] = useState(0);
+  const [tab, setTab]             = useState<MainTab>('ideas');
+  const [stats, setStats]         = useState<Stats | null>(null);
+  const [ideas, setIdeas]         = useState<AdminIdea[]>([]);
+  const [posts, setPosts]         = useState<AdminPost[]>([]);
+  const [users, setUsers]         = useState<AdminUser[]>([]);
+  const [ideaFilter, setIdeaFilter] = useState<IdeaFilter>('all');
+  const [postFilter, setPostFilter] = useState<PostFilter>('flagged');
+  const [loading, setLoading]     = useState(false);
+  const [search, setSearch]       = useState('');
+  const [digestState, setDigestState] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
+  const [digestQueued, setDigestQueued] = useState<number | null>(null);
+
+  // Poll unread message count every 30s
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      try { const r = await messagesApi.unreadCount(); if (!cancelled) setUnread(r.data.unread); } catch {}
+    };
+    check();
+    const id = setInterval(check, 30000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
+
+  const loadStats = useCallback(async () => {
+    try { const r = await adminApi.getStats(); setStats(r.data); } catch {}
+  }, []);
+
+  const loadIdeas = useCallback(async (filter: IdeaFilter) => {
+    setLoading(true);
+    try {
+      const r = await adminApi.listIdeas(filter === 'all' ? undefined : filter);
+      setIdeas(r.data.ideas);
+    } catch {} finally { setLoading(false); }
+  }, []);
+
+  const loadPosts = useCallback(async (filter: PostFilter) => {
+    setLoading(true);
+    try {
+      const r = await adminApi.listPosts(filter === 'all' ? undefined : filter);
+      setPosts(r.data.posts);
+    } catch {} finally { setLoading(false); }
+  }, []);
+
+  const loadUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await adminApi.listUsers();
+      setUsers(r.data.users);
+    } catch {} finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { loadStats(); }, [loadStats]);
+
+  useEffect(() => {
+    setSearch('');
+    if (tab === 'ideas')      loadIdeas(ideaFilter);
+    else if (tab === 'posts') loadPosts(postFilter);
+    else                      loadUsers();
+  }, [tab, ideaFilter, postFilter, loadIdeas, loadPosts, loadUsers]);
+
+  const handleModerateIdea = async (id: string, status: string) => {
+    await adminApi.moderateIdea(id, status);
+    setIdeas(prev => prev.map(i => i.id === id ? { ...i, moderation_status: status as AdminIdea['moderation_status'] } : i));
+    loadStats();
+  };
+
+  const handleDeleteIdea = async (id: string) => {
+    await adminApi.deleteIdea(id);
+    setIdeas(prev => prev.filter(i => i.id !== id));
+    loadStats();
+  };
+
+  const handleModeratePost = async (id: string, status: string) => {
+    await adminApi.moderatePost(id, status);
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, moderation_status: status as AdminPost['moderation_status'] } : p));
+    loadStats();
+  };
+
+  // Filtered by search
+  const filteredIdeas = ideas.filter(i =>
+    !search || i.name.toLowerCase().includes(search.toLowerCase()) || i.author_name.toLowerCase().includes(search.toLowerCase())
+  );
+  const filteredPosts = posts.filter(p =>
+    !search || p.content.toLowerCase().includes(search.toLowerCase()) || p.author_name.toLowerCase().includes(search.toLowerCase())
+  );
+  const filteredUsers = users.filter(u =>
+    !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Tab styles
+  const mainTab = (active: boolean): React.CSSProperties => ({
+    padding: '9px 20px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+    background: active ? '#fff' : 'transparent', color: active ? '#1d1d1f' : '#6e6e73',
+    border: 'none', boxShadow: active ? '0 1px 4px #0001' : 'none', transition: 'all .14s',
+  });
+
+  const pill = (active: boolean, color?: string): React.CSSProperties => ({
+    padding: '5px 14px', borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+    background: active ? (color ? `${color}18` : '#111827') : 'transparent',
+    color: active ? (color ?? '#fff') : '#6e6e73',
+    border: `1px solid ${active ? (color ?? '#111827') : '#d2d2d7'}`,
+    transition: 'all .12s',
+  });
+
+  const alertCount = (stats ? Number(stats.ideas.pending) + Number(stats.posts.flagged) : 0);
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#f5f5f7', fontFamily: 'inherit' }}>
+
+      {/* ── Top bar ── */}
+      <div style={{ background: '#fff', borderBottom: '1px solid #d2d2d7', height: 56, display: 'flex', alignItems: 'center', padding: '0 28px', gap: 14 }}>
+        <div>
+          <div style={{ fontWeight: 900, fontSize: 15, color: '#1d1d1f', letterSpacing: -0.3 }}>🛡 Admin Control Panel</div>
+          <div style={{ fontSize: 9, color: '#86868b', fontWeight: 500, marginTop: 1 }}>MVP Club · From idea to launched — one step at a time.</div>
+        </div>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          {alertCount > 0 && (<>
+            {stats && Number(stats.ideas.pending) > 0 && (
+              <span style={{ background: '#fef3c7', color: '#d97706', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 800 }}>
+                {stats.ideas.pending} ideas pending
+              </span>
+            )}
+            {stats && Number(stats.posts.flagged) > 0 && (
+              <span style={{ background: '#fee2e2', color: '#dc2626', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 800 }}>
+                {stats.posts.flagged} posts flagged
+              </span>
+            )}
+          </>)}
+          {/* Help button */}
+          <button
+            onClick={() => navigate('/help?guide=getting-started')}
+            title="How-to guides"
+            style={{ width: 34, height: 34, borderRadius: '50%', background: 'transparent', border: '1.5px solid #d2d2d7', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, fontWeight: 800, color: '#6e6e73', transition: 'all .15s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f3f4f6'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+          >
+            ?
+          </button>
+
+          {/* Private inbox */}
+          <button
+            onClick={() => navigate('/messages')}
+            title="Private inbox"
+            style={{ position: 'relative', width: 34, height: 34, borderRadius: '50%', background: 'transparent', border: '1.5px solid #d2d2d7', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 15, transition: 'all .15s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f7'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+          >
+            ✉️
+            {unread > 0 && (
+              <span style={{ position: 'absolute', top: -3, right: -3, width: 16, height: 16, borderRadius: '50%', background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => { logout(); navigate('/'); }}
+            style={{ padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', transition: 'all .12s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f3f4f6'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 28px 80px' }}>
+
+        {/* ── Stats row ── */}
+        {stats && (
+          <div style={{ display: 'flex', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}>
+            <StatCard label="Pending ideas"  value={stats.ideas.pending}  color="#d97706" />
+            <StatCard label="Live ideas"     value={stats.ideas.approved} color="#15803d" />
+            <StatCard label="Rejected ideas" value={stats.ideas.rejected} color="#dc2626" />
+            <StatCard label="Flagged posts"  value={stats.posts.flagged}  color="#dc2626" />
+            <StatCard label="Held posts"     value={stats.posts.held}     color="#d97706" />
+            <StatCard label="Members"        value={stats.users.total}    color="#6366f1" />
+          </div>
+        )}
+
+        {/* ── Main tabs + search ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 14, padding: 4 }}>
+            {(['ideas', 'posts', 'users', 'tools'] as const).map(t => (
+              <button key={t} onClick={() => setTab(t)} style={mainTab(tab === t)}>
+                {t === 'ideas' ? '💡 Ideas' : t === 'posts' ? '💬 Comments' : t === 'users' ? '👥 Members' : '⚙️ Tools'}
+              </button>
+            ))}
+          </div>
+          {tab !== 'tools' && (
+            <input
+              placeholder={`Search ${tab}…`}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ padding: '8px 14px', borderRadius: 10, border: '1px solid #d2d2d7', fontSize: 13, outline: 'none', background: '#fff', minWidth: 200 }}
+            />
+          )}
+          {tab !== 'tools' && (
+            <span style={{ fontSize: 12, color: '#86868b', marginLeft: 'auto' }}>
+              {tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : filteredUsers.length} result{(tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : filteredUsers.length) !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+
+        {/* ══════ IDEAS ══════ */}
+        {tab === 'ideas' && (
+          <>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+              {([['all', 'All'], ['pending', 'Pending'], ['approved', 'Approved'], ['rejected', 'Rejected']] as [IdeaFilter, string][]).map(([v, l]) => (
+                <button key={v} onClick={() => setIdeaFilter(v)} style={pill(ideaFilter === v, v === 'pending' ? '#d97706' : v === 'approved' ? '#15803d' : v === 'rejected' ? '#dc2626' : undefined)}>
+                  {l}{v !== 'all' && stats ? ` (${stats.ideas[v as keyof typeof stats.ideas] ?? ''})` : ''}
+                </button>
+              ))}
+            </div>
+
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#86868b', fontSize: 13 }}>Loading…</div>
+            ) : filteredIdeas.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#86868b' }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>✅</div>
+                <div style={{ fontSize: 14 }}>No ideas here</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {filteredIdeas.map(idea => (
+                  <IdeaRow
+                    key={idea.id}
+                    idea={idea}
+                    onModerate={handleModerateIdea}
+                    onDelete={handleDeleteIdea}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══════ POSTS ══════ */}
+        {tab === 'posts' && (
+          <>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+              {([['flagged', 'Flagged', '#dc2626'], ['held', 'On Hold', '#d97706'], ['rejected', 'Rejected', '#6b7280'], ['approved', 'Approved', '#15803d'], ['all', 'All', undefined]] as [PostFilter, string, string | undefined][]).map(([v, l, c]) => (
+                <button key={v} onClick={() => setPostFilter(v)} style={pill(postFilter === v, c)}>
+                  {l}{v === 'flagged' && stats ? ` (${stats.posts.flagged})` : v === 'held' && stats ? ` (${stats.posts.held})` : ''}
+                </button>
+              ))}
+            </div>
+
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#86868b' }}>Loading…</div>
+            ) : filteredPosts.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#86868b' }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>🎉</div>
+                <div style={{ fontSize: 14 }}>No posts in this state</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {filteredPosts.map(post => (
+                  <div key={post.id} style={{
+                    background: '#fff', borderRadius: 16, padding: '16px 20px',
+                    border: `1px solid ${post.moderation_status === 'flagged' ? '#fecaca' : '#d2d2d7'}`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                      <Avatar initials={post.avatar_initials} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 700, fontSize: 13, color: '#1d1d1f' }}>{post.author_name}</span>
+                          <span style={{ fontSize: 11, color: '#86868b' }}>{post.author_email}</span>
+                          <span style={{ fontSize: 11, color: '#86868b' }}>{timeAgo(post.created_at)}</span>
+                          <Badge status={post.moderation_status} map={POST_STATUS} />
+                          {post.flag_reason && (
+                            <span style={{ fontSize: 10, color: '#dc2626', fontWeight: 700 }}>⚠ {post.flag_reason}</span>
+                          )}
+                        </div>
+                        {post.idea_name && (
+                          <div style={{ fontSize: 11, color: '#86868b', marginBottom: 6 }}>
+                            On idea: <strong style={{ color: '#6366f1' }}>{post.idea_name}</strong>
+                          </div>
+                        )}
+                        <div style={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6, background: '#f5f5f7', borderRadius: 10, padding: '10px 14px', marginBottom: 10, whiteSpace: 'pre-wrap', borderLeft: `3px solid ${POST_STATUS[post.moderation_status]?.color ?? '#d2d2d7'}` }}>
+                          {post.content}
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          {post.moderation_status !== 'visible' && post.moderation_status !== 'approved' && (
+                            <Btn label="✓ Approve" color="#15803d" filled onClick={() => handleModeratePost(post.id, 'approved')} />
+                          )}
+                          {post.moderation_status !== 'rejected' && (
+                            <Btn label="✕ Reject" danger onClick={() => handleModeratePost(post.id, 'rejected')} />
+                          )}
+                          {post.moderation_status !== 'held' && (
+                            <Btn label="⏸ Hold" color="#d97706" onClick={() => handleModeratePost(post.id, 'held')} />
+                          )}
+                          {(post.moderation_status === 'rejected' || post.moderation_status === 'held') && (
+                            <Btn label="↩ Restore" color="#6b7280" onClick={() => handleModeratePost(post.id, 'visible')} />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══════ MEMBERS ══════ */}
+        {tab === 'users' && (
+          <>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#86868b' }}>Loading…</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {filteredUsers.map(u => (
+                  <UserRow
+                    key={u.id}
+                    user={u}
+                    onResetPassword={async (id, pw) => { await adminApi.resetPassword(id, pw); }}
+                    onSuspend={async (id, s) => {
+                      await adminApi.suspendUser(id, s);
+                      setUsers(prev => prev.map(x => x.id === id ? { ...x, suspended: s } : x));
+                    }}
+                    onDelete={async (id) => {
+                      await adminApi.deleteUser(id);
+                      setUsers(prev => prev.filter(x => x.id !== id));
+                      loadStats();
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══════ TOOLS ══════ */}
+        {tab === 'tools' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 640 }}>
+
+            {/* Weekly Digest card */}
+            <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #d2d2d7', overflow: 'hidden' }}>
+              {/* Header band */}
+              <div style={{ background: '#0066cc', padding: '20px 24px' }}>
+                <div style={{ fontSize: 22, marginBottom: 4 }}>📧</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: -0.3 }}>Weekly Momentum Digest</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 3 }}>Sends a personalised Monday email to every member with email notifications enabled</div>
+              </div>
+
+              <div style={{ padding: '20px 24px' }}>
+                {/* What it does */}
+                <div style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.6, marginBottom: 20 }}>
+                  Each email shows the founder's current stage, how many updates they made last week, and one specific next step. Founders who were active get an encouragement; dormant ones get a nudge.
+                  The digest is <strong>automatically scheduled every Monday at 08:00 UTC</strong> — use this button to send it on demand for testing or a one-off blast.
+                </div>
+
+                {/* Status indicator */}
+                {digestState === 'done' && digestQueued !== null && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 18 }}>✅</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#15803d' }}>Digest queued for {digestQueued} member{digestQueued !== 1 ? 's' : ''}</div>
+                      <div style={{ fontSize: 12, color: '#166534', marginTop: 2 }}>Emails will arrive within a few minutes. Check server logs for delivery status.</div>
+                    </div>
+                  </div>
+                )}
+                {digestState === 'error' && (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 18 }}>⚠️</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#dc2626' }}>Failed to start digest</div>
+                      <div style={{ fontSize: 12, color: '#991b1b', marginTop: 2 }}>Check server logs for details. Make sure SMTP_USER and SMTP_PASS are set in your .env.</div>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  disabled={digestState === 'running'}
+                  onClick={async () => {
+                    setDigestState('running');
+                    setDigestQueued(null);
+                    try {
+                      const r = await adminApi.triggerWeeklyDigest();
+                      setDigestQueued(r.data.queued ?? 0);
+                      setDigestState('done');
+                      setTimeout(() => setDigestState('idle'), 30000);
+                    } catch {
+                      setDigestState('error');
+                      setTimeout(() => setDigestState('idle'), 10000);
+                    }
+                  }}
+                  style={{
+                    padding: '11px 24px', borderRadius: 12, border: 'none',
+                    background: digestState === 'running' ? '#d2d2d7' : digestState === 'done' ? '#dcfce7' : '#0066cc',
+                    color: digestState === 'done' ? '#15803d' : '#fff',
+                    fontWeight: 800, fontSize: 14, cursor: digestState === 'running' ? 'not-allowed' : 'pointer',
+                    transition: 'all .2s', display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  {digestState === 'running' ? (
+                    <>
+                      <span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid #fff4', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
+                      Sending…
+                    </>
+                  ) : digestState === 'done' ? '✓ Sent!' : '📧 Send weekly digest now'}
+                </button>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* spinner keyframe */}
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    </div>
+  );
+}

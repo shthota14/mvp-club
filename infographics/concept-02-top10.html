@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top 10 Things Every Founder Must Do</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; padding: 40px 20px; color: #111827; }
+  .page { width: 900px; margin: 0 auto; background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 40px rgba(0,0,0,0.08); }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 60%, #0369a1 100%);
+    padding: 44px 52px 40px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; right:-60px; top:-60px; width:300px; height:300px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .tag { display:inline-block; background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; padding:5px 12px; border-radius:20px; margin-bottom:14px; }
+  .header h1 { font-size:36px; font-weight:900; letter-spacing:-1px; line-height:1.1; margin-bottom:10px; }
+  .header p { font-size:15px; opacity:0.75; line-height:1.6; max-width:480px; }
+  .num-big { position:absolute; right:52px; top:36px; font-size:100px; font-weight:900; color:rgba(255,255,255,0.06); line-height:1; letter-spacing:-6px; }
+
+  /* Timeline flow */
+  .timeline { padding: 36px 52px 16px; }
+  .tl-label { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#9ca3af; margin-bottom:24px; }
+
+  .tl-item {
+    display: flex;
+    gap: 20px;
+    position: relative;
+    margin-bottom: 0;
+  }
+  .tl-item:not(:last-child) .tl-line {
+    position: absolute;
+    left: 19px; top: 44px;
+    width: 2px;
+    bottom: 0;
+    background: linear-gradient(to bottom, #e5e7eb, transparent);
+  }
+
+  .tl-left { display:flex; flex-direction:column; align-items:center; width:40px; flex-shrink:0; }
+  .tl-num {
+    width: 40px; height: 40px; border-radius: 50%;
+    font-size: 15px; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; position: relative; z-index: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  .tl-connector { flex: 1; width: 2px; }
+
+  .tl-card {
+    flex: 1;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    border: 1.5px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .tl-card::after {
+    content: attr(data-icon);
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    font-size: 32px; opacity: 0.12;
+  }
+  .tl-phase { font-size: 9px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 4px; opacity: 0.6; }
+  .tl-title { font-size: 15px; font-weight: 900; margin-bottom: 4px; }
+  .tl-desc { font-size: 12px; line-height: 1.6; opacity: 0.75; }
+  .tl-tip {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 8px; font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 7px;
+  }
+
+  /* Phase markers */
+  .phase-header {
+    display: flex; align-items: center; gap: 10px;
+    margin: 8px 0 12px 60px;
+  }
+  .phase-pill {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.8px;
+    text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+  }
+  .phase-line { flex: 1; height: 1px; background: #f3f4f6; }
+
+  /* Bottom summary */
+  .summary { margin: 4px 52px 36px; background: #0f172a; border-radius: 18px; padding: 24px 28px; color: white; }
+  .summary h3 { font-size: 16px; font-weight: 900; margin-bottom: 16px; color: #e2e8f0; letter-spacing: -0.3px; }
+  .summary-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .summary-item { text-align: center; }
+  .summary-num { font-size: 28px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+  .summary-lbl { font-size: 10px; color: rgba(255,255,255,0.45); font-weight: 600; line-height: 1.3; }
+
+  /* Footer */
+  .footer { background: #f8fafc; border-top: 1px solid #f3f4f6; padding: 18px 52px; display: flex; align-items: center; justify-content: space-between; }
+  .footer-brand { font-size: 13px; font-weight: 900; color: #6366f1; }
+  .footer-label { font-size: 11px; color: #9ca3af; font-weight: 600; letter-spacing: 0.5px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="tag">Founder Playbook</div>
+    <div class="num-big">10</div>
+    <h1>Top 10 Things Every<br>Founder Must Do</h1>
+    <p>From the first spark to your first paying customer — the non-negotiable moves, in order.</p>
+  </div>
+
+  <div class="timeline">
+    <div class="tl-label">The founder's checklist — in sequence</div>
+
+    <!-- Phase 1: Think -->
+    <div class="phase-header">
+      <div class="phase-pill" style="background:#fdf4ff;color:#a21caf;">💡 Phase 1 — Think</div>
+      <div class="phase-line"></div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-num" style="background:#a21caf;color:#fff;">1</div>
+        <div class="tl-connector" style="background:linear-gradient(#e879f9,#e5e7eb);"></div>
+      </div>
+      <div class="tl-card" data-icon="💡" style="background:#fdf4ff;border-color:#f0abfc;">
+        <div class="tl-phase" style="color:#a21caf;">Must-do #1</div>
+        <div class="tl-title" style="color:#86198f;">Write your idea in one sentence</div>
+        <div class="tl-desc" style="color:#701a75;">Before anything else — can you explain what you're building, for whom, and why, in a single clear sentence? If you can't, it's not ready.</div>
+        <div class="tl-tip" style="background:#e879f920;color:#a21caf;">✓ "I help [who] do [what] so they can [outcome]"</div>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-num" style="background:#7c3aed;color:#fff;">2</div>
+        <div class="tl-connector" style="background:linear-gradient(#a78bfa,#e5e7eb);"></div>
+      </div>
+      <div class="tl-card" data-icon="🔎" style="background:#f5f3ff;border-color:#c4b5fd;">
+        <div class="tl-phase" style="color:#7c3aed;">Must-do #2</div>
+        <div class="tl-title" style="color:#5b21b6;">Identify the exact problem — not the symptom</div>
+        <div class="tl-desc" style="color:#4c1d95;">Most founders solve surface symptoms. Dig until you can answer: "What is the real pain, when does it happen, and what does it cost the person right now?"</div>
+        <div class="tl-tip" style="background:#ede9fe;color:#7c3aed;">✓ Ask "why?" 5 times until you hit root cause</div>
+      </div>
+    </div>
+
+    <!-- Phase 2: Talk -->
+    <div class="phase-header" style="margin-top:8px;">
+      <div class="phase-pill" style="background:#eff6ff;color:#1d4ed8;">💬 Phase 2 — Talk</div>
+      <div class="phase-line"></div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-num" style="background:#1d4ed8;color:#fff;">3</div>
+        <div class="tl-connector" style="background:linear-gradient(#60a5fa,#e5e7eb);"></div>
+      </div>
+      <div class="tl-card" data-icon="🗣" style="background:#eff6ff;border-color:#bfdbfe;">
+        <div class="tl-phase" style="color:#1d4ed8;">Must-do #3</div>
+        <div class="tl-title" style="color:#1e3a8a;">Talk to 10 real potential users — before building</div>
+        <div class="tl-desc" style="color:#1e40af;">Not friends. Not family. Find strangers who actually have the problem. Ask about their experience, not your solution. Listen more than you speak.</div>
+        <div class="tl-tip" style="background:#dbeafe;color:#1d4ed8;">✓ Rule: 0 pitching, 100% listening</div>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-num" style="background:#0369a1;color:#fff;">4</div>
+        <div class="tl-connector" style="background:linear-gradient(#38bdf8,#e5e7eb);"></div>
+      </div>
+      <div class="tl-card" data-icon="📊" style="background:#f0f9ff;border-color:#7dd3fc;">
+        <div class="tl-phase" style="color:#0369a1;">Must-do #4</div>
+        <div class="tl-title" style="color:#075985;">Find the signal: 3 people who say "I'd pay for this"</div>
+        <div class="tl-desc" style="color:#0c4a6e;">Not "this sounds interesting." You need people who say they'd pay, or who would switch from their current solution. That's your green light to proceed.</div>
+        <div class="tl-tip" style="background:#e0f2fe;color:#0369a1;">✓ "Would you pay £X for this?" — watch the reaction</div>
+      </div>
+    </div>
+
+    <!-- Phase 3: Plan -->
+    <div class="phase-header" style="margin-top:8px;">
+      <div class="phase-pill" style="background:#f0fdf4;color:#15803d;">📋 Phase 3 — Plan</div>
+      <div class="phase-line"></div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-num" style="background:#15803d;color:#fff;">5</div>
+        <div class="tl-connector" style="background:linear-gradient(#4ade80,#e5e7eb);"></div>
+      </div>
+      <div class="tl-card" data-icon="🗺" style="background:#f0fdf4;border-color:#86efac;">
+        <div class="tl-phase" style="color:#15803d;">Must-do #5</div>
+        <div class="tl-title" style="color:#166534;">Complete your Business Model Canvas</div>
+        <div class="tl-desc" style="color:#14532d;">Map out all 9 blocks — who you serve, what you offer, how you reach them, what it costs, and how you make money. Do this before you touch any code or design.</div>
+        <div class="tl-tip" style="background:#dcfce7;color:#15803d;">✓ Available inside MVP Club → My Idea Vault</div>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-num" style="background:#059669;color:#fff;">6</div>
+        <div class="tl-connector" style="background:linear-gradient(#34d399,#e5e7eb);"></div>
+      </div>
+      <div class="tl-card" data-icon="✂️" style="background:#ecfdf5;border-color:#6ee7b7;">
+        <div class="tl-phase" style="color:#059669;">Must-do #6</div>
+        <div class="tl-title" style="color:#065f46;">Define your MVP in exactly 3 features</div>
+        <div class="tl-desc" style="color:#064e3b;">Not 10 features. Not a "complete product." What is the absolute minimum that lets a user solve their problem? Three features max. Cut everything else ruthlessly.</div>
+        <div class="tl-tip" style="background:#d1fae5;color:#059669;">✓ If it's not core to the promise, cut it</div>
+      </div>
+    </div>
+
+    <!-- Phase 4: Build -->
+    <div class="phase-header" style="margin-top:8px;">
+      <div class="phase-pill" style="background:#fff7ed;color:#c2410c;">🛠 Phase 4 — Build</div>
+      <div class="phase-line"></div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-num" style="background:#c2410c;color:#fff;">7</div>
+        <div class="tl-connector" style="background:linear-gradient(#fb923c,#e5e7eb);"></div>
+      </div>
+      <div class="tl-card" data-icon="🏗" style="background:#fff7ed;border-color:#fdba74;">
+        <div class="tl-phase" style="color:#c2410c;">Must-do #7</div>
+        <div class="tl-title" style="color:#9a3412;">Build fast, ship ugly, learn fast</div>
+        <div class="tl-desc" style="color:#7c2d12;">Perfection is the enemy of shipped. Your first version will be embarrassing — that's fine. Ship it to real users, get feedback, and iterate. Speed of learning beats quality of launch.</div>
+        <div class="tl-tip" style="background:#ffedd5;color:#c2410c;">✓ "If you're not embarrassed, you launched too late"</div>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-num" style="background:#d97706;color:#fff;">8</div>
+        <div class="tl-connector" style="background:linear-gradient(#fbbf24,#e5e7eb);"></div>
+      </div>
+      <div class="tl-card" data-icon="📣" style="background:#fffbeb;border-color:#fde68a;">
+        <div class="tl-phase" style="color:#d97706;">Must-do #8</div>
+        <div class="tl-title" style="color:#92400e;">Tell everyone — distribution is the hardest part</div>
+        <div class="tl-desc" style="color:#78350f;">Building is 20% of the job. Getting it in front of the right people is 80%. Post on Reddit, LinkedIn, communities, forums. Tell your network. Do things that don't scale.</div>
+        <div class="tl-tip" style="background:#fef3c7;color:#d97706;">✓ The best product without distribution = nothing</div>
+      </div>
+    </div>
+
+    <!-- Phase 5: Grow -->
+    <div class="phase-header" style="margin-top:8px;">
+      <div class="phase-pill" style="background:#fef2f2;color:#dc2626;">🚀 Phase 5 — Grow</div>
+      <div class="phase-line"></div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-num" style="background:#dc2626;color:#fff;">9</div>
+        <div class="tl-connector" style="background:linear-gradient(#f87171,#e5e7eb);"></div>
+      </div>
+      <div class="tl-card" data-icon="💰" style="background:#fef2f2;border-color:#fca5a5;">
+        <div class="tl-phase" style="color:#dc2626;">Must-do #9</div>
+        <div class="tl-title" style="color:#991b1b;">Get your first paying customer — not a free user</div>
+        <div class="tl-desc" style="color:#7f1d1d;">Free users lie. Paying customers vote with their wallet. Chase your first pound/dollar with urgency — it validates everything and proves you have a real business, not a hobby.</div>
+        <div class="tl-tip" style="background:#fee2e2;color:#dc2626;">✓ Charge from day one, even if it's a small amount</div>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-num" style="background:#6366f1;color:#fff;">10</div>
+        <div class="tl-connector"></div>
+      </div>
+      <div class="tl-card" data-icon="🔄" style="background:#eef2ff;border-color:#a5b4fc;">
+        <div class="tl-phase" style="color:#6366f1;">Must-do #10</div>
+        <div class="tl-title" style="color:#3730a3;">Build a feedback loop and never stop iterating</div>
+        <div class="tl-desc" style="color:#312e81;">Talk to customers weekly. Track what they use, what they ignore, and what they complain about. The companies that win are the ones that listen and adapt fastest.</div>
+        <div class="tl-tip" style="background:#e0e7ff;color:#6366f1;">✓ Weekly user calls → monthly product update cycle</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Summary bar -->
+  <div class="summary">
+    <h3>The 5 phases at a glance</h3>
+    <div class="summary-row">
+      <div class="summary-item">
+        <div class="summary-num" style="color:#f0abfc;">💡</div>
+        <div class="summary-lbl">Think<br>#1–2</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-num" style="color:#60a5fa;">💬</div>
+        <div class="summary-lbl">Talk<br>#3–4</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-num" style="color:#4ade80;">📋</div>
+        <div class="summary-lbl">Plan<br>#5–6</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-num" style="color:#fb923c;">🛠</div>
+        <div class="summary-lbl">Build<br>#7–8</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-num" style="color:#f87171;">🚀</div>
+        <div class="summary-lbl">Grow<br>#9–10</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="footer-brand">MVP Club</span>
+    <span style="font-size:12px;color:#9ca3af;font-style:italic;">From idea to launched — one step at a time.</span>
+    <span class="footer-label">FOUNDER PLAYBOOK · TOP 10</span>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MVP Club — Community & Seeking Help</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f8fafc;
+    color: #111827;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .page {
+    width: 800px;
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.08);
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+    padding: 44px 52px 40px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.9);
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 1.2px; text-transform: uppercase;
+    padding: 5px 12px; border-radius: 20px; margin-bottom: 14px;
+  }
+  .header h1 { font-size: 36px; font-weight: 900; letter-spacing: -1px; line-height: 1.1; margin-bottom: 12px; }
+  .header p { font-size: 15px; opacity: 0.85; line-height: 1.55; max-width: 440px; }
+  .header-num {
+    position: absolute; right: 52px; top: 44px;
+    font-size: 80px; font-weight: 900;
+    color: rgba(255,255,255,0.1); line-height: 1; letter-spacing: -4px;
+  }
+
+  /* Body */
+  .body { padding: 40px 52px 44px; }
+
+  /* Section heading */
+  .section-h {
+    font-size: 11px; font-weight: 800; letter-spacing: 1px;
+    text-transform: uppercase; color: #4b5563; margin-bottom: 16px;
+  }
+
+  /* Two columns */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Action card */
+  .action-card {
+    border: 1.5px solid #f3f4f6;
+    border-radius: 14px;
+    padding: 18px;
+    transition: border-color .15s;
+  }
+  .action-card .icon { font-size: 24px; margin-bottom: 10px; }
+  .action-card h3 { font-size: 14px; font-weight: 800; margin-bottom: 5px; color: #111827; }
+  .action-card p { font-size: 12px; color: #374151; line-height: 1.55; }
+  .action-how {
+    margin-top: 10px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .action-step {
+    display: flex; align-items: flex-start; gap: 6px;
+    font-size: 11px; color: #374151; font-weight: 600; line-height: 1.4;
+  }
+  .num-badge {
+    width: 16px; height: 16px; border-radius: 50%;
+    font-size: 9px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  /* Divider */
+  .divider { height: 1px; background: #f3f4f6; margin: 28px 0; }
+
+  /* Post mock */
+  .post-mock {
+    background: #f8fafc;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .post-header {
+    padding: 14px 16px 10px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 800; flex-shrink: 0;
+  }
+  .post-meta { flex: 1; }
+  .post-name { font-size: 13px; font-weight: 800; color: #111827; }
+  .post-sub { font-size: 11px; color: #4b5563; margin-top: 1px; }
+  .post-body { padding: 0 16px 12px; font-size: 13px; color: #374151; line-height: 1.6; }
+  .post-tags { display: flex; gap: 6px; padding: 0 16px 10px; flex-wrap: wrap; }
+  .post-tag {
+    font-size: 10px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px;
+  }
+  .post-reactions {
+    padding: 10px 16px;
+    border-top: 1px solid #f3f4f6;
+    display: flex; gap: 10px; align-items: center;
+  }
+  .react-btn {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 700;
+    padding: 5px 10px; border-radius: 8px;
+    background: #fff; border: 1.5px solid #e5e7eb;
+    color: #374151; cursor: pointer;
+  }
+  .react-btn.active { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+  .comment-count { font-size: 11px; color: #4b5563; margin-left: auto; }
+
+  /* Seeking section */
+  .seeking-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .seeking-card {
+    border-radius: 12px;
+    padding: 14px 14px 12px;
+    text-align: center;
+  }
+  .seeking-card .s-icon { font-size: 22px; margin-bottom: 8px; }
+  .seeking-card h4 { font-size: 12px; font-weight: 800; margin-bottom: 4px; }
+  .seeking-card p { font-size: 11px; color: #374151; line-height: 1.45; }
+
+  /* Moderation note */
+  .mod-note {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-top: 16px;
+  }
+  .mod-note .icon { font-size: 20px; flex-shrink: 0; }
+  .mod-note p { font-size: 12px; color: #78350f; line-height: 1.55; }
+  .mod-note strong { font-weight: 800; }
+
+  /* Footer */
+  .footer {
+    background: #f8fafc;
+    border-top: 1px solid #f3f4f6;
+    padding: 20px 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-brand { font-size: 13px; font-weight: 900; color: #0ea5e9; }
+  .footer-label { font-size: 11px; color: #4b5563; font-weight: 600; letter-spacing: 0.5px; }
+  .page-indicator { display: flex; gap: 5px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #e5e7eb; }
+  .dot.active { background: #0ea5e9; width: 18px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="tag">Guide 3 of 4</div>
+    <div class="header-num">03</div>
+    <h1>Community<br>& Seeking Help</h1>
+    <p>The community is where founders learn from each other. Here's how to post, comment, react — and ask for exactly what you need.</p>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+
+    <!-- What you can do -->
+    <div class="section-h">What you can do in the community</div>
+    <div class="two-col">
+      <div class="action-card">
+        <div class="icon">📣</div>
+        <h3>Post an update</h3>
+        <p>Share a milestone, insight, or question about your idea. Posts appear on your idea's public page.</p>
+        <div class="action-how">
+          <div class="action-step">
+            <span class="num-badge" style="background:#e0f2fe;color:#0369a1;">1</span>
+            Go to Community and open any idea
+          </div>
+          <div class="action-step">
+            <span class="num-badge" style="background:#e0f2fe;color:#0369a1;">2</span>
+            Scroll to the posts section
+          </div>
+          <div class="action-step">
+            <span class="num-badge" style="background:#e0f2fe;color:#0369a1;">3</span>
+            Click <strong>Add update</strong> and write your post
+          </div>
+        </div>
+      </div>
+      <div class="action-card">
+        <div class="icon">👀</div>
+        <h3>Browse other ideas</h3>
+        <p>Filter by stage to find founders at the same point as you. Tap any card to see their full post feed.</p>
+        <div class="action-how">
+          <div class="action-step">
+            <span class="num-badge" style="background:#f0fdf4;color:#15803d;">1</span>
+            Click <strong>Community</strong> in the nav
+          </div>
+          <div class="action-step">
+            <span class="num-badge" style="background:#f0fdf4;color:#15803d;">2</span>
+            Use the stage filter pills to narrow down
+          </div>
+          <div class="action-step">
+            <span class="num-badge" style="background:#f0fdf4;color:#15803d;">3</span>
+            Click any idea card to open it
+          </div>
+        </div>
+      </div>
+      <div class="action-card">
+        <div class="icon">💬</div>
+        <h3>Comment on a post</h3>
+        <p>Comments are public and visible to all members. Offer feedback, share resources, or ask questions.</p>
+        <div class="action-how">
+          <div class="action-step">
+            <span class="num-badge" style="background:#fdf4ff;color:#a21caf;">1</span>
+            Open an idea and find a post
+          </div>
+          <div class="action-step">
+            <span class="num-badge" style="background:#fdf4ff;color:#a21caf;">2</span>
+            Click <strong>💬 Comment</strong> or the comment count
+          </div>
+          <div class="action-step">
+            <span class="num-badge" style="background:#fdf4ff;color:#a21caf;">3</span>
+            Type your comment and submit
+          </div>
+        </div>
+      </div>
+      <div class="action-card">
+        <div class="icon">⚡</div>
+        <h3>React to posts</h3>
+        <p>Two reactions keep things focused: Encourage to show support, Ask How to invite them to share more.</p>
+        <div class="action-how">
+          <div class="action-step">
+            <span class="num-badge" style="background:#fff7ed;color:#c2410c;">1</span>
+            Find a post you want to react to
+          </div>
+          <div class="action-step">
+            <span class="num-badge" style="background:#fff7ed;color:#c2410c;">2</span>
+            Click <strong>👍 Encourage</strong> or <strong>🔍 Ask how</strong>
+          </div>
+          <div class="action-step">
+            <span class="num-badge" style="background:#fff7ed;color:#c2410c;">3</span>
+            Reactions are visible to the poster instantly
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Live post example -->
+    <div class="section-h">What a community post looks like</div>
+    <div class="post-mock">
+      <div class="post-header">
+        <div class="avatar" style="background:#dbeafe;color:#1d4ed8;">SK</div>
+        <div class="post-meta">
+          <div class="post-name">Sarah K.</div>
+          <div class="post-sub">Validate stage · AI tutoring app · 2h ago</div>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:#15803d;background:#dcfce7;padding:3px 8px;border-radius:20px;align-self:center;">✅ Approved</div>
+      </div>
+      <div class="post-body">
+        Just finished talking to my 5th potential user. 4 out of 5 said they'd pay for this — but NOT for the feature I thought they wanted. Turns out they care most about <strong>accountability</strong>, not content. Big pivot incoming! 🔄
+      </div>
+      <div class="post-tags">
+        <span class="post-tag" style="background:#dbeafe;color:#1d4ed8;">🔍 Seeking: Advice</span>
+        <span class="post-tag" style="background:#fdf4ff;color:#a21caf;">📣 Milestone</span>
+      </div>
+      <div class="post-reactions">
+        <div class="react-btn active">👍 Encourage <span style="color:#818cf8;font-size:11px;">12</span></div>
+        <div class="react-btn">🔍 Ask how <span style="color:#374151;font-size:11px;">4</span></div>
+        <div class="comment-count">💬 8 comments</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Seeking help types -->
+    <div class="section-h">How to signal what you're seeking</div>
+    <div class="seeking-grid">
+      <div class="seeking-card" style="background:#eff6ff;">
+        <div class="s-icon">💡</div>
+        <h4 style="color:#1d4ed8;">Advice</h4>
+        <p>Ask for guidance on a decision, direction, or strategy</p>
+      </div>
+      <div class="seeking-card" style="background:#f0fdf4;">
+        <div class="s-icon">🤝</div>
+        <h4 style="color:#15803d;">Co-founder</h4>
+        <p>Looking for someone to build alongside you</p>
+      </div>
+      <div class="seeking-card" style="background:#fdf4ff;">
+        <div class="s-icon">🛠</div>
+        <h4 style="color:#a21caf;">Technical help</h4>
+        <p>Need a developer or technical person</p>
+      </div>
+      <div class="seeking-card" style="background:#fff7ed;">
+        <div class="s-icon">🎨</div>
+        <h4 style="color:#c2410c;">Design help</h4>
+        <p>Need design, UX, or branding support</p>
+      </div>
+      <div class="seeking-card" style="background:#ecfdf5;">
+        <div class="s-icon">📣</div>
+        <h4 style="color:#065f46;">Feedback</h4>
+        <p>Want honest opinions on your idea or MVP</p>
+      </div>
+      <div class="seeking-card" style="background:#f8fafc;">
+        <div class="s-icon">👥</div>
+        <h4 style="color:#374151;">Beta users</h4>
+        <p>Looking for early testers and first users</p>
+      </div>
+    </div>
+
+    <!-- Moderation note -->
+    <div class="mod-note">
+      <div class="icon">🛡</div>
+      <p><strong>Content moderation:</strong> All posts are visible immediately but monitored. Flagged posts are reviewed by the admin and may be held, approved, or removed. Keep posts relevant and respectful to maintain your standing in the community.</p>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="footer-brand">MVP Club</span>
+    <div class="page-indicator">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot active"></div>
+      <div class="dot"></div>
+    </div>
+    <span class="footer-label">HOW-TO GUIDE 3 / 4</span>
+  </div>
+
+</div>
+</body>
+</html>

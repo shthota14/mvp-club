@@ -1,0 +1,26 @@
+# Secrets — never commit these
+.env
+.env.production
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Editor/OS cruft
+.DS_Store
+*.log
+
+# Scratch / working files (patch diffs delivered during AI-assisted edits)
+_patches*/
+_to_delete/
+PROBE_FILE.txt
+
+# Vite dev-server temp config cache
+*.timestamp-*.mjs
+
+# Editor/manual backup files
+*.bak

@@ -1,0 +1,3 @@
+ALTER TABLE interviews
+  ADD COLUMN IF NOT EXISTS alignment_score INTEGER CHECK (alignment_score BETWEEN 1 AND 3),
+  ADD COLUMN IF NOT EXISTS confirmed_problem BOOLEAN DEFAULT FALSE;

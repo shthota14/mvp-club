@@ -1,0 +1,10 @@
+# Caddy terminates TLS (automatic Let's Encrypt certificates) and forwards
+# everything to the frontend nginx, which serves the SPA and proxies /api.
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy frontend:80
+}
+
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}

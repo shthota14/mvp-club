@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MVP Club — Challenge the Pain</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --faint: #9ca3af;
+    --accent: #0066cc;
+    --accent-soft: rgba(0,102,204,0.08);
+    --red: #ef4444;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --purple: #7c3aed;
+    --radius: 18px;
+  }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── NAV ─────────────────────────────────── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 56px;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 9px; cursor: pointer; }
+  .nav-logo-text { font-size: 15px; font-weight: 900; letter-spacing: -0.4px; }
+  .nav-logo-text span { font-weight: 300; letter-spacing: 2px; font-size: 12.75px; }
+  .nav-pill {
+    padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 700;
+    border: none; cursor: pointer; transition: 0.15s; text-decoration: none;
+  }
+  .nav-pill.active { background: #111; color: #fff; }
+  .nav-pill:not(.active) { background: transparent; color: var(--muted); }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+  /* ─── PAGE WRAPPER ───────────────────────── */
+  .page { max-width: 1160px; margin: 0 auto; padding: 36px 28px 80px; }
+
+  /* ─── VIEWS ─────────────────────────────── */
+  #view-feed { display: block; }
+  #view-detail { display: none; }
+
+  /* ─── FEED HEADER ─────────────────────────── */
+  .feed-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; }
+  .feed-title { font-size: 26px; font-weight: 900; letter-spacing: -0.6px; }
+  .feed-sub { font-size: 14px; color: var(--muted); margin-top: 3px; }
+  .live-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(239,68,68,0.09); color: var(--red);
+    border: 1px solid rgba(239,68,68,0.18);
+    border-radius: 20px; padding: 5px 12px; font-size: 11px; font-weight: 800;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ─── CHALLENGE GRID ─────────────────────── */
+  .challenge-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 18px;
+  }
+
+  /* ─── CHALLENGE CARD ─────────────────────── */
+  .challenge-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px 20px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+    display: flex; flex-direction: column; gap: 0;
+    position: relative;
+  }
+  .challenge-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 6px 32px rgba(0,102,204,0.1);
+    transform: translateY(-2px);
+  }
+  .challenge-card.hot { border-color: rgba(239,68,68,0.35); }
+  .challenge-card.hot:hover { border-color: var(--red); box-shadow: 0 6px 32px rgba(239,68,68,0.1); }
+
+  .card-eyebrow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .challenge-num { font-size: 11px; font-weight: 800; color: var(--faint); letter-spacing: 0.8px; text-transform: uppercase; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    border-radius: 20px; padding: 3px 10px; font-size: 10px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .status-live { background: rgba(239,68,68,0.09); color: var(--red); }
+  .status-brewing { background: rgba(245,158,11,0.1); color: var(--amber); }
+  .status-solved { background: rgba(16,185,129,0.1); color: var(--green); }
+
+  .card-question {
+    font-size: 17px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.35;
+    margin-bottom: 16px; color: var(--text);
+  }
+
+  /* Progress bar */
+  .progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .progress-track { flex: 1; height: 6px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+  .progress-pct { font-size: 12px; font-weight: 800; color: var(--text); }
+
+  /* Stats row */
+  .stats-row { display: flex; gap: 16px; margin-bottom: 16px; }
+  .stat { display: flex; flex-direction: column; gap: 1px; }
+  .stat-val { font-size: 16px; font-weight: 800; color: var(--text); }
+  .stat-lbl { font-size: 10px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.4px; }
+
+  /* Tension strip */
+  .tension-strip {
+    background: linear-gradient(90deg, rgba(0,102,204,0.06) 0%, rgba(239,68,68,0.06) 100%);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 16px;
+    font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.5;
+  }
+  .tension-vs { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .tension-a { color: var(--accent); font-weight: 800; font-size: 13px; }
+  .tension-b { color: var(--red); font-weight: 800; font-size: 13px; }
+  .tension-divider { flex: 1; height: 1px; background: var(--border); }
+  .tension-mid { font-size: 10px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+
+  /* Card footer */
+  .card-footer { display: flex; align-items: center; justify-content: space-between; }
+  .experts-row { display: flex; }
+  .expert-avatar {
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff;
+    font-size: 8px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+    margin-left: -6px; color: #fff;
+  }
+  .expert-avatar:first-child { margin-left: 0; }
+  .expert-count { font-size: 12px; color: var(--muted); font-weight: 600; margin-left: 8px; }
+  .view-btn { font-size: 12px; font-weight: 800; color: var(--accent); letter-spacing: 0.2px; }
+
+  /* ─── DETAIL VIEW ─────────────────────────── */
+  .detail-back {
+    display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+    color: var(--muted); font-size: 13px; font-weight: 700; margin-bottom: 24px;
+    border: none; background: none; padding: 0;
+  }
+  .detail-back:hover { color: var(--text); }
+
+  .detail-header {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 28px 32px; margin-bottom: 20px;
+  }
+  .detail-eyebrow { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .detail-num { font-size: 12px; font-weight: 800; color: var(--faint); letter-spacing: 0.8px; text-transform: uppercase; }
+  .detail-question { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; line-height: 1.3; margin-bottom: 20px; }
+
+  /* Health bars */
+  .health-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .health-item label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--faint); display: block; margin-bottom: 5px; }
+  .health-track { height: 8px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
+  .health-fill { height: 100%; border-radius: 99px; }
+
+  .detail-stats { display: flex; gap: 28px; flex-wrap: wrap; }
+  .detail-stat { display: flex; flex-direction: column; gap: 2px; }
+  .detail-stat-val { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; }
+  .detail-stat-lbl { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+  /* ─── AI GUIDE ───────────────────────────── */
+  .ai-guide {
+    background: linear-gradient(135deg, #0066cc 0%, #5b21b6 100%);
+    border-radius: var(--radius); padding: 20px 24px; margin-bottom: 20px;
+    color: #fff;
+  }
+  .ai-guide-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .ai-icon { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .ai-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.75; }
+  .ai-message { font-size: 15px; font-weight: 600; line-height: 1.6; opacity: 0.95; margin-bottom: 14px; }
+  .ai-questions { display: flex; flex-direction: column; gap: 7px; }
+  .ai-q {
+    background: rgba(255,255,255,0.12); border-radius: 10px; padding: 9px 13px;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ai-q:hover { background: rgba(255,255,255,0.2); }
+  .ai-q-arrow { font-size: 11px; margin-left: auto; opacity: 0.6; }
+
+  /* ─── LAYOUT GRID ───────────────────────── */
+  .detail-body { display: grid; grid-template-columns: 1fr 360px; gap: 20px; }
+
+  /* ─── KNOWLEDGE TREE ─────────────────────── */
+  .tree-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .tree-title {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 8px;
+  }
+  .tree-wrap { padding: 20px; overflow-x: auto; }
+
+  /* Tree node styles */
+  .tree { display: flex; flex-direction: column; gap: 0; }
+  .tree-node {
+    display: flex; flex-direction: column;
+  }
+  .node-row { display: flex; align-items: flex-start; gap: 0; }
+  .node-line-wrap { display: flex; flex-direction: column; align-items: center; width: 20px; flex-shrink: 0; }
+  .node-vline { width: 2px; background: var(--border); flex: 1; min-height: 8px; }
+  .node-hline { width: 18px; height: 2px; background: var(--border); margin-top: 16px; }
+  .node-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 13px; }
+  .node-box {
+    margin-left: 8px; margin-bottom: 8px; border-radius: 10px; padding: 8px 12px;
+    font-size: 12px; font-weight: 600; line-height: 1.4; cursor: pointer;
+    border: 1.5px solid transparent; transition: 0.15s; flex: 1;
+    display: flex; align-items: flex-start; gap: 7px;
+  }
+  .node-box:hover { transform: translateX(2px); }
+  .node-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+  .node-text { flex: 1; }
+  .node-pts { font-size: 10px; font-weight: 800; margin-top: 3px; opacity: 0.7; }
+
+  .node-root { background: #111; color: #fff; border-color: #111; font-size: 13px; font-weight: 800; }
+  .node-evidence { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.2); color: #064e3b; }
+  .node-hypothesis { background: rgba(0,102,204,0.07); border-color: rgba(0,102,204,0.18); color: #1e3a5f; }
+  .node-assumption { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); color: #78350f; }
+  .node-question { background: rgba(124,58,237,0.07); border-color: rgba(124,58,237,0.18); color: #4c1d95; }
+  .node-challenge { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.18); color: #7f1d1d; }
+  .node-solution { background: rgba(59,130,246,0.07); border-color: rgba(59,130,246,0.18); color: #1e3a8a; }
+  .node-outcome { background: #f3f4f6; border-color: var(--border); color: var(--muted); }
+
+  .tree-children { margin-left: 28px; border-left: 2px solid var(--border); padding-left: 12px; }
+
+  /* ─── SIDEBAR ─────────────────────────────── */
+  .sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+  /* Contribute palette */
+  .palette-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .palette-title { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+  .palette-sub { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .palette-grid { display: flex; flex-direction: column; gap: 7px; }
+  .palette-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 11px;
+    border: 1.5px solid var(--border); background: transparent;
+    cursor: pointer; transition: 0.15s; text-align: left; width: 100%;
+    font-family: inherit;
+  }
+  .palette-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .palette-icon { font-size: 16px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 8px; flex-shrink: 0; }
+  .palette-btn-text { flex: 1; }
+  .palette-btn-label { font-size: 12px; font-weight: 700; color: var(--text); display: block; }
+  .palette-btn-pts { font-size: 10px; font-weight: 700; color: var(--green); display: block; margin-top: 1px; }
+  .palette-btn-arrow { font-size: 11px; color: var(--faint); }
+
+  /* Tension card */
+  .tension-card {
+    background: linear-gradient(135deg, rgba(0,102,204,0.05) 0%, rgba(239,68,68,0.05) 100%);
+    border: 1.5px solid var(--border); border-radius: var(--radius); padding: 18px 20px;
+  }
+  .tension-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--faint); margin-bottom: 10px; }
+  .tension-question { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; line-height: 1.5; }
+  .tension-bars { display: flex; flex-direction: column; gap: 8px; }
+  .tension-bar-row { display: flex; align-items: center; gap: 8px; }
+  .tension-bar-label { font-size: 12px; font-weight: 700; width: 80px; flex-shrink: 0; }
+  .tension-bar-track { flex: 1; height: 10px; background: #f3f4f6; border-radius: 99px; overflow: hidden; }
+  .tension-bar-fill-a { height: 100%; background: var(--accent); border-radius: 99px; }
+  .tension-bar-fill-b { height: 100%; background: var(--red); border-radius: 99px; }
+  .tension-bar-pct { font-size: 12px; font-weight: 800; width: 32px; text-align: right; }
+  .tension-cta { margin-top: 12px; font-size: 12px; font-weight: 700; color: var(--accent); text-align: center; padding: 8px; background: var(--accent-soft); border-radius: 9px; cursor: pointer; }
+
+  /* Leaderboard card */
+  .leaders-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px;
+  }
+  .leaders-title { font-size: 13px; font-weight: 800; margin-bottom: 14px; }
+  .leader-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .leader-avatar { width: 34px; height: 34px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .leader-info { flex: 1; }
+  .leader-name { font-size: 13px; font-weight: 700; }
+  .leader-title { font-size: 11px; color: var(--accent); font-weight: 600; }
+  .leader-pts { text-align: right; }
+  .leader-pts-val { font-size: 14px; font-weight: 900; color: var(--text); }
+  .leader-pts-lbl { font-size: 10px; color: var(--faint); font-weight: 600; display: block; }
+
+  /* Reactions card */
+  .reactions-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px;
+  }
+  .reactions-title { font-size: 13px; font-weight: 800; margin-bottom: 14px; }
+  .reaction-row {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border: 1.5px solid var(--border); border-radius: 11px; cursor: pointer;
+    transition: 0.15s; margin-bottom: 7px;
+  }
+  .reaction-row:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .reaction-icon { font-size: 18px; }
+  .reaction-text { flex: 1; font-size: 12px; font-weight: 600; line-height: 1.4; }
+  .reaction-count { font-size: 12px; font-weight: 800; color: var(--muted); }
+
+  /* ─── CONTRIBUTION FEED ──────────────────── */
+  .contrib-feed { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .contrib-item {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+  }
+  .contrib-header { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+  .contrib-avatar { width: 28px; height: 28px; border-radius: 50%; color: #fff; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .contrib-meta { flex: 1; }
+  .contrib-name { font-size: 12px; font-weight: 700; }
+  .contrib-role { font-size: 10px; color: var(--accent); font-weight: 600; }
+  .contrib-type-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    border-radius: 20px; padding: 3px 9px; font-size: 10px; font-weight: 700;
+  }
+  .contrib-body { font-size: 13px; color: var(--text); line-height: 1.6; margin-bottom: 10px; }
+  .contrib-footer { display: flex; align-items: center; justify-content: space-between; }
+  .contrib-pts { font-size: 11px; font-weight: 800; color: var(--green); }
+  .contrib-reactions { display: flex; gap: 6px; }
+  .contrib-react-btn {
+    display: flex; align-items: center; gap: 4px; padding: 3px 8px;
+    border: 1px solid var(--border); border-radius: 20px; font-size: 11px;
+    background: transparent; cursor: pointer; transition: 0.15s; color: var(--muted);
+    font-weight: 600;
+  }
+  .contrib-react-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+  /* ─── TOAST ──────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 999;
+    background: #111; color: #fff; border-radius: 14px; padding: 14px 20px;
+    font-size: 14px; font-weight: 700; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    transform: translateY(20px); opacity: 0; transition: 0.25s;
+    pointer-events: none;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  .toast-pts { color: #4ade80; }
+
+  /* ─── RESPONSIVE ─────────────────────────── */
+  @media (max-width: 900px) {
+    .detail-body { grid-template-columns: 1fr; }
+    .health-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo" onclick="showFeed()">
+    <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="5.5" fill="#111827"/>
+      <line x1="25" y1="16" x2="29" y2="16" stroke="#111827" stroke-width="2" stroke-linecap="round"/>
+      <line x1="16" y1="25" x2="16" y2="29" stroke="#111827" stroke-width="2" stroke-linecap="round"/>
+      <line x1="7" y1="16" x2="3" y2="16" stroke="#111827" stroke-width="2" stroke-linecap="round"/>
+      <line x1="16" y1="7" x2="16" y2="3" stroke="#111827" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div class="nav-logo-text">MVP <span>CLUB</span></div>
+  </div>
+  <div style="display:flex;gap:4px">
+    <a class="nav-pill active">Challenges</a>
+    <a class="nav-pill">My Idea Vault</a>
+    <a class="nav-pill">Network</a>
+  </div>
+  <div class="nav-right">
+    <div style="font-size:12px;font-weight:700;color:var(--green)">⬡ 847 pts</div>
+    <div class="avatar">ST</div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════ FEED VIEW -->
+<div id="view-feed">
+  <div class="page">
+
+    <div class="feed-header">
+      <div>
+        <div class="feed-title">Active Challenges</div>
+        <div class="feed-sub">Each is a live investigation. Join one and advance collective thinking.</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="live-badge"><div class="live-dot"></div>5 active now</div>
+        <button onclick="openDetail(0)" style="padding:9px 18px;border-radius:20px;background:#111;color:#fff;border:none;font-size:13px;font-weight:700;cursor:pointer">+ Post a Challenge</button>
+      </div>
+    </div>
+
+    <div class="challenge-grid" id="challenge-grid"></div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ DETAIL VIEW -->
+<div id="view-detail">
+  <div class="page">
+
+    <button class="detail-back" onclick="showFeed()">← All Challenges</button>
+
+    <div class="detail-header" id="detail-header"></div>
+
+    <div class="ai-guide" id="ai-guide"></div>
+
+    <div class="detail-body">
+      <div>
+        <!-- Knowledge Tree -->
+        <div class="tree-card">
+          <div class="tree-title">🌳 Investigation Tree <span style="font-size:11px;color:var(--faint);font-weight:600;margin-left:auto">Everything is connected. Nothing is just a comment.</span></div>
+          <div class="tree-wrap" id="tree-wrap"></div>
+        </div>
+        <!-- Contribution feed -->
+        <div class="contrib-feed" id="contrib-feed"></div>
+      </div>
+
+      <div class="sidebar">
+        <!-- Contribute palette -->
+        <div class="palette-card" id="palette-card"></div>
+        <!-- Tension -->
+        <div class="tension-card" id="tension-card"></div>
+        <!-- Top contributors -->
+        <div class="leaders-card" id="leaders-card"></div>
+        <!-- Business reactions -->
+        <div class="reactions-card" id="reactions-card"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ───────────────────────────────────────────
+// DATA
+// ───────────────────────────────────────────
+const challenges = [
+  {
+    id: 482,
+    status: 'live',
+    question: 'Why can\'t people share a real-time thought publicly without it vanishing into the void?',
+    founder: 'Jack Dorsey',
+    initials: 'JD',
+    color: '#5856d6',
+    progress: 72,
+    evidence: 18,
+    hypotheses: 9,
+    experts: 34,
+    confidence: 72,
+    tensionA: { label: 'Discovery problem', pct: 58 },
+    tensionB: { label: 'Distribution problem', pct: 42 },
+    expertAvatars: [
+      {i:'MZ',c:'#ff9500'},{i:'BC',c:'#0066cc'},{i:'TK',c:'#34c759'},{i:'EH',c:'#af52de'}
+    ],
+    aiMessage: 'This challenge is gaining momentum. The community is split on whether this is fundamentally a discovery problem or a distribution one. Help break the tie.',
+    aiQuestions: [
+      'Who is the person most frustrated by this right now?',
+      'What does "vanishing into the void" feel like — what\'s the emotional cost?',
+      'When did people first start wanting to do this publicly?'
+    ],
+    tension: {
+      question: 'Community is divided on root cause. Help decide.',
+      a: { label: 'Discovery', pct: 58 },
+      b: { label: 'Distribution', pct: 42 }
+    },
+    tree: {
+      label: '🎯 Why can\'t people share real-time thoughts publicly?',
+      type: 'root',
+      children: [
+        {
+          label: '📊 Evidence: 90% of blogs get fewer than 10 readers in first 48 hrs',
+          type: 'evidence', pts: '+18',
+          children: [
+            { label: '💡 Hypothesis: Async distribution can\'t serve real-time intent', type: 'hypothesis', pts: '+24',
+              children: [
+                { label: '⚠️ Assumption challenged: Email newsletters "solve" this', type: 'challenge', pts: '+31' },
+                { label: '💡 Solution: Hard 140-char cap forces clarity over volume', type: 'solution', pts: '+28' }
+              ]
+            }
+          ]
+        },
+        {
+          label: '🔍 Question: Is the problem the format, the audience, or the timing?',
+          type: 'question', pts: '+42',
+          children: [
+            { label: '🔄 Similar: SMS is real-time but private — can it go public?', type: 'hypothesis', pts: '+19' },
+            { label: '📊 Evidence: IRC & AIM showed demand for live public chatter', type: 'evidence', pts: '+22' }
+          ]
+        },
+        {
+          label: '⚠️ Assumption: People want to be heard by strangers, not just friends',
+          type: 'assumption', pts: '+31',
+          children: [
+            { label: '🎯 Outcome: Follower model rewards consistency over one-time posts', type: 'outcome', pts: '+15' }
+          ]
+        }
+      ]
+    },
+    contributions: [
+      { name: 'Erin H.', initials: 'EH', color: '#af52de', role: 'Question Master', type: '🔍 Question', typeBg: 'rgba(124,58,237,0.09)', typeColor: '#6d28d9', text: 'Has anyone mapped the gap between "intent to share" and "actual reach"? The problem might be that people don\'t know if anyone is listening — not that they can\'t publish.', pts: '+42 Insight Points' },
+      { name: 'Ben C.', initials: 'BC', color: '#0066cc', role: 'Root Cause Hunter', type: '⚠️ Challenge', typeBg: 'rgba(239,68,68,0.08)', typeColor: '#b91c1c', text: 'Challenging the assumption that "going viral" is the goal. Most people just want 5 people they respect to see it. The bar is way lower than we\'re designing for.', pts: '+31 Critical Thinking' },
+      { name: 'Mia K.', initials: 'MK', color: '#34c759', role: 'Evidence Detective', type: '📊 Evidence', typeBg: 'rgba(16,185,129,0.08)', typeColor: '#065f46', text: 'In our user interviews, 73% said they\'ve had a thought they wanted to share "in the moment" but didn\'t because there was nowhere that felt right. Email felt too formal. Text felt too private.', pts: '+18 Evidence Score' }
+    ],
+    leaders: [
+      { name: 'Erin H.', initials: 'EH', color: '#af52de', title: 'Question Master', pts: 847 },
+      { name: 'Ben C.', initials: 'BC', color: '#0066cc', title: 'Root Cause Hunter', pts: 631 },
+      { name: 'Mia K.', initials: 'MK', color: '#34c759', title: 'Evidence Detective', pts: 482 }
+    ],
+    health: { definition: 88, evidence: 65, agreement: 48, confidence: 72 }
+  },
+
+  {
+    id: 483,
+    status: 'live',
+    question: 'Why are university students disconnected from each other online despite already owning social media accounts?',
+    founder: 'Mark Zuckerberg',
+    initials: 'MZ',
+    color: '#ff9500',
+    progress: 54,
+    evidence: 12,
+    hypotheses: 6,
+    experts: 21,
+    confidence: 54,
+    tensionA: { label: 'Trust barrier', pct: 53 },
+    tensionB: { label: 'Identity barrier', pct: 47 },
+    expertAvatars: [
+      {i:'JD',c:'#5856d6'},{i:'EH',c:'#af52de'},{i:'RK',c:'#ff3b30'}
+    ],
+    aiMessage: 'The problem statement is strong. But the community needs more evidence before the confidence bar can rise. Can you share a real data point from student life?',
+    aiQuestions: [
+      'What does a university student actually do when they want to connect with a classmate?',
+      'What\'s the difference between "knowing someone exists" and "being connected"?',
+      'Is this a freshman problem, a transfer student problem, or everyone\'s problem?'
+    ],
+    tension: {
+      question: 'Which barrier is harder to break?',
+      a: { label: 'Trust (verified identity)', pct: 53 },
+      b: { label: 'Context (campus-specific)', pct: 47 }
+    },
+    tree: {
+      label: '🎯 Why are students disconnected despite owning social media?',
+      type: 'root',
+      children: [
+        {
+          label: '📊 Evidence: Students follow public profiles, not classmates',
+          type: 'evidence', pts: '+18',
+          children: [
+            { label: '⚠️ Assumption: Existing social networks are "general purpose"', type: 'assumption', pts: '+31',
+              children: [
+                { label: '💡 Hypothesis: Verification (edu email) removes anonymity fear', type: 'hypothesis', pts: '+24' }
+              ]
+            }
+          ]
+        },
+        {
+          label: '🔍 Question: Is the disconnect about finding people or trusting them?',
+          type: 'question', pts: '+42',
+          children: [
+            { label: '📊 Evidence: Dorm floor group chats get 10x more engagement than class FB groups', type: 'evidence', pts: '+22' }
+          ]
+        },
+        {
+          label: '💡 Solution: Verified .edu login as the identity layer',
+          type: 'solution', pts: '+28',
+          children: [
+            { label: '🎯 Outcome: Trust-by-default changes social dynamics immediately', type: 'outcome', pts: '+15' }
+          ]
+        }
+      ]
+    },
+    contributions: [
+      { name: 'Rachel K.', initials: 'RK', color: '#ff3b30', role: 'Implementation Guru', type: '💡 Idea', typeBg: 'rgba(0,102,204,0.07)', typeColor: '#1e3a5f', text: '.edu email verification is the unlock. It makes everyone a verified real person. Facebook is the first social network where you know the names of everyone you\'re connected to are real.', pts: '+28 Insight Points' },
+      { name: 'Erin H.', initials: 'EH', color: '#af52de', role: 'Question Master', type: '🔍 Question', typeBg: 'rgba(124,58,237,0.09)', typeColor: '#6d28d9', text: 'Is the problem that students can\'t find each other, or that when they do find each other there\'s no shared context to start a conversation? These need different solutions.', pts: '+42 Critical Thinking' }
+    ],
+    leaders: [
+      { name: 'Rachel K.', initials: 'RK', color: '#ff3b30', title: 'Implementation Guru', pts: 712 },
+      { name: 'Erin H.', initials: 'EH', color: '#af52de', title: 'Question Master', pts: 591 },
+      { name: 'James L.', initials: 'JL', color: '#0066cc', title: 'Root Cause Hunter', pts: 349 }
+    ],
+    health: { definition: 75, evidence: 48, agreement: 52, confidence: 54 }
+  },
+
+  {
+    id: 484,
+    status: 'live',
+    question: 'Why do travelers pay 3× for a hotel bed when millions of spare rooms sit empty the same night?',
+    founder: 'Brian Chesky',
+    initials: 'BC',
+    color: '#0066cc',
+    hot: true,
+    progress: 81,
+    evidence: 24,
+    hypotheses: 11,
+    experts: 47,
+    confidence: 81,
+    tensionA: { label: 'Supply problem', pct: 44 },
+    tensionB: { label: 'Trust problem', pct: 56 },
+    expertAvatars: [
+      {i:'JD',c:'#5856d6'},{i:'MZ',c:'#ff9500'},{i:'TK',c:'#34c759'},{i:'EH',c:'#af52de'},{i:'MK',c:'#ff3b30'}
+    ],
+    aiMessage: 'This challenge has the highest confidence score on the platform. The community has reached near-consensus on root cause. One critical question remains unanswered — can you help?',
+    aiQuestions: [
+      'What makes a host trust a stranger enough to give them a key?',
+      'What is the emotional moment that makes a traveler choose a spare room over a hotel?',
+      'Has anyone modeled what happens to hotel pricing when 5% of rooms shift to peer supply?'
+    ],
+    tension: {
+      question: 'The core blocker — which is harder to solve?',
+      a: { label: 'Supply (get hosts)', pct: 44 },
+      b: { label: 'Trust (stranger safety)', pct: 56 }
+    },
+    tree: {
+      label: '🎯 Why do travelers pay 3× when spare rooms sit empty?',
+      type: 'root',
+      children: [
+        {
+          label: '📊 Evidence: ~80M spare bedrooms in US alone on any given night',
+          type: 'evidence', pts: '+18',
+          children: [
+            { label: '⚠️ Assumption: "Spare" doesn\'t mean "available to strangers"', type: 'assumption', pts: '+31',
+              children: [
+                { label: '💡 Hypothesis: Mutual ratings eliminate stranger danger', type: 'hypothesis', pts: '+24',
+                  children: [
+                    { label: '💡 Solution: Two-way reviews — guests AND hosts rate each other', type: 'solution', pts: '+28' }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          label: '🔍 Question: Is price the motivator, or is it uniqueness of experience?',
+          type: 'question', pts: '+42',
+          children: [
+            { label: '📊 Evidence: 67% of early users cited "local feel" over price in surveys', type: 'evidence', pts: '+22' },
+            { label: '🔄 Similar: CouchSurfing works for trust — fails on reliability', type: 'hypothesis', pts: '+19' }
+          ]
+        },
+        {
+          label: '⚠️ Assumption: Insurance liability blocks most hosts from listing',
+          type: 'assumption', pts: '+31',
+          children: [
+            { label: '💡 Hypothesis: Host Guarantee program shifts perceived risk to platform', type: 'hypothesis', pts: '+24' },
+            { label: '🎯 Outcome: Trust infrastructure is the product, rooms are the inventory', type: 'outcome', pts: '+15' }
+          ]
+        }
+      ]
+    },
+    contributions: [
+      { name: 'Tom K.', initials: 'TK', color: '#34c759', role: 'Implementation Guru', type: '🎯 Impact', typeBg: 'rgba(16,185,129,0.08)', typeColor: '#065f46', text: 'The trust mechanism changes everything. We modeled it: if you solve bilateral trust through ratings, the supply problem solves itself. Hosts self-select in when they feel safe.', pts: '+38 Evidence Score' },
+      { name: 'Mia K.', initials: 'MK', color: '#ff3b30', role: 'Evidence Detective', type: '📊 Evidence', typeBg: 'rgba(16,185,129,0.08)', typeColor: '#065f46', text: 'Ran 12 interviews with people who had spare rooms. 11 of 12 said they\'d consider renting it if "the right system existed." The system they described = verified identity + damage protection.', pts: '+18 Evidence Score' },
+      { name: 'Erin H.', initials: 'EH', color: '#af52de', role: 'Question Master', type: '⚠️ Challenge', typeBg: 'rgba(239,68,68,0.08)', typeColor: '#b91c1c', text: 'Challenging the core framing: travelers don\'t actually want cheaper rooms — they want *better* rooms. Price is the secondary motivator. You\'re solving the wrong thing if you lead with cost.', pts: '+31 Critical Thinking' }
+    ],
+    leaders: [
+      { name: 'Tom K.', initials: 'TK', color: '#34c759', title: 'Implementation Guru', pts: 1203 },
+      { name: 'Mia K.', initials: 'MK', color: '#ff3b30', title: 'Evidence Detective', pts: 891 },
+      { name: 'Erin H.', initials: 'EH', color: '#af52de', title: 'Question Master', pts: 743 }
+    ],
+    health: { definition: 92, evidence: 85, agreement: 74, confidence: 81 }
+  },
+
+  {
+    id: 485,
+    status: 'live',
+    question: 'Why is it impossible to reliably summon a private car in under 5 minutes in a major city?',
+    founder: 'Travis Kalanick',
+    initials: 'TK',
+    color: '#34c759',
+    progress: 67,
+    evidence: 16,
+    hypotheses: 8,
+    experts: 29,
+    confidence: 67,
+    tensionA: { label: 'Supply problem', pct: 61 },
+    tensionB: { label: 'Coordination problem', pct: 39 },
+    expertAvatars: [
+      {i:'JD',c:'#5856d6'},{i:'BC',c:'#0066cc'},{i:'EH',c:'#af52de'}
+    ],
+    aiMessage: 'Strong early momentum. The 5-minute constraint is interesting — is that a driver expectation or a customer tolerance threshold? The investigation needs to go deeper here.',
+    aiQuestions: [
+      'Who has tried to solve this before, and why did they fail?',
+      'What is the driver\'s biggest fear when they consider doing this as a job?',
+      'Is 5 minutes a psychological threshold or an operational constraint?'
+    ],
+    tension: {
+      question: 'What\'s the real constraint?',
+      a: { label: 'Not enough drivers', pct: 61 },
+      b: { label: 'No coordination layer', pct: 39 }
+    },
+    tree: {
+      label: '🎯 Why can\'t you reliably summon a car in 5 minutes?',
+      type: 'root',
+      children: [
+        {
+          label: '📊 Evidence: Taxis average 20-min wait in SF; 40% of trips are no-shows',
+          type: 'evidence', pts: '+18',
+          children: [
+            { label: '⚠️ Assumption: Professional drivers are the only supply pool', type: 'assumption', pts: '+31',
+              children: [
+                { label: '💡 Hypothesis: GPS + smartphone unlocks a new driver category', type: 'hypothesis', pts: '+24' }
+              ]
+            }
+          ]
+        },
+        {
+          label: '🔍 Question: Is the bottleneck cars, drivers, or matching?',
+          type: 'question', pts: '+42',
+          children: [
+            { label: '📊 Evidence: Black car drivers have 60% idle time between rides', type: 'evidence', pts: '+22' },
+            { label: '💡 Solution: Dynamic pricing solves supply at peak demand automatically', type: 'solution', pts: '+28' }
+          ]
+        },
+        {
+          label: '⚠️ Assumption: Licensing requirements can\'t be circumvented',
+          type: 'assumption', pts: '+31',
+          children: [
+            { label: '🎯 Outcome: Regulatory arbitrage as temporary advantage', type: 'outcome', pts: '+15' }
+          ]
+        }
+      ]
+    },
+    contributions: [
+      { name: 'Dana P.', initials: 'DP', color: '#5856d6', role: 'Root Cause Hunter', type: '⚠️ Challenge', typeBg: 'rgba(239,68,68,0.08)', typeColor: '#b91c1c', text: 'The 5-minute bar is actually a proxy for trust. People don\'t want to wait — but more importantly, they want to *know* when it\'s coming. Certainty of ETA matters more than the ETA itself.', pts: '+31 Critical Thinking' },
+      { name: 'Sam R.', initials: 'SR', color: '#ff9500', role: 'Evidence Detective', type: '📊 Evidence', typeBg: 'rgba(16,185,129,0.08)', typeColor: '#065f46', text: 'Interviewed 40 SF residents: 82% said they\'d pay a premium for "guaranteed pickup in 5 min" vs "average 8 min." Willingness to pay for certainty is enormous.', pts: '+18 Evidence Score' }
+    ],
+    leaders: [
+      { name: 'Dana P.', initials: 'DP', color: '#5856d6', title: 'Root Cause Hunter', pts: 634 },
+      { name: 'Sam R.', initials: 'SR', color: '#ff9500', title: 'Evidence Detective', pts: 501 },
+      { name: 'Flo J.', initials: 'FJ', color: '#34c759', title: 'Implementation Guru', pts: 388 }
+    ],
+    health: { definition: 82, evidence: 62, agreement: 55, confidence: 67 }
+  },
+
+  {
+    id: 486,
+    status: 'brewing',
+    question: 'Why do people waste 30% of their groceries when they already have the ingredients to cook a week of meals?',
+    founder: 'Shyam Thota',
+    initials: 'ST',
+    color: '#af52de',
+    progress: 38,
+    evidence: 7,
+    hypotheses: 4,
+    experts: 12,
+    confidence: 38,
+    tensionA: { label: 'Planning failure', pct: 64 },
+    tensionB: { label: 'Inspiration failure', pct: 36 },
+    expertAvatars: [
+      {i:'MZ',c:'#ff9500'},{i:'EH',c:'#af52de'},{i:'MK',c:'#ff3b30'}
+    ],
+    aiMessage: 'This challenge is still forming. The problem statement has good emotional clarity, but the community needs more evidence before hypotheses can be trusted. Your mission: find ONE data point.',
+    aiQuestions: [
+      'What specifically goes wrong at the moment someone opens their fridge?',
+      'Is this a Monday problem (weekend shop, not used) or a Thursday problem (nothing left)?',
+      'Who suffers this most — singles, families, people who work late?'
+    ],
+    tension: {
+      question: 'Which is the real failure point?',
+      a: { label: 'Planning (no meal plan)', pct: 64 },
+      b: { label: 'Inspiration (don\'t know what to cook)', pct: 36 }
+    },
+    tree: {
+      label: '🎯 Why do people waste 30% of groceries they bought?',
+      type: 'root',
+      children: [
+        {
+          label: '📊 Evidence: Avg household wastes £700/yr of food (WRAP 2022)',
+          type: 'evidence', pts: '+18',
+          children: [
+            { label: '🔍 Question: Is it forgotten food, or food bought with no plan?', type: 'question', pts: '+42' }
+          ]
+        },
+        {
+          label: '⚠️ Assumption: People know what\'s in their fridge',
+          type: 'assumption', pts: '+31',
+          children: [
+            { label: '💡 Hypothesis: Fridge blindness (can\'t see what\'s at the back) is root cause', type: 'hypothesis', pts: '+24',
+              children: [
+                { label: '💡 Solution: Vision AI → meal plan removes need to mentally inventory', type: 'solution', pts: '+28' }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    contributions: [
+      { name: 'Priya N.', initials: 'PN', color: '#af52de', role: 'New Member', type: '🔍 Question', typeBg: 'rgba(124,58,237,0.09)', typeColor: '#6d28d9', text: 'I want to understand who the primary sufferer is. Is it people who cook but forget ingredients, or people who buy healthy food with good intentions but then order takeaway?', pts: '+22 Insight Points' },
+      { name: 'Shyam T.', initials: 'ST', color: '#0066cc', role: 'Founder', type: '📊 Evidence', typeBg: 'rgba(16,185,129,0.08)', typeColor: '#065f46', text: 'Personal experience: I throw out roughly £40 of food a month despite genuinely trying not to. The moment I fail is Thursday evening — I have food but no idea what to make with it.', pts: '+15 Evidence Score' }
+    ],
+    leaders: [
+      { name: 'Priya N.', initials: 'PN', color: '#af52de', title: 'Question Master', pts: 312 },
+      { name: 'Shyam T.', initials: 'ST', color: '#0066cc', title: 'Founder', pts: 248 },
+      { name: 'Alex W.', initials: 'AW', color: '#ff9500', title: 'Evidence Detective', pts: 191 }
+    ],
+    health: { definition: 60, evidence: 28, agreement: 35, confidence: 38 }
+  }
+];
+
+// ───────────────────────────────────────────
+// RENDER FEED
+// ───────────────────────────────────────────
+function getProgressColor(pct) {
+  if (pct >= 75) return '#10b981';
+  if (pct >= 50) return '#0066cc';
+  if (pct >= 30) return '#f59e0b';
+  return '#ef4444';
+}
+
+function renderFeed() {
+  const grid = document.getElementById('challenge-grid');
+  grid.innerHTML = challenges.map((c, i) => `
+    <div class="challenge-card${c.hot ? ' hot' : ''}" onclick="openDetail(${i})">
+      <div class="card-eyebrow">
+        <span class="challenge-num">Challenge #${c.id}</span>
+        <span class="status-badge status-${c.status}">
+          ${c.status === 'live' ? '🔴' : c.status === 'brewing' ? '🟡' : '🟢'} ${c.status}
+        </span>
+      </div>
+
+      <div class="card-question">${c.question}</div>
+
+      <div class="progress-row">
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${c.progress}%;background:${getProgressColor(c.progress)}"></div>
+        </div>
+        <span class="progress-pct">${c.progress}%</span>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat"><div class="stat-val">${c.evidence}</div><div class="stat-lbl">Evidence</div></div>
+        <div class="stat"><div class="stat-val">${c.hypotheses}</div><div class="stat-lbl">Hypotheses</div></div>
+        <div class="stat"><div class="stat-val">${c.experts}</div><div class="stat-lbl">Experts</div></div>
+        <div class="stat"><div class="stat-val">${c.confidence}%</div><div class="stat-lbl">Confidence</div></div>
+      </div>
+
+      <div class="tension-strip">
+        <div>⚡ Community divided on this one</div>
+        <div class="tension-vs">
+          <span class="tension-a">${c.tensionA.pct}% ${c.tensionA.label}</span>
+          <div class="tension-divider"></div>
+          <span class="tension-mid">vs</span>
+          <div class="tension-divider"></div>
+          <span class="tension-b">${c.tensionB.pct}% ${c.tensionB.label}</span>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div style="display:flex;align-items:center;gap:0">
+          <div class="experts-row">
+            ${c.expertAvatars.map(a => `<div class="expert-avatar" style="background:${a.c}">${a.i}</div>`).join('')}
+          </div>
+          <span class="expert-count">+${c.experts - c.expertAvatars.length} thinking</span>
+        </div>
+        <span class="view-btn">Investigate →</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ───────────────────────────────────────────
+// RENDER DETAIL
+// ───────────────────────────────────────────
+let currentChallenge = null;
+
+function openDetail(i) {
+  currentChallenge = challenges[i];
+  const c = currentChallenge;
+
+  document.getElementById('view-feed').style.display = 'none';
+  document.getElementById('view-detail').style.display = 'block';
+  window.scrollTo(0, 0);
+
+  renderDetailHeader(c);
+  renderAiGuide(c);
+  renderTree(c.tree);
+  renderPalette();
+  renderTension(c);
+  renderLeaders(c);
+  renderReactions();
+  renderContribs(c);
+}
+
+function showFeed() {
+  document.getElementById('view-feed').style.display = 'block';
+  document.getElementById('view-detail').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
+function renderDetailHeader(c) {
+  const el = document.getElementById('detail-header');
+  el.innerHTML = `
+    <div class="detail-eyebrow">
+      <span class="challenge-num">Challenge #${c.id}</span>
+      <span class="status-badge status-${c.status}">
+        ${c.status === 'live' ? '🔴' : '🟡'} ${c.status}
+      </span>
+      <span style="font-size:12px;color:var(--muted);font-weight:600;margin-left:auto">Posted by ${c.founder}</span>
+    </div>
+    <div class="detail-question">${c.question}</div>
+
+    <div class="health-grid">
+      ${[
+        ['Problem Definition', c.health.definition, '#0066cc'],
+        ['Evidence Collected', c.health.evidence, '#10b981'],
+        ['Community Agreement', c.health.agreement, '#f59e0b'],
+        ['Solution Confidence', c.health.confidence, c.health.confidence >= 70 ? '#10b981' : '#0066cc']
+      ].map(([lbl, pct, col]) => `
+        <div class="health-item">
+          <label>${lbl} <strong style="color:${col}">${pct}%</strong></label>
+          <div class="health-track"><div class="health-fill" style="width:${pct}%;background:${col}"></div></div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="detail-stats">
+      <div class="detail-stat"><div class="detail-stat-val" style="color:#10b981">${c.evidence}</div><div class="detail-stat-lbl">Evidence pieces</div></div>
+      <div class="detail-stat"><div class="detail-stat-val" style="color:#0066cc">${c.hypotheses}</div><div class="detail-stat-lbl">Hypotheses</div></div>
+      <div class="detail-stat"><div class="detail-stat-val" style="color:#f59e0b">${c.experts}</div><div class="detail-stat-lbl">Experts joined</div></div>
+      <div class="detail-stat"><div class="detail-stat-val">${c.confidence}%</div><div class="detail-stat-lbl">Confidence level</div></div>
+    </div>
+  `;
+}
+
+function renderAiGuide(c) {
+  const el = document.getElementById('ai-guide');
+  el.innerHTML = `
+    <div class="ai-guide-top">
+      <div class="ai-icon">✦</div>
+      <div><div class="ai-label">AI Facilitator</div><div style="font-size:13px;font-weight:700;opacity:0.9">Guiding collective thinking</div></div>
+    </div>
+    <div class="ai-message">${c.aiMessage}</div>
+    <div class="ai-questions">
+      ${c.aiQuestions.map(q => `<div class="ai-q" onclick="contributeAction('🔍 Ask a Question', q)">💬 ${q}<span class="ai-q-arrow">→</span></div>`).join('')}
+    </div>
+  `;
+}
+
+// ── TREE ───────────────────────────────────
+function renderNode(node, depth = 0) {
+  const typeMap = {
+    root: 'node-root',
+    evidence: 'node-evidence',
+    hypothesis: 'node-hypothesis',
+    assumption: 'node-assumption',
+    question: 'node-question',
+    challenge: 'node-challenge',
+    solution: 'node-solution',
+    outcome: 'node-outcome'
+  };
+  const cls = typeMap[node.type] || 'node-outcome';
+  const hasChildren = node.children && node.children.length > 0;
+
+  return `
+    <div class="tree-node">
+      <div class="node-box ${cls}" onclick="handleNodeClick('${node.type}', this)">
+        <span class="node-text">${node.label}</span>
+        ${node.pts ? `<span class="node-pts">${node.pts}</span>` : ''}
+      </div>
+      ${hasChildren ? `<div class="tree-children">${node.children.map(ch => renderNode(ch, depth+1)).join('')}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderTree(root) {
+  document.getElementById('tree-wrap').innerHTML = renderNode(root);
+}
+
+function handleNodeClick(type, el) {
+  el.style.outline = '2.5px solid #0066cc';
+  el.style.outlineOffset = '2px';
+  setTimeout(() => { el.style.outline = ''; el.style.outlineOffset = ''; }, 600);
+  const typeToAction = {
+    evidence: '📊 Share Evidence',
+    hypothesis: '💡 Suggest an Idea',
+    assumption: '⚠️ Challenge an Assumption',
+    question: '🔍 Ask a Question',
+    solution: '🧪 Suggest an Experiment',
+    outcome: '🎯 Estimate Impact'
+  };
+  const action = typeToAction[type] || '🔍 Ask a Question';
+  showToast(`Contribution linked to this node → ${action}`, '+25 pts');
+}
+
+// ── PALETTE ────────────────────────────────
+function renderPalette() {
+  const el = document.getElementById('palette-card');
+  const actions = [
+    { icon: '🔍', label: 'Ask a deeper question', pts: '+42 Insight Points', bg: 'rgba(124,58,237,0.08)' },
+    { icon: '💡', label: 'Propose a solution', pts: '+28 Thinking Points', bg: 'rgba(0,102,204,0.07)' },
+    { icon: '⚠️', label: 'Challenge an assumption', pts: '+31 Critical Thinking', bg: 'rgba(245,158,11,0.08)' },
+    { icon: '📊', label: 'Add evidence', pts: '+18 Evidence Score', bg: 'rgba(16,185,129,0.08)' },
+    { icon: '🔄', label: 'Link a similar experience', pts: '+19 Context Points', bg: 'rgba(239,68,68,0.07)' },
+    { icon: '🧪', label: 'Suggest an experiment', pts: '+24 Thinking Points', bg: 'rgba(0,102,204,0.07)' },
+    { icon: '🎯', label: 'Estimate impact', pts: '+15 Signal Points', bg: 'rgba(16,185,129,0.08)' }
+  ];
+  el.innerHTML = `
+    <div class="palette-title">What's your most valuable move?</div>
+    <div class="palette-sub">Every contribution advances the investigation.</div>
+    <div class="palette-grid">
+      ${actions.map(a => `
+        <button class="palette-btn" onclick="contributeAction('${a.label}')">
+          <div class="palette-icon" style="background:${a.bg}">${a.icon}</div>
+          <div class="palette-btn-text">
+            <span class="palette-btn-label">${a.label}</span>
+            <span class="palette-btn-pts">${a.pts}</span>
+          </div>
+          <span class="palette-btn-arrow">→</span>
+        </button>
+      `).join('')}
+    </div>
+  `;
+}
+
+function contributeAction(action) {
+  const ptsMap = {
+    'Ask a deeper question': '+42 Insight Points',
+    'Propose a solution': '+28 Thinking Points',
+    'Challenge an assumption': '+31 Critical Thinking',
+    'Add evidence': '+18 Evidence Score',
+    'Link a similar experience': '+19 Context Points',
+    'Suggest an experiment': '+24 Thinking Points',
+    'Estimate impact': '+15 Signal Points'
+  };
+  const pts = ptsMap[action] || '+25 Points';
+  showToast(`✔ Your ${action.toLowerCase()} was added`, pts);
+}
+
+// ── TENSION ────────────────────────────────
+function renderTension(c) {
+  const el = document.getElementById('tension-card');
+  el.innerHTML = `
+    <div class="tension-title">⚡ Community Divided</div>
+    <div class="tension-question">${c.tension.question}</div>
+    <div class="tension-bars">
+      <div class="tension-bar-row">
+        <span class="tension-bar-label" style="color:var(--accent)">${c.tension.a.label}</span>
+        <div class="tension-bar-track"><div class="tension-bar-fill-a" style="width:${c.tension.a.pct}%"></div></div>
+        <span class="tension-bar-pct" style="color:var(--accent)">${c.tension.a.pct}%</span>
+      </div>
+      <div class="tension-bar-row">
+        <span class="tension-bar-label" style="color:var(--red)">${c.tension.b.label}</span>
+        <div class="tension-bar-track"><div class="tension-bar-fill-b" style="width:${c.tension.b.pct}%"></div></div>
+        <span class="tension-bar-pct" style="color:var(--red)">${c.tension.b.pct}%</span>
+      </div>
+    </div>
+    <div class="tension-cta" onclick="contributeAction('Challenge an assumption')">Help decide →</div>
+  `;
+}
+
+// ── LEADERS ────────────────────────────────
+function renderLeaders(c) {
+  const el = document.getElementById('leaders-card');
+  el.innerHTML = `
+    <div class="leaders-title">🏆 Top Thinkers</div>
+    ${c.leaders.map(l => `
+      <div class="leader-row">
+        <div class="leader-avatar" style="background:${l.color}">${l.initials}</div>
+        <div class="leader-info">
+          <div class="leader-name">${l.name}</div>
+          <div class="leader-title">${l.title}</div>
+        </div>
+        <div class="leader-pts">
+          <div class="leader-pts-val">${l.pts}</div>
+          <span class="leader-pts-lbl">points</span>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ── REACTIONS ──────────────────────────────
+function renderReactions() {
+  const el = document.getElementById('reactions-card');
+  el.innerHTML = `
+    <div class="reactions-title">Business Reactions</div>
+    ${[
+      ['❤️', 'Useful — this shaped our understanding', 8],
+      ['🧠', 'Changed our thinking entirely', 4],
+      ['🚀', 'We\'re already implementing this', 2],
+      ['❌', 'Doesn\'t apply to our context', 1]
+    ].map(([icon, text, count]) => `
+      <div class="reaction-row" onclick="showToast('Reaction recorded', '✔')">
+        <span class="reaction-icon">${icon}</span>
+        <span class="reaction-text">${text}</span>
+        <span class="reaction-count">${count}</span>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ── CONTRIBUTIONS ──────────────────────────
+function renderContribs(c) {
+  const el = document.getElementById('contrib-feed');
+  el.innerHTML = `
+    <div style="font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;padding:8px 0 4px">Recent contributions</div>
+    ${c.contributions.map(ct => `
+      <div class="contrib-item">
+        <div class="contrib-header">
+          <div class="contrib-avatar" style="background:${ct.color}">${ct.initials}</div>
+          <div class="contrib-meta">
+            <div class="contrib-name">${ct.name}</div>
+            <div class="contrib-role">${ct.role}</div>
+          </div>
+          <span class="contrib-type-badge" style="background:${ct.typeBg};color:${ct.typeColor}">${ct.type}</span>
+        </div>
+        <div class="contrib-body">${ct.text}</div>
+        <div class="contrib-footer">
+          <span class="contrib-pts">✔ ${ct.pts}</span>
+          <div class="contrib-reactions">
+            <button class="contrib-react-btn" onclick="showToast('Marked useful', '✔')">❤️ Useful</button>
+            <button class="contrib-react-btn" onclick="showToast('Marked as changed thinking', '🧠')">🧠 Changed thinking</button>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+// ───────────────────────────────────────────
+// TOAST
+// ───────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, pts) {
+  const el = document.getElementById('toast');
+  el.innerHTML = `${msg} <span class="toast-pts">${pts}</span>`;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+// ───────────────────────────────────────────
+// INIT
+// ───────────────────────────────────────────
+renderFeed();
+</script>
+</body>
+</html>

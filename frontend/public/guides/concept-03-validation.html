@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Validate an Idea</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; padding: 40px 20px; color: #111827; }
+  .page { width: 900px; margin: 0 auto; background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 40px rgba(0,0,0,0.08); }
+
+  .header {
+    background: linear-gradient(135deg, #065f46 0%, #059669 60%, #34d399 100%);
+    padding: 44px 52px 40px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; right:-60px; top:-60px; width:280px; height:280px; border-radius:50%; background:rgba(255,255,255,0.06); }
+  .tag { display:inline-block; background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; padding:5px 12px; border-radius:20px; margin-bottom:14px; }
+  .header h1 { font-size:36px; font-weight:900; letter-spacing:-1px; line-height:1.1; margin-bottom:10px; }
+  .header p { font-size:15px; opacity:0.78; line-height:1.6; max-width:460px; }
+  .header-badge { position:absolute; right:52px; top:36px; font-size:80px; font-weight:900; color:rgba(255,255,255,0.07); line-height:1; }
+
+  .body { padding: 36px 52px 40px; }
+  .section-label { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#4b5563; margin-bottom:18px; }
+
+  /* Main flowchart */
+  .flow { display:flex; flex-direction:column; gap:0; }
+
+  .flow-step {
+    display: flex;
+    gap: 0;
+    position: relative;
+  }
+
+  /* Vertical line */
+  .flow-step:not(:last-child) .step-line {
+    position: absolute;
+    left: 28px; top: 56px; bottom: -10px;
+    width: 2px;
+    background: linear-gradient(to bottom, #059669, #e5e7eb);
+  }
+
+  .step-icon-col { width: 58px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
+  .step-circle {
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+    position: relative; z-index: 1;
+  }
+
+  .step-body { flex: 1; padding: 6px 0 28px 20px; }
+  .step-num { font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:3px; }
+  .step-title { font-size:16px; font-weight:900; margin-bottom:5px; }
+  .step-desc { font-size:13px; color:#374151; line-height:1.6; margin-bottom:10px; }
+
+  /* Sub-cards inside steps */
+  .sub-cards { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+  .sub-card { background:#f8fafc; border:1.5px solid #e5e7eb; border-radius:10px; padding:12px 14px; }
+  .sub-card .sc-label { font-size:11px; font-weight:800; color:#374151; margin-bottom:3px; }
+  .sub-card .sc-val { font-size:11px; color:#374151; line-height:1.45; }
+
+  /* Decision diamond */
+  .decision-wrap { display:flex; justify-content:center; padding:8px 0 20px; position:relative; }
+  .decision-wrap::before { content:''; position:absolute; left:28px; top:0; bottom:0; width:2px; background:linear-gradient(#e5e7eb, #e5e7eb); }
+  .diamond {
+    width: 180px; padding: 16px 20px;
+    background: #fffbeb;
+    border: 2px solid #fde68a;
+    border-radius: 16px;
+    text-align: center;
+    position: relative; z-index: 1;
+  }
+  .diamond-q { font-size:13px; font-weight:800; color:#92400e; }
+  .diamond-sub { font-size:11px; color:#b45309; margin-top:3px; }
+
+  /* Decision branches */
+  .branches { display:flex; gap:16px; margin-bottom:24px; padding-left:0; }
+  .branch {
+    flex: 1; border-radius: 14px; padding: 16px; position: relative;
+  }
+  .branch-label { font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+  .branch-title { font-size:14px; font-weight:800; margin-bottom:5px; }
+  .branch-items { display:flex; flex-direction:column; gap:4px; }
+  .branch-item { display:flex; align-items:flex-start; gap:6px; font-size:12px; font-weight:600; line-height:1.4; }
+
+  /* Interview template */
+  .interview-box { background:#f0fdf4; border:1.5px solid #86efac; border-radius:14px; padding:20px; margin:8px 0 24px; }
+  .interview-box h4 { font-size:13px; font-weight:800; color:#166534; margin-bottom:14px; }
+  .q-list { display:flex; flex-direction:column; gap:8px; }
+  .q-item { display:flex; gap:10px; align-items:flex-start; }
+  .q-num { width:22px; height:22px; border-radius:50%; background:#dcfce7; color:#15803d; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+  .q-text { font-size:12px; color:#14532d; font-weight:600; line-height:1.5; }
+
+  /* Signal vs Noise */
+  .signal-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px; }
+  .signal-card { border-radius:14px; padding:18px; }
+  .signal-card h4 { font-size:13px; font-weight:800; margin-bottom:10px; }
+  .signal-item { display:flex; align-items:flex-start; gap:7px; font-size:12px; font-weight:600; margin-bottom:6px; line-height:1.4; }
+
+  /* Insight */
+  .insight { background:linear-gradient(135deg,#ecfdf5,#f0fdf4); border:1.5px solid #bbf7d0; border-radius:16px; padding:20px 24px; display:flex; gap:14px; }
+  .insight .icon { font-size:26px; flex-shrink:0; }
+  .insight h4 { font-size:14px; font-weight:800; color:#065f46; margin-bottom:4px; }
+  .insight p { font-size:13px; color:#14532d; line-height:1.6; }
+
+  .footer { background:#f8fafc; border-top:1px solid #f3f4f6; padding:18px 52px; display:flex; align-items:center; justify-content:space-between; }
+  .footer-brand { font-size:13px; font-weight:900; color:#6366f1; }
+  .footer-label { font-size:11px; color:#4b5563; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="tag">Founder Process</div>
+    <div class="header-badge">✅</div>
+    <h1>How to Validate<br>an Idea</h1>
+    <p>Stop guessing. Start learning. Here's the exact process to find out if people will actually pay for what you're building — before you build it.</p>
+  </div>
+
+  <div class="body">
+
+    <div class="section-label">The 5-step validation flowchart</div>
+
+    <div class="flow">
+
+      <!-- Step 1 -->
+      <div class="flow-step">
+        <div class="step-line"></div>
+        <div class="step-icon-col">
+          <div class="step-circle" style="background:#fdf4ff;">🎯</div>
+        </div>
+        <div class="step-body">
+          <div class="step-num" style="color:#a21caf;">Step 1</div>
+          <div class="step-title" style="color:#86198f;">Get crystal clear on the problem</div>
+          <div class="step-desc">Before talking to anyone, you must be able to describe the problem in exact, specific terms. Vague problems get vague validation.</div>
+          <div class="sub-cards">
+            <div class="sub-card">
+              <div class="sc-label">Write this down first:</div>
+              <div class="sc-val">"The problem is [X]. It happens when [Y]. Right now people deal with it by [Z]."</div>
+            </div>
+            <div class="sub-card">
+              <div class="sc-label">Warning sign:</div>
+              <div class="sc-val">If your problem statement is more than 2 sentences, it's not specific enough yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="flow-step">
+        <div class="step-line"></div>
+        <div class="step-icon-col">
+          <div class="step-circle" style="background:#eff6ff;">🗣</div>
+        </div>
+        <div class="step-body">
+          <div class="step-num" style="color:#1d4ed8;">Step 2</div>
+          <div class="step-title" style="color:#1e3a8a;">Find 5–10 people who have the problem</div>
+          <div class="step-desc">Not your mum. Not your friends. Find strangers who match your ideal customer profile — they'll give you honest, unbiased feedback.</div>
+          <div class="sub-cards">
+            <div class="sub-card">
+              <div class="sc-label">Where to find them:</div>
+              <div class="sc-val">Reddit communities · LinkedIn DMs · Facebook groups · Industry forums · Slack communities · Meetups</div>
+            </div>
+            <div class="sub-card">
+              <div class="sc-label">Your message:</div>
+              <div class="sc-val">"Hi, I'm researching [problem]. Would you spare 15 mins for a chat? No pitch — I just want to learn."</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Interview -->
+      <div class="flow-step">
+        <div class="step-line"></div>
+        <div class="step-icon-col">
+          <div class="step-circle" style="background:#f0fdf4;">📋</div>
+        </div>
+        <div class="step-body">
+          <div class="step-num" style="color:#15803d;">Step 3</div>
+          <div class="step-title" style="color:#166534;">Run the interview — ask these 5 questions</div>
+          <div class="step-desc">Keep it conversational. Record it (with permission). Never mention your solution until the end.</div>
+          <div class="interview-box">
+            <h4>🎙 The 5 core interview questions</h4>
+            <div class="q-list">
+              <div class="q-item"><div class="q-num">1</div><div class="q-text">"Tell me about the last time you experienced [problem]. What happened?"</div></div>
+              <div class="q-item"><div class="q-num">2</div><div class="q-text">"How do you deal with it today? What tools or workarounds do you use?"</div></div>
+              <div class="q-item"><div class="q-num">3</div><div class="q-text">"What's the most frustrating part of your current solution?"</div></div>
+              <div class="q-item"><div class="q-num">4</div><div class="q-text">"If you could wave a magic wand and fix this, what would the perfect solution look like?"</div></div>
+              <div class="q-item"><div class="q-num">5</div><div class="q-text">"How much does this problem cost you — in time, money, or stress — per month?"</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Interpret -->
+      <div class="flow-step">
+        <div class="step-line"></div>
+        <div class="step-icon-col">
+          <div class="step-circle" style="background:#fff7ed;">🔍</div>
+        </div>
+        <div class="step-body">
+          <div class="step-num" style="color:#c2410c;">Step 4</div>
+          <div class="step-title" style="color:#9a3412;">Spot the signal — not the noise</div>
+          <div class="step-desc">Not everything people say is validation. Here's how to tell the difference between real signal and polite noise.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Signal vs Noise grid -->
+    <div class="signal-grid">
+      <div class="signal-card" style="background:#f0fdf4;border:1.5px solid #86efac;">
+        <h4 style="color:#15803d;">✅ Real signal — green flags</h4>
+        <div class="signal-item" style="color:#166534;"><span>🟢</span> "I've already tried to solve this myself"</div>
+        <div class="signal-item" style="color:#166534;"><span>🟢</span> "I'd switch from [current tool] for this"</div>
+        <div class="signal-item" style="color:#166534;"><span>🟢</span> "I'd pay £X/month for this without hesitation"</div>
+        <div class="signal-item" style="color:#166534;"><span>🟢</span> "Can I be a beta user? Here's my email."</div>
+        <div class="signal-item" style="color:#166534;"><span>🟢</span> "This happens to me at least once a week"</div>
+      </div>
+      <div class="signal-card" style="background:#fef2f2;border:1.5px solid #fca5a5;">
+        <h4 style="color:#dc2626;">🚩 Noise — red flags</h4>
+        <div class="signal-item" style="color:#991b1b;"><span>🔴</span> "Yeah that sounds like a good idea"</div>
+        <div class="signal-item" style="color:#991b1b;"><span>🔴</span> "I might use something like that someday"</div>
+        <div class="signal-item" style="color:#991b1b;"><span>🔴</span> "My friend would definitely want this"</div>
+        <div class="signal-item" style="color:#991b1b;"><span>🔴</span> "Sure, I'd probably sign up if it was free"</div>
+        <div class="signal-item" style="color:#991b1b;"><span>🔴</span> Any answer that avoids committing to anything</div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="flow">
+      <div class="flow-step">
+        <div class="step-icon-col">
+          <div class="step-circle" style="background:#eef2ff;">🚦</div>
+        </div>
+        <div class="step-body">
+          <div class="step-num" style="color:#6366f1;">Step 5</div>
+          <div class="step-title" style="color:#4338ca;">Make the go / pivot / stop decision</div>
+          <div class="step-desc">After your 5–10 interviews, you should have enough data to make a clear call.</div>
+          <div class="branches">
+            <div class="branch" style="background:#f0fdf4;border:1.5px solid #86efac;">
+              <div class="branch-label" style="color:#15803d;">🟢 Go — build it</div>
+              <div class="branch-title" style="color:#166534;">You found the signal</div>
+              <div class="branch-items">
+                <div class="branch-item" style="color:#14532d;"><span>✓</span> 3+ people confirmed the pain</div>
+                <div class="branch-item" style="color:#14532d;"><span>✓</span> At least 2 said they'd pay</div>
+                <div class="branch-item" style="color:#14532d;"><span>✓</span> You understand the job-to-be-done</div>
+              </div>
+            </div>
+            <div class="branch" style="background:#fffbeb;border:1.5px solid #fde68a;">
+              <div class="branch-label" style="color:#d97706;">🟡 Pivot — adjust</div>
+              <div class="branch-title" style="color:#92400e;">Mixed signals</div>
+              <div class="branch-items">
+                <div class="branch-item" style="color:#78350f;"><span>↺</span> Reframe the problem statement</div>
+                <div class="branch-item" style="color:#78350f;"><span>↺</span> Target a different customer segment</div>
+                <div class="branch-item" style="color:#78350f;"><span>↺</span> Test a different solution approach</div>
+              </div>
+            </div>
+            <div class="branch" style="background:#fef2f2;border:1.5px solid #fca5a5;">
+              <div class="branch-label" style="color:#dc2626;">🔴 Stop — move on</div>
+              <div class="branch-title" style="color:#991b1b;">No real signal</div>
+              <div class="branch-items">
+                <div class="branch-item" style="color:#7f1d1d;"><span>✗</span> Nobody actually has the problem</div>
+                <div class="branch-item" style="color:#7f1d1d;"><span>✗</span> Existing solutions work fine</div>
+                <div class="branch-item" style="color:#7f1d1d;"><span>✗</span> No one would pay even a small amount</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <div class="icon">⚡</div>
+      <div>
+        <h4>The validation mantra: "Fall in love with the problem, not your solution"</h4>
+        <p>Most founders do validation wrong — they pitch their idea and ask "do you like it?" That's not validation. Real validation is understanding the problem so deeply that the solution becomes obvious. If you talk to 10 people and you still love your original idea, you probably weren't listening hard enough.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span class="footer-brand">MVP Club</span>
+    <span style="font-size:12px;color:#4b5563;font-style:italic;">From idea to launched — one step at a time.</span>
+    <span class="footer-label">FOUNDER PROCESS · VALIDATION</span>
+  </div>
+
+</div>
+</body>
+</html>

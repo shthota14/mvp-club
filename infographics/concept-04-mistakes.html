@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Common Founder Mistakes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; padding: 40px 20px; color: #111827; }
+  .page { width: 900px; margin: 0 auto; background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 40px rgba(0,0,0,0.08); }
+
+  .header {
+    background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 60%, #f87171 100%);
+    padding: 44px 52px 40px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; right:-60px; top:-60px; width:280px; height:280px; border-radius:50%; background:rgba(255,255,255,0.06); }
+  .tag { display:inline-block; background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; padding:5px 12px; border-radius:20px; margin-bottom:14px; }
+  .header h1 { font-size:36px; font-weight:900; letter-spacing:-1px; line-height:1.1; margin-bottom:10px; }
+  .header p { font-size:15px; opacity:0.78; line-height:1.6; max-width:480px; }
+  .header-badge { position:absolute; right:52px; top:36px; font-size:80px; font-weight:900; color:rgba(255,255,255,0.07); line-height:1; }
+
+  .body { padding: 36px 52px 40px; }
+  .section-label { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#9ca3af; margin-bottom:20px; }
+
+  .mistakes-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:28px; }
+
+  .mistake-card {
+    border-radius:16px;
+    padding:20px;
+    border: 1.5px solid;
+    position:relative;
+    overflow:hidden;
+  }
+  .mistake-card::before {
+    content: attr(data-num);
+    position:absolute; bottom:-10px; right:10px;
+    font-size:64px; font-weight:900; opacity:0.06; line-height:1;
+  }
+
+  .mistake-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .mistake-badge { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  .mistake-num { font-size:10px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
+  .mistake-title { font-size:15px; font-weight:900; margin-bottom:6px; line-height:1.25; }
+  .mistake-desc { font-size:12px; line-height:1.6; margin-bottom:10px; }
+
+  .mistake-fix {
+    display:flex; align-items:flex-start; gap:7px;
+    background:rgba(255,255,255,0.6); border-radius:9px; padding:9px 11px;
+    font-size:12px; font-weight:700; line-height:1.4;
+  }
+  .fix-label { font-size:10px; font-weight:800; letter-spacing:0.5px; text-transform:uppercase; flex-shrink:0; }
+
+  /* Stats row */
+  .stats-row { display:flex; gap:12px; margin-bottom:28px; }
+  .stat-card { flex:1; background:#f8fafc; border:1.5px solid #e5e7eb; border-radius:14px; padding:16px; text-align:center; }
+  .stat-num { font-size:28px; font-weight:900; color:#dc2626; line-height:1; margin-bottom:4px; }
+  .stat-label { font-size:11px; color:#6b7280; font-weight:600; line-height:1.4; }
+
+  /* The antidote */
+  .antidote { background:linear-gradient(135deg,#f0fdf4,#ecfdf5); border:1.5px solid #86efac; border-radius:16px; padding:22px 24px; margin-bottom:0; }
+  .antidote h4 { font-size:14px; font-weight:900; color:#065f46; margin-bottom:14px; }
+  .antidote-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .antidote-item { background:white; border-radius:10px; padding:12px; border:1px solid #d1fae5; }
+  .antidote-item .ai-icon { font-size:20px; margin-bottom:5px; }
+  .antidote-item .ai-title { font-size:12px; font-weight:800; color:#065f46; margin-bottom:3px; }
+  .antidote-item .ai-text { font-size:11px; color:#14532d; line-height:1.45; }
+
+  .footer { background:#f8fafc; border-top:1px solid #f3f4f6; padding:18px 52px; display:flex; align-items:center; justify-content:space-between; }
+  .footer-brand { font-size:13px; font-weight:900; color:#6366f1; }
+  .footer-label { font-size:11px; color:#9ca3af; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="tag">Founder Awareness</div>
+    <div class="header-badge">💀</div>
+    <h1>8 Mistakes That<br>Kill Startups</h1>
+    <p>Most startups don't fail because of bad luck. They fail because of predictable, avoidable mistakes. Learn to spot them before they get you.</p>
+  </div>
+
+  <div class="body">
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num">90%</div>
+        <div class="stat-label">of startups fail within<br>the first 10 years</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">#1</div>
+        <div class="stat-label">reason: built something<br>nobody wanted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">42%</div>
+        <div class="stat-label">failed due to<br>no market need</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">29%</div>
+        <div class="stat-label">failed due to<br>cash running out</div>
+      </div>
+    </div>
+
+    <div class="section-label">The 8 mistakes — and how to avoid them</div>
+
+    <div class="mistakes-grid">
+
+      <!-- Mistake 1 -->
+      <div class="mistake-card" data-num="1" style="background:#fef2f2;border-color:#fca5a5;">
+        <div class="mistake-header">
+          <div class="mistake-badge" style="background:#fee2e2;">💻</div>
+          <div class="mistake-num" style="color:#dc2626;">Mistake #1</div>
+        </div>
+        <div class="mistake-title" style="color:#7f1d1d;">Building before talking to customers</div>
+        <div class="mistake-desc" style="color:#991b1b;">Spending 6 months building in secret, then discovering nobody needs what you made. The classic "build it and they will come" trap.</div>
+        <div class="mistake-fix" style="border:1px solid #fecaca;">
+          <span style="color:#dc2626;">⚡</span>
+          <div><span class="fix-label" style="color:#dc2626;">Fix: </span><span style="color:#7f1d1d;">Talk to 10 potential customers before writing a single line of code.</span></div>
+        </div>
+      </div>
+
+      <!-- Mistake 2 -->
+      <div class="mistake-card" data-num="2" style="background:#fff7ed;border-color:#fdba74;">
+        <div class="mistake-header">
+          <div class="mistake-badge" style="background:#fed7aa;">🌍</div>
+          <div class="mistake-num" style="color:#c2410c;">Mistake #2</div>
+        </div>
+        <div class="mistake-title" style="color:#7c2d12;">Trying to solve for everyone</div>
+        <div class="mistake-desc" style="color:#9a3412;">"Anyone with a phone could use this!" If your target market is "everyone", you're targeting no one. Broad = weak message, weak product, no traction.</div>
+        <div class="mistake-fix" style="border:1px solid #fed7aa;">
+          <span style="color:#c2410c;">⚡</span>
+          <div><span class="fix-label" style="color:#c2410c;">Fix: </span><span style="color:#7c2d12;">Get specific. Name your ideal first customer. Build for them first, then expand.</span></div>
+        </div>
+      </div>
+
+      <!-- Mistake 3 -->
+      <div class="mistake-card" data-num="3" style="background:#fdf4ff;border-color:#e879f9;">
+        <div class="mistake-header">
+          <div class="mistake-badge" style="background:#fae8ff;">🏗</div>
+          <div class="mistake-num" style="color:#a21caf;">Mistake #3</div>
+        </div>
+        <div class="mistake-title" style="color:#701a75;">Over-engineering the MVP</div>
+        <div class="mistake-desc" style="color:#86198f;">Building every feature before launch. Adding the perfect onboarding, the dashboard, the API integrations — before you've validated anything.</div>
+        <div class="mistake-fix" style="border:1px solid #f0abfc;">
+          <span style="color:#a21caf;">⚡</span>
+          <div><span class="fix-label" style="color:#a21caf;">Fix: </span><span style="color:#701a75;">MVP = the smallest thing that proves your core assumption. Ship it.</span></div>
+        </div>
+      </div>
+
+      <!-- Mistake 4 -->
+      <div class="mistake-card" data-num="4" style="background:#eff6ff;border-color:#93c5fd;">
+        <div class="mistake-header">
+          <div class="mistake-badge" style="background:#dbeafe;">🤫</div>
+          <div class="mistake-num" style="color:#1d4ed8;">Mistake #4</div>
+        </div>
+        <div class="mistake-title" style="color:#1e3a8a;">Keeping the idea secret</div>
+        <div class="mistake-desc" style="color:#1e40af;">Afraid someone will steal your idea, so you tell nobody. The cost of secrecy is zero feedback, zero network, and zero early adopters.</div>
+        <div class="mistake-fix" style="border:1px solid #bfdbfe;">
+          <span style="color:#1d4ed8;">⚡</span>
+          <div><span class="fix-label" style="color:#1d4ed8;">Fix: </span><span style="color:#1e3a8a;">Ideas are worthless without execution. Share early. Execution is your moat.</span></div>
+        </div>
+      </div>
+
+      <!-- Mistake 5 -->
+      <div class="mistake-card" data-num="5" style="background:#f0fdf4;border-color:#86efac;">
+        <div class="mistake-header">
+          <div class="mistake-badge" style="background:#dcfce7;">💰</div>
+          <div class="mistake-num" style="color:#15803d;">Mistake #5</div>
+        </div>
+        <div class="mistake-title" style="color:#14532d;">Waiting to charge money</div>
+        <div class="mistake-desc" style="color:#166534;">"I'll figure out monetization later." Free users don't validate a business. Only people who pay with real money are real validation signals.</div>
+        <div class="mistake-fix" style="border:1px solid #bbf7d0;">
+          <span style="color:#15803d;">⚡</span>
+          <div><span class="fix-label" style="color:#15803d;">Fix: </span><span style="color:#14532d;">Ask for money in week 1. Even a deposit. Payment is the ultimate validation.</span></div>
+        </div>
+      </div>
+
+      <!-- Mistake 6 -->
+      <div class="mistake-card" data-num="6" style="background:#fffbeb;border-color:#fde68a;">
+        <div class="mistake-header">
+          <div class="mistake-badge" style="background:#fef3c7;">👤</div>
+          <div class="mistake-num" style="color:#d97706;">Mistake #6</div>
+        </div>
+        <div class="mistake-title" style="color:#78350f;">Founding solo without realizing it</div>
+        <div class="mistake-desc" style="color:#92400e;">Going solo without building any support structure — no advisors, no community, no accountability. Startup loneliness is a real killer of momentum.</div>
+        <div class="mistake-fix" style="border:1px solid #fde68a;">
+          <span style="color:#d97706;">⚡</span>
+          <div><span class="fix-label" style="color:#d97706;">Fix: </span><span style="color:#78350f;">Join a community (like MVP Club). Find a co-founder or an accountability partner.</span></div>
+        </div>
+      </div>
+
+      <!-- Mistake 7 -->
+      <div class="mistake-card" data-num="7" style="background:#f8fafc;border-color:#cbd5e1;">
+        <div class="mistake-header">
+          <div class="mistake-badge" style="background:#e2e8f0;">📊</div>
+          <div class="mistake-num" style="color:#475569;">Mistake #7</div>
+        </div>
+        <div class="mistake-title" style="color:#0f172a;">Mistaking activity for progress</div>
+        <div class="mistake-desc" style="color:#334155;">Attending 10 startup events. Tweaking the landing page. Redesigning the logo. Busy ≠ moving forward. None of this gets you a customer.</div>
+        <div class="mistake-fix" style="border:1px solid #cbd5e1;">
+          <span style="color:#475569;">⚡</span>
+          <div><span class="fix-label" style="color:#475569;">Fix: </span><span style="color:#0f172a;">Each week, ask: "Did I talk to a customer or get closer to revenue?" If no — reset.</span></div>
+        </div>
+      </div>
+
+      <!-- Mistake 8 -->
+      <div class="mistake-card" data-num="8" style="background:#fef2f2;border-color:#fca5a5;">
+        <div class="mistake-header">
+          <div class="mistake-badge" style="background:#fee2e2;">🔄</div>
+          <div class="mistake-num" style="color:#dc2626;">Mistake #8</div>
+        </div>
+        <div class="mistake-title" style="color:#7f1d1d;">Pivoting too fast (or not at all)</div>
+        <div class="mistake-desc" style="color:#991b1b;">Either quitting after the first "no" or ignoring 10 "nos" and charging ahead anyway. Both extremes destroy startups at different speeds.</div>
+        <div class="mistake-fix" style="border:1px solid #fecaca;">
+          <span style="color:#dc2626;">⚡</span>
+          <div><span class="fix-label" style="color:#dc2626;">Fix: </span><span style="color:#7f1d1d;">Set clear criteria upfront: "If X doesn't happen after 10 interviews, I pivot." Then stick to it.</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- The antidote -->
+    <div class="antidote">
+      <h4>✅ The antidote: do these 3 things instead</h4>
+      <div class="antidote-grid">
+        <div class="antidote-item">
+          <div class="ai-icon">🗣</div>
+          <div class="ai-title">Talk first, build second</div>
+          <div class="ai-text">Spend your first weeks having conversations, not writing code. Understanding beats assumption every time.</div>
+        </div>
+        <div class="antidote-item">
+          <div class="ai-icon">🎯</div>
+          <div class="ai-title">Ruthlessly narrow your focus</div>
+          <div class="ai-text">One problem. One customer segment. One solution. Nail it before you scale it. Specific beats broad.</div>
+        </div>
+        <div class="antidote-item">
+          <div class="ai-icon">🚀</div>
+          <div class="ai-title">Ship embarrassingly early</div>
+          <div class="ai-text">If you're not embarrassed by your first version, you waited too long. Real feedback beats perfect plans.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span class="footer-brand">MVP Club</span>
+    <span style="font-size:12px;color:#9ca3af;font-style:italic;">From idea to launched — one step at a time.</span>
+    <span class="footer-label">FOUNDER AWARENESS · MISTAKES</span>
+  </div>
+
+</div>
+</body>
+</html>

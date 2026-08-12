@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MVP Club — Getting Started</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f8fafc;
+    color: #111827;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .page {
+    width: 800px;
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.08);
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+    padding: 44px 52px 40px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    right: 40px; bottom: -80px;
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+  .tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.9);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+  .header h1 {
+    font-size: 36px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .header p {
+    font-size: 16px;
+    opacity: 0.85;
+    line-height: 1.5;
+    max-width: 440px;
+  }
+  .header-num {
+    position: absolute;
+    right: 52px; top: 44px;
+    font-size: 80px;
+    font-weight: 900;
+    color: rgba(255,255,255,0.1);
+    line-height: 1;
+    letter-spacing: -4px;
+  }
+
+  /* ── Body ── */
+  .body { padding: 44px 52px; }
+
+  /* Steps */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: flex;
+    gap: 20px;
+    position: relative;
+  }
+  .step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 19px; top: 44px;
+    width: 2px;
+    height: calc(100% - 20px);
+    background: #e5e7eb;
+  }
+  .step-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #eef2ff;
+    color: #6366f1;
+    font-size: 16px;
+    font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .step-content { padding: 8px 0 32px; flex: 1; }
+  .step-content h3 {
+    font-size: 16px; font-weight: 800; color: #111827; margin-bottom: 6px;
+  }
+  .step-content p {
+    font-size: 14px; color: #374151; line-height: 1.6;
+  }
+  .step-tip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+  }
+
+  /* UI callout */
+  .ui-mock {
+    background: #f8fafc;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #374151;
+  }
+  .ui-mock .nav-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.8);
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 10px;
+  }
+  .nav-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .pill {
+    background: #000; color: #fff;
+    font-size: 11px; font-weight: 700;
+    padding: 4px 10px; border-radius: 20px;
+  }
+  .pill-ghost {
+    background: transparent; color: #4b5563;
+    font-size: 11px; font-weight: 600;
+    padding: 4px 10px; border-radius: 20px;
+  }
+  .nav-spacer { flex: 1; }
+  .avatar-sm {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #6366f1; color: #fff;
+    font-size: 8px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .envelope-sm {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 1.5px solid #e5e7eb;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+
+  /* Stage pills */
+  .stage-row {
+    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;
+  }
+  .stage-pill {
+    font-size: 11px; font-weight: 700;
+    padding: 5px 12px; border-radius: 20px;
+    border: 2px solid transparent;
+  }
+
+  /* Divider */
+  .divider { height: 1px; background: #f3f4f6; margin: 8px 0 32px; }
+
+  /* Two-col tips */
+  .tips-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .tip-card {
+    background: #fafafa;
+    border: 1.5px solid #f3f4f6;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .tip-card .icon { font-size: 22px; margin-bottom: 8px; }
+  .tip-card h4 { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+  .tip-card p { font-size: 12px; color: #374151; line-height: 1.5; }
+
+  /* Footer */
+  .footer {
+    background: #f8fafc;
+    border-top: 1px solid #f3f4f6;
+    padding: 20px 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-brand { font-size: 13px; font-weight: 900; color: #6366f1; letter-spacing: -0.3px; }
+  .footer-label { font-size: 11px; color: #4b5563; font-weight: 600; letter-spacing: 0.5px; }
+  .page-indicator { display: flex; gap: 5px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #e5e7eb; }
+  .dot.active { background: #6366f1; width: 18px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="tag">Guide 1 of 4</div>
+    <div class="header-num">01</div>
+    <h1>Getting Started<br>with MVP Club</h1>
+    <p>From zero to your first session in under 5 minutes. Here's exactly what to do.</p>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Create your account</h3>
+          <p>Visit the app and click <strong>Get started</strong> on the home screen. Enter your name, email, and a password. That's it — no credit card, no lengthy onboarding.</p>
+          <div class="step-tip">✓ Takes less than 60 seconds</div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Pick your current stage</h3>
+          <p>MVP Club works around 5 stages. Choose the one that best describes where you are <em>right now</em>. You can change it anytime.</p>
+          <div class="stage-row">
+            <span class="stage-pill" style="background:#fdf4ff;color:#a21caf;border-color:#e879f9">💡 Idea</span>
+            <span class="stage-pill" style="background:#eff6ff;color:#1d4ed8;border-color:#93c5fd">🔍 Hone</span>
+            <span class="stage-pill" style="background:#f0fdf4;color:#15803d;border-color:#86efac">✅ Validate</span>
+            <span class="stage-pill" style="background:#fff7ed;color:#c2410c;border-color:#fdba74">🛠 Shape</span>
+            <span class="stage-pill" style="background:#f0fdf4;color:#065f46;border-color:#6ee7b7">🚀 Done</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Add your idea</h3>
+          <p>Go to <strong>My Idea Vault</strong> and click <strong>+ New idea</strong>. Give it a name and a one-sentence description. You can have multiple ideas and switch between them.</p>
+          <div class="ui-mock">
+            <div style="font-size:12px;color:#4b5563;font-weight:600;margin-bottom:8px;">MY IDEA VAULT</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border-radius:10px;border:1.5px solid #e5e7eb;">
+              <div style="width:28px;height:28px;border-radius:8px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:14px;">💡</div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:700;color:#111827;">AI tutoring for adults</div>
+                <div style="font-size:11px;color:#4b5563;">Idea stage · Added today</div>
+              </div>
+              <div style="font-size:11px;font-weight:700;color:#d97706;background:#fef3c7;padding:3px 8px;border-radius:20px;">⏳ Pending</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:9px 12px;border-radius:10px;border:1.5px dashed #e5e7eb;color:#4b5563;font-size:12px;cursor:pointer;">
+              <span style="font-size:16px;line-height:1;">+</span> Add another idea
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Navigate the app</h3>
+          <p>Three areas to know:</p>
+          <div class="ui-mock">
+            <div class="nav-bar">
+              <span style="font-size:13px;font-weight:900;color:#111;">MVP Club</span>
+              <div class="nav-spacer"></div>
+              <span class="pill">Community</span>
+              <span class="pill-ghost">My Idea Vault</span>
+              <div class="nav-spacer"></div>
+              <div class="envelope-sm">✉️</div>
+              <div class="avatar-sm">YO</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:28px;height:28px;border-radius:8px;background:#000;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;flex-shrink:0;">C</div>
+                <div><span style="font-size:13px;font-weight:700;">Community</span> <span style="font-size:12px;color:#374151;">— see ideas and posts from other founders</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:28px;height:28px;border-radius:8px;background:#eef2ff;display:flex;align-items:center;justify-content:center;font-size:11px;color:#6366f1;font-weight:800;flex-shrink:0;">V</div>
+                <div><span style="font-size:13px;font-weight:700;">My Idea Vault</span> <span style="font-size:12px;color:#374151;">— your private workspace for each idea</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:28px;height:28px;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">✉️</div>
+                <div><span style="font-size:13px;font-weight:700;">Inbox icon</span> <span style="font-size:12px;color:#374151;">— private messages with members or admin</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content" style="padding-bottom:0;">
+          <h3>Wait for approval, then go public</h3>
+          <p>Your idea is reviewed by the MVP Club admin before it appears in the community. You'll see a <strong>⏳ Pending</strong> badge until approved. Once live, your idea is visible to all members.</p>
+          <div class="step-tip">✓ Most ideas are reviewed within 24 hours</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="divider" style="margin-top:32px;"></div>
+
+    <div style="font-size:12px;font-weight:700;color:#4b5563;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:14px;">Quick tips</div>
+    <div class="tips-grid">
+      <div class="tip-card">
+        <div class="icon">🔒</div>
+        <h4>Your vault is private</h4>
+        <p>Notes, progress, and the Business Model Canvas are only visible to you — not the community.</p>
+      </div>
+      <div class="tip-card">
+        <div class="icon">🔄</div>
+        <h4>Change your stage anytime</h4>
+        <p>Update your stage as you progress. This keeps your community posts and guidance relevant.</p>
+      </div>
+      <div class="tip-card">
+        <div class="icon">💬</div>
+        <h4>Community is public</h4>
+        <p>Your approved idea and its updates are visible to all founders. Comments are open to everyone.</p>
+      </div>
+      <div class="tip-card">
+        <div class="icon">🛡</div>
+        <h4>Admin reviews everything</h4>
+        <p>Content is moderated to keep MVP Club a high-quality, focused space for serious founders.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="footer-brand">MVP Club</span>
+    <div class="page-indicator">
+      <div class="dot active"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    <span class="footer-label">HOW-TO GUIDE 1 / 4</span>
+  </div>
+
+</div>
+</body>
+</html>

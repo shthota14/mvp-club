@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top 10 Practical Guides Every Tech Founder Needs</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; padding: 40px 20px; color: #111827; }
+  .page { width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #064e3b 0%, #059669 55%, #34d399 100%);
+    border-radius: 24px; padding: 44px 56px; color: white; position: relative; overflow: hidden;
+  }
+  .hero::before { content:''; position:absolute; right:-80px; top:-80px; width:340px; height:340px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .hero-tag { display:inline-block; background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; padding:5px 14px; border-radius:20px; margin-bottom:14px; }
+  .hero h1 { font-size:36px; font-weight:900; letter-spacing:-1.2px; line-height:1.1; margin-bottom:10px; }
+  .hero-sub { font-size:14px; opacity:0.75; line-height:1.6; max-width:520px; }
+  .hero-badge { position:absolute; right:52px; top:40px; font-size:80px; font-weight:900; color:rgba(255,255,255,0.07); line-height:1; }
+
+  /* ── Grid of 10 guide cards ── */
+  .guides-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .guide-card {
+    background: #fff; border-radius: 18px; overflow: hidden;
+    border: 1.5px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    display: flex; flex-direction: column;
+  }
+  .card-header {
+    padding: 16px 20px 14px; border-bottom: 1.5px solid;
+    display: flex; align-items: flex-start; gap: 12px;
+  }
+  .card-num {
+    width: 32px; height: 32px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 900; flex-shrink: 0; margin-top: 1px;
+  }
+  .card-head-text { flex: 1; }
+  .card-label { font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+  .card-title { font-size: 14px; font-weight: 900; line-height: 1.25; }
+  .card-body { padding: 14px 20px 16px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .card-focus { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+
+  /* mini bullet list inside card */
+  .mini-list { display: flex; flex-direction: column; gap: 5px; }
+  .mini-item { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; color: #374151; font-weight: 500; line-height: 1.45; }
+  .mini-dot { width: 16px; height: 16px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 900; flex-shrink: 0; margin-top: 1px; }
+
+  /* signal chip at bottom of card */
+  .signal { display: flex; align-items: flex-start; gap: 7px; border-radius: 9px; padding: 9px 11px; margin-top: auto; }
+  .signal-text { font-size: 11px; font-weight: 700; line-height: 1.4; }
+
+  /* ── Principles section ── */
+  .principles {
+    background: #fff; border: 1.5px solid #e5e7eb; border-radius: 20px; overflow: hidden;
+  }
+  .principles-header {
+    background: linear-gradient(135deg, #1e1b4b, #4338ca);
+    padding: 20px 28px; color: white;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .principles-header h2 { font-size: 17px; font-weight: 900; }
+  .principles-header p { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+  .principles-body { padding: 20px 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .principle { display: flex; align-items: flex-start; gap: 10px; background: #f8fafc; border: 1.5px solid #e5e7eb; border-radius: 11px; padding: 11px 13px; }
+  .p-num { font-size: 17px; font-weight: 900; color: #6366f1; line-height: 1; flex-shrink: 0; }
+  .p-text { font-size: 12px; font-weight: 600; color: #374151; line-height: 1.45; }
+
+  /* ── If you read 5 things ── */
+  .five {
+    background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 20px; padding: 24px 28px;
+  }
+  .five h3 { font-size: 14px; font-weight: 900; color: '#78350f'; margin-bottom: 14px; }
+  .five-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .five-item { background: #fff; border: 1.5px solid #fde68a; border-radius: 13px; padding: 14px 12px; text-align: center; }
+  .five-icon { font-size: 22px; margin-bottom: 6px; }
+  .five-label { font-size: 11px; font-weight: 800; color: #92400e; line-height: 1.3; }
+
+  /* footer */
+  .footer { background: #fff; border: 1.5px solid #e5e7eb; border-radius: 16px; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; }
+  .footer-brand { font-size: 13px; font-weight: 900; color: #6366f1; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── HERO ── -->
+  <div class="hero">
+    <div class="hero-tag">Practical Founder Guides</div>
+    <div class="hero-badge">10</div>
+    <h1>Top 10 Practical Guides<br>Every Tech Founder Needs</h1>
+    <p class="hero-sub">Original, founder-tested guides covering the full journey — from choosing a co-founder to scaling without chaos. No theory. No fluff.</p>
+  </div>
+
+  <!-- ── GUIDE CARDS ── -->
+  <div class="guides-grid">
+
+    <!-- 1. Validate -->
+    <div class="guide-card">
+      <div class="card-header" style="background:#fdf4ff;border-color:#f0abfc;">
+        <div class="card-num" style="background:#fae8ff;color:#a21caf;">01</div>
+        <div class="card-head-text">
+          <div class="card-label" style="color:#a21caf;">Before you code</div>
+          <div class="card-title" style="color:#701a75;">How to Validate an Idea</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-focus" style="color:#86198f;">Focus on evidence that people care before investing time and money.</div>
+        <div class="mini-list">
+          <div class="mini-item"><div class="mini-dot" style="background:#fae8ff;color:#a21caf;">→</div>Identify a specific customer problem</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fae8ff;color:#a21caf;">→</div>Interview 20–50 potential users</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fae8ff;color:#a21caf;">→</div>Understand current workarounds</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fae8ff;color:#a21caf;">→</div>Test demand with prototypes or landing pages</div>
+        </div>
+        <div class="signal" style="background:#fdf4ff;border:1.5px solid #f0abfc;">
+          <span style="font-size:14px;">🎯</span>
+          <div class="signal-text" style="color:#701a75;">Customers describe the problem in their own words.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. PMF -->
+    <div class="guide-card">
+      <div class="card-header" style="background:#eff6ff;border-color:#93c5fd;">
+        <div class="card-num" style="background:#dbeafe;color:#1d4ed8;">02</div>
+        <div class="card-head-text">
+          <div class="card-label" style="color:#1d4ed8;">The holy grail</div>
+          <div class="card-title" style="color:#1e3a8a;">How to Find Product-Market Fit</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-focus" style="color:#1e40af;">PMF happens when customers consistently find value and keep returning.</div>
+        <div class="mini-list">
+          <div class="mini-item"><div class="mini-dot" style="background:#dbeafe;color:#1d4ed8;">→</div>Are users actively and repeatedly using it?</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#dbeafe;color:#1d4ed8;">→</div>Would they be disappointed if it disappeared?</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#dbeafe;color:#1d4ed8;">→</div>Are referrals happening naturally?</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#dbeafe;color:#1d4ed8;">→</div>Is retention improving over time?</div>
+        </div>
+        <div class="signal" style="background:#eff6ff;border:1.5px solid #93c5fd;">
+          <span style="font-size:14px;">🎯</span>
+          <div class="signal-text" style="color:#1e3a8a;">Solve one painful problem extremely well before expanding features.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. MVP -->
+    <div class="guide-card">
+      <div class="card-header" style="background:#f0fdf4;border-color:#86efac;">
+        <div class="card-num" style="background:#dcfce7;color:#15803d;">03</div>
+        <div class="card-head-text">
+          <div class="card-label" style="color:#15803d;">Ship faster</div>
+          <div class="card-title" style="color:#14532d;">How to Build an MVP That Matters</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-focus" style="color:#166534;">An MVP is not a smaller product. It's the simplest way to test your core assumption.</div>
+        <div class="mini-list">
+          <div class="mini-item"><div class="mini-dot" style="background:#dcfce7;color:#15803d;">✓</div>Build only essential functionality</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#dcfce7;color:#15803d;">✓</div>Ignore edge cases initially</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#dcfce7;color:#15803d;">✓</div>Prioritise learning over perfection</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#dcfce7;color:#15803d;">✓</div>Launch sooner than feels comfortable</div>
+        </div>
+        <div class="signal" style="background:#f0fdf4;border:1.5px solid #86efac;">
+          <span style="font-size:14px;">🎯</span>
+          <div class="signal-text" style="color:#14532d;">The MVP's job is to generate insights, not impress investors.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Co-Founder -->
+    <div class="guide-card">
+      <div class="card-header" style="background:#fff7ed;border-color:#fdba74;">
+        <div class="card-num" style="background:#fed7aa;color:#c2410c;">04</div>
+        <div class="card-head-text">
+          <div class="card-label" style="color:#c2410c;">Choose wisely</div>
+          <div class="card-title" style="color:#7c2d12;">How to Choose a Co-Founder</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-focus" style="color:#9a3412;">A co-founder relationship often lasts longer than many marriages. Evaluate carefully.</div>
+        <div class="mini-list">
+          <div class="mini-item"><div class="mini-dot" style="background:#fed7aa;color:#c2410c;">→</div>Complementary skills, not identical ones</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fed7aa;color:#c2410c;">→</div>Shared values on risk, money, and pace</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fed7aa;color:#c2410c;">→</div>Work ethic compatibility</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fed7aa;color:#c2410c;">→</div>Ability to handle disagreement productively</div>
+        </div>
+        <div class="signal" style="background:#fff7ed;border:1.5px solid #fdba74;">
+          <span style="font-size:14px;">🎯</span>
+          <div class="signal-text" style="color:#7c2d12;">Work together on a meaningful project for months before formalising anything.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. First Customers -->
+    <div class="guide-card">
+      <div class="card-header" style="background:#ecfeff;border-color:#67e8f9;">
+        <div class="card-num" style="background:#cffafe;color:#0e7490;">05</div>
+        <div class="card-head-text">
+          <div class="card-label" style="color:#0e7490;">Do things that don't scale</div>
+          <div class="card-title" style="color:#164e63;">How to Get Your First 100 Customers</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-focus" style="color:#155e75;">Early growth is manual. Persistence beats scalable marketing channels every time.</div>
+        <div class="mini-list">
+          <div class="mini-item"><div class="mini-dot" style="background:#cffafe;color:#0e7490;">→</div>Direct outreach to your network first</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#cffafe;color:#0e7490;">→</div>Community engagement in your niche</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#cffafe;color:#0e7490;">→</div>Personalised demos and onboarding</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#cffafe;color:#0e7490;">→</div>Ask every user for one referral</div>
+        </div>
+        <div class="signal" style="background:#ecfeff;border:1.5px solid #67e8f9;">
+          <span style="font-size:14px;">🎯</span>
+          <div class="signal-text" style="color:#164e63;">Customers arrive through recommendations you didn't engineer.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Pricing -->
+    <div class="guide-card">
+      <div class="card-header" style="background:#fef9c3;border-color:#fde047;">
+        <div class="card-num" style="background:#fef08a;color:#a16207;">06</div>
+        <div class="card-head-text">
+          <div class="card-label" style="color:#a16207;">Don't guess</div>
+          <div class="card-title" style="color:#713f12;">How to Price Your Product</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-focus" style="color:#854d0e;">Pricing affects growth, positioning, and profitability. Don't base it on development costs.</div>
+        <div class="mini-list">
+          <div class="mini-item"><div class="mini-dot" style="background:#fef08a;color:#a16207;">→</div>Value delivered to the customer</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fef08a;color:#a16207;">→</div>What alternatives exist and what they cost</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fef08a;color:#a16207;">→</div>Willingness to pay (ask directly)</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fef08a;color:#a16207;">→</div>Cost structure and target margin</div>
+        </div>
+        <div class="signal" style="background:#fef9c3;border:1.5px solid #fde047;">
+          <span style="font-size:14px;">🎯</span>
+          <div class="signal-text" style="color:#713f12;">Customers pay without negotiating the price down significantly.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Fundraising -->
+    <div class="guide-card">
+      <div class="card-header" style="background:#f5f3ff;border-color:#ddd6fe;">
+        <div class="card-num" style="background:#ede9fe;color:#7c3aed;">07</div>
+        <div class="card-head-text">
+          <div class="card-label" style="color:#7c3aed;">Only if you need it</div>
+          <div class="card-title" style="color:#4c1d95;">How to Raise Funding</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-focus" style="color:#5b21b6;">Fundraising should support a strategy, not replace one. Most founders bootstrap longer than expected.</div>
+        <div class="mini-list">
+          <div class="mini-item"><div class="mini-dot" style="background:#ede9fe;color:#7c3aed;">→</div>Clear vision that investors can believe in</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#ede9fe;color:#7c3aed;">→</div>Evidence of traction — real numbers</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#ede9fe;color:#7c3aed;">→</div>Market understanding and sizing</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#ede9fe;color:#7c3aed;">→</div>Strong narrative, not just a pitch deck</div>
+        </div>
+        <div class="signal" style="background:#f5f3ff;border:1.5px solid #ddd6fe;">
+          <span style="font-size:14px;">🎯</span>
+          <div class="signal-text" style="color:#4c1d95;">Investors say yes to the team as much as the idea.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. Team -->
+    <div class="guide-card">
+      <div class="card-header" style="background:#f0f9ff;border-color:#7dd3fc;">
+        <div class="card-num" style="background:#e0f2fe;color:#0369a1;">08</div>
+        <div class="card-head-text">
+          <div class="card-label" style="color:#0369a1;">Hire slow</div>
+          <div class="card-title" style="color:#0c4a6e;">How to Build an Effective Team</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-focus" style="color:#075985;">Early hires shape company culture and execution quality for years.</div>
+        <div class="mini-list">
+          <div class="mini-item"><div class="mini-dot" style="background:#e0f2fe;color:#0369a1;">✓</div>Adaptability over experience</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#e0f2fe;color:#0369a1;">✓</div>Ownership mindset — no hand-holding</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#e0f2fe;color:#0369a1;">✓</div>Strong communication skills</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#e0f2fe;color:#0369a1;">✓</div>Mission alignment — they care about the problem</div>
+        </div>
+        <div class="signal" style="background:#f0f9ff;border:1.5px solid #7dd3fc;">
+          <span style="font-size:14px;">🎯</span>
+          <div class="signal-text" style="color:#0c4a6e;">A small team of exceptional people outperforms a large average one.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. Metrics -->
+    <div class="guide-card">
+      <div class="card-header" style="background:#fdf2f8;border-color:#f9a8d4;">
+        <div class="card-num" style="background:#fce7f3;color:#be185d;">09</div>
+        <div class="card-head-text">
+          <div class="card-label" style="color:#be185d;">Cut the noise</div>
+          <div class="card-title" style="color:#831843;">How to Measure What Matters</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-focus" style="color:#9d174d;">Track a small set of metrics aligned with your business model — nothing else.</div>
+        <div class="mini-list">
+          <div class="mini-item"><div class="mini-dot" style="background:#fce7f3;color:#be185d;">→</div>Customer acquisition cost (CAC)</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fce7f3;color:#be185d;">→</div>Monthly recurring revenue (MRR)</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fce7f3;color:#be185d;">→</div>Retention and churn rate</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#fce7f3;color:#be185d;">→</div>Customer lifetime value (LTV)</div>
+        </div>
+        <div class="signal" style="background:#fdf2f8;border:1.5px solid #f9a8d4;">
+          <span style="font-size:14px;">🎯</span>
+          <div class="signal-text" style="color:#831843;">Avoid vanity metrics that look impressive but don't change decisions.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. Scale -->
+    <div class="guide-card">
+      <div class="card-header" style="background:#f8fafc;border-color:#cbd5e1;">
+        <div class="card-num" style="background:#e2e8f0;color:#334155;">10</div>
+        <div class="card-head-text">
+          <div class="card-label" style="color:#475569;">Amplify what works</div>
+          <div class="card-title" style="color:#0f172a;">How to Scale Without Losing Focus</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-focus" style="color:#334155;">Growth creates complexity. Scaling should amplify what already works — not fix what doesn't.</div>
+        <div class="mini-list">
+          <div class="mini-item"><div class="mini-dot" style="background:#e2e8f0;color:#334155;">✓</div>Clear priorities — say no to most things</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#e2e8f0;color:#334155;">✓</div>Document processes before expanding the team</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#e2e8f0;color:#334155;">✓</div>Disciplined hiring — roles with clear ownership</div>
+          <div class="mini-item"><div class="mini-dot" style="background:#e2e8f0;color:#334155;">✓</div>Keep customer feedback loops short</div>
+        </div>
+        <div class="signal" style="background:#f8fafc;border:1.5px solid #cbd5e1;">
+          <span style="font-size:14px;">🎯</span>
+          <div class="signal-text" style="color:#0f172a;">Growth increases without operational chaos.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── FOUNDER OPERATING PRINCIPLES ── -->
+  <div class="principles">
+    <div class="principles-header">
+      <div>
+        <h2>The Founder Operating Principles</h2>
+        <p>Consistent habits across every stage that successful founders share</p>
+      </div>
+    </div>
+    <div class="principles-body">
+      <div class="principle"><div class="p-num">01</div><div class="p-text">Talk to customers constantly — not just at the start.</div></div>
+      <div class="principle"><div class="p-num">02</div><div class="p-text">Solve real problems, not just interesting ones.</div></div>
+      <div class="principle"><div class="p-num">03</div><div class="p-text">Launch earlier than feels comfortable. Done beats perfect.</div></div>
+      <div class="principle"><div class="p-num">04</div><div class="p-text">Learn faster than competitors. Speed of learning is your moat.</div></div>
+      <div class="principle"><div class="p-num">05</div><div class="p-text">Prioritise retention before chasing growth.</div></div>
+      <div class="principle"><div class="p-num">06</div><div class="p-text">Hire slowly and intentionally. Every early hire shapes culture.</div></div>
+      <div class="principle"><div class="p-num">07</div><div class="p-text">Protect cash. It is your strategic oxygen.</div></div>
+      <div class="principle"><div class="p-num">08</div><div class="p-text">Measure outcomes, not activity. Busy ≠ moving forward.</div></div>
+      <div class="principle"><div class="p-num">09</div><div class="p-text">Stay adaptable. The plan will change — your judgment shouldn't.</div></div>
+      <div class="principle"><div class="p-num">10</div><div class="p-text">Keep building value for customers. Revenue follows value.</div></div>
+    </div>
+  </div>
+
+  <!-- ── START WITH THESE 5 ── -->
+  <div class="five">
+    <h3 style="font-size:14px;font-weight:900;color:#78350f;margin-bottom:14px;">📌 If you only focus on 5 first</h3>
+    <div class="five-grid">
+      <div class="five-item">
+        <div class="five-icon">🚀</div>
+        <div class="five-label">Validate your idea</div>
+      </div>
+      <div class="five-item">
+        <div class="five-icon">🛠</div>
+        <div class="five-label">Build a lean MVP</div>
+      </div>
+      <div class="five-item">
+        <div class="five-icon">👥</div>
+        <div class="five-label">Get first 100 customers</div>
+      </div>
+      <div class="five-item">
+        <div class="five-icon">📊</div>
+        <div class="five-label">Measure what matters</div>
+      </div>
+      <div class="five-item">
+        <div class="five-icon">📈</div>
+        <div class="five-label">Find product-market fit</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;font-size:12px;color:#92400e;font-weight:600;line-height:1.6;">
+      Together these cover the full founder journey: <strong>idea → MVP → customers → product-market fit → sustainable growth.</strong>
+    </div>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <div class="footer">
+    <span class="footer-brand">MVP Club</span>
+    <span style="font-size:12px;color:#9ca3af;font-style:italic;">From idea to launched — one step at a time.</span>
+    <span style="font-size:11px;color:#9ca3af;font-weight:600;letter-spacing:0.5px;">PRACTICAL GUIDES · ORIGINAL CONTENT</span>
+  </div>
+
+</div>
+</body>
+</html>

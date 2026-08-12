@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What is a Business Model Canvas?</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; padding: 40px 20px; color: #111827; }
+  .page { width: 900px; margin: 0 auto; background: #fff; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 40px rgba(0,0,0,0.08); }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 60%, #6366f1 100%);
+    padding: 44px 52px 40px; color: white; position: relative; overflow: hidden;
+  }
+  .header::before { content:''; position:absolute; right:-80px; top:-80px; width:320px; height:320px; border-radius:50%; background:rgba(255,255,255,0.05); }
+  .header::after { content:''; position:absolute; right:60px; bottom:-60px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); }
+  .tag { display:inline-block; background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); font-size:11px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; padding:5px 12px; border-radius:20px; margin-bottom:14px; }
+  .header h1 { font-size:38px; font-weight:900; letter-spacing:-1.2px; line-height:1.1; margin-bottom:10px; }
+  .header p { font-size:15px; opacity:0.75; line-height:1.6; max-width:480px; }
+  .header-badge { position:absolute; right:52px; top:44px; font-size:72px; font-weight:900; color:rgba(255,255,255,0.07); line-height:1; letter-spacing:-4px; }
+
+  /* Intro strip */
+  .intro { padding:24px 52px; background:#fafafa; border-bottom:1px solid #f3f4f6; display:flex; align-items:center; gap:20px; }
+  .intro-icon { font-size:32px; flex-shrink:0; }
+  .intro p { font-size:14px; color:#374151; line-height:1.65; }
+  .intro strong { color:#111827; font-weight:800; }
+
+  /* Canvas grid */
+  .canvas-wrap { padding:36px 52px 28px; }
+  .canvas-label { font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#9ca3af; margin-bottom:20px; }
+  .canvas-grid {
+    display:grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap:8px;
+  }
+
+  .block {
+    border-radius:14px;
+    padding:16px;
+    position:relative;
+    overflow:hidden;
+    min-height:110px;
+  }
+  .block::after {
+    content: attr(data-num);
+    position:absolute; bottom:8px; right:12px;
+    font-size:36px; font-weight:900; opacity:0.08; line-height:1;
+  }
+  .block-num { width:22px; height:22px; border-radius:50%; font-size:10px; font-weight:900; display:flex; align-items:center; justify-content:center; margin-bottom:8px; flex-shrink:0; }
+  .block-title { font-size:12px; font-weight:800; margin-bottom:5px; line-height:1.2; }
+  .block-q { font-size:11px; font-weight:600; opacity:0.7; line-height:1.45; margin-bottom:6px; }
+  .block-ex { font-size:10px; font-weight:700; opacity:0.55; font-style:italic; }
+
+  /* Arrow connector */
+  .flow-arrow { display:flex; align-items:center; justify-content:center; font-size:16px; color:#d1d5db; }
+
+  /* Flow below grid */
+  .flow-strip { padding:0 52px 36px; }
+  .flow-row { display:flex; align-items:stretch; gap:0; position:relative; }
+  .flow-row::before { content:''; position:absolute; top:50%; left:0; right:0; height:2px; background:#e5e7eb; z-index:0; }
+  .flow-node {
+    z-index:1;
+    background:#fff;
+    border:2px solid #e5e7eb;
+    border-radius:12px;
+    padding:10px 14px;
+    flex:1;
+    text-align:center;
+    position:relative;
+  }
+  .flow-node.highlight { background:#eef2ff; border-color:#6366f1; }
+  .flow-sep { width:32px; flex-shrink:0; display:flex; align-items:center; justify-content:center; z-index:1; background:#fff; }
+  .flow-sep span { font-size:14px; color:#9ca3af; font-weight:700; }
+  .flow-node-icon { font-size:18px; margin-bottom:4px; }
+  .flow-node-label { font-size:11px; font-weight:800; color:#111827; }
+  .flow-node-sub { font-size:10px; color:#9ca3af; margin-top:2px; }
+
+  /* Key insight */
+  .insight { margin:0 52px 36px; background:linear-gradient(135deg,#eef2ff,#f0fdf4); border:1.5px solid #e0e7ff; border-radius:16px; padding:20px 24px; display:flex; gap:14px; }
+  .insight .icon { font-size:26px; flex-shrink:0; }
+  .insight h4 { font-size:14px; font-weight:800; color:#4338ca; margin-bottom:4px; }
+  .insight p { font-size:13px; color:#374151; line-height:1.6; }
+
+  /* Footer */
+  .footer { background:#f8fafc; border-top:1px solid #f3f4f6; padding:18px 52px; display:flex; align-items:center; justify-content:space-between; }
+  .footer-brand { font-size:13px; font-weight:900; color:#6366f1; }
+  .footer-label { font-size:11px; color:#9ca3af; font-weight:600; letter-spacing:0.5px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="tag">Concept Guide</div>
+    <div class="header-badge">BMC</div>
+    <h1>What is a Business<br>Model Canvas?</h1>
+    <p>A single-page visual that maps out every critical dimension of your business — before you write a single line of code.</p>
+  </div>
+
+  <div class="intro">
+    <div class="intro-icon">🗺</div>
+    <p>Created by Alexander Osterwalder, the <strong>Business Model Canvas (BMC)</strong> is a strategic tool that replaces a 30-page business plan with <strong>9 focused building blocks</strong> on one page. It forces you to think clearly about how your business creates, delivers, and captures value.</p>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-wrap">
+    <div class="canvas-label">The 9 building blocks</div>
+    <div class="canvas-grid">
+
+      <!-- Row 1: KP | KA | VP (spans 2 rows) | CR | CS (spans 2 rows) -->
+      <!-- Key Partners -->
+      <div class="block" data-num="1" style="background:#fdf4ff;grid-column:1;grid-row:1/3;">
+        <div class="block-num" style="background:#e879f920;color:#a21caf;">1</div>
+        <div class="block-title" style="color:#86198f;">🤝 Key Partners</div>
+        <div class="block-q">Who do you need to work with to make this happen?</div>
+        <div class="block-ex">Suppliers, alliances, outsource partners</div>
+      </div>
+
+      <!-- Key Activities -->
+      <div class="block" data-num="2" style="background:#eff6ff;grid-column:2;grid-row:1;">
+        <div class="block-num" style="background:#bfdbfe;color:#1d4ed8;">2</div>
+        <div class="block-title" style="color:#1e40af;">⚙️ Key Activities</div>
+        <div class="block-q">What do you do every day to deliver value?</div>
+        <div class="block-ex">Build, sell, support</div>
+      </div>
+
+      <!-- Value Proposition -->
+      <div class="block" data-num="3" style="background:#fef9c3;grid-column:3;grid-row:1/3;border:2px solid #fde047;">
+        <div class="block-num" style="background:#fef08a;color:#854d0e;">3</div>
+        <div class="block-title" style="color:#713f12;">⭐ Value Proposition</div>
+        <div class="block-q">What problem do you solve? Why choose you over alternatives?</div>
+        <div class="block-ex">Your unique promise to the customer</div>
+        <div style="margin-top:10px;background:#fef08a30;border-radius:8px;padding:8px 10px;font-size:10px;color:#854d0e;font-weight:700;line-height:1.4;">This is the heart of your canvas. Everything else connects to it.</div>
+      </div>
+
+      <!-- Customer Relationships -->
+      <div class="block" data-num="4" style="background:#f0fdf4;grid-column:4;grid-row:1;">
+        <div class="block-num" style="background:#bbf7d0;color:#15803d;">4</div>
+        <div class="block-title" style="color:#166534;">💬 Customer Relationships</div>
+        <div class="block-q">How do you get, keep, and grow customers?</div>
+        <div class="block-ex">Self-serve, personal, community</div>
+      </div>
+
+      <!-- Customer Segments -->
+      <div class="block" data-num="5" style="background:#fff7ed;grid-column:5;grid-row:1/3;">
+        <div class="block-num" style="background:#fed7aa;color:#c2410c;">5</div>
+        <div class="block-title" style="color:#9a3412;">🎯 Customer Segments</div>
+        <div class="block-q">Exactly who are you building this for?</div>
+        <div class="block-ex">Mass market, niche, B2B, B2C</div>
+      </div>
+
+      <!-- Row 2: (KP continues) | Key Resources | (VP continues) | Channels | (CS continues) -->
+      <div class="block" data-num="6" style="background:#eff6ff;grid-column:2;grid-row:2;">
+        <div class="block-num" style="background:#bfdbfe;color:#1d4ed8;">6</div>
+        <div class="block-title" style="color:#1e40af;">🏗 Key Resources</div>
+        <div class="block-q">What assets do you absolutely need to operate?</div>
+        <div class="block-ex">People, tech, IP, cash</div>
+      </div>
+
+      <div class="block" data-num="7" style="background:#f0fdf4;grid-column:4;grid-row:2;">
+        <div class="block-num" style="background:#bbf7d0;color:#15803d;">7</div>
+        <div class="block-title" style="color:#166534;">📣 Channels</div>
+        <div class="block-q">How do customers find and receive your product?</div>
+        <div class="block-ex">Web, app, sales, referral</div>
+      </div>
+
+      <!-- Row 3: Cost Structure | Revenue Streams -->
+      <div class="block" data-num="8" style="background:#fef2f2;grid-column:1/4;grid-row:3;min-height:90px;">
+        <div class="block-num" style="background:#fecaca;color:#dc2626;">8</div>
+        <div class="block-title" style="color:#991b1b;">💸 Cost Structure</div>
+        <div class="block-q">What does it cost to run this business? Fixed costs, variable costs, biggest expenses?</div>
+        <div class="block-ex">Infrastructure · Salaries · Marketing · Support</div>
+      </div>
+
+      <div class="block" data-num="9" style="background:#f0fdf4;grid-column:4/6;grid-row:3;min-height:90px;">
+        <div class="block-num" style="background:#bbf7d0;color:#15803d;">9</div>
+        <div class="block-title" style="color:#166534;">💰 Revenue Streams</div>
+        <div class="block-q">How do you make money? What are customers actually paying for?</div>
+        <div class="block-ex">Subscription · One-time · Usage-based · Freemium</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- How to fill it in flow -->
+  <div class="flow-strip">
+    <div class="canvas-label" style="padding:0 0 16px;">How to fill it in — start here</div>
+    <div class="flow-row">
+      <div class="flow-node highlight">
+        <div class="flow-node-icon">🎯</div>
+        <div class="flow-node-label">① Customer Segments</div>
+        <div class="flow-node-sub">Who are you serving?</div>
+      </div>
+      <div class="flow-sep"><span>→</span></div>
+      <div class="flow-node highlight">
+        <div class="flow-node-icon">⭐</div>
+        <div class="flow-node-label">② Value Proposition</div>
+        <div class="flow-node-sub">What's the promise?</div>
+      </div>
+      <div class="flow-sep"><span>→</span></div>
+      <div class="flow-node highlight">
+        <div class="flow-node-icon">📣</div>
+        <div class="flow-node-label">③ Channels</div>
+        <div class="flow-node-sub">How do they find you?</div>
+      </div>
+      <div class="flow-sep"><span>→</span></div>
+      <div class="flow-node highlight">
+        <div class="flow-node-icon">💬</div>
+        <div class="flow-node-label">④ Relationships</div>
+        <div class="flow-node-sub">How do you retain them?</div>
+      </div>
+      <div class="flow-sep"><span>→</span></div>
+      <div class="flow-node highlight">
+        <div class="flow-node-icon">💰</div>
+        <div class="flow-node-label">⑤ Revenue</div>
+        <div class="flow-node-sub">How do you get paid?</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:center;align-items:center;gap:6px;margin:10px 0;color:#9ca3af;font-size:12px;font-weight:700;">
+      <span>↓</span> <span>Then fill in the left side (the "how")</span> <span>↓</span>
+    </div>
+    <div class="flow-row">
+      <div class="flow-node">
+        <div class="flow-node-icon">⚙️</div>
+        <div class="flow-node-label">Key Activities</div>
+        <div class="flow-node-sub">What you must do</div>
+      </div>
+      <div class="flow-sep"><span>+</span></div>
+      <div class="flow-node">
+        <div class="flow-node-icon">🏗</div>
+        <div class="flow-node-label">Key Resources</div>
+        <div class="flow-node-sub">What you need</div>
+      </div>
+      <div class="flow-sep"><span>+</span></div>
+      <div class="flow-node">
+        <div class="flow-node-icon">🤝</div>
+        <div class="flow-node-label">Key Partners</div>
+        <div class="flow-node-sub">Who helps you</div>
+      </div>
+      <div class="flow-sep"><span>=</span></div>
+      <div class="flow-node">
+        <div class="flow-node-icon">💸</div>
+        <div class="flow-node-label">Cost Structure</div>
+        <div class="flow-node-sub">Your total spend</div>
+      </div>
+      <div class="flow-sep"><span>vs</span></div>
+      <div class="flow-node" style="background:#f0fdf4;border-color:#86efac;">
+        <div class="flow-node-icon">💰</div>
+        <div class="flow-node-label" style="color:#15803d;">Revenue Streams</div>
+        <div class="flow-node-sub">Must be bigger</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight">
+    <div class="icon">💡</div>
+    <div>
+      <h4>The BMC test: can a stranger understand your business in 60 seconds?</h4>
+      <p>If someone picks up your BMC and can't immediately understand what you do, who you serve, how you make money, and why customers would choose you — it's not clear enough yet. Revise until it passes the 60-second test. In MVP Club, your BMC lives inside My Idea Vault and can be updated at any stage.</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span class="footer-brand">MVP Club</span>
+    <span style="font-size:12px;color:#9ca3af;font-style:italic;">From idea to launched — one step at a time.</span>
+    <span class="footer-label">CONCEPT GUIDE · BMC</span>
+  </div>
+
+</div>
+</body>
+</html>
