@@ -340,6 +340,7 @@ const NOTIF_ICON: Record<string, string> = {
   new_reply:     '↩️',
   encourage:     '👍',
   network_offer: '🤝',
+  new_feedback:  '💡',
 };
 
 const NOTIF_COLOR: Record<string, string> = {
@@ -348,6 +349,7 @@ const NOTIF_COLOR: Record<string, string> = {
   new_reply:     '#5856d6',
   encourage:     '#ff9500',
   network_offer: '#34c759',
+  new_feedback:  '#8b5cf6',
 };
 
 export async function sendNotificationEmail({

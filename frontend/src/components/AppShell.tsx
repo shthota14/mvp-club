@@ -6,6 +6,7 @@ import Logo from './Logo';
 import NotificationBell from './NotificationBell';
 import OnboardingWizard from './OnboardingWizard';
 import GettingStartedPanel from './GettingStartedPanel';
+import FeedbackWidget from './FeedbackWidget';
 import { messagesApi } from '@/api/client';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
@@ -46,6 +47,7 @@ export default function AppShell() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [onboardingDone, setOnboardingDone] = useState(true); // assume done until user loads
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     if (user && !user.is_admin) {
@@ -118,6 +120,16 @@ export default function AppShell() {
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#6e6e73'; }}
           >
             ?
+          </button>
+
+          <button
+            onClick={() => setFeedbackOpen(true)}
+            title="Feature request, bug report, or feedback"
+            style={{ ...iconBtn, fontSize: 15 }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f7'; (e.currentTarget as HTMLButtonElement).style.color = '#1d1d1f'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#6e6e73'; }}
+          >
+            💬
           </button>
 
           <NotificationBell />
@@ -222,6 +234,7 @@ export default function AppShell() {
         />
       )}
       <GettingStartedPanel onboardingDone={onboardingDone} />
+      <FeedbackWidget open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </>
   );
 }

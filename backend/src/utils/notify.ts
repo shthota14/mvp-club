@@ -6,11 +6,12 @@ export type NotificationType =
   | 'new_comment'
   | 'encourage'
   | 'network_offer'
-  | 'new_reply';
+  | 'new_reply'
+  | 'new_feedback';
 
 // Encourages are high-volume — skip emailing those
 const EMAIL_ELIGIBLE: NotificationType[] = [
-  'new_post', 'new_comment', 'new_reply', 'network_offer',
+  'new_post', 'new_comment', 'new_reply', 'network_offer', 'new_feedback',
 ];
 
 export async function createNotification(

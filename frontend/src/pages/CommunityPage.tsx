@@ -527,6 +527,8 @@ const POST_TYPE_BADGE: Record<string, { label: string; color: string; bg: string
   update:             { label: '📝 Update',     color: '#2563eb', bg: '#eff6ff' },
   question:           { label: '❓ Question',   color: '#d97706', bg: '#fffbeb' },
   validation_request: { label: '🧪 Validation', color: '#7c3aed', bg: '#f5f3ff' },
+  pain_point:         { label: '🎯 Pain point', color: '#dc2626', bg: '#fff5f5' },
+  collab:             { label: '🤝 Collab',     color: '#92400e', bg: '#fffbeb' },
 };
 
 // ── Share a Win Modal ─────────────────────────────────────────────────────────
@@ -663,6 +665,15 @@ function ActivityCard({ post, onEncourage, onViewIdea }: {
   const color = STAGE_COLORS[post.stage];
   const badge = POST_TYPE_BADGE[post.post_type] ?? POST_TYPE_BADGE['update'];
 
+  // Pain-point and collab posts store structured data as encoded JSON
+  // (||PP||{...}||END|| / ||COLLAB||{...}||END||) and have their own tabs
+  // with proper cards — the API excludes them from this generic feed, but
+  // decode defensively here too in case one ever slips through, so it never
+  // renders as raw JSON.
+  const pp = post.post_type === 'pain_point' ? decodePP(post.content) : null;
+  const collab = post.post_type === 'collab' ? decodeCollab(post.content) : null;
+  const displayContent = pp ? pp.description : collab ? `Looking for: ${collab.looking_for}` : post.content;
+
   const diff = Date.now() - new Date(post.created_at).getTime();
   const mins = Math.floor(diff / 60000);
   const ago = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : Math.floor(mins/60) < 24 ? `${Math.floor(mins/60)}h ago` : `${Math.floor(mins/86400000*60)}d ago`;
@@ -697,7 +708,7 @@ function ActivityCard({ post, onEncourage, onViewIdea }: {
 
       {/* Content */}
       <div style={{ fontSize: 15, color: LIT.text, lineHeight: 1.65, fontFamily: LIT.bodyFont }}>
-        {post.content}
+        {displayContent}
       </div>
 
       {/* Actions */}
@@ -4405,6 +4416,120 @@ function PainPointsTab({ onNavigate: _onNavigate }: { onNavigate: (path: string)
   );
 }
 
+// ── Early-Stage Funding News widget ─────────────────────────────────────────
+// Real angel/pre-seed/seed-round headlines scraped from Google News RSS,
+// then rephrased in Ollama's own words — refreshed daily. No outbound link
+// to the source site; the source is named as plain-text attribution only.
+// See backend/src/utils/startupNewsFeed.ts.
+
+interface StartupNewsItem {
+  id: string;
+  headline: string;
+  source: string;
+  published_at: string | null;
+}
+
+function newsAgo(iso: string | null): string {
+  if (!iso) return '';
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (days <= 0) return 'today';
+  if (days === 1) return '1d ago';
+  return `${days}d ago`;
+}
+
+// Fetches the curated news items once, for the compact pill-chip row
+// (placement option #44) shown in the same spot as the original banner.
+function useStartupNews() {
+  const [items, setItems]     = useState<StartupNewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    communityApi.listStartupNews()
+      .then(res => setItems(res.data.items ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { items, loading };
+}
+
+// Placement option #44 — same spot as the original banner (right under the
+// "MVP Club is free" support banner), but instead of big cards, a single
+// row of small rounded pill-chips, headline text only, auto-scrolling like a
+// news ticker. Still no outbound link — just the rephrased headline and a
+// plain-text source/timestamp on hover via title=.
+function StartupNewsPillRow() {
+  const { items, loading } = useStartupNews();
+  const [now, setNow] = useState(() => new Date());
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} style={{ height: 26, width: 120 + (i % 2) * 40, borderRadius: 100, background: '#111', border: '1px solid #333' }} />
+        ))}
+      </div>
+    );
+  }
+
+  if (items.length === 0) return null;
+
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  // Duplicate the list so the looping animation has no visible seam.
+  const trackItems = [...items, ...items];
+  const duration = Math.max(45, items.length * 14);
+
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6, flexWrap: 'wrap' as const }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#000', letterSpacing: .5, fontFamily: LIT.headFont }}>
+          📰 Funding news
+        </span>
+        <span style={{ fontSize: 11, color: '#000', fontFamily: '"Courier New", Courier, monospace', letterSpacing: .3 }}>
+          {dateStr} · {timeStr}
+        </span>
+      </div>
+
+      <div
+        style={{ overflow: 'hidden', width: '100%' }}
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+      >
+        <div style={{
+          display: 'flex', gap: 8, width: 'max-content',
+          animation: `newsTickerScroll ${duration}s linear infinite`,
+          animationPlayState: paused ? 'paused' : 'running',
+        }}>
+          {trackItems.map((item, i) => (
+            <span
+              key={`${item.id}-${i}`}
+              title={`${item.source}${item.published_at ? ` · ${newsAgo(item.published_at)}` : ''}`}
+              style={{
+                flexShrink: 0, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, color: '#f2f2f2',
+                background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 100,
+                padding: '5px 14px', fontFamily: '"Courier New", Courier, monospace',
+                letterSpacing: .3, cursor: 'default',
+              }}
+            >
+              {item.headline}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Ticker keyframe — moves the (doubled) track left→right in a seamless loop */}
+      <style>{`@keyframes newsTickerScroll { from { transform: translateX(-50%); } to { transform: translateX(0%); } }`}</style>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function CommunityPage() {
   const navigate = useNavigate();
@@ -4590,6 +4715,9 @@ export default function CommunityPage() {
           Support MVP Club →
         </button>
       </div>
+
+      {/* Early-Stage Funding News — compact pill-chip row, community home page only */}
+      {tab === 'ideas' && <StartupNewsPillRow />}
 
       {/* Proof tab */}
       {tab === 'proof' && (

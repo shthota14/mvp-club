@@ -9,7 +9,7 @@ router.use(requireAdmin);
 // ── Dashboard stats ───────────────────────────────────────────────────────────
 router.get('/stats', async (_req: Request, res: Response) => {
   try {
-    const [ideas, posts, users] = await Promise.all([
+    const [ideas, posts, users, feedback] = await Promise.all([
       query(`SELECT
                COUNT(*) FILTER (WHERE moderation_status = 'pending')  AS pending,
                COUNT(*) FILTER (WHERE moderation_status = 'approved') AS approved,
@@ -23,8 +23,9 @@ router.get('/stats', async (_req: Request, res: Response) => {
                COUNT(*) AS total
              FROM community_posts`),
       query('SELECT COUNT(*) AS total FROM users WHERE is_admin = FALSE'),
+      query(`SELECT COUNT(*) FILTER (WHERE status = 'new') AS new, COUNT(*) AS total FROM feedback_submissions`),
     ]);
-    res.json({ ideas: ideas.rows[0], posts: posts.rows[0], users: users.rows[0] });
+    res.json({ ideas: ideas.rows[0], posts: posts.rows[0], users: users.rows[0], feedback: feedback.rows[0] });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
@@ -220,6 +221,45 @@ router.post('/jobs/weekly-digest', async (_req: Request, res: Response) => {
     console.error('[admin/jobs] weekly-digest trigger error:', err);
     res.status(500).json({ error: 'Failed to start job' });
   }
+});
+
+// ── Feedback inbox (feature requests / bugs / improvements / general feedback)
+router.get('/feedback', async (req: Request, res: Response) => {
+  const { status } = req.query;
+  try {
+    const params: unknown[] = [];
+    const where = status ? `WHERE f.status = $${params.push(status)}` : '';
+    const result = await query(
+      `SELECT
+         f.id, f.category, f.message, f.page_context, f.status, f.admin_notes,
+         f.created_at, f.updated_at,
+         u.name AS author_name, u.email AS author_email, u.avatar_initials
+       FROM feedback_submissions f
+       JOIN users u ON f.user_id = u.id
+       ${where}
+       ORDER BY f.created_at DESC`,
+      params
+    );
+    res.json({ submissions: result.rows });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+router.patch('/feedback/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status, admin_notes } = req.body;
+  if (status && !['new', 'reviewing', 'planned', 'done', 'dismissed'].includes(status)) {
+    res.status(400).json({ error: 'Invalid status' }); return;
+  }
+  try {
+    const result = await query(
+      `UPDATE feedback_submissions
+       SET status = COALESCE($1, status), admin_notes = COALESCE($2, admin_notes), updated_at = NOW()
+       WHERE id = $3 RETURNING *`,
+      [status ?? null, admin_notes ?? null, id]
+    );
+    if (!result.rows.length) { res.status(404).json({ error: 'Submission not found' }); return; }
+    res.json({ submission: result.rows[0] });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
 export default router;

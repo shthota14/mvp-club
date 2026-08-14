@@ -309,6 +309,9 @@ export const communityApi = {
   listPainPoints: () => api.get('/community/pain-points'),
   // collabs
   listCollabs: () => api.get('/community/collabs'),
+  // early-stage funding news (real headlines, AI-curated — see backend/src/utils/startupNewsFeed.ts)
+  listStartupNews: () => api.get('/community/startup-news'),
+  refreshStartupNews: () => api.post('/community/startup-news/refresh'),
 };
 
 // Surveys
@@ -358,6 +361,16 @@ export const adminApi = {
   suspendUser: (id: string, suspended: boolean) => api.patch(`/admin/users/${id}/suspend`, { suspended }),
   deleteUser: (id: string) => api.delete(`/admin/users/${id}`),
   triggerWeeklyDigest: () => api.post('/admin/jobs/weekly-digest'),
+  listFeedback: (status?: string) => api.get('/admin/feedback', { params: status ? { status } : {} }),
+  updateFeedback: (id: string, data: { status?: string; admin_notes?: string }) => api.patch(`/admin/feedback/${id}`, data),
+};
+
+// Feedback (feature requests / bugs / improvements / general feedback) —
+// noticeable everywhere via the FeedbackWidget (top-nav icon + floating tab
+// in AppShell.tsx). Submissions go to a private admin-only inbox.
+export const feedbackApi = {
+  submit: (data: { category: 'feature' | 'bug' | 'improvement' | 'feedback'; message: string; page_context?: string }) =>
+    api.post('/feedback', data),
 };
 
 // Donations

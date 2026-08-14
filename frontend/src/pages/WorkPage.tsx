@@ -7,7 +7,6 @@ import IdeaCanvasModal from '@/components/IdeaCanvasModal';
 import StageCompleteModal from '@/components/StageCompleteModal';
 import AvailabilityModal from '@/components/AvailabilityModal';
 import InterviewScriptCard from '@/components/InterviewScriptCard';
-import CommunitySidebar from '@/components/CommunitySidebar';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { deriveAssumptionVerdicts } from '@/utils/assumptionVerdicts';
 import { deriveVeraVerdicts } from '@/utils/veraVerdicts';
@@ -10220,7 +10219,6 @@ export default function WorkPage() {
   const [fields, setFields] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [showLI, setShowLI] = useState(false);
-  const [briefPanelOpen, setBriefPanelOpen] = useState(false);
   const [showBMCDraft, setShowBMCDraft] = useState(false);
   const [showPitchDraft, setShowPitchDraft] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -10244,7 +10242,6 @@ export default function WorkPage() {
   const [v3ExpandedCard, setV3ExpandedCard] = useState<string | null>(null); // expanded drill card id
   const [v3IvTab, setV3IvTab] = useState<'transcript' | 'edit'>('transcript');
   const [v3ModalIv, setV3ModalIv] = useState<any | null>(null);
-  const [commAutoDraft, setCommAutoDraft] = useState<string | null>(null);
   const [v3DraftNotes, setV3DraftNotes] = useState('');
   const [v3DraftScore, setV3DraftScore] = useState<number | null>(null);
   const [addInterviewName, setAddInterviewName] = useState('');
@@ -10908,15 +10905,6 @@ export default function WorkPage() {
         }
       } catch { /* silent */ }
     }
-    // Auto-draft community post when a new alignment score is recorded
-    if (scoringNew && score !== null) {
-      const name = iv.interviewee_name ? ` with ${iv.interviewee_name}` : '';
-      const draft =
-        score === 3 ? `I completed an interview${name} — they confirmed the problem! 🎉 Moving forward with confidence.`
-        : score === 2 ? `I had an interview${name} — got mixed signals. Still gathering data and refining my approach.`
-        : `Completed an interview${name} — not a fit. Adjusting my thinking based on the feedback.`;
-      setCommAutoDraft(draft);
-    }
     setV3ModalIv(null);
   };
 
@@ -10943,36 +10931,59 @@ export default function WorkPage() {
 
     if (sidebarCollapsed) return (
       <aside style={{
-        width: 52, flexShrink: 0,
+        width: 64, flexShrink: 0,
         background: '#f8f8fa',
         borderRight: `1px solid ${BORDER}`,
         height: 'calc(100vh - 64px)', position: 'sticky', top: 64,
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        paddingTop: 12, gap: 4, transition: 'width 0.2s',
+        paddingTop: 12, gap: 8, transition: 'width 0.2s',
       }}>
         {/* Expand toggle */}
         <button
           onClick={() => setSidebarCollapsed(false)}
           title="Expand sidebar"
-          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${BORDER}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, marginBottom: 8 }}
+          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${BORDER}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, marginBottom: 6 }}
         >›</button>
-        {/* Stage icons */}
+        {/* Stage icons — count-forward hierarchy: step count leads, icon, micro-label */}
         {MODULES.map(m => {
-          const isActive = mod === m;
-          const c = STAGE_COLORS[m];
+          const isActive   = mod === m;
+          const isDone     = !!completed[m];
+          const isLocked   = !unlocked[m];
+          const c          = STAGE_COLORS[m];
+          const total      = META[m].steps;
+          const doneSteps  = isDone ? total : isActive ? Math.max(0, Math.min(step - 1, total)) : 0;
+          const showCount  = !isLocked;
+          const emphasize  = isDone || isActive;
+          const shortLabel = m === 'validate' ? 'VAL' : META[m].label.toUpperCase();
           return (
             <button
               key={m}
               onClick={() => { if (unlocked[m]) { goMod(m); setSidebarCollapsed(false); } }}
-              title={META[m].label}
+              title={`${META[m].label}${showCount ? ` — ${doneSteps}/${total} steps` : ' — locked'}`}
               style={{
-                width: 36, height: 36, borderRadius: 10, border: `1.5px solid ${isActive ? c : BORDER}`,
-                background: isActive ? `${c}18` : '#fff', cursor: unlocked[m] ? 'pointer' : 'default',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+                width: 46, background: 'none', border: 'none', padding: '2px 0',
+                cursor: unlocked[m] ? 'pointer' : 'default', fontFamily: 'inherit',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                 opacity: unlocked[m] ? 1 : 0.35,
               }}
             >
-              {completed[m] ? '✅' : META[m].icon}
+              <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: -.2, lineHeight: 1, height: 11, color: emphasize ? c : '#b0b0b8' }}>
+                {showCount ? `${doneSteps}/${total}` : ''}
+              </span>
+              <span style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                border: `1.5px solid ${isActive ? c : BORDER}`,
+                background: isActive ? `${c}18` : '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
+              }}>
+                {isDone ? '✅' : META[m].icon}
+              </span>
+              <span style={{
+                fontSize: 8, fontWeight: 800, letterSpacing: .3, textTransform: 'uppercase' as const,
+                color: emphasize ? c : '#b0b0b8',
+              }}>
+                {shortLabel}
+              </span>
             </button>
           );
         })}
@@ -16832,222 +16843,6 @@ export default function WorkPage() {
   const allSteps: Record<Mod, JSX.Element[]> = { idea: ideaSteps, hone: honeSteps, validate: validateSteps, shape: shapeSteps, done: doneSteps };
   const currentStep = allSteps[mod][Math.min(step, allSteps[mod].length - 1)];
 
-  // ── Live BMC (computed from stage entries, never stored) ─────────────────
-
-  const bl = get('buildApproach') === 'code'   ? 'In-house engineering'
-           : get('buildApproach') === 'nocode' ? 'No-code tools'
-           : get('buildApproach') === 'hire'   ? 'Outsourced / hired dev'
-           : get('buildApproach') || '';
-
-  const liveBMC: { key: string; label: string; stageColor: string; value: string }[] = [
-    {
-      key: 'vp', label: 'Value Proposition', stageColor: '#dc2626',
-      value: [
-        get('problemSentence'),
-        get('validatedProblem'),
-        !get('problemSentence') && !get('validatedProblem') ? get('oneLiner') : '',
-        get('painIfNothing') ? `Cost of inaction: ${get('painIfNothing')}` : '',
-        get('quantifiedValue') ? `Value: ${get('quantifiedValue')}` : '',
-      ].filter(Boolean).join('\n'),
-    },
-    {
-      key: 'segments', label: 'Customer Segments', stageColor: STAGE_COLORS.hone,
-      value: [
-        get('whoExactly'),
-        get('frequency') ? `Frequency: ${get('frequency')}` : '',
-      ].filter(Boolean).join('\n'),
-    },
-    {
-      key: 'activities', label: 'Key Activities', stageColor: STAGE_COLORS.shape,
-      value: [
-        get('activity1') ? `• ${get('activity1')}` : '',
-        get('activity2') ? `• ${get('activity2')}` : '',
-        get('activity3') ? `• ${get('activity3')}` : '',
-        get('feature1')  ? `• ${get('feature1')}` : '',
-        get('feature2')  ? `• ${get('feature2')}` : '',
-        get('feature3')  ? `• ${get('feature3')}` : '',
-        get('whatBuilt') ? `Built: ${get('whatBuilt')}` : '',
-      ].filter(Boolean).join('\n'),
-    },
-    {
-      key: 'relations', label: 'Customer Relationships', stageColor: STAGE_COLORS.validate,
-      value: [
-        get('relationshipType') ? `Model: ${get('relationshipType')}` : '',
-        get('firstUsers')       ? `Early users: ${get('firstUsers')}` : '',
-        get('pullSigns')        ? `Buy signals: ${get('pullSigns')}` : '',
-        get('interviewTarget'),
-        get('metricTarget')     ? `Metric: ${get('metricTarget')}` : '',
-      ].filter(Boolean).join('\n'),
-    },
-    {
-      key: 'resources', label: 'Key Resources', stageColor: STAGE_COLORS.shape,
-      value: [
-        bl ? `Build: ${bl}` : '',
-        get('founderStatement'),
-        get('refinement') ? `Edge: ${get('refinement')}` : '',
-      ].filter(Boolean).join('\n'),
-    },
-    {
-      key: 'channels', label: 'Channels', stageColor: STAGE_COLORS.shape,
-      value: [
-        get('distributionPlan'),
-        get('workaround') ? `Current: ${get('workaround')}` : '',
-      ].filter(Boolean).join('\n'),
-    },
-    {
-      key: 'cost', label: 'Cost Structure', stageColor: STAGE_COLORS.done,
-      value: [
-        get('costStructure')     ? get('costStructure') : bl ? `${bl} costs` : '',
-        !get('costStructure') && get('outOfScope') ? `Out of scope: ${get('outOfScope')}` : '',
-      ].filter(Boolean).join('\n'),
-    },
-    {
-      key: 'revenue', label: 'Revenue Streams', stageColor: '#059669',
-      value: [
-        get('vModel') ? `Model: ${get('vModel')}` : get('revenueModel') ? `Model: ${get('revenueModel')}` : '',
-        get('vPrice') ? `Price: $${get('vPrice')}/mo` : '',
-        get('vBuyer') ? `Buyer: ${get('vBuyer')}` : get('whoPays') ? `Payer: ${get('whoPays')}` : '',
-      ].filter(Boolean).join('\n'),
-    },
-    {
-      key: 'partners', label: 'Key Partners', stageColor: T2,
-      value: (() => {
-        const pl = (get('partnerPlan') || '').split('|').filter(Boolean);
-        if (pl.length) return pl.join(', ');
-        // fallback: infer from cost chips that imply external dependencies
-        const costs = (get('topCost') || '').split('|').filter(Boolean);
-        const inferred = costs.filter(c => ['AI / LLM API', 'Payment fees', 'Cloud hosting'].includes(c));
-        return inferred.length ? inferred.join(', ') : '';
-      })(),
-    },
-  ];
-
-  const bmcFilled   = liveBMC.filter(c => c.value.trim()).length;
-  const bmcTotal    = liveBMC.length;
-
-  // ── Live summary panel ────────────────────────────────────────────────────
-
-  const summaryRows: { label: string; value: string; color?: string }[] = [
-    { label: 'One-liner',      value: get('oneLiner'),         color: STAGE_COLORS.idea },
-    { label: 'Why it matters', value: get('spark'),            color: STAGE_COLORS.idea },
-    { label: 'Target audience',value: parseWhoDisplay(get('whoExactly')),  color: STAGE_COLORS.hone },
-    { label: 'The problem',    value: parseProblemDisplay(get('problemSentence')),  color: STAGE_COLORS.hone },
-    { label: 'Alternatives',   value: get('alternatives'),     color: STAGE_COLORS.hone },
-    { label: 'Assumed workarounds', value: (get('solutionAlternatives') || '').split('|||').filter(Boolean).map((s, i) => `${i+1}. ${s}`).join(' · '), color: STAGE_COLORS.hone },
-    { label: 'Founder statement', value: get('founderStatement'), color: STAGE_COLORS.hone },
-    { label: 'Interview targets', value: get('interviewTarget'), color: STAGE_COLORS.validate },
-    { label: 'Revenue model',  value: get('revenueModel'),     color: STAGE_COLORS.validate },
-    { label: 'Core feature 1', value: get('feature1'),         color: STAGE_COLORS.shape },
-    { label: 'Core feature 2', value: get('feature2'),         color: STAGE_COLORS.shape },
-    { label: 'Core feature 3', value: get('feature3'),         color: STAGE_COLORS.shape },
-    { label: 'Core feature 4', value: get('feature4'),         color: STAGE_COLORS.shape },
-    { label: 'Core feature 5', value: get('feature5'),         color: STAGE_COLORS.shape },
-    { label: 'Out of scope',   value: get('outOfScope'),       color: STAGE_COLORS.shape },
-    { label: 'Distribution',   value: get('distributionPlan'), color: STAGE_COLORS.shape },
-    { label: 'What you built', value: get('whatBuilt'),        color: STAGE_COLORS.done },
-    { label: 'North star metric', value: get('metricTarget'),  color: STAGE_COLORS.done },
-  ].filter(r => r.value?.trim());
-
-  const filledCount = summaryRows.length;
-
-  const SummaryPanel = () => {
-    return (
-    <aside style={{
-      width: 272, flexShrink: 0,
-      position: 'sticky', top: 24, alignSelf: 'flex-start',
-      maxHeight: 'calc(100vh - 112px)', overflowY: 'auto',
-      display: 'flex', flexDirection: 'column', gap: 12,
-    }}>
-
-      {/* ── Startup Brief ── */}
-      <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
-        <div style={{ padding: '14px 16px', borderBottom: filledCount > 0 ? `1px solid ${BORDER}` : 'none' }}>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: T3, marginBottom: 5 }}>Startup Brief</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: T1, letterSpacing: -0.3 }}>{activeIdea.name}</div>
-          {filledCount > 0 && (
-            <div style={{ marginTop: 10, height: 3, borderRadius: 3, background: '#f0f0f2', overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 3, background: STAGE_COLORS[mod], width: `${Math.min(filledCount / 16 * 100, 100)}%`, transition: 'width .4s ease' }} />
-            </div>
-          )}
-          {filledCount === 0 && (
-            <div style={{ marginTop: 6, fontSize: 11, color: T3, fontStyle: 'italic', lineHeight: 1.5 }}>Your answers will appear here as you fill them in.</div>
-          )}
-        </div>
-        {summaryRows.map((r, i) => (
-          <div key={r.label} style={{ padding: '10px 16px', borderTop: i > 0 ? `1px solid #f0f0f2` : 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-              <div style={{ width: 5, height: 5, borderRadius: '50%', background: r.color ?? T3, flexShrink: 0 }} />
-              <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1.1, textTransform: 'uppercase' as const, color: T3 }}>{r.label}</div>
-            </div>
-            <div style={{ fontSize: 11, color: T1, lineHeight: 1.55, fontStyle: 'italic', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
-              {r.value.replace(/^\[.+?\]\n/, '').split('\n')[0]}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Business Model Canvas (live) ── */}
-      <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
-        {/* BMC header */}
-        <div style={{ padding: '14px 16px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: T3, marginBottom: 4 }}>Business Model Canvas</div>
-            <div style={{ fontSize: 11, color: bmcFilled > 0 ? T1 : T3, fontWeight: 600 }}>
-              {bmcFilled > 0 ? `${bmcFilled} of ${bmcTotal} cells filling` : 'Builds as you progress'}
-            </div>
-          </div>
-          {bmcFilled > 0 && (
-            <div style={{
-              width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-              background: `conic-gradient(#dc2626 ${bmcFilled / bmcTotal * 360}deg, #f0f0f2 0deg)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color: '#dc2626' }}>
-                {Math.round(bmcFilled / bmcTotal * 100)}%
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* BMC cells */}
-        {liveBMC.map((cell, i) => {
-          const filled = cell.value.trim().length > 0;
-          return (
-            <div key={cell.key} style={{
-              padding: '10px 16px',
-              borderTop: i > 0 ? `1px solid #f0f0f2` : 'none',
-              borderLeft: `3px solid ${filled ? cell.stageColor : '#f0f0f2'}`,
-              background: filled ? `${cell.stageColor}04` : '#fff',
-              transition: 'all .2s',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: filled ? 4 : 0 }}>
-                <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' as const, color: filled ? cell.stageColor : T3 }}>
-                  {cell.label}
-                </div>
-                {filled && <div style={{ width: 5, height: 5, borderRadius: '50%', background: cell.stageColor, flexShrink: 0 }} />}
-              </div>
-              {filled ? (
-                <div style={{ fontSize: 11, color: T1, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
-                  {cell.value.split('\n')[0]}
-                </div>
-              ) : (
-                <div style={{ fontSize: 10, color: '#d0d0d6', fontStyle: 'italic' }}>Not yet filled</div>
-              )}
-            </div>
-          );
-        })}
-
-        {bmcFilled === 0 && (
-          <div style={{ padding: '14px 16px', textAlign: 'center' as const }}>
-            <div style={{ fontSize: 24, marginBottom: 6 }}>🧩</div>
-            <div style={{ fontSize: 11, color: T3, lineHeight: 1.55 }}>Complete the guided steps and your BMC will build itself here.</div>
-          </div>
-        )}
-      </div>
-    </aside>
-    );
-  };
-
   // ── Three-column layout ───────────────────────────────────────────────────
 
   // ── Mobile stage tab strip ────────────────────────────────────────────────
@@ -17261,41 +17056,6 @@ export default function WorkPage() {
                 </div>
               )}
             </div>
-
-            {/* Right: live startup brief (desktop only) — collapsible */}
-            {!isMobile && (
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start' }}>
-                {/* Toggle tab */}
-                <button
-                  onClick={() => setBriefPanelOpen(o => !o)}
-                  title={briefPanelOpen ? 'Collapse panel' : 'Expand panel'}
-                  style={{
-                    position: 'sticky', top: 24,
-                    width: 20, height: 56, flexShrink: 0,
-                    background: '#fff', border: `1.5px solid ${BORDER}`,
-                    borderRadius: briefPanelOpen ? '8px 0 0 8px' : 8,
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 1px 4px rgba(0,0,0,.08)',
-                    transition: 'border-radius .2s',
-                    marginRight: briefPanelOpen ? 0 : 0,
-                    zIndex: 1,
-                  }}
-                >
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transition: 'transform .2s', transform: briefPanelOpen ? 'rotate(0deg)' : 'rotate(180deg)' }}>
-                    <path d="M6.5 2L3.5 5l3 3" stroke={T3} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-                {/* Panel */}
-                <div style={{
-                  width: briefPanelOpen ? 272 : 0,
-                  overflow: 'hidden',
-                  transition: 'width .25s ease',
-                  flexShrink: 0,
-                }}>
-                  <SummaryPanel />
-                </div>
-              </div>
-            )}
           </div>
         </div>
         </IdeaIdCtx.Provider>
@@ -17482,13 +17242,6 @@ export default function WorkPage() {
           }}
         />
       )}
-
-      {/* ── Community Proof sidebar ── */}
-      <CommunitySidebar
-        currentStage={mod}
-        autoDraft={commAutoDraft}
-        onAutoDraftDismiss={() => setCommAutoDraft(null)}
-      />
     </>
   );
 }

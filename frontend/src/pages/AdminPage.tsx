@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminApi, messagesApi } from '@/api/client';
+import { adminApi, messagesApi, communityApi } from '@/api/client';
 import { STAGE_LABELS, STAGE_COLORS, type Stage } from '@/types';
 import { useApp } from '@/context/AppContext';
 import IdeaCanvasModal from '@/components/IdeaCanvasModal';
@@ -43,15 +43,30 @@ interface AdminUser {
   idea_count: string;
 }
 
+interface AdminFeedback {
+  id: string;
+  category: 'feature' | 'bug' | 'improvement' | 'feedback';
+  message: string;
+  page_context: string | null;
+  status: 'new' | 'reviewing' | 'planned' | 'done' | 'dismissed';
+  admin_notes: string | null;
+  created_at: string;
+  author_name: string;
+  author_email: string;
+  avatar_initials: string;
+}
+
 interface Stats {
   ideas: { pending: string; approved: string; rejected: string; total: string };
   posts: { flagged: string; held: string; rejected: string; total: string };
   users: { total: string };
+  feedback: { new: string; total: string };
 }
 
-type MainTab = 'ideas' | 'posts' | 'users' | 'tools';
+type MainTab = 'ideas' | 'posts' | 'users' | 'feedback' | 'tools';
 type IdeaFilter = 'all' | 'pending' | 'approved' | 'rejected';
 type PostFilter = 'all' | 'flagged' | 'held' | 'rejected' | 'approved';
+type FeedbackFilter = 'new' | 'reviewing' | 'planned' | 'done' | 'dismissed' | 'all';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function timeAgo(d: string) {
@@ -76,6 +91,21 @@ const POST_STATUS: Record<string, { label: string; color: string; bg: string }> 
   flagged:  { label: 'Flagged',  color: '#dc2626', bg: '#fee2e2' },
   held:     { label: 'On Hold',  color: '#d97706', bg: '#fef3c7' },
   rejected: { label: 'Rejected', color: '#6e6e73', bg: '#f3f4f6' },
+};
+
+const FEEDBACK_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  new:       { label: 'New',        color: '#8b5cf6', bg: '#f5f3ff' },
+  reviewing: { label: 'Reviewing',  color: '#2563eb', bg: '#eff6ff' },
+  planned:   { label: 'Planned',    color: '#d97706', bg: '#fef3c7' },
+  done:      { label: 'Done',       color: '#15803d', bg: '#dcfce7' },
+  dismissed: { label: 'Dismissed',  color: '#6e6e73', bg: '#f3f4f6' },
+};
+
+const FEEDBACK_CATEGORY: Record<string, { label: string; color: string; bg: string }> = {
+  feature:     { label: '💡 Feature idea', color: '#8b5cf6', bg: '#f5f3ff' },
+  bug:         { label: '🐞 Bug',          color: '#dc2626', bg: '#fee2e2' },
+  improvement: { label: '✨ Improvement',  color: '#2563eb', bg: '#eff6ff' },
+  feedback:    { label: '💬 Feedback',     color: '#15803d', bg: '#dcfce7' },
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -374,22 +404,94 @@ function UserRow({ user: u, onResetPassword, onSuspend, onDelete }: {
   );
 }
 
+// ── Feedback row with status + internal notes management ──────────────────────
+function FeedbackRow({ item, onUpdate }: {
+  item: AdminFeedback;
+  onUpdate: (id: string, data: { status?: string; admin_notes?: string }) => Promise<void>;
+}) {
+  const [notes, setNotes]       = useState(item.admin_notes ?? '');
+  const [showNotes, setShowNotes] = useState(!!item.admin_notes);
+  const [saving, setSaving]     = useState(false);
+  const [acting, setActing]     = useState(false);
+  const cat = FEEDBACK_CATEGORY[item.category] ?? FEEDBACK_CATEGORY.feedback;
+
+  const setStatus = async (status: string) => {
+    setActing(true);
+    try { await onUpdate(item.id, { status }); } finally { setActing(false); }
+  };
+
+  const saveNotes = async () => {
+    setSaving(true);
+    try { await onUpdate(item.id, { admin_notes: notes }); } finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, border: `1px solid ${item.status === 'new' ? '#ddd6fe' : '#d2d2d7'}`, padding: '16px 20px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        <Avatar initials={item.avatar_initials} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 700, fontSize: 13, color: '#1d1d1f' }}>{item.author_name}</span>
+            <span style={{ fontSize: 11, color: '#86868b' }}>{item.author_email}</span>
+            <span style={{ fontSize: 11, color: '#86868b' }}>{timeAgo(item.created_at)}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+            <span style={{ background: cat.bg, color: cat.color, borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 800 }}>{cat.label}</span>
+            <Badge status={item.status} map={FEEDBACK_STATUS} />
+            {item.page_context && (
+              <span style={{ fontSize: 10, color: '#86868b' }}>
+                on <code style={{ background: '#f3f4f6', borderRadius: 4, padding: '1px 5px' }}>{item.page_context}</code>
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6, background: '#f5f5f7', borderRadius: 10, padding: '10px 14px', marginBottom: 10, whiteSpace: 'pre-wrap', borderLeft: `3px solid ${cat.color}` }}>
+            {item.message}
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: showNotes ? 10 : 0 }}>
+            {(['new', 'reviewing', 'planned', 'done', 'dismissed'] as const).filter(s => s !== item.status).map(s => (
+              <Btn key={s} label={`→ ${FEEDBACK_STATUS[s].label}`} color={FEEDBACK_STATUS[s].color} onClick={() => setStatus(s)} disabled={acting} />
+            ))}
+            <Btn label={showNotes ? 'Hide notes' : '📝 Notes'} onClick={() => setShowNotes(s => !s)} />
+          </div>
+          {showNotes && (
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Internal notes (not visible to the submitter)…"
+                rows={2}
+                style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid #d2d2d7', fontSize: 12, outline: 'none', resize: 'vertical' as const, fontFamily: 'inherit' }}
+              />
+              <Btn label={saving ? 'Saving…' : 'Save'} color="#6366f1" filled onClick={saveNotes} disabled={saving} />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main admin page ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { logout } = useApp();
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
-  const [tab, setTab]             = useState<MainTab>('ideas');
+  // Deep-linkable from the feedback-notification link (/admin?tab=feedback)
+  const [tab, setTab]             = useState<MainTab>(() => (new URLSearchParams(window.location.search).get('tab') === 'feedback' ? 'feedback' : 'ideas'));
   const [stats, setStats]         = useState<Stats | null>(null);
   const [ideas, setIdeas]         = useState<AdminIdea[]>([]);
   const [posts, setPosts]         = useState<AdminPost[]>([]);
   const [users, setUsers]         = useState<AdminUser[]>([]);
+  const [feedback, setFeedback]   = useState<AdminFeedback[]>([]);
   const [ideaFilter, setIdeaFilter] = useState<IdeaFilter>('all');
   const [postFilter, setPostFilter] = useState<PostFilter>('flagged');
+  const [feedbackFilter, setFeedbackFilter] = useState<FeedbackFilter>('new');
   const [loading, setLoading]     = useState(false);
   const [search, setSearch]       = useState('');
   const [digestState, setDigestState] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [digestQueued, setDigestQueued] = useState<number | null>(null);
+  const [newsState, setNewsState] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
+  const [newsResult, setNewsResult] = useState<{ fetched: number; kept: number; stored: number } | null>(null);
 
   // Poll unread message count every 30s
   useEffect(() => {
@@ -430,14 +532,23 @@ export default function AdminPage() {
     } catch {} finally { setLoading(false); }
   }, []);
 
+  const loadFeedback = useCallback(async (filter: FeedbackFilter) => {
+    setLoading(true);
+    try {
+      const r = await adminApi.listFeedback(filter === 'all' ? undefined : filter);
+      setFeedback(r.data.submissions);
+    } catch {} finally { setLoading(false); }
+  }, []);
+
   useEffect(() => { loadStats(); }, [loadStats]);
 
   useEffect(() => {
     setSearch('');
-    if (tab === 'ideas')      loadIdeas(ideaFilter);
-    else if (tab === 'posts') loadPosts(postFilter);
-    else                      loadUsers();
-  }, [tab, ideaFilter, postFilter, loadIdeas, loadPosts, loadUsers]);
+    if (tab === 'ideas')          loadIdeas(ideaFilter);
+    else if (tab === 'posts')     loadPosts(postFilter);
+    else if (tab === 'users')     loadUsers();
+    else if (tab === 'feedback')  loadFeedback(feedbackFilter);
+  }, [tab, ideaFilter, postFilter, feedbackFilter, loadIdeas, loadPosts, loadUsers, loadFeedback]);
 
   const handleModerateIdea = async (id: string, status: string) => {
     await adminApi.moderateIdea(id, status);
@@ -457,6 +568,19 @@ export default function AdminPage() {
     loadStats();
   };
 
+  const handleUpdateFeedback = async (id: string, data: { status?: string; admin_notes?: string }) => {
+    const r = await adminApi.updateFeedback(id, data);
+    // A status change moves an item out of any specific (non-"all") filter —
+    // drop it from the list in that case. Otherwise (or on the "all" filter,
+    // or a notes-only save) just update it in place.
+    if (data.status && feedbackFilter !== 'all') {
+      setFeedback(prev => prev.filter(f => f.id !== id));
+    } else {
+      setFeedback(prev => prev.map(f => f.id === id ? { ...f, ...r.data.submission } : f));
+    }
+    if (data.status) loadStats();
+  };
+
   // Filtered by search
   const filteredIdeas = ideas.filter(i =>
     !search || i.name.toLowerCase().includes(search.toLowerCase()) || i.author_name.toLowerCase().includes(search.toLowerCase())
@@ -466,6 +590,9 @@ export default function AdminPage() {
   );
   const filteredUsers = users.filter(u =>
     !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
+  );
+  const filteredFeedback = feedback.filter(f =>
+    !search || f.message.toLowerCase().includes(search.toLowerCase()) || f.author_name.toLowerCase().includes(search.toLowerCase())
   );
 
   // Tab styles
@@ -483,7 +610,7 @@ export default function AdminPage() {
     transition: 'all .12s',
   });
 
-  const alertCount = (stats ? Number(stats.ideas.pending) + Number(stats.posts.flagged) : 0);
+  const alertCount = (stats ? Number(stats.ideas.pending) + Number(stats.posts.flagged) + Number(stats.feedback?.new ?? 0) : 0);
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f5f7', fontFamily: 'inherit' }}>
@@ -504,6 +631,11 @@ export default function AdminPage() {
             {stats && Number(stats.posts.flagged) > 0 && (
               <span style={{ background: '#fee2e2', color: '#dc2626', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 800 }}>
                 {stats.posts.flagged} posts flagged
+              </span>
+            )}
+            {stats && Number(stats.feedback?.new ?? 0) > 0 && (
+              <span style={{ background: '#f5f3ff', color: '#8b5cf6', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 800 }}>
+                {stats.feedback.new} new feedback
               </span>
             )}
           </>)}
@@ -554,6 +686,7 @@ export default function AdminPage() {
             <StatCard label="Rejected ideas" value={stats.ideas.rejected} color="#dc2626" />
             <StatCard label="Flagged posts"  value={stats.posts.flagged}  color="#dc2626" />
             <StatCard label="Held posts"     value={stats.posts.held}     color="#d97706" />
+            <StatCard label="New feedback"   value={stats.feedback?.new ?? 0} color="#8b5cf6" />
             <StatCard label="Members"        value={stats.users.total}    color="#6366f1" />
           </div>
         )}
@@ -561,9 +694,14 @@ export default function AdminPage() {
         {/* ── Main tabs + search ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 14, padding: 4 }}>
-            {(['ideas', 'posts', 'users', 'tools'] as const).map(t => (
+            {(['ideas', 'posts', 'users', 'feedback', 'tools'] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} style={mainTab(tab === t)}>
-                {t === 'ideas' ? '💡 Ideas' : t === 'posts' ? '💬 Comments' : t === 'users' ? '👥 Members' : '⚙️ Tools'}
+                {t === 'ideas' ? '💡 Ideas' : t === 'posts' ? '💬 Comments' : t === 'users' ? '👥 Members' : t === 'feedback' ? '📮 Feedback' : '⚙️ Tools'}
+                {t === 'feedback' && stats && Number(stats.feedback?.new ?? 0) > 0 && (
+                  <span style={{ marginLeft: 6, background: '#8b5cf6', color: '#fff', borderRadius: 20, padding: '1px 6px', fontSize: 10, fontWeight: 800 }}>
+                    {stats.feedback.new}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -577,7 +715,7 @@ export default function AdminPage() {
           )}
           {tab !== 'tools' && (
             <span style={{ fontSize: 12, color: '#86868b', marginLeft: 'auto' }}>
-              {tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : filteredUsers.length} result{(tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : filteredUsers.length) !== 1 ? 's' : ''}
+              {tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : tab === 'users' ? filteredUsers.length : filteredFeedback.length} result{(tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : tab === 'users' ? filteredUsers.length : filteredFeedback.length) !== 1 ? 's' : ''}
             </span>
           )}
         </div>
@@ -711,6 +849,34 @@ export default function AdminPage() {
           </>
         )}
 
+        {/* ══════ FEEDBACK ══════ */}
+        {tab === 'feedback' && (
+          <>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+              {([['new', 'New', '#8b5cf6'], ['reviewing', 'Reviewing', '#2563eb'], ['planned', 'Planned', '#d97706'], ['done', 'Done', '#15803d'], ['dismissed', 'Dismissed', '#6b7280'], ['all', 'All', undefined]] as [FeedbackFilter, string, string | undefined][]).map(([v, l, c]) => (
+                <button key={v} onClick={() => setFeedbackFilter(v)} style={pill(feedbackFilter === v, c)}>
+                  {l}{v === 'new' && stats ? ` (${stats.feedback?.new ?? 0})` : ''}
+                </button>
+              ))}
+            </div>
+
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#86868b' }}>Loading…</div>
+            ) : filteredFeedback.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#86868b' }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>📭</div>
+                <div style={{ fontSize: 14 }}>Nothing here</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {filteredFeedback.map(item => (
+                  <FeedbackRow key={item.id} item={item} onUpdate={handleUpdateFeedback} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
         {/* ══════ TOOLS ══════ */}
         {tab === 'tools' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 640 }}>
@@ -780,6 +946,79 @@ export default function AdminPage() {
                       Sending…
                     </>
                   ) : digestState === 'done' ? '✓ Sent!' : '📧 Send weekly digest now'}
+                </button>
+              </div>
+            </div>
+
+            {/* Early-Stage Funding News card */}
+            <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #d2d2d7', overflow: 'hidden' }}>
+              {/* Header band */}
+              <div style={{ background: '#7c3aed', padding: '20px 24px' }}>
+                <div style={{ fontSize: 22, marginBottom: 4 }}>📰</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', letterSpacing: -0.3 }}>Early-Stage Funding News</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 3 }}>Real angel/pre-seed/seed headlines shown on the Community home page</div>
+              </div>
+
+              <div style={{ padding: '20px 24px' }}>
+                {/* What it does */}
+                <div style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.6, marginBottom: 20 }}>
+                  Fetches real headlines from Google News RSS, then uses the local Ollama model to drop anything that isn't genuinely an early-stage funding story and write a one-line blurb — it never invents headlines.
+                  This runs <strong>automatically every day at 07:00 UTC</strong> — use this button to refresh it now instead of waiting.
+                </div>
+
+                {/* Status indicator */}
+                {newsState === 'done' && newsResult !== null && (
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 18 }}>✅</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#15803d' }}>
+                        {newsResult.stored} headline{newsResult.stored !== 1 ? 's' : ''} stored
+                      </div>
+                      <div style={{ fontSize: 12, color: '#166534', marginTop: 2 }}>
+                        {newsResult.fetched} candidate{newsResult.fetched !== 1 ? 's' : ''} fetched, {newsResult.kept} kept after AI curation. Visible on the Community home page now.
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {newsState === 'error' && (
+                  <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 18 }}>⚠️</span>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#dc2626' }}>Refresh failed</div>
+                      <div style={{ fontSize: 12, color: '#991b1b', marginTop: 2 }}>Check server logs — make sure the "startup_news_items" migration has been run and the ollama service is up.</div>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  disabled={newsState === 'running'}
+                  onClick={async () => {
+                    setNewsState('running');
+                    setNewsResult(null);
+                    try {
+                      const r = await communityApi.refreshStartupNews();
+                      setNewsResult(r.data);
+                      setNewsState('done');
+                      setTimeout(() => setNewsState('idle'), 30000);
+                    } catch {
+                      setNewsState('error');
+                      setTimeout(() => setNewsState('idle'), 10000);
+                    }
+                  }}
+                  style={{
+                    padding: '11px 24px', borderRadius: 12, border: 'none',
+                    background: newsState === 'running' ? '#d2d2d7' : newsState === 'done' ? '#dcfce7' : '#7c3aed',
+                    color: newsState === 'done' ? '#15803d' : '#fff',
+                    fontWeight: 800, fontSize: 14, cursor: newsState === 'running' ? 'not-allowed' : 'pointer',
+                    transition: 'all .2s', display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                >
+                  {newsState === 'running' ? (
+                    <>
+                      <span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid #fff4', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin .7s linear infinite' }} />
+                      Fetching &amp; curating…
+                    </>
+                  ) : newsState === 'done' ? '✓ Refreshed!' : '📰 Refresh startup news now'}
                 </button>
               </div>
             </div>

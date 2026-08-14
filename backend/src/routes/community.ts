@@ -2,9 +2,11 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
+import { requireAdmin } from '../middleware/admin';
 import { moderateContent } from '../utils/moderation';
 import { sendNetworkOfferEmail } from '../utils/mailer';
 import { createNotification } from '../utils/notify';
+import { refreshStartupNews } from '../utils/startupNewsFeed';
 
 const router = Router();
 router.use(requireAuth);
@@ -419,7 +421,7 @@ router.get('/posts', async (req: Request, res: Response) => {
        LEFT JOIN reactions r_enc ON r_enc.post_id = p.id AND r_enc.type = 'encourage'
        LEFT JOIN reactions r_ask ON r_ask.post_id = p.id AND r_ask.type = 'ask'
        LEFT JOIN comments c ON c.post_id = p.id
-       ${stage ? 'WHERE p.stage = $4' : ''}
+       WHERE p.post_type NOT IN ('pain_point', 'collab') ${stage ? 'AND p.stage = $4' : ''}
        GROUP BY p.id, u.name, u.avatar_initials
        ORDER BY p.created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -995,6 +997,41 @@ router.post('/posts/:id/comments', async (req: Request, res: Response) => {
     }
 
     res.status(201).json({ comment: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Early-Stage Funding News ──────────────────────────────────────────────────
+// Real headlines (Google News RSS), AI-curated for relevance — refreshed
+// daily by jobs/startupNewsDigest.ts. See utils/startupNewsFeed.ts.
+
+// List the latest cached items (any authenticated user)
+router.get('/startup-news', async (_req: Request, res: Response) => {
+  try {
+    // No "url" in the response — the feed shows the AI-rephrased headline
+    // only and never links out to the source site (source name is shown as
+    // plain-text attribution by the frontend, not a link).
+    const result = await query(
+      `SELECT id, COALESCE(headline, title) AS headline, source, published_at
+       FROM startup_news_items
+       ORDER BY COALESCE(published_at, fetched_at) DESC
+       LIMIT 12`
+    );
+    res.json({ items: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Manually trigger a refresh (admin only) — useful right after setup, since
+// the daily cron only runs once at 07:00 UTC.
+router.post('/startup-news/refresh', requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const result = await refreshStartupNews();
+    res.json(result);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });

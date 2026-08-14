@@ -24,3 +24,7 @@ PROBE_FILE.txt
 
 # Editor/manual backup files
 *.bak
+
+# Large local seed data — not meant to be version-controlled, was slowing
+# down every commit/diff. Untracked via `git rm --cached` on 2026-08-14.
+backend/src/db/seed-100-saas-ideas.sql

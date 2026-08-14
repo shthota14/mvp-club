@@ -19,8 +19,10 @@ import notificationsRouter from './routes/notifications';
 import donationsRouter from './routes/donations';
 import challengesRouter from './routes/challenges';
 import schedulingRouter from './routes/scheduling';
+import feedbackRouter from './routes/feedback';
 import { runWeeklyDigest } from './jobs/weeklyDigest';
 import { runReEngagement } from './jobs/reEngagement';
+import { runStartupNewsDigest } from './jobs/startupNewsDigest';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -54,6 +56,7 @@ app.use('/api/surveys', surveysRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/donations', donationsRouter);
 app.use('/api/challenges', challengesRouter);
+app.use('/api/feedback', feedbackRouter);
 // Mounted at bare /api — scheduling.ts defines its own full paths
 // (/availability, /book/:token) since it mixes authed founder endpoints with
 // public token-based ones, unlike the other routers here.
@@ -102,5 +105,14 @@ cron.schedule('0 9 * * *', () => {
   runReEngagement().catch(err => console.error('[cron] reEngagement crashed:', err));
 });
 console.log('[cron] Re-engagement job scheduled — daily at 09:00 UTC');
+
+// Early-stage funding news digest — daily at 7:00 AM UTC, before the other
+// jobs. Real headlines (Google News RSS), AI-curated for relevance — see
+// jobs/startupNewsDigest.ts. Can also be triggered on demand via
+// POST /api/community/startup-news/refresh (admin only).
+cron.schedule('0 7 * * *', () => {
+  runStartupNewsDigest().catch(err => console.error('[cron] startupNewsDigest crashed:', err));
+});
+console.log('[cron] Startup news digest scheduled — daily at 07:00 UTC');
 
 export default app;
