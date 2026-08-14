@@ -312,6 +312,10 @@ export const communityApi = {
   // early-stage funding news (real headlines, AI-curated — see backend/src/utils/startupNewsFeed.ts)
   listStartupNews: () => api.get('/community/startup-news'),
   refreshStartupNews: () => api.post('/community/startup-news/refresh'),
+  // community polls — any member can create, one vote per person, auto-closes after 7 days
+  listPolls: () => api.get('/community/polls'),
+  createPoll: (question: string, options: string[]) => api.post('/community/polls', { question, options }),
+  votePoll: (pollId: string, optionIndex: number) => api.post(`/community/polls/${pollId}/vote`, { option_index: optionIndex }),
 };
 
 // Surveys

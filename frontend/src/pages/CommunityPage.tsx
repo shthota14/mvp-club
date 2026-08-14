@@ -4524,8 +4524,437 @@ function StartupNewsPillRow() {
         </div>
       </div>
 
-      {/* Ticker keyframe — moves the (doubled) track left→right in a seamless loop */}
-      <style>{`@keyframes newsTickerScroll { from { transform: translateX(-50%); } to { transform: translateX(0%); } }`}</style>
+      {/* Ticker keyframe — moves the (doubled) track right→left in a seamless loop */}
+      <style>{`@keyframes newsTickerScroll { from { transform: translateX(0%); } to { transform: translateX(-50%); } }`}</style>
+    </div>
+  );
+}
+
+// ── Community Wins spotlight — top-engagement shipped ideas, reuses the
+// existing ideas list already loaded for the grid, no extra fetch. ─────────
+function CommunityWinsSpotlight({ ideas, rxStore, onNavigate }: { ideas: IdeaCard[]; rxStore: RxStore; onNavigate: (path: string) => void }) {
+  const wins = ideas
+    .filter(i => i.idea_status === 'done' || i.stage === 'done')
+    .map(i => ({ idea: i, score: engagementScore(i, rxStore) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6);
+
+  if (wins.length === 0) return null;
+
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, letterSpacing: .5, fontFamily: LIT.headFont, marginBottom: 8 }}>
+        🌟 Community wins
+      </div>
+      <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+        {wins.map(({ idea, score }) => (
+          <button
+            key={idea.id}
+            onClick={() => onNavigate(`/community/${idea.id}`)}
+            style={{
+              flexShrink: 0, width: 220, textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit',
+              background: LIT.card, border: `1.5px solid ${LIT.border}`, borderRadius: LIT.radius,
+              padding: '14px 16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#059669', background: '#f0fdf4', borderRadius: 100, padding: '2px 8px' }}>🚀 Shipped</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: LIT.muted }}>{score} pts</span>
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: LIT.text, marginBottom: 3, fontFamily: LIT.headFont }}>{idea.name}</div>
+            <div style={{ fontSize: 11, color: LIT.secondary, fontFamily: LIT.bodyFont }}>{idea.author_name}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Resources tab — weekly tip, curated founder resources, FAQ/glossary.
+// All static content, no backend calls, so it's live immediately. ─────────
+const WEEKLY_TIPS: string[] = [
+  "Talk to 5 potential customers before writing a single line of code — clarity beats speed.",
+  "Your first 10 users care more about you solving their problem than a polished UI.",
+  '"I\'d definitely use that" is not validation. A calendar booking or a payment is.',
+  "Write your elevator pitch in one sentence. If it takes two, the idea isn't focused yet.",
+  "Ship the ugly version this week. You'll learn more from real usage than another week of planning.",
+  "Ask users what they're using today instead of your product — the answer tells you your real competition.",
+  "A waitlist of 50 emails is worth less than 5 people who pre-paid.",
+  "Track one metric that would make you genuinely worried if it dropped. That's your north star.",
+  "Founders overestimate what a landing page proves and underestimate what a real conversation reveals.",
+  "If you can't explain the problem in a way a stranger nods along to, the product won't sell itself either.",
+  "Rejection from a user interview is data, not a verdict on the idea — ask what would have made them say yes.",
+  "Momentum compounds. A small, visible weekly update beats a big invisible quarter.",
+];
+
+function getWeeklyTip(): { tip: string; weekLabel: string } {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
+  const weekIndex = Math.floor(dayOfYear / 7);
+  return { tip: WEEKLY_TIPS[weekIndex % WEEKLY_TIPS.length], weekLabel: `Week ${weekIndex + 1} of ${now.getFullYear()}` };
+}
+
+interface FounderResource { title: string; description: string; url: string; category: string; }
+const FOUNDER_RESOURCES: FounderResource[] = [
+  { title: 'Y Combinator Startup Library', description: 'Free essays and guides on fundraising, growth, and early-stage product from YC partners.', url: 'https://www.ycombinator.com/library', category: 'General' },
+  { title: 'How to Talk to Users (YC)', description: 'A practical guide to running customer interviews without leading the witness.', url: 'https://www.ycombinator.com/library/6f-how-to-talk-to-users', category: 'Validation' },
+  { title: 'Stripe Atlas Guides', description: 'Plain-English guides on incorporation, equity, and the paperwork side of starting a company.', url: 'https://stripe.com/atlas/guides', category: 'Legal' },
+  { title: 'YC SAFE Templates', description: 'The standard SAFE (Simple Agreement for Future Equity) documents used in most pre-seed rounds.', url: 'https://www.ycombinator.com/documents', category: 'Fundraising' },
+  { title: 'Carta: Understanding Cap Tables', description: 'A clear walkthrough of what a cap table is and how equity dilution actually works.', url: 'https://carta.com/learn/startups/cap-table/', category: 'Fundraising' },
+  { title: 'Lean Canvas', description: 'A one-page business model template built specifically for early-stage startups.', url: 'https://leanstack.com/lean-canvas', category: 'Product' },
+  { title: 'First Round Review', description: 'Long-form, tactical essays from operators — less hype, more "here\'s exactly what we did."', url: 'https://review.firstround.com/', category: 'General' },
+  { title: 'Google Ventures Design Sprint', description: 'The 5-day process GV uses to test a product idea before building it.', url: 'https://www.gv.com/sprint/', category: 'Product' },
+  { title: 'Indie Hackers', description: 'Community and interviews with founders building profitable, often bootstrapped, products.', url: 'https://www.indiehackers.com/', category: 'General' },
+  { title: 'Paul Graham — Essays', description: 'Foundational essays on startups, ideas, and how to think about building something people want.', url: 'https://paulgraham.com/articles.html', category: 'General' },
+];
+
+interface FounderFaq { q: string; a: string; }
+const FOUNDER_FAQS: FounderFaq[] = [
+  { q: 'What counts as "validation" on MVP Club?', a: 'Any real signal that someone other than you wants this — a completed customer interview, a paid pre-order, a waitlist signup with intent, or a pilot commitment. Opinions ("sounds cool") don’t count; actions do.' },
+  { q: 'What is a SAFE?', a: 'A Simple Agreement for Future Equity — a short pre-seed fundraising document that converts to equity at your next priced round, without setting a valuation upfront. Common for angel and pre-seed checks.' },
+  { q: 'What’s the difference between pre-seed, seed, and Series A?', a: 'Pre-seed is usually the first outside money (friends, angels, sometimes pre-product). Seed typically follows early traction and funds you to real product-market fit signals. Series A comes once you have repeatable, provable growth and is usually led by an institutional VC.' },
+  { q: 'How is my Thinking Points score calculated?', a: 'Points come from contributions you make to other founders’ ideas on the Challenges tab (questions, evidence, solutions) plus engagement your own posts receive. See the Leaderboard tab for the full breakdown.' },
+  { q: 'What’s an MVP, really?', a: 'The smallest version of your product that lets you test your riskiest assumption with real users — not a stripped-down version of your final vision, but the fastest path to a real answer.' },
+  { q: 'Is my idea data private?', a: 'Your working notes inside each stage (Idea → Hone → Validate → Shape → Ship) are private to you. Only what you explicitly post to the Community tabs is visible to other members.' },
+  { q: 'How often does the Funding News ticker update?', a: 'Automatically once a day via a scheduled job, with real headlines pulled from Google News and rephrased by a local AI model. Admins can also trigger an on-demand refresh from the Admin Panel.' },
+  { q: 'I’m stuck between two ideas — what should I do?', a: 'Run the same validation step (e.g. 5 customer conversations) on both in parallel rather than debating in the abstract. The market will disagree with you faster than your own reasoning will.' },
+];
+
+function ResourcesTab() {
+  const { tip, weekLabel } = getWeeklyTip();
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
+
+      {/* Weekly tip hero */}
+      <div style={{
+        borderRadius: LIT.radius, padding: '24px 28px',
+        background: `linear-gradient(135deg, ${LIT.accent}14 0%, ${LIT.accent}06 100%)`,
+        border: `1.5px solid ${LIT.accent}30`,
+      }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: LIT.accent, letterSpacing: 1.2, textTransform: 'uppercase' as const, marginBottom: 8, fontFamily: LIT.headFont }}>
+          💡 Tip of the week · {weekLabel}
+        </div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: LIT.text, lineHeight: 1.4, fontFamily: LIT.headFont, maxWidth: 640 }}>
+          {tip}
+        </div>
+      </div>
+
+      {/* Founder resources */}
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 14, fontFamily: LIT.headFont }}>
+          📚 Founder resources
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+          {FOUNDER_RESOURCES.map(r => (
+            <a
+              key={r.url}
+              href={r.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block', textDecoration: 'none',
+                background: LIT.card, border: `1.5px solid ${LIT.border}`, borderRadius: LIT.radius,
+                padding: '16px 18px', transition: 'border-color .15s, box-shadow .15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = LIT.accent + '60'; e.currentTarget.style.boxShadow = `0 4px 16px ${LIT.accent}18`; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = LIT.border; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 700, color: LIT.accent, background: `${LIT.accent}12`, borderRadius: 100, padding: '2px 9px', marginBottom: 8 }}>
+                {r.category}
+              </span>
+              <div style={{ fontSize: 14, fontWeight: 700, color: LIT.text, marginBottom: 5, fontFamily: LIT.headFont }}>{r.title} ↗</div>
+              <div style={{ fontSize: 12.5, color: LIT.secondary, fontFamily: LIT.bodyFont, lineHeight: 1.5 }}>{r.description}</div>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* FAQ / glossary */}
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 14, fontFamily: LIT.headFont }}>
+          ❓ FAQ &amp; glossary
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {FOUNDER_FAQS.map((f, i) => {
+            const open = openFaq === i;
+            return (
+              <div key={f.q} style={{ background: LIT.card, border: `1.5px solid ${LIT.border}`, borderRadius: LIT.radius, overflow: 'hidden' }}>
+                <button
+                  onClick={() => setOpenFaq(open ? null : i)}
+                  style={{
+                    width: '100%', textAlign: 'left' as const, background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  <span style={{ fontSize: 13.5, fontWeight: 700, color: LIT.text }}>{f.q}</span>
+                  <span style={{ fontSize: 14, color: LIT.muted, flexShrink: 0, marginLeft: 12 }}>{open ? '−' : '+'}</span>
+                </button>
+                {open && (
+                  <div style={{ padding: '0 18px 16px', fontSize: 13, color: LIT.secondary, fontFamily: LIT.bodyFont, lineHeight: 1.6 }}>
+                    {f.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Polls tab — any member can post a poll; one vote per person, changeable
+// until it closes (7 days after creation). See backend routes /community/polls*.
+interface Poll {
+  id: string;
+  question: string;
+  options: string[];
+  author_name: string;
+  author_initials: string;
+  created_at: string;
+  closes_at: string;
+  is_closed: boolean;
+  votes: number[];
+  total_votes: number;
+  my_vote: number | null;
+}
+
+function PollsTab() {
+  const [polls, setPolls]             = useState<Poll[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [loadError, setLoadError]     = useState('');
+  const [showCompose, setShowCompose] = useState(false);
+  const [composeQuestion, setComposeQuestion] = useState('');
+  const [composeOptions, setComposeOptions]   = useState<string[]>(['', '']);
+  const [composeError, setComposeError]       = useState('');
+  const [submitting, setSubmitting]           = useState(false);
+  const [votingId, setVotingId]               = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const res = await communityApi.listPolls();
+      setPolls(res.data.polls ?? []);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } }; message?: string })
+        ?.response?.data?.error ?? 'Failed to load polls';
+      setLoadError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleVote = async (poll: Poll, optionIndex: number) => {
+    if (poll.is_closed || votingId) return;
+    setVotingId(poll.id);
+    // Optimistic update so the bars move instantly.
+    setPolls(prev => prev.map(p => {
+      if (p.id !== poll.id) return p;
+      const votes = [...p.votes];
+      let total = p.total_votes;
+      if (p.my_vote !== null && p.my_vote !== optionIndex) {
+        votes[p.my_vote] = Math.max(0, votes[p.my_vote] - 1);
+        votes[optionIndex] += 1;
+      } else if (p.my_vote === null) {
+        votes[optionIndex] += 1;
+        total += 1;
+      }
+      return { ...p, votes, total_votes: total, my_vote: optionIndex };
+    }));
+    try {
+      await communityApi.votePoll(poll.id, optionIndex);
+    } catch {
+      load(); // revert to server truth if the vote didn't actually land
+    } finally {
+      setVotingId(null);
+    }
+  };
+
+  const handleCreate = async () => {
+    setComposeError('');
+    const q = composeQuestion.trim();
+    const opts = composeOptions.map(o => o.trim()).filter(Boolean);
+    if (!q) { setComposeError('Give your poll a question.'); return; }
+    if (opts.length < 2) { setComposeError('Add at least 2 options.'); return; }
+    setSubmitting(true);
+    try {
+      await communityApi.createPoll(q, opts);
+      setComposeQuestion('');
+      setComposeOptions(['', '']);
+      setShowCompose(false);
+      load();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } }; message?: string })
+        ?.response?.data?.error ?? 'Failed to create poll';
+      setComposeError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: '60px 0', color: LIT.muted, fontSize: 14, fontFamily: LIT.bodyFont }}>Loading polls…</div>;
+  }
+
+  const active = polls.filter(p => !p.is_closed);
+  const closed = polls.filter(p => p.is_closed);
+
+  const renderPoll = (poll: Poll) => (
+    <div key={poll.id} style={{ background: LIT.card, border: `1.5px solid ${LIT.border}`, borderRadius: LIT.radius, padding: '18px 20px', marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: LIT.text, fontFamily: LIT.headFont, lineHeight: 1.4 }}>{poll.question}</div>
+        {poll.is_closed && (
+          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: LIT.muted, background: LIT.cardTint, border: `1px solid ${LIT.border}`, borderRadius: 100, padding: '2px 9px', whiteSpace: 'nowrap' as const }}>Closed</span>
+        )}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {poll.options.map((opt, i) => {
+          const count = poll.votes[i] ?? 0;
+          const pct = poll.total_votes > 0 ? Math.round((count / poll.total_votes) * 100) : 0;
+          const isMine = poll.my_vote === i;
+          // No bars — the option text itself scales by vote share (14px at 0% up to 32px at 100%),
+          // like a mini word cloud. Percent + count still shown alongside so it stays precise, not just decorative.
+          const fontSize = poll.total_votes > 0 ? 14 + Math.round((pct / 100) * 18) : 16;
+          return (
+            <button
+              key={i}
+              onClick={() => handleVote(poll, i)}
+              disabled={poll.is_closed}
+              style={{
+                textAlign: 'left' as const, cursor: poll.is_closed ? 'default' : 'pointer',
+                border: 'none', borderBottom: `1px solid ${LIT.border}`, background: 'none', fontFamily: 'inherit',
+                padding: '9px 2px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12,
+                width: '100%', boxSizing: 'border-box' as const,
+              }}
+            >
+              <span style={{
+                fontSize, fontWeight: 800, lineHeight: 1.2, color: isMine ? LIT.accent : LIT.text,
+                transition: 'font-size .3s ease, color .2s ease',
+              }}>
+                {isMine ? '✓ ' : ''}{opt}
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: LIT.muted, flexShrink: 0 }}>{pct}% · {count}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ marginTop: 10, fontSize: 11, color: LIT.muted, fontFamily: LIT.bodyFont }}>
+        {poll.total_votes} vote{poll.total_votes !== 1 ? 's' : ''} · started by {poll.author_name}
+        {!poll.is_closed && ` · closes ${new Date(poll.closes_at).toLocaleDateString()}`}
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap' as const, gap: 12 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, letterSpacing: 1, textTransform: 'uppercase' as const, fontFamily: LIT.headFont }}>
+          📊 Community polls
+        </div>
+        <button
+          onClick={() => setShowCompose(v => !v)}
+          style={{
+            padding: '9px 18px', borderRadius: 100, background: LIT.accent, color: '#fff',
+            border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+          }}
+        >
+          {showCompose ? 'Cancel' : '+ New poll'}
+        </button>
+      </div>
+
+      {showCompose && (
+        <div style={{ background: LIT.cardTint, border: `1.5px solid ${LIT.border}`, borderRadius: LIT.radius, padding: '18px 20px', marginBottom: 24 }}>
+          <input
+            value={composeQuestion}
+            onChange={e => setComposeQuestion(e.target.value)}
+            placeholder="Ask the community something…"
+            maxLength={300}
+            style={{
+              width: '100%', padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${LIT.border}`,
+              fontSize: 14, fontFamily: 'inherit', marginBottom: 10, boxSizing: 'border-box' as const,
+            }}
+          />
+          {composeOptions.map((opt, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <input
+                value={opt}
+                onChange={e => setComposeOptions(prev => prev.map((o, idx) => idx === i ? e.target.value : o))}
+                placeholder={`Option ${i + 1}`}
+                maxLength={120}
+                style={{
+                  flex: 1, padding: '9px 14px', borderRadius: 10, border: `1.5px solid ${LIT.border}`,
+                  fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' as const,
+                }}
+              />
+              {composeOptions.length > 2 && (
+                <button
+                  onClick={() => setComposeOptions(prev => prev.filter((_, idx) => idx !== i))}
+                  style={{ background: 'none', border: 'none', color: LIT.muted, cursor: 'pointer', fontSize: 16, padding: '0 6px' }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          ))}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+            {composeOptions.length < 6 ? (
+              <button
+                onClick={() => setComposeOptions(prev => [...prev, ''])}
+                style={{ background: 'none', border: 'none', color: LIT.accent, fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+              >
+                + Add option
+              </button>
+            ) : <span />}
+            <button
+              onClick={handleCreate}
+              disabled={submitting}
+              style={{
+                padding: '9px 20px', borderRadius: 100, background: LIT.accent, color: '#fff',
+                border: 'none', fontSize: 12, fontWeight: 700, cursor: submitting ? 'default' : 'pointer',
+                fontFamily: 'inherit', opacity: submitting ? .6 : 1,
+              }}
+            >
+              {submitting ? 'Posting…' : 'Post poll'}
+            </button>
+          </div>
+          {composeError && (
+            <div style={{ marginTop: 10, fontSize: 12, color: '#dc2626', fontWeight: 600 }}>⚠️ {composeError}</div>
+          )}
+        </div>
+      )}
+
+      {loadError && (
+        <div style={{ textAlign: 'center' as const, padding: '40px 0' }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#dc2626' }}>{loadError}</div>
+        </div>
+      )}
+
+      {!loadError && polls.length === 0 && (
+        <div style={{ textAlign: 'center' as const, padding: '60px 0', color: LIT.muted }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>📊</div>
+          <div style={{ fontFamily: LIT.headFont, fontSize: 15, fontWeight: 700, marginBottom: 6, color: LIT.text }}>No polls yet</div>
+          <div style={{ fontSize: 13, fontFamily: LIT.bodyFont }}>Be the first to ask the community something.</div>
+        </div>
+      )}
+
+      {active.length > 0 && <div>{active.map(renderPoll)}</div>}
+
+      {closed.length > 0 && (
+        <div style={{ marginTop: active.length > 0 ? 28 : 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: LIT.muted, letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 12, fontFamily: LIT.headFont }}>
+            Past polls
+          </div>
+          {closed.map(renderPoll)}
+        </div>
+      )}
     </div>
   );
 }
@@ -4536,9 +4965,9 @@ export default function CommunityPage() {
   const [searchParams] = useSearchParams();
   const { user } = useApp();
   const isMobile = useIsMobile();
-  const [tab, setTab]                   = useState<'proof' | 'ideas' | 'pain' | 'collab' | 'leaderboard' | 'challenges'>(() => {
+  const [tab, setTab]                   = useState<'proof' | 'ideas' | 'pain' | 'collab' | 'leaderboard' | 'challenges' | 'resources' | 'polls'>(() => {
     const t = searchParams.get('tab');
-    return (t === 'challenges' || t === 'ideas' || t === 'proof' || t === 'pain' || t === 'collab' || t === 'leaderboard') ? t : 'ideas';
+    return (t === 'challenges' || t === 'ideas' || t === 'proof' || t === 'pain' || t === 'collab' || t === 'leaderboard' || t === 'resources' || t === 'polls') ? t : 'ideas';
   });
   const [highlightChallengeId] = useState<string | null>(() => searchParams.get('highlight'));
   const [showPayItForward, setShowPayItForward] = useState(false);
@@ -4656,6 +5085,8 @@ export default function CommunityPage() {
             { key: 'collab',      label: '🤝 Collabs' },
             { key: 'challenges',  label: '🎯 Challenges' },
             { key: 'leaderboard', label: '🏆 Leaderboard' },
+            { key: 'resources',   label: '📚 Resources' },
+            { key: 'polls',       label: '📊 Polls' },
           ] as const).map(t => (
             <button
               key={t.key}
@@ -4716,6 +5147,9 @@ export default function CommunityPage() {
         </button>
       </div>
 
+      {/* Community Wins — spotlight strip of top-engagement shipped ideas */}
+      {tab === 'ideas' && <CommunityWinsSpotlight ideas={ideas} rxStore={rxStore} onNavigate={navigate} />}
+
       {/* Early-Stage Funding News — compact pill-chip row, community home page only */}
       {tab === 'ideas' && <StartupNewsPillRow />}
 
@@ -4742,6 +5176,16 @@ export default function CommunityPage() {
       {/* Leaderboard tab */}
       {tab === 'leaderboard' && (
         <LeaderboardTab />
+      )}
+
+      {/* Resources tab — curated founder resources, weekly tip, FAQ */}
+      {tab === 'resources' && (
+        <ResourcesTab />
+      )}
+
+      {/* Polls tab — any member can create, one vote per person */}
+      {tab === 'polls' && (
+        <PollsTab />
       )}
 
       {/* Ideas tab controls + grid */}

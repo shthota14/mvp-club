@@ -7,6 +7,7 @@ import { moderateContent } from '../utils/moderation';
 import { sendNetworkOfferEmail } from '../utils/mailer';
 import { createNotification } from '../utils/notify';
 import { refreshStartupNews } from '../utils/startupNewsFeed';
+import { checkPollContent } from '../utils/pollModeration';
 
 const router = Router();
 router.use(requireAuth);
@@ -1034,6 +1035,171 @@ router.post('/startup-news/refresh', requireAdmin, async (_req: Request, res: Re
     res.json(result);
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Community Polls ────────────────────────────────────────────────────────
+// Any member can create a poll; one vote per person, changeable until the
+// poll closes (7 days after creation). See db/migrations/add-community-polls.sql.
+
+// List all polls (active + closed), with per-option vote counts and the
+// requesting user's own vote, if any.
+router.get('/polls', async (req: Request, res: Response) => {
+  try {
+    const pollsRes = await query<{
+      id: string; question: string; options: string[];
+      created_at: string; closes_at: string; is_closed: boolean;
+      author_name: string; author_initials: string;
+    }>(
+      `SELECT p.id, p.question, p.options, p.created_at, p.closes_at,
+              (p.closes_at < NOW()) AS is_closed,
+              u.name AS author_name, u.avatar_initials AS author_initials
+       FROM community_polls p
+       JOIN users u ON u.id = p.user_id
+       ORDER BY p.created_at DESC
+       LIMIT 50`
+    );
+    const polls = pollsRes.rows;
+    if (polls.length === 0) { res.json({ polls: [] }); return; }
+
+    const pollIds = polls.map(p => p.id);
+    const votesRes = await query<{ poll_id: string; option_index: number; count: number }>(
+      `SELECT poll_id, option_index, COUNT(*)::int AS count
+       FROM community_poll_votes
+       WHERE poll_id = ANY($1::uuid[])
+       GROUP BY poll_id, option_index`,
+      [pollIds]
+    );
+    const myVotesRes = await query<{ poll_id: string; option_index: number }>(
+      `SELECT poll_id, option_index FROM community_poll_votes
+       WHERE poll_id = ANY($1::uuid[]) AND user_id = $2`,
+      [pollIds, req.userId]
+    );
+
+    const votesByPoll: Record<string, number[]> = {};
+    for (const p of polls) votesByPoll[p.id] = new Array(p.options.length).fill(0);
+    for (const v of votesRes.rows) {
+      if (votesByPoll[v.poll_id]) votesByPoll[v.poll_id][v.option_index] = v.count;
+    }
+    const myVoteByPoll: Record<string, number> = {};
+    for (const v of myVotesRes.rows) myVoteByPoll[v.poll_id] = v.option_index;
+
+    res.json({
+      polls: polls.map(p => ({
+        id: p.id,
+        question: p.question,
+        options: p.options,
+        author_name: p.author_name,
+        author_initials: p.author_initials,
+        created_at: p.created_at,
+        closes_at: p.closes_at,
+        is_closed: p.is_closed,
+        votes: votesByPoll[p.id],
+        total_votes: votesByPoll[p.id].reduce((a, b) => a + b, 0),
+        my_vote: myVoteByPoll[p.id] ?? null,
+      })),
+    });
+  } catch (err) {
+    console.error('[polls] list error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Create a poll — any authenticated community member.
+router.post('/polls', async (req: Request, res: Response) => {
+  const { question, options } = req.body;
+  if (!question || typeof question !== 'string' || !question.trim()) {
+    res.status(400).json({ error: 'A poll question is required.' });
+    return;
+  }
+  if (!Array.isArray(options)) {
+    res.status(400).json({ error: 'Provide between 2 and 6 options.' });
+    return;
+  }
+  const cleanOptions = options
+    .map((o: unknown) => (typeof o === 'string' ? o.trim() : ''))
+    .filter(Boolean)
+    .slice(0, 6);
+  if (cleanOptions.length < 2) {
+    res.status(400).json({ error: 'Provide at least 2 non-empty options (max 6).' });
+    return;
+  }
+
+  const trimmedQuestion = question.trim().slice(0, 300);
+
+  // Cheap keyword check first — instant, catches the obvious stuff, no
+  // network call needed.
+  const { flagged, reason } = moderateContent(trimmedQuestion);
+  if (flagged) {
+    res.status(400).json({ error: `Couldn't post this poll: ${reason || 'content flagged by moderation.'}` });
+    return;
+  }
+
+  // AI relevance + objectionable-content check (local Ollama model) — judges
+  // subtler cases the keyword check can't: off-topic spam, harassment framed
+  // politely, etc. Fails open (approves) if the AI model is unreachable, so
+  // a down Ollama service never blocks poll creation outright.
+  try {
+    const aiCheck = await checkPollContent(trimmedQuestion, cleanOptions);
+    if (!aiCheck.approved) {
+      res.status(400).json({ error: `Couldn't post this poll: ${aiCheck.reason || 'flagged as not relevant or not appropriate for this community.'}` });
+      return;
+    }
+  } catch (err) {
+    // checkPollContent already fails open internally on its own errors, but
+    // guard here too in case something outside that (e.g. a thrown TypeError)
+    // slips through — never let a moderation bug block legitimate polls.
+    console.error('[polls] AI moderation check threw unexpectedly, allowing poll:', err);
+  }
+
+  try {
+    const result = await query<{ id: string }>(
+      `INSERT INTO community_polls (user_id, question, options)
+       VALUES ($1, $2, $3) RETURNING id`,
+      [req.userId, trimmedQuestion, cleanOptions]
+    );
+    res.json({ id: result.rows[0].id });
+  } catch (err) {
+    console.error('[polls] create error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Cast (or change) a vote on a poll.
+router.post('/polls/:id/vote', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { option_index } = req.body;
+  if (typeof option_index !== 'number' || option_index < 0) {
+    res.status(400).json({ error: 'A valid option is required.' });
+    return;
+  }
+
+  try {
+    const pollRes = await query<{ options: string[]; closes_at: string }>(
+      `SELECT options, closes_at FROM community_polls WHERE id = $1`,
+      [id]
+    );
+    if (pollRes.rows.length === 0) { res.status(404).json({ error: 'Poll not found' }); return; }
+    const poll = pollRes.rows[0];
+    if (new Date(poll.closes_at) < new Date()) {
+      res.status(400).json({ error: 'This poll has closed.' });
+      return;
+    }
+    if (option_index >= poll.options.length) {
+      res.status(400).json({ error: 'Invalid option.' });
+      return;
+    }
+
+    await query(
+      `INSERT INTO community_poll_votes (poll_id, user_id, option_index)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (poll_id, user_id) DO UPDATE SET option_index = EXCLUDED.option_index, created_at = NOW()`,
+      [id, req.userId, option_index]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[polls] vote error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
