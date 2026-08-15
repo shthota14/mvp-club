@@ -68,7 +68,7 @@ export async function checkQuestion(question: string, hint?: string): Promise<Qu
         format: 'json',
         options: { temperature: 0.3 },
       },
-      { timeout: 30000 }
+      { timeout: 120000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -148,7 +148,7 @@ export async function reactToIdeaAnswer(question: string, answer: string): Promi
         format: 'json',
         options: { temperature: 0.6 },
       },
-      { timeout: 20000 }
+      { timeout:  90000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -218,7 +218,7 @@ export async function assembleOneLinerSentence(building: string, audience: strin
         format: 'json',
         options: { temperature: 0.4 },
       },
-      { timeout: 25000 }
+      { timeout: 100000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -307,7 +307,7 @@ export async function generateInterviewScript(ctx: ScriptGenContext): Promise<Ge
         format: 'json',
         options: { temperature: 0.5 },
       },
-      { timeout: 45000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -524,7 +524,7 @@ export async function generateDiscoveryGuide(ctx: DiscoveryGuideContext): Promis
         format: 'json',
         options: { temperature: 0.5 },
       },
-      { timeout: 90000 }
+      { timeout: 240000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNABORTED') {
@@ -622,7 +622,7 @@ export async function generateQuestionChips(ctx: QuestionChipsContext): Promise<
         format: 'json',
         options: { temperature: 0.5 },
       },
-      { timeout: 30000 }
+      { timeout: 120000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -794,7 +794,7 @@ export async function classifyInterviewAlignment(ctx: AlignmentClassifyContext):
         format: 'json',
         options: { temperature: 0.3 },
       },
-      { timeout: 45000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -882,7 +882,7 @@ export async function reasonAboutAlignment(ctx: AlignmentReasonContext): Promise
         format: 'json',
         options: { temperature: 0.4 },
       },
-      { timeout: 45000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -989,7 +989,7 @@ export async function generateMvpHypotheses(ctx: MvpHypothesisContext): Promise<
         format: 'json',
         options: { temperature: 0.5 },
       },
-      { timeout: 45000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -1109,7 +1109,7 @@ export async function generateFeatureSuggestions(ctx: FeatureEvidenceContext): P
         format: 'json',
         options: { temperature: 0.5 },
       },
-      { timeout: 45000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -1181,7 +1181,7 @@ export async function checkFeatureEvidence(features: string[], ctx: FeatureEvide
         format: 'json',
         options: { temperature: 0.3 },
       },
-      { timeout: 45000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -1293,7 +1293,7 @@ export async function generateDistributionSuggestions(ctx: DistributionContext):
         format: 'json',
         options: { temperature: 0.4 },
       },
-      { timeout: 45000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -1398,7 +1398,7 @@ export async function generatePricingSuggestions(ctx: PricingContext): Promise<P
         format: 'json',
         options: { temperature: 0.4 },
       },
-      { timeout: 45000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -1475,7 +1475,7 @@ export async function checkPricingEvidence(revenueModel: string[], pricePoint: s
         format: 'json',
         options: { temperature: 0.3 },
       },
-      { timeout: 45000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -1615,7 +1615,7 @@ export async function generateBuildSpec(ctx: BuildSpecContext): Promise<BuildSpe
         format: 'json',
         options: { temperature: 0.4 },
       },
-      { timeout: 60000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -1745,7 +1745,7 @@ export async function recommendBuildPath(ctx: BuildPathContext): Promise<BuildPa
         format: 'json',
         options: { temperature: 0.3 },
       },
-      { timeout: 45000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -1986,7 +1986,7 @@ export async function generateUIPrompt(ctx: UIPromptContext): Promise<string> {
       },
       // Single screen, so lighter than the flows/screens generator, but
       // still a full multi-section prompt — give the local model room.
-      { timeout: 90000 }
+      { timeout: 240000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -2213,7 +2213,7 @@ export async function generateChangeCodingPrompt(ctx: ChangeCoachContext): Promi
         options: { temperature: 0.4 },
       },
       // Single change request, comparable in size to a single screen prompt.
-      { timeout: 90000 }
+      { timeout: 240000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
@@ -2300,7 +2300,7 @@ export async function generateMarketSnapshot(ctx: MarketSnapshotContext): Promis
         format: 'json',
         options: { temperature: 0.3 },
       },
-      { timeout: 60000 }
+      { timeout: 180000 }
     );
   } catch (err: any) {
     if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
