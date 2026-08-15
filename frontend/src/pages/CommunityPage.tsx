@@ -1593,9 +1593,9 @@ function CollabsTab({ userId }: { userId?: string }) {
 
 function HowMuchPicker({ onAmountChange }: { onAmountChange?: (v: string) => void }) {
   const tiers = [
-    { amount: '10',  label: 'Supporter',   desc: 'Keeps the lights on for the community' },
-    { amount: '50',  label: 'Contributor', desc: 'Funds a month of platform development' },
-    { amount: '200', label: 'Champion',    desc: 'Helps us reach more founders who need this' },
+    { amount: '10',  label: 'Supporter',   desc: 'Keeps the lights on' },
+    { amount: '50',  label: 'Contributor', desc: 'Funds a month of dev' },
+    { amount: '200', label: 'Champion',    desc: 'Reaches more founders' },
   ];
   const [selected, setSelected]   = useState<string | null>(null);
   const [custom,   setCustom]     = useState('');
@@ -1603,26 +1603,26 @@ function HowMuchPicker({ onAmountChange }: { onAmountChange?: (v: string) => voi
   const finalAmount = isCustom ? custom : selected;
 
   return (
-    <div style={{ marginBottom: 36 }}>
-      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: LIT.muted, textTransform: 'uppercase', marginBottom: 18, fontFamily: LIT.headFont }}>
+    <div style={{ marginBottom: 20 }}>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: LIT.muted, textTransform: 'uppercase', marginBottom: 10, fontFamily: LIT.headFont }}>
         How much?
       </div>
 
       {/* Tier cards */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
         {tiers.map(t => {
           const on = selected === t.amount;
           return (
             <button key={t.amount} onClick={() => { const next = on ? null : t.amount; setSelected(next); setCustom(''); onAmountChange?.(next ?? ''); }}
               style={{
-                flex: 1, padding: '16px 10px', borderRadius: LIT.radius, cursor: 'pointer',
+                flex: 1, padding: '11px 8px', borderRadius: LIT.radius, cursor: 'pointer',
                 border: `2px solid ${on ? LIT.accent : LIT.border}`,
                 background: on ? LIT.accentSoft : LIT.cardTint,
                 textAlign: 'center', fontFamily: 'inherit', transition: 'all .15s',
               }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: on ? LIT.accent : LIT.text, fontFamily: LIT.headFont, marginBottom: 4 }}>${t.amount}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: on ? LIT.accent : LIT.text, marginBottom: 3 }}>{t.label}</div>
-              <div style={{ fontSize: 12, color: LIT.secondary, lineHeight: 1.5, fontFamily: LIT.bodyFont }}>{t.desc}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: on ? LIT.accent : LIT.text, fontFamily: LIT.headFont, marginBottom: 2 }}>${t.amount}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: on ? LIT.accent : LIT.text, marginBottom: 2 }}>{t.label}</div>
+              <div style={{ fontSize: 10.5, color: LIT.secondary, lineHeight: 1.35, fontFamily: LIT.bodyFont }}>{t.desc}</div>
             </button>
           );
         })}
@@ -1630,21 +1630,21 @@ function HowMuchPicker({ onAmountChange }: { onAmountChange?: (v: string) => voi
         {/* Custom tile */}
         <button onClick={() => { const next = isCustom ? null : 'custom'; setSelected(next); if (!next) { setCustom(''); onAmountChange?.(''); } }}
           style={{
-            flex: 1, padding: '16px 10px', borderRadius: LIT.radius, cursor: 'pointer',
+            flex: 1, padding: '11px 8px', borderRadius: LIT.radius, cursor: 'pointer',
             border: `2px solid ${isCustom ? LIT.accent : LIT.border}`,
             background: isCustom ? LIT.accentSoft : LIT.cardTint,
             textAlign: 'center', fontFamily: 'inherit', transition: 'all .15s',
           }}>
-          <div style={{ fontSize: 22, fontWeight: 800, color: isCustom ? LIT.accent : LIT.muted, fontFamily: LIT.headFont, marginBottom: 4 }}>✏️</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: isCustom ? LIT.accent : LIT.text, marginBottom: 3 }}>Custom</div>
-          <div style={{ fontSize: 12, color: LIT.secondary, lineHeight: 1.5, fontFamily: LIT.bodyFont }}>Your own amount</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: isCustom ? LIT.accent : LIT.muted, fontFamily: LIT.headFont, marginBottom: 2 }}>✏️</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: isCustom ? LIT.accent : LIT.text, marginBottom: 2 }}>Custom</div>
+          <div style={{ fontSize: 10.5, color: LIT.secondary, lineHeight: 1.35, fontFamily: LIT.bodyFont }}>Your own amount</div>
         </button>
       </div>
 
       {/* Custom amount input */}
       {isCustom && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: `2px solid ${LIT.accent}`, borderRadius: LIT.radius, overflow: 'hidden', background: LIT.card }}>
-          <span style={{ padding: '12px 14px', fontSize: 16, fontWeight: 700, color: LIT.accent, background: LIT.accentSoft, borderRight: `1.5px solid ${LIT.accentSoftBorder}` }}>$</span>
+          <span style={{ padding: '9px 12px', fontSize: 14, fontWeight: 700, color: LIT.accent, background: LIT.accentSoft, borderRight: `1.5px solid ${LIT.accentSoftBorder}` }}>$</span>
           <input
             autoFocus
             type="number"
@@ -1653,13 +1653,13 @@ function HowMuchPicker({ onAmountChange }: { onAmountChange?: (v: string) => voi
             onChange={e => { setCustom(e.target.value); onAmountChange?.(e.target.value); }}
             placeholder="Enter amount"
             style={{
-              flex: 1, padding: '12px 14px', border: 'none', outline: 'none',
-              fontSize: 16, fontWeight: 700, color: LIT.text,
+              flex: 1, padding: '9px 12px', border: 'none', outline: 'none',
+              fontSize: 14, fontWeight: 700, color: LIT.text,
               fontFamily: 'inherit', background: 'transparent',
             }}
           />
           {custom && (
-            <span style={{ padding: '12px 14px', fontSize: 12, color: LIT.accent, fontWeight: 700, background: LIT.accentSoft, borderLeft: `1.5px solid ${LIT.accentSoftBorder}` }}>
+            <span style={{ padding: '9px 12px', fontSize: 11, color: LIT.accent, fontWeight: 700, background: LIT.accentSoft, borderLeft: `1.5px solid ${LIT.accentSoftBorder}` }}>
               USD
             </span>
           )}
@@ -1668,7 +1668,7 @@ function HowMuchPicker({ onAmountChange }: { onAmountChange?: (v: string) => voi
 
       {/* Selected summary */}
       {finalAmount && (
-        <div style={{ marginTop: 10, fontSize: 13, color: LIT.secondary, textAlign: 'center', fontFamily: LIT.bodyFont }}>
+        <div style={{ marginTop: 8, fontSize: 12, color: LIT.secondary, textAlign: 'center', fontFamily: LIT.bodyFont }}>
           You're contributing <strong style={{ color: LIT.accent }}>${finalAmount}</strong> — thank you 💛
         </div>
       )}
@@ -1729,7 +1729,7 @@ function PayItForwardModal({ onClose }: { onClose: () => void }) {
         <div style={{
           background: 'linear-gradient(135deg, #1a0533 0%, #0f1e4a 60%, #0a2a1a 100%)',
           borderRadius: '24px 24px 0 0',
-          padding: '48px 44px 40px',
+          padding: '26px 40px 20px',
           position: 'relative',
           overflow: 'hidden',
         }}>
@@ -1748,76 +1748,67 @@ function PayItForwardModal({ onClose }: { onClose: () => void }) {
           ))}
 
           <div style={{ position: 'relative' }}>
-            <div style={{ fontSize: 44, marginBottom: 16 }}>🤝</div>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>🤝</div>
             <h2 style={{
-              fontSize: 'clamp(26px,4vw,36px)', fontWeight: 700, color: '#fff',
+              fontSize: 'clamp(20px,3vw,26px)', fontWeight: 700, color: '#fff',
               fontFamily: LIT.headFont, letterSpacing: -1, lineHeight: 1.15,
-              margin: '0 0 14px',
+              margin: '0 0 8px',
             }}>
               Support MVP Club
             </h2>
-            <p style={{ fontSize: 16, fontFamily: LIT.bodyFont, color: 'rgba(255,255,255,.6)', lineHeight: 1.75, maxWidth: 480, margin: 0 }}>
-              MVP Club is free for every founder and community user — and we intend to keep it that way.
-              No ads, no investors, no paywalls. Your donation directly funds the platform and the community around it.
+            <p style={{ fontSize: 13, fontFamily: LIT.bodyFont, color: 'rgba(255,255,255,.6)', lineHeight: 1.55, maxWidth: 480, margin: 0 }}>
+              Free for every founder, always — no ads, no paywalls. Your donation funds the platform and community.
             </p>
           </div>
         </div>
 
-        <div style={{ padding: '36px 44px 44px' }}>
+        <div style={{ padding: '20px 40px 26px' }}>
 
           {/* ── Who can contribute ── */}
-          <div style={{ marginBottom: 36 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: LIT.muted, textTransform: 'uppercase', marginBottom: 18, fontFamily: LIT.headFont }}>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: LIT.muted, textTransform: 'uppercase', marginBottom: 10, fontFamily: LIT.headFont }}>
               Anyone can contribute
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 0, position: 'relative' }}>
               <div style={{
-                position: 'absolute', top: 20, left: 20, right: 20, height: 2,
+                position: 'absolute', top: 15, left: 15, right: 15, height: 2,
                 background: 'linear-gradient(90deg, #7c3aed, #2563eb, #059669, #d97706, #dc2626)',
                 zIndex: 0,
               }} />
               {moments.map((m, i) => (
-                <div key={m.stage} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative', zIndex: 1 }}>
+                <div key={m.stage} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, position: 'relative', zIndex: 1 }}>
                   <div style={{
-                    width: 40, height: 40, borderRadius: '50%',
+                    width: 30, height: 30, borderRadius: '50%',
                     background: m.color,
-                    border: `3px solid ${m.color}`,
+                    border: `2px solid ${m.color}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 13, fontWeight: 800, color: '#fff',
-                    boxShadow: `0 0 0 4px ${m.color}20`,
+                    fontSize: 11, fontWeight: 800, color: '#fff',
+                    boxShadow: `0 0 0 3px ${m.color}20`,
                   }}>
                     {i + 1}
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: m.color, textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: m.color, textAlign: 'center' }}>
                     {m.stage}
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{
-              marginTop: 20, padding: '14px 18px', borderRadius: 12,
-              background: '#f0fdf4', border: '1.5px solid #86efac',
-            }}>
-              <div style={{ fontSize: 13, color: '#065f46', lineHeight: 1.65 }}>
-                Whether you're just getting started or you've already launched — if MVP Club has been useful to you or the startup community you care about, any contribution is welcome and appreciated.
-              </div>
-            </div>
           </div>
 
           {/* ── Where it goes — Donut chart ── */}
-          <div style={{ marginBottom: 36 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.5, color: LIT.muted, textTransform: 'uppercase', marginBottom: 18, fontFamily: LIT.headFont }}>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: LIT.muted, textTransform: 'uppercase', marginBottom: 10, fontFamily: LIT.headFont }}>
               Where it goes
             </div>
 
             {/* Donut + legend side by side */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 32, marginBottom: 20, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
 
               {/* SVG Donut */}
               <div style={{ position: 'relative', flexShrink: 0 }}>
-                <svg width="180" height="180" viewBox="0 0 180 180">
+                <svg width="128" height="128" viewBox="0 0 128 128">
                   {(() => {
-                    const cx = 90, cy = 90, r = 70, strokeW = 28;
+                    const cx = 64, cy = 64, r = 48, strokeW = 20;
                     const circumference = 2 * Math.PI * r;
                     let offset = 0;
                     return uses.map(u => {
@@ -1845,43 +1836,23 @@ function PayItForwardModal({ onClose }: { onClose: () => void }) {
                     });
                   })()}
                   {/* Centre label */}
-                  <text x="90" y="85" textAnchor="middle" style={{ fontSize: 22, fontWeight: 800, fill: LIT.text, fontFamily: LIT.headFont }}>100%</text>
-                  <text x="90" y="103" textAnchor="middle" style={{ fontSize: 10, fill: LIT.muted, fontFamily: 'system-ui, sans-serif' }}>of donations</text>
+                  <text x="64" y="60" textAnchor="middle" style={{ fontSize: 17, fontWeight: 800, fill: LIT.text, fontFamily: LIT.headFont }}>100%</text>
+                  <text x="64" y="74" textAnchor="middle" style={{ fontSize: 8, fill: LIT.muted, fontFamily: 'system-ui, sans-serif' }}>of donations</text>
                 </svg>
               </div>
 
               {/* Legend */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minWidth: 180 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 180 }}>
                 {uses.map(u => (
-                  <div key={u.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: u.color, flexShrink: 0 }} />
+                  <div key={u.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: u.color, flexShrink: 0 }} />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: LIT.text }}>{u.icon} {u.label}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: LIT.text }}>{u.icon} {u.label}</div>
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: u.color }}>{u.pct}%</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: u.color }}>{u.pct}%</span>
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Category breakdown */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {uses.map(u => (
-                <div key={u.label} style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
-                  padding: '12px 14px', borderRadius: LIT.radius,
-                  background: `${u.color}08`, border: `1.5px solid ${u.color}20`,
-                }}>
-                  <div style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{u.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: LIT.text }}>{u.label}</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: u.color }}>{u.pct}%</span>
-                    </div>
-                    <div style={{ fontSize: 13, color: LIT.secondary, lineHeight: 1.55, fontFamily: LIT.bodyFont }}>{u.desc}</div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
 
@@ -1890,19 +1861,19 @@ function PayItForwardModal({ onClose }: { onClose: () => void }) {
 
           {/* ── CTA ── */}
           {error && (
-            <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', fontSize: 13, color: '#dc2626' }}>
+            <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 10, background: '#fef2f2', border: '1px solid #fecaca', fontSize: 12, color: '#dc2626' }}>
               {error}
             </div>
           )}
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             <button
               onClick={handleCheckout}
               disabled={loading}
               style={{
-                flex: 2, padding: '15px', borderRadius: LIT.radius, border: 'none',
+                flex: 2, padding: '13px', borderRadius: LIT.radius, border: 'none',
                 background: loading ? LIT.border : `linear-gradient(135deg, ${LIT.accent}, #6b4520)`,
                 color: loading ? LIT.muted : '#fff',
-                fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: 14, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit', textAlign: 'center',
                 boxShadow: loading ? 'none' : LIT.shadow,
                 transition: 'all .15s',
@@ -1911,17 +1882,17 @@ function PayItForwardModal({ onClose }: { onClose: () => void }) {
               {loading ? 'Redirecting to Stripe…' : '💛 Support MVP Club →'}
             </button>
             <button onClick={onClose} style={{
-              flex: 1, padding: '15px', borderRadius: LIT.radius,
+              flex: 1, padding: '13px', borderRadius: LIT.radius,
               border: `1.5px solid ${LIT.border}`, background: LIT.card,
-              color: LIT.secondary, fontSize: 14, fontWeight: 600,
+              color: LIT.secondary, fontSize: 13, fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
             }}>
               Maybe later
             </button>
           </div>
 
-          <p style={{ fontSize: 12, color: LIT.muted, textAlign: 'center', marginTop: 16, lineHeight: 1.6, fontFamily: LIT.bodyFont }}>
-            No pressure. MVP Club is free for everyone, always. Every contribution — big or small — goes directly into keeping it that way.
+          <p style={{ fontSize: 11, color: LIT.muted, textAlign: 'center', marginTop: 10, lineHeight: 1.5, fontFamily: LIT.bodyFont }}>
+            No pressure — MVP Club stays free for everyone, always.
           </p>
         </div>
       </div>
