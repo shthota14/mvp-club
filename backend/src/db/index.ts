@@ -11,7 +11,7 @@ pool.on('error', (err) => {
   console.error('Unexpected error on idle PostgreSQL client', err);
 });
 
-export const query = <T = unknown>(
+export const query = <T = any>(
   text: string,
   params?: unknown[]
 ) => pool.query<T & Record<string, unknown>>(text, params);
