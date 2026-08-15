@@ -30,6 +30,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:?set a long random JWT_SECRET in .env.production}
       FRONTEND_URL: https://${DOMAIN:?set DOMAIN in .env.production}
       UPLOADS_DIR: /app/uploads
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID:-}
@@ -42,6 +44,26 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      ollama:
+        condition: service_started
+
+  # Self-hosted LLM powering every AI feature (interview scripts, market
+  # snapshot, alignment classification, pricing/feature suggestions, ...).
+  # NOTE: deliberately no `ports:` — only the backend talks to it, over the
+  # internal Docker network. Publishing 11434 would expose an unauthenticated
+  # model API to the internet, since Docker bypasses ufw for published ports.
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: ['/bin/sh', '-c']
+    command:
+      - |
+        ollama serve &
+        sleep 5
+        ollama pull ${OLLAMA_MODEL:-llama3.2}
+        wait
 
   frontend:
     build:
@@ -68,6 +90,7 @@ services:
 
 volumes:
   pgdata:
+  ollama_data:
   backend_uploads:
   caddy_data:
   caddy_config:
