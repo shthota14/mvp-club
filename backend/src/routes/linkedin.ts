@@ -73,11 +73,13 @@ router.get('/callback', async (req: Request, res: Response) => {
   const { code, state, error: liError } = req.query as Record<string, string>;
 
   if (liError) {
+    console.error('[linkedin] callback denied/error from LinkedIn:', liError, JSON.stringify(req.query));
     res.redirect(`${FRONTEND_URL}?linkedin=denied`);
     return;
   }
 
   if (!code || !state) {
+    console.error('[linkedin] missing params, query was:', JSON.stringify(req.query));
     res.redirect(`${FRONTEND_URL}?linkedin=error&reason=missing_params`);
     return;
   }
@@ -85,6 +87,7 @@ router.get('/callback', async (req: Request, res: Response) => {
   purgeExpiredStates();
   const stored = stateStore.get(state);
   if (!stored || stored.expiresAt < Date.now()) {
+    console.error('[linkedin] state not found or expired (backend restarted mid-flow?)');
     res.redirect(`${FRONTEND_URL}?linkedin=error&reason=expired_state`);
     return;
   }
@@ -106,7 +109,7 @@ router.get('/callback', async (req: Request, res: Response) => {
     });
 
     if (!tokenRes.ok) {
-      console.error('LinkedIn token exchange failed:', await tokenRes.text());
+      console.error('[linkedin] token exchange failed, HTTP', tokenRes.status, (await tokenRes.text()).slice(0, 400));
       res.redirect(`${FRONTEND_URL}?linkedin=error&reason=token_exchange`);
       return;
     }
@@ -120,7 +123,7 @@ router.get('/callback', async (req: Request, res: Response) => {
     });
 
     if (!profileRes.ok) {
-      console.error('LinkedIn profile fetch failed:', await profileRes.text());
+      console.error('[linkedin] profile fetch failed, HTTP', profileRes.status, (await profileRes.text()).slice(0, 400));
       res.redirect(`${FRONTEND_URL}?linkedin=error&reason=profile_fetch`);
       return;
     }
