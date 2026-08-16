@@ -39,6 +39,18 @@ services:
       LINKEDIN_REDIRECT_URI: https://${DOMAIN}/api/linkedin/callback
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      # Zoom — per-user OAuth connect (Profile panel / Schedule step)
+      ZOOM_OAUTH_CLIENT_ID: ${ZOOM_OAUTH_CLIENT_ID:-}
+      ZOOM_OAUTH_CLIENT_SECRET: ${ZOOM_OAUTH_CLIENT_SECRET:-}
+      ZOOM_OAUTH_REDIRECT_URI: https://${DOMAIN}/api/zoom/callback
+      # Zoom — Server-to-Server app, lets the platform create meetings itself
+      ZOOM_ACCOUNT_ID: ${ZOOM_ACCOUNT_ID:-}
+      ZOOM_CLIENT_ID: ${ZOOM_CLIENT_ID:-}
+      ZOOM_CLIENT_SECRET: ${ZOOM_CLIENT_SECRET:-}
+      # Microsoft Teams (Graph API, app-only)
+      MS_TENANT_ID: ${MS_TENANT_ID:-}
+      MS_CLIENT_ID: ${MS_CLIENT_ID:-}
+      MS_CLIENT_SECRET: ${MS_CLIENT_SECRET:-}
     volumes:
       - backend_uploads:/app/uploads
     depends_on:
