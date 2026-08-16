@@ -136,7 +136,11 @@ const LIT = {
   radius:           4,
   shadow:           '0 2px 14px rgba(70,50,15,.06)',
   headFont:         "'Playfair Display', Georgia, serif",
-  bodyFont:         "'Cormorant Garamond', Georgia, serif",
+  // Body text was 'Cormorant Garamond' — a DISPLAY serif. Small x-height and
+  // thin strokes make it hard to read below ~16px, which is most of this page.
+  // Inter (already loaded in index.html) is built for UI text. Playfair Display
+  // stays on headings, so the editorial character is preserved.
+  bodyFont:         "'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif",
 };
 
 // Tab bar active-state color — Classic Orange (#f07d19), chosen from the
