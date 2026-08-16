@@ -969,11 +969,15 @@ function swooshUnderline(color: string, width = 160) {
   );
 }
 
-function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disabledReason, stepTitle, ideaId, stageColor }: {
+function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disabledReason, onDisabledClick, stepTitle, ideaId, stageColor }: {
   onBack?: () => void;
   onNext: () => void;
   nextLabel?: string;
   disabled?: boolean;
+  // When supplied, the Next button stays clickable while greyed out and calls
+  // this instead of onNext — used to point the founder at what's missing
+  // rather than leaving them poking a dead button.
+  onDisabledClick?: () => void;
   // Short, human reason shown (as a tooltip + a small hint line) when disabled
   // is true, so a greyed-out Next button never leaves the founder guessing
   // what's missing. Falls back to a generic message if a call site doesn't
@@ -1013,10 +1017,11 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
             <button onClick={onBack} style={{ flex: 1, padding: '13px 16px', borderRadius: 10, border: `1.5px solid ${BORDER2}`, background: '#fff', color: '#3a3a3c', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>← Back</button>
           )}
           <button
-            onClick={onNext}
-            disabled={disabled}
+            onClick={disabled ? onDisabledClick : onNext}
+            disabled={disabled && !onDisabledClick}
+            aria-disabled={disabled || undefined}
             title={disabled ? (disabledReason || 'Fill in what\'s required above to continue.') : undefined}
-            style={{ flex: 2, padding: '13px 20px', borderRadius: 10, border: 'none', background: disabled ? '#e5e5ea' : '#1a1a1a', color: disabled ? T3 : '#fff', fontSize: 15, fontWeight: 700, cursor: disabled ? 'default' : 'pointer', transition: 'background .15s' }}
+            style={{ flex: 2, padding: '13px 20px', borderRadius: 10, border: 'none', background: disabled ? '#e5e5ea' : '#1a1a1a', color: disabled ? T3 : '#fff', fontSize: 15, fontWeight: 700, cursor: disabled ? (onDisabledClick ? 'not-allowed' : 'default') : 'pointer', transition: 'background .15s' }}
           >{nextLabel}</button>
           {ideaId && (
             <button
@@ -3036,6 +3041,20 @@ function initSeverityProblems(raw: string): SeverityProblem[] {
   });
 }
 
+// Severity is what drives prioritisation later in Validate, so every problem
+// the founder has written must carry one before they can move on. Returns the
+// number of problems still missing a severity.
+function severityMissingCount(raw: string): number {
+  return raw.split(MULTI_SEP).filter(Boolean).filter(seg => {
+    const [text, sev] = seg.split(FIELD_SEP);
+    return (text ?? '').trim().length > 0 && !['critical', 'major', 'minor'].includes(sev ?? '');
+  }).length;
+}
+
+// Fired when the founder clicks a Next button that's blocked on severity.
+// ProblemBuilder listens and animates a pointer to the first unanswered row.
+const SEVERITY_NUDGE_EVENT = 'mvpclub:nudge-severity';
+
 function PainPointCard({
   entry, idx, total, active, onActivate, onChange, onRemove,
 }: {
@@ -3191,6 +3210,38 @@ function ProblemBuilder({ value, onChange }: { value: string; onChange: (v: stri
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
 
+  // ── Severity nudge ────────────────────────────────────────────────────────
+  // When the founder clicks a Next button that's blocked because a problem has
+  // no severity, we animate a pointer from the button up to the first
+  // unanswered row and pulse its chips, rather than just greying Next out.
+  const severityRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const nudgeTimers = useRef<number[]>([]);
+  const [nudge, setNudge] = useState<{ x: number; y: number; moving: boolean } | null>(null);
+  const [pulseId, setPulseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const clearTimers = () => { nudgeTimers.current.forEach(clearTimeout); nudgeTimers.current = []; };
+    const handler = () => {
+      const target = problems.find(pp => pp.text.trim() && !pp.severity);
+      if (!target) return;
+      const el = severityRowRefs.current[target.id];
+      if (!el) return;
+      clearTimers();
+      setPulseId(target.id);
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Start the pointer down where the Next button lives, then travel up.
+      setNudge({ x: window.innerWidth / 2, y: window.innerHeight - 80, moving: false });
+      nudgeTimers.current.push(window.setTimeout(() => {
+        const r = el.getBoundingClientRect();
+        setNudge({ x: r.left + Math.min(56, r.width / 2), y: r.bottom + 16, moving: true });
+      }, 450));
+      nudgeTimers.current.push(window.setTimeout(() => setNudge(null), 4200));
+      nudgeTimers.current.push(window.setTimeout(() => setPulseId(null), 4600));
+    };
+    window.addEventListener(SEVERITY_NUDGE_EVENT, handler);
+    return () => { window.removeEventListener(SEVERITY_NUDGE_EVENT, handler); clearTimers(); };
+  }, [problems]);
+
   useEffect(() => {
     if (value && problems.length === 0) {
       const loaded = initSeverityProblems(value);
@@ -3261,6 +3312,38 @@ function ProblemBuilder({ value, onChange }: { value: string; onChange: (v: stri
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+      <style>{`
+        @keyframes sevPulse {
+          0%, 100% { background: transparent; box-shadow: 0 0 0 0 rgba(220,38,38,0); }
+          50%      { background: #fff1f2;    box-shadow: 0 0 0 4px rgba(220,38,38,.18); }
+        }
+        @keyframes sevTap { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(.78) translateY(-5px); } }
+      `}</style>
+
+      {/* Animated pointer — travels from the Next button to the first problem
+          that still has no severity, taps it twice, then fades. */}
+      {nudge && (
+        <div
+          aria-hidden
+          style={{
+            position: 'fixed', left: nudge.x, top: nudge.y, zIndex: 5000, pointerEvents: 'none',
+            transform: 'translate(-50%,-50%)',
+            transition: 'left .8s cubic-bezier(.22,.61,.36,1), top .8s cubic-bezier(.22,.61,.36,1), opacity .3s',
+            opacity: nudge.moving ? 1 : 0.85,
+          }}
+        >
+          <div style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 3px 7px rgba(0,0,0,.35))',
+                        animation: nudge.moving ? 'sevTap .75s ease-in-out .85s 2' : undefined }}>👆</div>
+          {nudge.moving && (
+            <div style={{
+              position: 'absolute', top: 34, left: '50%', transform: 'translateX(-50%)',
+              whiteSpace: 'nowrap', background: '#1a1a1a', color: '#fff', fontSize: 12, fontWeight: 700,
+              padding: '5px 10px', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,.22)',
+            }}>Pick how severe this one is</div>
+          )}
+        </div>
+      )}
 
       {/* ── Suggestion chips by category — whiteboard style ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -3376,7 +3459,16 @@ function ProblemBuilder({ value, onChange }: { value: string; onChange: (v: stri
                     <button onClick={() => setEditingId(null)} style={{ padding: '5px 12px', borderRadius: 7, border: '1.5px solid #e0e0e0', background: '#fff', color: '#888', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', gap: 7, marginLeft: 36 }}>
+                  <div
+                    ref={el => { severityRowRefs.current[p.id] = el; }}
+                    style={{
+                      display: 'flex', gap: 7, marginLeft: 36,
+                      padding: pulseId === p.id ? '4px 8px' : undefined,
+                      marginTop: pulseId === p.id ? -4 : undefined,
+                      borderRadius: 12,
+                      animation: pulseId === p.id ? 'sevPulse 1.1s ease-in-out 3' : undefined,
+                    }}
+                  >
                     {(Object.entries(SEVERITY_CONFIG) as [SeverityLevel, typeof SEVERITY_CONFIG[SeverityLevel]][]).map(([lvl, sc]) => {
                       const on = p.severity === lvl;
                       return (
@@ -11958,7 +12050,32 @@ export default function WorkPage() {
       <BMCLabel blocks={['Value Proposition']} />
       <H accent={STAGE_COLORS.hone}>What are the problems?</H>
       <ProblemBuilder value={get('problemSentence')} onChange={v => set('problemSentence', v)} />
-      <NavRow onBack={back} onNext={async () => { await save('hone', { problemSentence: get('problemSentence') }); next(); }} nextLabel="Next →" disabled={!get('problemSentence').split(MULTI_SEP).filter(Boolean).some(s => s.trim().length > 5 && !s.includes('___'))} disabledReason="Describe at least one real problem to continue." stageColor={STAGE_COLORS.idea} stepTitle="What are the problems?" ideaId={activeIdea.id} />
+      {(() => {
+        const raw        = get('problemSentence');
+        const hasProblem = raw.split(MULTI_SEP).filter(Boolean).some(s => s.trim().length > 5 && !s.includes('___'));
+        const missing    = severityMissingCount(raw);
+        // Next stays blocked until every problem carries a severity.
+        const blocked    = !hasProblem || missing > 0;
+        return (
+          <NavRow
+            onBack={back}
+            onNext={async () => { await save('hone', { problemSentence: raw }); next(); }}
+            nextLabel="Next →"
+            disabled={blocked}
+            disabledReason={
+              !hasProblem
+                ? 'Describe at least one real problem to continue.'
+                : `Pick how severe ${missing === 1 ? 'the remaining problem is' : `each of the ${missing} remaining problems is`} — critical, major or minor.`
+            }
+            onDisabledClick={hasProblem && missing > 0
+              ? () => window.dispatchEvent(new CustomEvent(SEVERITY_NUDGE_EVENT))
+              : undefined}
+            stageColor={STAGE_COLORS.idea}
+            stepTitle="What are the problems?"
+            ideaId={activeIdea.id}
+          />
+        );
+      })()}
     </div>,
     <div key="h2" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={2} />
