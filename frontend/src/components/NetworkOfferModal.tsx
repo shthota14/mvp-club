@@ -22,11 +22,11 @@ function CopyBox({ label, text }: { label: string; text: string }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#6e6e73', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#6e6e73', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
         <button
           onClick={copy}
           style={{
-            fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, cursor: 'pointer', border: 'none',
+            fontSize: 13, fontWeight: 700, padding: '3px 10px', borderRadius: 6, cursor: 'pointer', border: 'none',
             background: copied ? '#dcfce7' : '#f0f0ff',
             color: copied ? '#15803d' : '#5856d6',
           }}
@@ -36,7 +36,7 @@ function CopyBox({ label, text }: { label: string; text: string }) {
       </div>
       <div style={{
         background: '#f5f5f7', border: '1px solid #d2d2d7', borderRadius: 10,
-        padding: '12px 14px', fontSize: 13, color: '#1d1d1f', lineHeight: 1.7,
+        padding: '12px 14px', fontSize: 15, color: '#1d1d1f', lineHeight: 1.7,
         whiteSpace: 'pre-wrap', fontFamily: 'inherit',
       }}>
         {text}
@@ -123,12 +123,12 @@ ${user?.name ?? 'A community member'}`
         {/* Header */}
         <div style={{ padding: '22px 24px 18px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'flex-start', gap: 12, flexShrink: 0 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#111', marginBottom: 3 }}>🤝 Offer your network</div>
-            <div style={{ fontSize: 13, color: '#6e6e73', lineHeight: 1.5 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#111', marginBottom: 3 }}>🤝 Offer your network</div>
+            <div style={{ fontSize: 15, color: '#6e6e73', lineHeight: 1.5 }}>
               Know someone who could help with <strong>{ideaName}</strong>? Introduce them.
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#b0b0b8', lineHeight: 1, flexShrink: 0 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 21, cursor: 'pointer', color: '#b0b0b8', lineHeight: 1, flexShrink: 0 }}>✕</button>
         </div>
 
         <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -136,19 +136,19 @@ ${user?.name ?? 'A community member'}`
             <div style={{ padding: '24px' }}>
               {/* Success header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>✅</div>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 21, flexShrink: 0 }}>✅</div>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>Intro sent to the founder</div>
-                  <div style={{ fontSize: 13, color: '#6e6e73' }}>They've been notified via private message.</div>
+                  <div style={{ fontSize: 17, fontWeight: 800 }}>Intro sent to the founder</div>
+                  <div style={{ fontSize: 15, color: '#6e6e73' }}>They've been notified via private message.</div>
                 </div>
               </div>
 
               {/* Step 2 — warm the contact */}
               <div style={{ background: '#fefce8', border: '1.5px solid #fde68a', borderRadius: 14, padding: '14px 16px', marginBottom: 20 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
                   ⚡ Step 2 — warm your contact first
                 </div>
-                <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.6 }}>
+                <div style={{ fontSize: 15, color: '#78350f', lineHeight: 1.6 }}>
                   The intro works best if <strong>{form.contact_name.split(' ')[0]}</strong> hears from you before the founder reaches out.
                   Copy the message below and send it now.
                 </div>
@@ -174,11 +174,11 @@ ${user?.name ?? 'A community member'}`
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                       width: '100%', padding: '11px 0', borderRadius: 12, marginBottom: 12,
-                      background: '#0a66c2', color: '#fff', fontWeight: 700, fontSize: 14,
+                      background: '#0a66c2', color: '#fff', fontWeight: 700, fontSize: 16,
                       textDecoration: 'none',
                     }}
                   >
-                    <span style={{ fontWeight: 900, fontSize: 16 }}>in</span>
+                    <span style={{ fontWeight: 900, fontSize: 18 }}>in</span>
                     {hasUrl
                       ? `Open ${form.contact_name.split(' ')[0]}'s LinkedIn profile`
                       : `Search "${form.contact_name}" on LinkedIn`}
@@ -192,7 +192,7 @@ ${user?.name ?? 'A community member'}`
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     width: '100%', padding: '11px 0', borderRadius: 12, marginBottom: 12,
-                    background: '#111827', color: '#fff', fontWeight: 700, fontSize: 14,
+                    background: '#111827', color: '#fff', fontWeight: 700, fontSize: 16,
                     textDecoration: 'none',
                   }}
                 >
@@ -202,7 +202,7 @@ ${user?.name ?? 'A community member'}`
 
               <button
                 onClick={onClose}
-                style={{ width: '100%', padding: '10px 0', borderRadius: 12, border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+                style={{ width: '100%', padding: '10px 0', borderRadius: 12, border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontWeight: 700, fontSize: 16, cursor: 'pointer' }}
               >
                 Done
               </button>
@@ -251,7 +251,7 @@ ${user?.name ?? 'A community member'}`
                       key={t}
                       onClick={() => set('contact_type', t)}
                       style={{
-                        flex: 1, padding: '8px 0', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                        flex: 1, padding: '8px 0', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer',
                         background: form.contact_type === t ? '#f0f0ff' : '#f5f5f7',
                         color: form.contact_type === t ? '#5856d6' : '#6e6e73',
                         border: `1.5px solid ${form.contact_type === t ? '#c4b5fd' : '#d2d2d7'}`,
@@ -269,18 +269,18 @@ ${user?.name ?? 'A community member'}`
                   onChange={e => set('contact_value', e.target.value)}
                   style={inputStyle}
                 />
-                <div style={{ fontSize: 11, color: '#86868b', marginTop: 5 }}>
+                <div style={{ fontSize: 13, color: '#86868b', marginTop: 5 }}>
                   {form.contact_type === 'linkedin'
                     ? 'Skip this if you don\'t have their URL — we\'ll generate a LinkedIn search for the founder.'
                     : 'Required so the founder can reach out directly.'}
                 </div>
               </div>
 
-              <div style={{ background: '#f5f5f7', border: '1px solid #d2d2d7', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#6e6e73', lineHeight: 1.6 }}>
+              <div style={{ background: '#f5f5f7', border: '1px solid #d2d2d7', borderRadius: 10, padding: '10px 14px', fontSize: 14, color: '#6e6e73', lineHeight: 1.6 }}>
                 🔒 Sent <strong>only to the idea founder</strong> via private message. You'll also get a ready-to-copy warm-up note to send your contact.
               </div>
 
-              {error && <div style={{ fontSize: 13, color: '#ef4444', fontWeight: 600 }}>{error}</div>}
+              {error && <div style={{ fontSize: 15, color: '#ef4444', fontWeight: 600 }}>{error}</div>}
 
               <button
                 onClick={submit}
@@ -288,7 +288,7 @@ ${user?.name ?? 'A community member'}`
                 style={{
                   width: '100%', padding: '13px 0', borderRadius: 12,
                   background: '#000', color: '#fff', border: 'none',
-                  fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer',
+                  fontSize: 16, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer',
                   opacity: saving ? 0.6 : 1,
                 }}
               >
@@ -303,12 +303,12 @@ ${user?.name ?? 'A community member'}`
 }
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 12, fontWeight: 700, color: '#3a3a3c',
+  display: 'block', fontSize: 14, fontWeight: 700, color: '#3a3a3c',
   marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em',
 };
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', fontSize: 14, padding: '10px 14px',
+  width: '100%', fontSize: 16, padding: '10px 14px',
   border: '1.5px solid #d2d2d7', borderRadius: 10,
   fontFamily: 'inherit', color: '#111', background: '#fff',
   boxSizing: 'border-box', outline: 'none',

@@ -397,16 +397,16 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
             {/* Left */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #1e1b4b, #4c1d95)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>
+                <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg, #1e1b4b, #4c1d95)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>
                   📊
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <span style={{ fontSize: 15, fontWeight: 900, color: '#111827', letterSpacing: -.4, lineHeight: 1 }}>Business Model Canvas</span>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: '#9ca3af', letterSpacing: .3 }}>{idea.name}</span>
+                  <span style={{ fontSize: 17, fontWeight: 900, color: '#111827', letterSpacing: -.4, lineHeight: 1 }}>Business Model Canvas</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#9ca3af', letterSpacing: .3 }}>{idea.name}</span>
                 </div>
               </div>
               <span style={{ width: 1, height: 22, background: '#e5e7eb', flexShrink: 0 }} />
-              <span style={{ flexShrink: 0, padding: '4px 11px', borderRadius: 20, background: `${stageColor}15`, color: stageColor, fontSize: 11, fontWeight: 700, border: `1px solid ${stageColor}25` }}>
+              <span style={{ flexShrink: 0, padding: '4px 11px', borderRadius: 20, background: `${stageColor}15`, color: stageColor, fontSize: 13, fontWeight: 700, border: `1px solid ${stageColor}25` }}>
                 {STAGE_LABELS[idea.stage]}
               </span>
             </div>
@@ -427,11 +427,11 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
                   />
                 ))}
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: completionPct === 100 ? '#16a34a' : '#9ca3af', minWidth: 60 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: completionPct === 100 ? '#16a34a' : '#9ca3af', minWidth: 60 }}>
                 {completionPct === 100 ? '✓ Complete' : `${completedBlocks}/${BLOCKS.length} filled`}
               </span>
               {!viewOnly && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600,
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600,
                   color: saveStatus === 'saved' ? '#22c55e' : saveStatus === 'saving' ? '#f59e0b' : '#9ca3af',
                   padding: '3px 9px', borderRadius: 20,
                   background: saveStatus === 'saved' ? '#f0fdf4' : saveStatus === 'saving' ? '#fffbeb' : '#f9fafb',
@@ -443,7 +443,7 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
                 </div>
               )}
               {viewOnly && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700, color: '#9ca3af', padding: '3px 10px', borderRadius: 20, background: '#f5f5f7', border: '1px solid #e5e7eb' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 700, color: '#9ca3af', padding: '3px 10px', borderRadius: 20, background: '#f5f5f7', border: '1px solid #e5e7eb' }}>
                   👁 View only
                 </div>
               )}
@@ -461,37 +461,37 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
                         onChange={e => setVersionName(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleSaveVersion(); if (e.key === 'Escape') { setShowSaveDialog(false); setVersionName(''); } }}
                         placeholder="Snapshot name…"
-                        style={{ padding: '6px 12px', borderRadius: 8, border: '1.5px solid #e0e0e8', fontSize: 12, width: 160, outline: 'none', fontFamily: 'inherit' }}
+                        style={{ padding: '6px 12px', borderRadius: 8, border: '1.5px solid #e0e0e8', fontSize: 14, width: 160, outline: 'none', fontFamily: 'inherit' }}
                       />
                       <button onClick={handleSaveVersion} disabled={savingVersion || !versionName.trim()}
-                        style={{ padding: '6px 14px', borderRadius: 8, background: '#6366f1', color: '#fff', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: savingVersion || !versionName.trim() ? 0.4 : 1 }}>
+                        style={{ padding: '6px 14px', borderRadius: 8, background: '#6366f1', color: '#fff', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: savingVersion || !versionName.trim() ? 0.4 : 1 }}>
                         {savingVersion ? '…' : 'Save'}
                       </button>
                       <button onClick={() => { setShowSaveDialog(false); setVersionName(''); }}
-                        style={{ padding: '6px 10px', borderRadius: 8, background: '#f5f5f7', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#6e6e73' }}>
+                        style={{ padding: '6px 10px', borderRadius: 8, background: '#f5f5f7', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', color: '#6e6e73' }}>
                         Cancel
                       </button>
                     </div>
                   ) : (
                     <button onClick={() => setShowSaveDialog(true)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, background: '#f5f5f7', border: '1px solid #e5e7eb', fontSize: 12, fontWeight: 700, cursor: 'pointer', color: '#374151', transition: 'all .12s' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, background: '#f5f5f7', border: '1px solid #e5e7eb', fontSize: 14, fontWeight: 700, cursor: 'pointer', color: '#374151', transition: 'all .12s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = '#ebebef'; e.currentTarget.style.borderColor = '#d1d5db'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = '#f5f5f7'; e.currentTarget.style.borderColor = '#e5e7eb'; }}>
                       📸 Save snapshot
                     </button>
                   )}
                   <button onClick={() => setShowVersions(v => !v)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, background: showVersions ? '#1e1b4b' : '#f5f5f7', color: showVersions ? '#c4b5fd' : '#374151', border: showVersions ? '1px solid #312e81' : '1px solid #e5e7eb', fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 8, background: showVersions ? '#1e1b4b' : '#f5f5f7', color: showVersions ? '#c4b5fd' : '#374151', border: showVersions ? '1px solid #312e81' : '1px solid #e5e7eb', fontSize: 14, fontWeight: 700, cursor: 'pointer', transition: 'all .15s' }}>
                     🕐 Snapshots{versions.length > 0 ? ` (${versions.length})` : ''}
                   </button>
                   {!isActive && onMakeActive && (
                     <button onClick={() => onMakeActive(idea)}
-                      style={{ padding: '6px 14px', borderRadius: 8, background: `${stageColor}12`, color: stageColor, border: `1px solid ${stageColor}28`, fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all .12s' }}>
+                      style={{ padding: '6px 14px', borderRadius: 8, background: `${stageColor}12`, color: stageColor, border: `1px solid ${stageColor}28`, fontSize: 14, fontWeight: 700, cursor: 'pointer', transition: 'all .12s' }}>
                       Set active
                     </button>
                   )}
                   {isActive && (
-                    <div style={{ padding: '6px 12px', borderRadius: 8, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', fontSize: 12, fontWeight: 700 }}>
+                    <div style={{ padding: '6px 12px', borderRadius: 8, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', fontSize: 14, fontWeight: 700 }}>
                       ● Active
                     </div>
                   )}
@@ -499,7 +499,7 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
               )}
               <button
                 onClick={onClose}
-                style={{ width: 32, height: 32, borderRadius: 8, background: '#f5f5f7', border: '1px solid #e5e7eb', color: '#6b7280', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .12s' }}
+                style={{ width: 32, height: 32, borderRadius: 8, background: '#f5f5f7', border: '1px solid #e5e7eb', color: '#6b7280', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .12s' }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = '#fecaca'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = '#f5f5f7'; e.currentTarget.style.color = '#6b7280'; e.currentTarget.style.borderColor = '#e5e7eb'; }}
               >
@@ -513,7 +513,7 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
 
             {/* ── Canvas grid ── */}
             {loading ? (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 14, background: '#f8fafc' }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 16, background: '#f8fafc' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 28, marginBottom: 10, opacity: .5 }}>📊</div>
                   <div style={{ fontWeight: 600 }}>Loading canvas…</div>
@@ -566,15 +566,15 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
                 overflow: 'hidden',
               }}>
                 <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #eeeff6', flexShrink: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: 13, color: '#111827', marginBottom: 3 }}>📸 Snapshots</div>
-                  <div style={{ fontSize: 11, color: '#9ca3af' }}>Restore your canvas to a previous version</div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: '#111827', marginBottom: 3 }}>📸 Snapshots</div>
+                  <div style={{ fontSize: 13, color: '#9ca3af' }}>Restore your canvas to a previous version</div>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
                   {versions.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '40px 12px' }}>
                       <div style={{ fontSize: 32, marginBottom: 10, opacity: .5 }}>📸</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>No snapshots yet</div>
-                      <div style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.5 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: '#374151', marginBottom: 6 }}>No snapshots yet</div>
+                      <div style={{ fontSize: 14, color: '#9ca3af', lineHeight: 1.5 }}>
                         Hit "Save snapshot" in the header to capture the current state of your canvas.
                       </div>
                     </div>
@@ -586,20 +586,20 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
                         <div key={v.key} className="version-card">
                           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
                             <div>
-                              <div style={{ fontWeight: 800, fontSize: 13, color: '#111827', marginBottom: 3 }}>{v.name}</div>
-                              <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600 }}>
+                              <div style={{ fontWeight: 800, fontSize: 15, color: '#111827', marginBottom: 3 }}>{v.name}</div>
+                              <div style={{ fontSize: 12, color: '#9ca3af', fontWeight: 600 }}>
                                 {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                 {' · '}
                                 {date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                               </div>
                             </div>
                             {i === 0 && (
-                              <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+                              <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
                                 LATEST
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 10 }}>{filled}/{BLOCKS.length} blocks filled</div>
+                          <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 10 }}>{filled}/{BLOCKS.length} blocks filled</div>
                           <button className="ver-restore-btn" onClick={() => handleRestoreVersion(v)} disabled={restoringVersion === v.key}>
                             {restoringVersion === v.key ? 'Restoring…' : '↩ Restore this version'}
                           </button>
@@ -609,7 +609,7 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
                   )}
                 </div>
                 <div style={{ padding: '10px 12px', borderTop: '1px solid #eeeff6', flexShrink: 0 }}>
-                  <div style={{ fontSize: 10, color: '#c0c0c8', lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 12, color: '#c0c0c8', lineHeight: 1.5 }}>
                     Restoring overwrites your current draft. Save a snapshot first if you want to keep it.
                   </div>
                 </div>
@@ -624,12 +624,12 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             flexShrink: 0, background: '#ffffff',
           }}>
-            <div style={{ fontSize: 10, color: '#c0c0c8', fontWeight: 500 }}>
+            <div style={{ fontSize: 12, color: '#c0c0c8', fontWeight: 500 }}>
               {viewOnly
                 ? `Viewing Business Model Canvas · Read only`
                 : 'Hover a block for suggestions · Click or drag a chip to add · Auto-saves as you type'}
             </div>
-            <div style={{ fontSize: 10, color: '#c0c0c8', fontWeight: 500 }}>
+            <div style={{ fontSize: 12, color: '#c0c0c8', fontWeight: 500 }}>
               Esc to close · {idea.name}
             </div>
           </div>
@@ -789,7 +789,7 @@ function CanvasBlock({
           width: 20, height: 20, borderRadius: 6,
           background: isDark ? 'rgba(255,255,255,0.14)' : `${block.accent}20`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 9, fontWeight: 900, color: isDark ? 'rgba(255,255,255,0.55)' : block.accent,
+          fontSize: 12, fontWeight: 900, color: isDark ? 'rgba(255,255,255,0.55)' : block.accent,
           letterSpacing: .3, flexShrink: 0,
           transition: 'opacity .15s',
         }}>
@@ -797,7 +797,7 @@ function CanvasBlock({
         </div>
         <span style={{ fontSize: isValueProp ? 16 : 13 }}>{block.icon}</span>
         <span style={{
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: 700,
           color: block.fg,
           fontFamily: "'Roboto', sans-serif",
@@ -816,7 +816,7 @@ function CanvasBlock({
           style={{
             marginLeft: 4, width: 15, height: 15, borderRadius: '50%', flexShrink: 0,
             background: `${block.accent}18`, border: `1px solid ${block.accent}40`,
-            color: block.accent, fontSize: 9, fontWeight: 800, cursor: 'pointer',
+            color: block.accent, fontSize: 12, fontWeight: 800, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             lineHeight: 1, padding: 0, fontFamily: 'sans-serif',
           }}
@@ -848,7 +848,7 @@ function CanvasBlock({
             color: '#e2e8f0',
             borderRadius: 10,
             padding: '14px 16px',
-            fontSize: 12,
+            fontSize: 14,
             lineHeight: 1.65,
             fontFamily: "'Roboto', sans-serif",
             fontWeight: 400,
@@ -859,8 +859,8 @@ function CanvasBlock({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-            <span style={{ fontSize: 14 }}>{block.icon}</span>
-            <span style={{ fontWeight: 700, fontSize: 12, color: '#f1f5f9', letterSpacing: .1 }}>{block.title}</span>
+            <span style={{ fontSize: 16 }}>{block.icon}</span>
+            <span style={{ fontWeight: 700, fontSize: 14, color: '#f1f5f9', letterSpacing: .1 }}>{block.title}</span>
           </div>
           <div style={{ color: '#cbd5e1' }}>{'explainer' in block ? (block as any).explainer : block.hint}</div>
         </div>,
@@ -913,7 +913,7 @@ function CanvasBlock({
           flex: 1,
           color: value ? block.fg : `${block.fg}50`,
           fontFamily: "'Roboto', sans-serif",
-          fontSize: 13,
+          fontSize: 15,
           fontWeight: 400,
           lineHeight: 1.7,
           letterSpacing: .1,
@@ -930,7 +930,7 @@ function CanvasBlock({
           background: `${block.accent}12`,
           backdropFilter: 'blur(2px)',
           pointerEvents: 'none',
-          fontSize: 12, fontWeight: 800,
+          fontSize: 14, fontWeight: 800,
           color: block.fg,
           letterSpacing: .2,
           zIndex: 10,
