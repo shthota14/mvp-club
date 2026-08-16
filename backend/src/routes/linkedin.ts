@@ -32,7 +32,7 @@ const JWT_SECRET    = process.env.JWT_SECRET             ?? 'dev_jwt_secret_chan
 
 const LINKEDIN_AUTH_URL  = 'https://www.linkedin.com/oauth/v2/authorization';
 const LINKEDIN_TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken';
-const LINKEDIN_USER_URL  = 'https://api.linkedin.com/oidc/userinfo';
+const LINKEDIN_USER_URL  = 'https://api.linkedin.com/v2/userinfo';
 
 // ── In-memory state store (TTL 10 min) ──────────────────────────────────────
 // Maps state → { userId, expiresAt }
