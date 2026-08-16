@@ -127,7 +127,7 @@ const LIT = {
   card:             '#ffffff',
   cardTint:         '#faf6ee',
   text:             '#2b2318',
-  muted:            '#8a7d64',
+  muted:            '#675b48',   // was #8a7d64 — only 3.81:1 on the cream bg (WCAG AA needs 4.5). Now 6.26:1.
   secondary:        '#6b5d47',
   accent:           '#8a5a2b',
   accentSoft:       '#f3e7d4',
@@ -5035,7 +5035,11 @@ export default function CommunityPage() {
   });
 
   return (
-    <div style={{ background: LIT.pageBg, minHeight: '100vh', fontFamily: LIT.bodyFont }}>
+    <div className="lit-page" style={{ background: LIT.pageBg, minHeight: '100vh', fontFamily: LIT.bodyFont }}>
+      {/* Cormorant Garamond's 400 weight is very light: on the cream background
+          it reads as faint regardless of size. Lift the page default to 500.
+          Inline fontWeight values (600/700/800) still win over this. */}
+      <style>{`.lit-page, .lit-page * { font-weight: 500; }`}</style>
     <div style={{ maxWidth: 1360, margin: '0 auto', padding: '32px 40px 80px', color: LIT.text }}>
 
       {/* Header */}
