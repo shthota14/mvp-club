@@ -245,14 +245,26 @@ CREATE INDEX IF NOT EXISTS idx_interviews_validation_contact ON interviews(valid
 CREATE INDEX IF NOT EXISTS idx_interviews_booking_token       ON interviews(booking_token);
 
 -- ── admin user ────────────────────────────────────────────────────────────────
-INSERT INTO users (email, password_hash, name, current_stage, avatar_initials, is_admin)
+-- Created LOCKED: the hash below is bcrypt of a 48-byte random string that was
+-- discarded at generation time, so nobody — including anyone reading this repo —
+-- can log in as this account. It exists only so the admin row is present.
+--
+-- To make it usable, run on the server:
+--     ./deploy/hetzner/set-admin.sh
+-- which prompts for a password, hashes it with the same bcryptjs/12 rounds the
+-- app uses, and makes this the sole admin account.
+--
+-- ON CONFLICT deliberately does NOT touch password_hash, so re-running this
+-- migration never resets a password you have already set.
+INSERT INTO users (email, password_hash, name, current_stage, avatar_initials, is_admin, email_notifications)
 VALUES (
   'admin@mvpclub.com',
-  '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- password: "password" — CHANGE IN PROD
+  '$2b$12$o/LBOOH2DD6Ag0PHjPiEG.I.2OOUBXqwKncwFSb72QXGiXKF/Oy.q', -- locked; see set-admin.sh
   'MVP Club Admin',
   'idea',
   'AD',
-  TRUE
+  TRUE,
+  FALSE
 )
 ON CONFLICT (email) DO UPDATE SET is_admin = TRUE;
 

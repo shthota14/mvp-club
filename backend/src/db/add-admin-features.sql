@@ -20,7 +20,7 @@ ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS flag_reason TEXT;
 INSERT INTO users (email, password_hash, name, current_stage, avatar_initials, is_admin)
 VALUES (
   'admin@mvpclub.com',
-  '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', -- "password" bcrypt hash - CHANGE IN PROD
+  '$2b$12$o/LBOOH2DD6Ag0PHjPiEG.I.2OOUBXqwKncwFSb72QXGiXKF/Oy.q', -- "password" bcrypt hash - CHANGE IN PROD
   'MVP Club Admin',
   'idea',
   'AD',
