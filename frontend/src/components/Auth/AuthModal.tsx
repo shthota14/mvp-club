@@ -85,7 +85,8 @@ export default function AuthModal({ mode, onClose }: Props) {
       const res = await authApi.login(email, password);
       login(res.data.token, res.data.user as User);
       onClose();
-      navigate('/journey');
+      // Returning users land on Community by default.
+      navigate('/community');
     } catch {
       setError('Invalid email or password.');
     } finally { setLoading(false); }

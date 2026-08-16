@@ -103,7 +103,7 @@ export default function App() {
     <ZoomCallbackHandler />
     <CookieConsent />
     <Routes>
-      <Route path="/" element={isAuthenticated ? <Navigate to={user?.is_admin ? '/admin' : '/progress'} replace /> : <HeroPage />} />
+      <Route path="/" element={isAuthenticated ? <Navigate to={user?.is_admin ? '/admin' : '/community'} replace /> : <HeroPage />} />
       <Route element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
         <Route path="/journey" element={<Navigate to="/progress" replace />} />
         <Route path="/community" element={<AdminRedirect><CommunityPage /></AdminRedirect>} />
