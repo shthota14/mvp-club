@@ -5443,6 +5443,17 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
         .catch(() => {});
     }, [ideaId]);
 
+    // Contacts live in this component's own state (fetched from the
+    // validation_contacts API), not in the get/set field system the rest of
+    // WorkPage uses — mirror the count into a field so the parent step's
+    // NavRow can gate "Next" on having added at least one, same as every
+    // other required step. Skipped while the initial fetch is still in
+    // flight so a not-yet-loaded list doesn't briefly read as "empty".
+    React.useEffect(() => {
+      if (loading) return;
+      set('outreachContactsAdded', contacts.length > 0 ? '1' : '');
+    }, [loading, contacts.length]);
+
     const addContact = async () => {
       const emailOk = newEmail.trim().includes('@');
       const phoneOk = newPhone.trim().length >= 6;
@@ -12156,7 +12167,7 @@ export default function WorkPage() {
         value={get('solutionAlternatives')}
         onChange={v => set('solutionAlternatives', v)}
       />
-      <NavRow onBack={back} onNext={async () => { await save('hone', { solutionAlternatives: get('solutionAlternatives') }); next(); }} nextLabel="Next →" stageColor={STAGE_COLORS.idea} stepTitle="What do you think people are doing to solve this?" ideaId={activeIdea.id} />
+      <NavRow onBack={back} onNext={async () => { await save('hone', { solutionAlternatives: get('solutionAlternatives') }); next(); }} nextLabel="Next →" disabled={!get('solutionAlternatives').split('|||').filter(Boolean).length} disabledReason="List at least one way people cope with this today." stageColor={STAGE_COLORS.idea} stepTitle="What do you think people are doing to solve this?" ideaId={activeIdea.id} />
     </div>,
     <div key="h-readiness" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={4} />
@@ -12554,7 +12565,7 @@ export default function WorkPage() {
 
             {/* ── Nav ── */}
             <div style={{ padding: '14px 18px' }}>
-              <NavRow onBack={back} onNext={async () => { await save('validate', { valGoalSuccess: get('valGoalSuccess'), valGoalConvos: get('valGoalConvos'), valGoalRate: get('valGoalRate'), valGoalSignal: get('valGoalSignal'), valGoalICP: get('valGoalICP'), valGoalTime: get('valGoalTime') }); next(); }} nextLabel="Set your priorities →" ideaId={activeIdea.id} />
+              <NavRow onBack={back} onNext={async () => { await save('validate', { valGoalSuccess: get('valGoalSuccess'), valGoalConvos: get('valGoalConvos'), valGoalRate: get('valGoalRate'), valGoalSignal: get('valGoalSignal'), valGoalICP: get('valGoalICP'), valGoalTime: get('valGoalTime') }); next(); }} nextLabel="Set your priorities →" disabled={!get('valGoalConvos') || !get('valGoalRate') || !get('valGoalSignal') || !get('valGoalICP') || !get('valGoalTime')} disabledReason="Answer all 5 questions above to set your winning condition." ideaId={activeIdea.id} />
             </div>
 
           </div>
@@ -12709,7 +12720,7 @@ export default function WorkPage() {
 
               {/* ── Nav ── */}
               <div style={{ padding: '14px 18px' }}>
-                <NavRow onBack={back} onNext={async () => { await save('validate', { valGoalProve: get('valGoalProve'), valGoalStop: get('valGoalStop') }); next(); }} nextLabel="State your assumptions →" ideaId={activeIdea.id} />
+                <NavRow onBack={back} onNext={async () => { await save('validate', { valGoalProve: get('valGoalProve'), valGoalStop: get('valGoalStop') }); next(); }} nextLabel="State your assumptions →" disabled={!get('valGoalProve').trim() || !get('valGoalStop').trim()} disabledReason="Pick at least one thing to prove, and one stop rule." ideaId={activeIdea.id} />
               </div>
 
             </div>
@@ -12743,7 +12754,13 @@ export default function WorkPage() {
               await save('validate', { assumptions: flushed || get('assumptions') });
               next();
             }}
-            nextLabel="Name who you'll speak to →" ideaId={activeIdea.id} />
+            nextLabel="Name who you'll speak to →"
+            disabled={
+              (() => { try { return (JSON.parse(get('assumptions') || '[]') as { text?: string }[]).filter(a => (a.text || '').trim()).length === 0; } catch { return true; } })()
+              && !assumptionsRef.current?.isDraftValid()
+            }
+            disabledReason="Add at least one assumption you're making before moving on."
+            ideaId={activeIdea.id} />
         </div>
       );
     })(),
@@ -12935,7 +12952,11 @@ export default function WorkPage() {
         </div>
       </div>
 
-      <NavRow onBack={back} onNext={() => next()} nextLabel="Build your interview script →" stageColor={STAGE_COLORS.validate} stepTitle="Targeting" ideaId={activeIdea.id} />
+      <NavRow onBack={back} onNext={() => next()} nextLabel="Build your interview script →" disabled={
+        !(get('icpJobs').split('|||').filter(Boolean).length || get('icpJobs_custom').trim()) ||
+        !(get('icpFrustrations').split('|||').filter(Boolean).length || get('icpFrustrations_custom').trim()) ||
+        !(get('icpAlternatives').split('|||').filter(Boolean).length || get('icpAlternatives_custom').trim())
+      } disabledReason="Answer all 3 questions above — pick a chip or write your own for each." stageColor={STAGE_COLORS.validate} stepTitle="Targeting" ideaId={activeIdea.id} />
     </div>,
 
     // ── v2: Build your interview script ───────────────────────────────────
@@ -12978,7 +12999,7 @@ export default function WorkPage() {
         }}
       />
 
-      <NavRow onBack={back} onNext={async () => { await save('validate', { keyQuestion: get('keyQuestion'), keyQuestionVersions: get('keyQuestionVersions'), warmContacts: get('warmContacts'), customInterviewQuestions: get('customInterviewQuestions') }); await fetchInterviews(); next(); }} nextLabel="Add your contacts →" stageColor={STAGE_COLORS.validate} stepTitle="Interview Script" ideaId={activeIdea.id} />
+      <NavRow onBack={back} onNext={async () => { await save('validate', { keyQuestion: get('keyQuestion'), keyQuestionVersions: get('keyQuestionVersions'), warmContacts: get('warmContacts'), customInterviewQuestions: get('customInterviewQuestions') }); await fetchInterviews(); next(); }} nextLabel="Add your contacts →" disabled={(() => { const p = parseStoredScript(get('customInterviewQuestions')); return p.manual.length === 0 && !p.ai; })()} disabledReason="Build at least one interview question before continuing." stageColor={STAGE_COLORS.validate} stepTitle="Interview Script" ideaId={activeIdea.id} />
     </div>,
 
     // ── v0b: Add your contacts ──────────────────────────────────────────────
@@ -13071,7 +13092,7 @@ export default function WorkPage() {
             }}
           />
 
-          <NavRow onBack={back} onNext={() => next()} nextLabel="Schedule interviews →" stageColor={STAGE_COLORS.validate} stepTitle="Add Contacts" ideaId={activeIdea.id} />
+          <NavRow onBack={back} onNext={() => next()} nextLabel="Schedule interviews →" disabled={!get('outreachContactsAdded')} disabledReason="Add at least one person you plan to reach out to." stageColor={STAGE_COLORS.validate} stepTitle="Add Contacts" ideaId={activeIdea.id} />
         </div>
       );
     })(),
@@ -14726,7 +14747,12 @@ export default function WorkPage() {
         );
       })()}
 
-      <NavRow onBack={back} onNext={async () => { await save('validate', { pivotOption: get('pivotOption'), insights: get('insights') }); next(); }} nextLabel="Record your decision →" stageColor={STAGE_COLORS.hone} stepTitle="Analyse" ideaId={activeIdea.id} />
+      <NavRow onBack={back} onNext={async () => { await save('validate', { pivotOption: get('pivotOption'), insights: get('insights') }); next(); }} nextLabel="Record your decision →" disabled={(() => {
+        const painPoints = get('problemSentence').split(MULTI_SEP).map(parseProblemText).filter((s: string) => s.trim() && !s.includes('___'));
+        if (painPoints.length === 0) return false;
+        const verdicts = (get('painPointVerdicts') || '').split(MULTI_SEP);
+        return painPoints.some((_: string, i: number) => !verdicts[i]);
+      })()} disabledReason="Rate every pain point above — confirmed, partial, or not confirmed." stageColor={STAGE_COLORS.hone} stepTitle="Analyse" ideaId={activeIdea.id} />
     </div>,
 
     // ── v4: Decision & findings ──────────────────────────────────────────
@@ -16290,7 +16316,7 @@ export default function WorkPage() {
           </div>
         );
       })()}
-      <NavRow onBack={back} onNext={async () => { await save('shape', { buildBacklog: get('buildBacklog') }); unlock('done'); mark('shape'); next(); }} nextLabel="Save shape →" ideaId={activeIdea.id} />
+      <NavRow onBack={back} onNext={async () => { await save('shape', { buildBacklog: get('buildBacklog') }); unlock('done'); mark('shape'); next(); }} nextLabel="Save shape →" disabled={(() => { try { return JSON.parse(get('buildBacklog') || '[]').length === 0; } catch { return true; } })()} disabledReason="Add at least one backlog item before saving." ideaId={activeIdea.id} />
     </div>,
 
     <CompleteBadge key="s-done" mod="shape" onContinue={() => goMod('done')} />,
@@ -16783,6 +16809,8 @@ export default function WorkPage() {
               onBack={back}
               onNext={async () => { await save('done', { vibeCoachRequests: get('vibeCoachRequests') }); next(); }}
               nextLabel="Next →"
+              disabled={savedRequests.length === 0}
+              disabledReason="Describe at least one change before continuing."
               stageColor={DC}
               stepTitle="Describe your next change"
               ideaId={activeIdea.id}
