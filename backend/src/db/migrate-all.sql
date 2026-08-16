@@ -256,9 +256,18 @@ CREATE INDEX IF NOT EXISTS idx_interviews_booking_token       ON interviews(book
 --
 -- ON CONFLICT deliberately does NOT touch password_hash, so re-running this
 -- migration never resets a password you have already set.
+-- Older installs created this admin on the .com address; rename it to the real
+-- domain rather than leaving two admin rows. Guarded against the unique index.
+UPDATE users SET email = 'admin@mvpclub.io'
+ WHERE email = 'admin@mvpclub.com'
+   AND NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@mvpclub.io');
+DELETE FROM users
+ WHERE email = 'admin@mvpclub.com'
+   AND EXISTS (SELECT 1 FROM users WHERE email = 'admin@mvpclub.io');
+
 INSERT INTO users (email, password_hash, name, current_stage, avatar_initials, is_admin, email_notifications)
 VALUES (
-  'admin@mvpclub.com',
+  'admin@mvpclub.io',
   '$2b$12$o/LBOOH2DD6Ag0PHjPiEG.I.2OOUBXqwKncwFSb72QXGiXKF/Oy.q', -- locked; see set-admin.sh
   'MVP Club Admin',
   'idea',

@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
 #
-# set-admin.sh — make admin@mvpclub.com the ONE admin account, with a password
+# set-admin.sh — make admin@mvpclub.io the ONE admin account, with a password
 # you choose, and strip admin from everyone else.
 #
 # Run on the server:
 #   cd /opt/mvpclub && ./deploy/hetzner/set-admin.sh
 #
+# Override the address if you ever need to:
+#   ADMIN_EMAIL=someone@mvpclub.io ./deploy/hetzner/set-admin.sh
+#
 # Safe to re-run. If the account already exists its password is reset to the
 # new one. Run this after any database wipe, and after any `migrate-all.sql`
-# run (that file creates admin@mvpclub.com with the literal password
-# "password" if the account is missing — this script replaces it).
+# run. Any legacy admin@mvpclub.com row is renamed to the .io address, so an
+# install never ends up with two admin accounts.
 
 set -euo pipefail
 
 APP_DIR="/opt/mvpclub"
-ADMIN_EMAIL="admin@mvpclub.com"
+ADMIN_EMAIL="${ADMIN_EMAIL:-admin@mvpclub.io}"
+LEGACY_EMAIL="admin@mvpclub.com"   # renamed to the .io address if still present
 ADMIN_NAME="MVP Club Admin"
 DC="docker compose -f ${APP_DIR}/docker-compose.prod.yml --env-file ${APP_DIR}/.env.production"
 
@@ -44,6 +48,15 @@ PSQL="$DC exec -T db psql -U mvpclub -d mvpclub -v ON_ERROR_STOP=1"
 log "Setting ${ADMIN_EMAIL} as the sole admin"
 $PSQL <<SQL
 BEGIN;
+
+-- If an older install created the .com admin, rename it rather than leaving
+-- two admin rows behind. Guarded so it can never hit the unique constraint.
+UPDATE users SET email = '${ADMIN_EMAIL}'
+ WHERE email = '${LEGACY_EMAIL}'
+   AND NOT EXISTS (SELECT 1 FROM users WHERE email = '${ADMIN_EMAIL}');
+DELETE FROM users
+ WHERE email = '${LEGACY_EMAIL}'
+   AND EXISTS (SELECT 1 FROM users WHERE email = '${ADMIN_EMAIL}');
 
 INSERT INTO users (email, name, password_hash, current_stage, avatar_initials, is_admin, email_notifications)
 VALUES ('${ADMIN_EMAIL}', '${ADMIN_NAME}', '${HASH}', 'idea', 'AD', TRUE, FALSE)

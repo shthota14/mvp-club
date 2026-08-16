@@ -17,9 +17,18 @@ ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS flag_reason TEXT;
 
 -- 4. Create a default admin user (change the password hash as needed)
 --    Password for below hash is: admin123  (bcrypt, 10 rounds)
+-- Older installs created this admin on the .com address; rename it to the real
+-- domain rather than leaving two admin rows. Guarded against the unique index.
+UPDATE users SET email = 'admin@mvpclub.io'
+ WHERE email = 'admin@mvpclub.com'
+   AND NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@mvpclub.io');
+DELETE FROM users
+ WHERE email = 'admin@mvpclub.com'
+   AND EXISTS (SELECT 1 FROM users WHERE email = 'admin@mvpclub.io');
+
 INSERT INTO users (email, password_hash, name, current_stage, avatar_initials, is_admin)
 VALUES (
-  'admin@mvpclub.com',
+  'admin@mvpclub.io',
   '$2b$12$o/LBOOH2DD6Ag0PHjPiEG.I.2OOUBXqwKncwFSb72QXGiXKF/Oy.q', -- "password" bcrypt hash - CHANGE IN PROD
   'MVP Club Admin',
   'idea',
