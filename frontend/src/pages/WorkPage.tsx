@@ -992,6 +992,30 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
   const [posting, setPosting]     = useState(false);
   const [posted, setPosted]       = useState(false);
   const [focused, setFocused]     = useState(false);
+  // Generic "you can't proceed yet" feedback for every step that sets
+  // `disabled` — a button shake + a flashed reason line. Steps that need
+  // something more specific (e.g. pointing at one field among several, like
+  // the Hone severity step) pass their own onDisabledClick and this is
+  // skipped in favor of that.
+  const [shaking, setShaking]         = useState(false);
+  const [showReason, setShowReason]   = useState(false);
+  const shakeTimer  = useRef<number | null>(null);
+  const reasonTimer = useRef<number | null>(null);
+
+  const handleBlockedClick = () => {
+    if (onDisabledClick) { onDisabledClick(); return; }
+    setShaking(false);
+    requestAnimationFrame(() => setShaking(true));
+    if (shakeTimer.current) clearTimeout(shakeTimer.current);
+    shakeTimer.current = window.setTimeout(() => setShaking(false), 500);
+    setShowReason(true);
+    if (reasonTimer.current) clearTimeout(reasonTimer.current);
+    reasonTimer.current = window.setTimeout(() => setShowReason(false), 2600);
+  };
+  useEffect(() => () => {
+    if (shakeTimer.current) clearTimeout(shakeTimer.current);
+    if (reasonTimer.current) clearTimeout(reasonTimer.current);
+  }, []);
 
   const handlePost = async () => {
     if (!question.trim() || !ideaId) return;
@@ -1010,6 +1034,19 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
   const c = stageColor ?? '#1d1d1f';
   return (
     <>
+      <style>{`
+        @keyframes navShake {
+          10%, 90% { transform: translateX(-1px); }
+          20%, 80% { transform: translateX(2px); }
+          30%, 50%, 70% { transform: translateX(-4px); }
+          40%, 60% { transform: translateX(4px); }
+        }
+        @keyframes navReasonFlash {
+          0% { transform: scale(1); }
+          15% { transform: scale(1.08); }
+          30% { transform: scale(1); }
+        }
+      `}</style>
       <div style={{ marginTop: 28 }}>
         {/* Nav buttons */}
         <div style={{ display: 'flex', gap: 10, marginBottom: disabled ? 6 : 14 }}>
@@ -1017,11 +1054,10 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
             <button onClick={onBack} style={{ flex: 1, padding: '13px 16px', borderRadius: 10, border: `1.5px solid ${BORDER2}`, background: '#fff', color: '#3a3a3c', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>← Back</button>
           )}
           <button
-            onClick={disabled ? onDisabledClick : onNext}
-            disabled={disabled && !onDisabledClick}
+            onClick={disabled ? handleBlockedClick : onNext}
             aria-disabled={disabled || undefined}
             title={disabled ? (disabledReason || 'Fill in what\'s required above to continue.') : undefined}
-            style={{ flex: 2, padding: '13px 20px', borderRadius: 10, border: 'none', background: disabled ? '#e5e5ea' : '#1a1a1a', color: disabled ? T3 : '#fff', fontSize: 15, fontWeight: 700, cursor: disabled ? (onDisabledClick ? 'not-allowed' : 'default') : 'pointer', transition: 'background .15s' }}
+            style={{ flex: 2, padding: '13px 20px', borderRadius: 10, border: 'none', background: disabled ? '#e5e5ea' : '#1a1a1a', color: disabled ? T3 : '#fff', fontSize: 15, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer', transition: 'background .15s', animation: shaking ? 'navShake .5s ease' : undefined }}
           >{nextLabel}</button>
           {ideaId && (
             <button
@@ -1032,8 +1068,14 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
           )}
         </div>
         {disabled && (
-          <div style={{ fontSize: 12.5, color: T3, marginBottom: 14, textAlign: 'right' as const }}>
-            {disabledReason || 'Fill in what\'s required above to continue.'}
+          <div style={{
+            fontSize: 12.5, marginBottom: 14, textAlign: 'right' as const,
+            color: showReason ? '#b42318' : T3,
+            fontWeight: showReason ? 700 : 400,
+            transition: 'color .15s, font-weight .15s',
+            animation: showReason ? 'navReasonFlash .5s ease' : undefined,
+          }}>
+            {showReason && '👉 '}{disabledReason || 'Fill in what\'s required above to continue.'}
           </div>
         )}
 
