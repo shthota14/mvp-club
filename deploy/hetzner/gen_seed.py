@@ -327,6 +327,7 @@ CFIRST = ["Sam","Jo","Alex","Chris","Robin","Morgan","Riley","Casey","Jamie","Dr
 CLAST  = ["Hughes","Patel","Okafor","Novak","Ferrari","Sandberg","Duval","Marsh","Quinn","Bright","Holt","Reyes","Baptiste","Lund","Whitmore"]
 
 n_contacts = n_interviews = 0
+INTERVIEW_IDS = []
 W("-- ---------- validation contacts & interviews ----------")
 for row in ideas_rows:
     iid, uid, name_, stage, domain, persona, problem, pain, alt, metric = row[:10]
@@ -352,10 +353,12 @@ for row in ideas_rows:
                 {"quote": f"We still use {alt}. Nobody loves it.",
                  "signal": "positive" if ai == 3 else "neutral"},
             ]
-            W(f"INSERT INTO interviews (idea_id,user_id,interviewee_name,interviewee_role,interviewee_email,"
+            ivid = str(uuid.uuid4())
+            INTERVIEW_IDS.append((ivid, problem, alt, metric))
+            W(f"INSERT INTO interviews (id,idea_id,user_id,interviewee_name,interviewee_role,interviewee_email,"
               f"scheduled_at,status,notes,key_insights,alignment_score,ai_alignment_score,ai_reasoning,ai_evidence,"
               f"confirmed_problem,booking_status,meeting_provider,duration_mins,validation_contact_id,created_at) VALUES "
-              f"({q(iid)},{q(uid)},{q(cname)},{q(random.choice(ROLES))},{q(cname.lower().replace(' ','.')+'@example.com')},"
+              f"({q(ivid)},{q(iid)},{q(uid)},{q(cname)},{q(random.choice(ROLES))},{q(cname.lower().replace(' ','.')+'@example.com')},"
               f"NOW()-INTERVAL '{random.randint(1,45)} days',{q('completed')},"
               f"{q(f'Described {problem} in detail without prompting. Quantified it in {metric}.')},"
               f"{q(f'{metric} is the number they already track. {alt} is trusted because it is theirs.')},"
@@ -453,6 +456,258 @@ for qn, opts in POLLS:
       f"NOW()+INTERVAL '{random.randint(3,14)} days');")
 W("")
 
+# ============================================================================
+#  Part 2 — the surfaces that look broken when empty
+# ============================================================================
+
+W("-- ---------- poll votes (the charts read these) ----------")
+n_votes = 0
+W("-- realistic skew: one option clearly leads, one trails")
+for pi in range(len(POLLS)):
+    n_opts = len(POLLS[pi][1])
+    weights = sorted([random.randint(5, 40) for _ in range(n_opts)], reverse=True)
+    random.shuffle(weights)
+    voters = random.sample(all_uids, min(len(all_uids), sum(weights) // 3 + 25))
+    for vi, vu in enumerate(voters):
+        opt = random.choices(range(n_opts), weights=weights)[0]
+        W(f"INSERT INTO community_poll_votes (poll_id,user_id,option_index,created_at) "
+          f"SELECT id,{q(vu)},{opt},NOW()-INTERVAL '{random.randint(1,15)} days' FROM community_polls "
+          f"WHERE question={q(POLLS[pi][0])} ON CONFLICT DO NOTHING;")
+        n_votes += 1
+W("")
+
+W("-- ---------- startup news ticker ----------")
+# Fictional early-stage funding stories. Deliberately invented companies — no
+# real business is named, so nothing here can be mistaken for a real report.
+NEWS = [
+ ("Shiftwell raises £1.2m seed to fix rota gaps in social care","Shiftwell","£1.2m seed round led by Ada Ventures to automate shift cover for care providers."),
+ ("Cropline closes $2.4m to bring audit-ready records to small farms","Cropline","US seed round backed by Fall Line Capital, targeting compliance paperwork for growers."),
+ ("Ledgerloop banks €900k pre-seed for bookkeeping automation","Ledgerloop","Berlin pre-seed from Cavalry Ventures to cut month-end reconciliation time."),
+ ("Physiobook picks up £600k angel round for clinic no-shows","Physiobook","Angel round led by former Babylon operators, tackling missed appointments."),
+ ("Testkite raises $3m Series A after 4x growth in flaky-test detection","Testkite","Series A led by Boldstart following strong developer adoption."),
+ ("Chalkroom secures £450k pre-seed for school cover lessons","Chalkroom","Pre-seed from Emerge Education to give cover teachers usable materials."),
+ ("Wattline lands €1.8m seed for multi-site energy anomaly alerts","Wattline","Seed round co-led by Contrarian Ventures and World Fund."),
+ ("Casechain raises £750k for conveyancing document chasing","Casechain","UK pre-seed backed by Fuel Ventures, aimed at small law firms."),
+ ("Prepdesk closes $1.1m seed to cut restaurant food waste","Prepdesk","Seed led by Slow Ventures, focused on kitchen prep forecasting."),
+ ("Routeloop raises £2.1m to end empty miles for regional couriers","Routeloop","Series seed from Ada Ventures and angels from Zego."),
+ ("Doseform banks £520k angel round for pharmacy dispensing checks","Doseform","Angel round from healthtech operators, targeting dosette box errors."),
+ ("Onboardly raises $1.6m seed for first-day employee setup","Onboardly","US seed led by Bessemer scouts, automating tooling access for new starters."),
+ ("Fieldnote secures €700k pre-seed for agronomy reporting","Fieldnote","Pre-seed from Rockstart AgriFood to shorten farm visit turnaround."),
+ ("Quotewire raises £1.4m to unblock field sales approvals","Quotewire","Seed round led by Concept Ventures for quote sign-off workflows."),
+]
+for i, (title, source, blurb) in enumerate(NEWS):
+    W(f"INSERT INTO startup_news_items (title,headline,url,source,blurb,published_at,fetched_at) VALUES "
+      f"({q(title)},{q(title)},{q('https://example.com/news/'+source.lower())},{q(source)},{q(blurb)},"
+      f"NOW()-INTERVAL '{i*7 + random.randint(1,6)} hours',NOW()-INTERVAL '{random.randint(1,10)} hours');")
+W("")
+
+W("-- ---------- interview questions & answers ----------")
+n_q = 0
+for ivid, problem, alt, metric in INTERVIEW_IDS:
+    qa = [
+      (f"Walk me through the last time {problem}.",
+       f"It was a fortnight ago. We lost most of a day to it and everyone was firefighting."),
+      (f"What did that actually cost you, in {metric}?",
+       f"Honestly? Close to a full day. And the knock-on meant two other things slipped."),
+      ("What are you using instead of a proper tool today?",
+       f"We use {alt}. It works right up until it's busy, which is exactly when we need it."),
+      ("Who else in the business feels this?",
+       "My manager sees it in the numbers at month end. The team feel it every week."),
+      ("What would have to be true for you to change how you do this?",
+       "It'd have to be quicker than what we do now on day one. No training week."),
+    ]
+    for oi, (qq, aa) in enumerate(qa):
+        W(f"INSERT INTO interview_questions (interview_id,question,answer,order_index) VALUES "
+          f"({q(ivid)},{q(qq)},{q(aa)},{oi});")
+        n_q += 1
+W("")
+
+W("-- ---------- surveys & responses ----------")
+n_sv = n_sr = 0
+for row in [r for r in ideas_rows if ORDER.index(r[3]) >= 2][:30]:
+    iid, uid, name_, stage, domain, persona, problem, pain, alt, metric = row[:10]
+    sid = str(uuid.uuid4())
+    qs = [
+      {"id": "q1", "type": "text",   "label": f"When did you last run into {problem}?"},
+      {"id": "q2", "type": "scale",  "label": f"How much of a problem is this for you?", "min": 1, "max": 5},
+      {"id": "q3", "type": "text",   "label": f"What do you use today instead?"},
+      {"id": "q4", "type": "choice", "label": "Would you try a tool that fixed this?",
+       "options": ["Yes, this month", "Maybe later", "No"]},
+    ]
+    W(f"INSERT INTO surveys (id,idea_id,user_id,token,title,description,questions,created_at) VALUES "
+      f"({q(sid)},{q(iid)},{q(uid)},{q(uuid.uuid4().hex[:16])},{q(f'{name_} — quick validation survey')},"
+      f"{q(f'Four questions for {persona}. Takes two minutes, no pitch.')},{jsonb(qs)},"
+      f"NOW()-INTERVAL '{random.randint(3,40)} days');")
+    n_sv += 1
+    for _ in range(random.randint(3, 12)):
+        rn = f"{random.choice(CFIRST)} {random.choice(CLAST)}"
+        align = random.choices(['confirmed','partial','not_confirmed'], weights=[5,3,2])[0]
+        ans = [
+          {"id":"q1","value": f"Last week. {problem.capitalize()}."},
+          {"id":"q2","value": random.randint(3,5) if align=='confirmed' else random.randint(1,3)},
+          {"id":"q3","value": alt},
+          {"id":"q4","value": "Yes, this month" if align=='confirmed' else random.choice(["Maybe later","No"])},
+        ]
+        W(f"INSERT INTO survey_responses (survey_id,respondent_name,respondent_email,answers,alignment,created_at) VALUES "
+          f"({q(sid)},{q(rn)},{q(rn.lower().replace(' ','.')+'@example.com')},{jsonb(ans)},{q(align)},"
+          f"NOW()-INTERVAL '{random.randint(1,30)} days');")
+        n_sr += 1
+W("")
+
+W("-- ---------- bookmarks & follows (drive community counts) ----------")
+n_bm = n_fl = 0
+for iid, uid, name_, stage, *_ in ideas_rows:
+    for bu in random.sample([u for u in all_uids if u != uid], random.randint(0, 7)):
+        W(f"INSERT INTO bookmarks (user_id,idea_id,created_at) VALUES ({q(bu)},{q(iid)},"
+          f"NOW()-INTERVAL '{random.randint(1,40)} days') ON CONFLICT DO NOTHING;")
+        n_bm += 1
+    for fu in random.sample([u for u in all_uids if u != uid], random.randint(0, 5)):
+        W(f"INSERT INTO idea_follows (user_id,idea_id,created_at) VALUES ({q(fu)},{q(iid)},"
+          f"NOW()-INTERVAL '{random.randint(1,40)} days') ON CONFLICT DO NOTHING;")
+        n_fl += 1
+W("")
+
+W("-- ---------- advisors ----------")
+ADVISORS = [
+ ("Dr Helen Marsh","Former NHS Digital product lead","Twenty years turning clinical workflows into software that people actually use.","HM",["idea","hone"],["healthtech","product","public sector"]),
+ ("Ben Oyelaran","Three-time founder, two exits","Built and sold two B2B SaaS companies. Blunt about what does and doesn't matter pre-revenue.","BO",["validate","shape"],["b2b-saas","fundraising","sales"]),
+ ("Sara Lindqvist","Head of Growth, marketplace scale-up","Took a two-sided marketplace from 100 to 40,000 monthly transactions.","SL",["shape","done"],["marketplace","growth","pricing"]),
+ ("Marcus Reilly","Angel investor, ex-CTO","Invests in pre-seed devtools. Reviews architecture decisions for free, opinions included.","MR",["shape","done"],["devtools","engineering","architecture"]),
+ ("Priya Venkatesh","Customer research consultant","Runs discovery interviews for a living. Will tell you if your questions are leading.","PV",["hone","validate"],["research","interviewing","icp"]),
+ ("Tomasz Bielecki","Fractional CFO for early startups","Helps founders work out whether the unit economics survive contact with reality.","TB",["shape","done"],["finance","pricing","modelling"]),
+ ("Grace Adeyinka","Design partner, ex-agency","Turns half-formed MVP scope into something a developer can actually build.","GA",["shape"],["design","ux","mvp"]),
+ ("Iain McAllister","Sold his agritech business in 2023","Spent a decade selling software to farmers. Knows why most of it fails.","IM",["idea","hone","validate"],["agritech","enterprise sales","domain"]),
+]
+for nm, role, bio, ini, stages_, exp in ADVISORS:
+    W(f"INSERT INTO advisors (name,role,bio,avatar_initials,stages,expertise,email,is_active) VALUES "
+      f"({q(nm)},{q(role)},{q(bio)},{q(ini)},{arr(stages_)},{arr(exp)},"
+      f"{q(nm.lower().replace(' ','.').replace('dr.','')+'@example.com')},TRUE);")
+W("")
+
+W("-- ---------- network contacts & offers ----------")
+n_nc = n_no = 0
+REL = ['Former colleague','University friend','Met at a conference','Client of mine','Family friend']
+for uid in random.sample(all_uids, 45):
+    for _ in range(random.randint(1, 4)):
+        cn = f"{random.choice(CFIRST)} {random.choice(CLAST)}"
+        ct = random.choice(['linkedin','email'])
+        cv = f"linkedin.com/in/{cn.lower().replace(' ','-')}" if ct == 'linkedin' else cn.lower().replace(' ','.')+'@example.com'
+        W(f"INSERT INTO network_contacts (user_id,name,contact_type,contact_value,notes,created_at) VALUES "
+          f"({q(uid)},{q(cn)},{q(ct)},{q(cv)},{q(random.choice(REL))},NOW()-INTERVAL '{random.randint(2,60)} days');")
+        n_nc += 1
+for row in random.sample([r for r in ideas_rows if ORDER.index(r[3]) >= 1], 32):
+    iid, uid, name_, stage, domain, persona = row[0], row[1], row[2], row[3], row[4], row[5]
+    offeror = random.choice([u for u in all_uids if u != uid])
+    cn = f"{random.choice(CFIRST)} {random.choice(CLAST)}"
+    ct = random.choice(['linkedin','email'])
+    cv = f"linkedin.com/in/{cn.lower().replace(' ','-')}" if ct == 'linkedin' else cn.lower().replace(' ','.')+'@example.com'
+    W(f"INSERT INTO network_offers (idea_id,offeror_id,contact_name,contact_description,contact_type,"
+      f"contact_value,relationship,status,created_at) VALUES ({q(iid)},{q(offeror)},{q(cn)},"
+      f"{q(f'Works as a {random.choice(ROLES).lower()} — close to {persona}.')},{q(ct)},{q(cv)},"
+      f"{q(random.choice(REL))},{q(random.choices(['offered','connected','declined'],weights=[5,4,1])[0])},"
+      f"NOW()-INTERVAL '{random.randint(1,35)} days');")
+    n_no += 1
+W("")
+
+W("-- ---------- help requests ----------")
+n_hr = 0
+for row in random.sample(ideas_rows, 26):
+    iid, uid, name_, stage, domain, persona, problem = row[:7]
+    W(f"INSERT INTO help_requests (user_id,stage,problem,specific_ask,channel,status,created_at) VALUES "
+      f"({q(uid)},{q(stage)},{q(f'Struggling to reach {persona} for interviews.')},"
+      f"{q(f'Could you introduce me to anyone who works with {persona}? Twenty minutes, no pitch.')},"
+      f"{q(random.choice(['linkedin','email']))},{q(random.choices(['sent','replied','done'],weights=[4,3,2])[0])},"
+      f"NOW()-INTERVAL '{random.randint(1,40)} days');")
+    n_hr += 1
+W("")
+
+W("-- ---------- availability (booking pages) ----------")
+n_av = 0
+for row in [r for r in ideas_rows if ORDER.index(r[3]) >= 2]:
+    uid = row[1]
+    W(f"INSERT INTO availability_settings (user_id,timezone,min_notice_hours,booking_window_days,buffer_mins) "
+      f"VALUES ({q(uid)},{q('Europe/London')},{random.choice([12,24])},{random.choice([14,21,28])},"
+      f"{random.choice([10,15])}) ON CONFLICT (user_id) DO NOTHING;")
+    for dow in random.sample([1,2,3,4,5], random.randint(2,4)):
+        st = random.choice(['09:00','10:00','13:00'])
+        en = {'09:00':'12:00','10:00':'13:00','13:00':'17:00'}[st]
+        W(f"INSERT INTO availability_rules (user_id,day_of_week,start_time,end_time) VALUES "
+          f"({q(uid)},{dow},{q(st)},{q(en)});")
+        n_av += 1
+W("")
+
+W("-- ---------- notifications ----------")
+n_nt = 0
+NOTIF = [
+ ('encourage','{who} encouraged your update','They tapped encourage on your post.','/community'),
+ ('comment','{who} commented on your post','"This mirrors exactly what I found."','/community'),
+ ('offer','{who} offered you an introduction','Someone in the community can connect you to a potential interviewee.','/network'),
+ ('follow','{who} is following your idea','They will see your progress updates.','/community'),
+ ('booking','An interview was booked','A contact confirmed a time from your booking page.','/work'),
+]
+for uid in random.sample(all_uids, 70):
+    for _ in range(random.randint(1, 4)):
+        t, title, body, link = random.choice(NOTIF)
+        who = random.choice([u for u in users if u[0] != uid])[2]
+        W(f"INSERT INTO notifications (user_id,type,title,body,link,is_read,created_at) VALUES "
+          f"({q(uid)},{q(t)},{q(title.format(who=who))},{q(body)},{q(link)},"
+          f"{random.choice(['TRUE','FALSE','FALSE'])},NOW()-INTERVAL '{random.randint(1,20)} days');")
+        n_nt += 1
+W("")
+
+W("-- ---------- messages ----------")
+n_cv = n_ms = 0
+CHAT = [
+ "Saw your post about interviewing care managers — I went through the same thing last month.",
+ "Happy to share the outreach message that finally got replies, if useful.",
+ "That would be great, thank you. I'm getting maybe one reply in ten.",
+ "Mine went from 1 in 10 to about 1 in 3 when I dropped the word 'research' entirely.",
+ "Interesting. What did you use instead?",
+ "Just asked about the specific thing they do. No framing, no explanation of why.",
+]
+for _ in range(24):
+    a, b = random.sample(all_uids, 2)
+    cid = str(uuid.uuid4())
+    W(f"INSERT INTO conversations (id,user1_id,user2_id,created_at) VALUES ({q(cid)},{q(a)},{q(b)},"
+      f"NOW()-INTERVAL '{random.randint(2,30)} days');")
+    n_cv += 1
+    n_msg = random.randint(2, 6)
+    for mi in range(n_msg):
+        sender = a if mi % 2 == 0 else b
+        read = 'NULL' if (mi == n_msg - 1 and random.random() < 0.4) else f"NOW()-INTERVAL '{random.randint(1,10)} days'"
+        W(f"INSERT INTO messages (conversation_id,sender_id,content,read_at,created_at) VALUES "
+          f"({q(cid)},{q(sender)},{q(CHAT[mi % len(CHAT)])},{read},"
+          f"NOW()-INTERVAL '{random.randint(1,25)} days');")
+        n_ms += 1
+W("")
+
+W("-- ---------- feedback submissions (admin panel) ----------")
+FB = [
+ ('bug','The interview script generator times out on longer ideas.','/work'),
+ ('idea','Could the community feed filter by business domain as well as stage?','/community'),
+ ('praise','The assumptions step completely changed how I think about my idea. Thank you.','/work'),
+ ('bug','Booking page shows times in UTC even though my timezone is set to London.','/work'),
+ ('idea','Would love to export my validation report as a PDF for my co-founder.','/work'),
+ ('other','Is there a way to archive an idea without deleting the interviews?','/progress'),
+ ('praise','The Build/Pivot/Drop decision screen is brutal in the best way.','/work'),
+ ('idea','Let me follow a business domain, not just individual ideas.','/community'),
+]
+for cat, msg, ctx in FB:
+    W(f"INSERT INTO feedback_submissions (user_id,category,message,page_context,status,created_at) VALUES "
+      f"({q(random.choice(all_uids))},{q(cat)},{q(msg)},{q(ctx)},"
+      f"{q(random.choice(['new','new','reviewed']))},NOW()-INTERVAL '{random.randint(1,25)} days');")
+W("")
+
+W("-- ---------- challenge offers ----------")
+W("INSERT INTO challenge_offers (challenge_id,user_id,offer_type,note,created_at)")
+W("SELECT c.id, u.id,")
+W("       CASE WHEN random() < 0.5 THEN 'vouch' ELSE 'fit' END,")
+W("       'Happy to help — I work near this space.',")
+W("       NOW() - (random()*20 || ' days')::interval")
+W("  FROM challenges c")
+W("  JOIN LATERAL (SELECT id FROM users WHERE id <> c.user_id AND is_seed_beta ORDER BY random() LIMIT 3) u ON TRUE;")
+W("")
+
 W("COMMIT;")
 W("")
 W("-- ---------- summary ----------")
@@ -465,7 +720,24 @@ W("UNION ALL SELECT 'community_posts', count(*) FROM community_posts")
 W("UNION ALL SELECT 'comments', count(*) FROM comments")
 W("UNION ALL SELECT 'reactions', count(*) FROM reactions")
 W("UNION ALL SELECT 'challenges', count(*) FROM challenges")
-W("UNION ALL SELECT 'community_polls', count(*) FROM community_polls;")
+W("UNION ALL SELECT 'community_polls', count(*) FROM community_polls")
+W("UNION ALL SELECT 'poll_votes', count(*) FROM community_poll_votes")
+W("UNION ALL SELECT 'startup_news', count(*) FROM startup_news_items")
+W("UNION ALL SELECT 'interview_questions', count(*) FROM interview_questions")
+W("UNION ALL SELECT 'surveys', count(*) FROM surveys")
+W("UNION ALL SELECT 'survey_responses', count(*) FROM survey_responses")
+W("UNION ALL SELECT 'bookmarks', count(*) FROM bookmarks")
+W("UNION ALL SELECT 'idea_follows', count(*) FROM idea_follows")
+W("UNION ALL SELECT 'advisors', count(*) FROM advisors")
+W("UNION ALL SELECT 'network_contacts', count(*) FROM network_contacts")
+W("UNION ALL SELECT 'network_offers', count(*) FROM network_offers")
+W("UNION ALL SELECT 'help_requests', count(*) FROM help_requests")
+W("UNION ALL SELECT 'availability_rules', count(*) FROM availability_rules")
+W("UNION ALL SELECT 'notifications', count(*) FROM notifications")
+W("UNION ALL SELECT 'conversations', count(*) FROM conversations")
+W("UNION ALL SELECT 'messages', count(*) FROM messages")
+W("UNION ALL SELECT 'feedback', count(*) FROM feedback_submissions")
+W("UNION ALL SELECT 'challenge_offers', count(*) FROM challenge_offers;")
 
 open('/home/claude/seedwork/seed-demo-100.sql', 'w').write("\n".join(out) + "\n")
 print(f"generated: entries={n_entries} contacts={n_contacts} interviews={n_interviews} "
