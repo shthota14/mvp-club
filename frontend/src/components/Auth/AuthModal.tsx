@@ -124,13 +124,18 @@ export default function AuthModal({ mode, onClose }: Props) {
   const overlay: React.CSSProperties = {
     position: 'fixed', inset: 0, zIndex: 500,
     background: isDark ? '#0a0a0a' : 'rgba(255,255,255,0.95)',
-    display: 'flex', alignItems: isDark ? 'flex-start' : 'center',
+    display: 'flex', alignItems: 'flex-start',
     justifyContent: 'center', padding: isDark ? '48px 20px 64px' : '20px',
     overflowY: 'auto',
   };
 
   const box: React.CSSProperties = {
     width: '100%', maxWidth: 400,
+    // `margin: auto` centres when it fits but, unlike `align-items: center`,
+    // still lets the overlay scroll to the TOP when the form is taller than
+    // the viewport (the register step is ~880px on a phone).
+    margin: isDark ? 0 : 'auto',
+    position: 'relative',
     background: isDark ? 'transparent' : 'white',
     borderRadius: isDark ? 0 : 24,
     padding: isDark ? 0 : 32,
@@ -159,6 +164,21 @@ export default function AuthModal({ mode, onClose }: Props) {
   return (
     <div style={overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={box}>
+        {!isDark && (
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              position: 'absolute', top: 10, right: 10,
+              width: 40, height: 40, borderRadius: '50%',
+              border: 'none', background: 'transparent',
+              color: '#86868b', fontSize: 18, lineHeight: 1, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            ✕
+          </button>
+        )}
 
         {/* LOGIN */}
         {step === 'login' && (

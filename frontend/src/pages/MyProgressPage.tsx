@@ -830,7 +830,7 @@ function NewIdeaModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
         width: '90%', maxWidth: 520, background: '#fff', borderRadius: 24,
         border: '1px solid #e5e5ea', boxShadow: '0 32px 80px rgba(0,0,0,.18)',
-        zIndex: 301, overflow: 'hidden',
+        zIndex: 301, maxHeight: '88dvh', overflowY: 'auto', overflowX: 'hidden',
       }}>
         {/* Accent bar */}
         <div style={{ height: 4, background: 'linear-gradient(90deg,#7c3aed,#2563eb,#059669)' }} />

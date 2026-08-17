@@ -69,3 +69,12 @@ a { text-decoration: none; color: inherit; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--sep); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+/* ── Mobile: prevent iOS Safari auto-zoom on input focus ───────────────────── */
+/* iOS zooms the page in whenever a focused field has font-size < 16px, and     */
+/* never zooms back out. Styling here is inline, and inline styles beat plain   */
+/* stylesheet rules, so !important is required to win. Scoped to the same       */
+/* 768px breakpoint useIsMobile() uses, so desktop type is untouched.           */
+@media (max-width: 767.98px) {
+  input, textarea, select { font-size: 16px !important; }
+}

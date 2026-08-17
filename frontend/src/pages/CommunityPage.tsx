@@ -567,7 +567,7 @@ function ShareWinModal({ userStage, onClose, onPosted }: {
       <div style={{
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
         width: '92%', maxWidth: 520, background: LIT.card, borderRadius: LIT.radius,
-        boxShadow: '0 32px 80px rgba(0,0,0,.18)', zIndex: 301, overflow: 'hidden',
+        boxShadow: '0 32px 80px rgba(0,0,0,.18)', zIndex: 301, maxHeight: '88dvh', overflowY: 'auto', overflowX: 'hidden',
       }}>
         <div style={{ height: 4, background: color }} />
         <div style={{ padding: '24px 28px 28px' }}>
@@ -1206,7 +1206,7 @@ function ExpressInterestModal({ collab, currentUserId, onClose, onSent }: {
       <div style={{
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
         width: '90%', maxWidth: 480, background: LIT.card, borderRadius: LIT.radius,
-        boxShadow: LIT.shadow, zIndex: 311, overflow: 'hidden',
+        boxShadow: LIT.shadow, zIndex: 311, maxHeight: '88dvh', overflowY: 'auto', overflowX: 'hidden',
       }}>
         <div style={{ height: 5, background: `linear-gradient(90deg, ${LIT.accent}, ${LIT.accentSoftBorder})` }} />
         <div style={{ padding: '24px 28px 28px' }}>
@@ -3935,7 +3935,7 @@ function BuildIdeaModal({
         width: '92%', maxWidth: 520,
         background: LIT.card, borderRadius: LIT.radius,
         boxShadow: '0 32px 80px rgba(70,50,15,.2)',
-        zIndex: 401, overflow: 'hidden',
+        zIndex: 401, maxHeight: '88dvh', overflowY: 'auto', overflowX: 'hidden',
         animation: 'fadeSlideIn .2s ease',
       }}>
         {/* Accent bar */}

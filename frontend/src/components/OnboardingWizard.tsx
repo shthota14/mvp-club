@@ -172,15 +172,16 @@ export default function OnboardingWizard({ onComplete }: Props) {
       background: 'rgba(245,245,247,0.96)',
       backdropFilter: 'blur(24px)',
       WebkitBackdropFilter: 'blur(24px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 24,
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+      padding: 24, overflowY: 'auto',
     }}>
       <div style={{
         width: '100%', maxWidth: 500,
         background: '#fff',
         borderRadius: 24,
         boxShadow: '0 16px 56px rgba(0,0,0,0.13)',
-        padding: '44px 44px 36px',
+        margin: 'auto',
+        padding: 'clamp(28px, 6vw, 44px) clamp(20px, 6vw, 44px) clamp(24px, 5vw, 36px)',
         display: 'flex', flexDirection: 'column',
       }}>
 

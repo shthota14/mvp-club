@@ -199,7 +199,7 @@ export default function StageCompleteModal({ stage, onContinue }: Props) {
       position: 'fixed', inset: 0, zIndex: 450,
       background: WB_BG,
       display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
+      alignItems: 'center', justifyContent: 'flex-start',
       padding: '24px 20px',
       fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
       overflowY: 'auto',
@@ -212,6 +212,7 @@ export default function StageCompleteModal({ stage, onContinue }: Props) {
       <div style={{
         position: 'relative', zIndex: 1,
         width: '100%', maxWidth: 420,
+        margin: 'auto 0',
         display: 'flex', flexDirection: 'column', gap: 0,
       }}>
 
