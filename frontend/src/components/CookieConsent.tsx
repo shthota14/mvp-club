@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { useApp } from '@/context/AppContext';
 
 // Cookie consent banner + preferences modal, shown site-wide until the
 // visitor makes a choice. Nothing in this app sets analytics cookies today
@@ -136,6 +138,13 @@ export default function CookieConsent() {
   const [consent, setConsent] = useState<CookieConsentValue | null>(() => readConsent());
   const [mode, setMode] = useState<'hidden' | 'banner' | 'preferences'>(() => (readConsent() ? 'hidden' : 'banner'));
   const [draftAnalytics, setDraftAnalytics] = useState<boolean>(() => readConsent()?.analytics ?? false);
+  const isMobile = useIsMobile();
+  const { isAuthenticated, user } = useApp();
+  // Mirrors AppShell's own condition for showing its fixed bottom tab bar —
+  // when that bar is on screen, this component must clear it instead of
+  // overlapping it.
+  const clearsBottomNav = isMobile && isAuthenticated && !user?.is_admin;
+  const bottomNavOffset = 'calc(60px + env(safe-area-inset-bottom) + 10px)';
 
   useEffect(() => {
     const openPrefs = () => {
@@ -171,7 +180,7 @@ export default function CookieConsent() {
           style={{
             position: 'fixed',
             left: 14,
-            bottom: 12,
+            bottom: clearsBottomNav ? bottomNavOffset : 12,
             zIndex: 900,
             background: 'transparent',
             border: 'none',
@@ -194,7 +203,7 @@ export default function CookieConsent() {
             position: 'fixed',
             left: 16,
             right: 16,
-            bottom: 16,
+            bottom: clearsBottomNav ? bottomNavOffset : 16,
             zIndex: 1000,
             maxWidth: 640,
             margin: '0 auto',

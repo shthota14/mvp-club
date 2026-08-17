@@ -170,7 +170,37 @@ export default function AppShell() {
         </div>
       </nav>
 
-      <main style={{ paddingTop: 64, paddingBottom: isMobile && !user?.is_admin ? 60 : 0, minHeight: '100vh', background: '#f5f5f7' }}>
+      {/* Mobile secondary nav row — Community / My Idea Vault (or Admin Panel for
+          admins) as text links, shown just below the icon bar. There isn't room
+          for them inline with the logo + icon buttons at 64px on a narrow screen
+          (desktop gets them inline in the main nav above), and admins previously
+          had no way at all to reach these on mobile since this row didn't exist
+          and the bottom tab bar is non-admin-only. */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed', top: 64, left: 0, right: 0, zIndex: 99,
+          background: 'rgba(255,255,255,.98)',
+          borderBottom: '1px solid #e5e5ea',
+          display: 'flex', gap: 8, alignItems: 'center',
+          padding: '8px 16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch',
+        }}>
+          {!user?.is_admin && (
+            <NavLink to="/community" style={({ isActive }) => navStyle(isActive)}>Community</NavLink>
+          )}
+          {!user?.is_admin && (
+            <NavLink to="/progress" style={({ isActive }) => navStyle(isActive || location.pathname.startsWith('/work') || location.pathname === '/journey')}>My Idea Vault</NavLink>
+          )}
+          {user?.is_admin && (
+            <NavLink to="/admin" style={({ isActive }) => ({
+              ...navStyle(isActive),
+              background: isActive ? '#1e1b4b' : 'transparent',
+              color: isActive ? '#818cf8' : '#6366f1',
+            })}>🛡 Admin Panel</NavLink>
+          )}
+        </div>
+      )}
+
+      <main style={{ paddingTop: isMobile ? 108 : 64, paddingBottom: isMobile && !user?.is_admin ? 60 : 0, minHeight: '100vh', background: '#f5f5f7' }}>
         <Outlet />
       </main>
 
