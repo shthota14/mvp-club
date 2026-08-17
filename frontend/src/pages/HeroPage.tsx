@@ -273,7 +273,7 @@ export default function HeroPage() {
             boxShadow: '3px 5px 12px rgba(0,0,0,.3)',
           }}>
             <p style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 23, color: '#4a4426', lineHeight: 1.35, margin: 0 }}>
-              I've built something before — not sure if I was building value, or just assumptions.
+              I've shipped things before that nobody asked for. That's the whole reason MVP Club exists.
             </p>
           </div>
 
