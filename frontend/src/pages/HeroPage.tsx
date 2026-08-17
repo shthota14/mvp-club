@@ -2,9 +2,19 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthModal from '@/components/Auth/AuthModal';
 
+// Caveat (marker handwriting font) — same id/pattern as StageCompleteModal.tsx so it's loaded once app-wide
+if (typeof document !== 'undefined' && !document.getElementById('caveat-font')) {
+  const link = document.createElement('link');
+  link.id = 'caveat-font';
+  link.rel = 'stylesheet';
+  link.href = 'https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap';
+  document.head.appendChild(link);
+}
+
 export default function HeroPage() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('register');
+  const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const open = (mode: 'login' | 'register') => { setAuthMode(mode); setAuthOpen(true); };
   const navigate = useNavigate();
 
@@ -14,6 +24,19 @@ export default function HeroPage() {
     { n: '03', label: 'Validate', desc: 'Test with people before you build.', detail: 'Talk to strangers. Not friends. Strangers who have the problem. If three of them would pay you today, you have something real.', color: '#34d399' },
     { n: '04', label: 'Shape', desc: 'Define the smallest possible MVP.', detail: 'Strip every feature down to the one thing that delivers the core promise. Then cut it in half again. Ship that.', color: '#fbbf24' },
     { n: '05', label: 'Ship', desc: 'Launch, learn, and iterate fast.', detail: 'The only way to know if it works is to put it in front of real customers. Launch rough. Measure everything. Improve weekly.', color: '#f87171' },
+  ];
+
+  // Coordinates (in the 900x210 viewBox below) for each stage's waypoint on the winding trail map
+  const trailPoints = [
+    { x: 60, y: 165 }, { x: 270, y: 55 }, { x: 480, y: 150 }, { x: 690, y: 45 }, { x: 860, y: 110 },
+  ];
+
+  const faqs = [
+    { icon: '🆓', q: 'Is MVP Club actually free?', a: "Yes \u2014 every core feature, for every founder, always. No paywalls, no feature gates that only unlock if you pay. If you find it useful, there's an optional way to support the project, but nothing here is held behind it." },
+    { icon: '🤝', q: 'Why should I trust this?', a: "Honestly? Think of whoever's behind this as someone quietly on your side \u2014 conspiring, in the best sense of that word, to see you succeed. Not chasing your attention, not selling you something you don't need. Just someone who wants your idea to actually go somewhere, and will keep telling you the honest next step even when it isn't the exciting one." },
+    { icon: '🤔', q: 'Is this AI giving me business advice, or is it just organizing my own thinking?', a: "MVP Club doesn't tell you what your idea should be. It asks you the questions a good advisor would ask, in the right order, and helps you organize what you already know \u2014 your assumptions, your interview notes, your decisions. The thinking stays yours." },
+    { icon: '🔒', q: 'Do I have to share my idea publicly?', a: "No! Not without your consent. You control what you'd like to seek the community's assistance for \u2014 sharing your progress is something you choose to do, when you're ready, not something that happens automatically. Your workspace, the Idea, Hone, Validate, Shape, and Done stages, stays yours. Remember, this is a community-oriented initiative, built with one objective: to see you succeed." },
+    { icon: '🎯', q: 'Is this for any kind of startup, or a specific type?', a: "Early-stage, pre-launch. If you have an idea and haven't validated it with real users yet, MVP Club is built for exactly that stage \u2014 from first sentence to first customer." },
   ];
 
   const features = [
@@ -74,6 +97,7 @@ export default function HeroPage() {
           .hp-feature-row { grid-template-columns: 1fr !important; gap: 6px !important; }
           .hp-idea-grid { grid-template-columns: 1fr !important; }
           .hp-footer { flex-direction: column !important; gap: 8px !important; text-align: center !important; }
+          .hp-trail-map { display: none !important; }
         }
         /* Tablet — idea cards get some breathing room back before going full-width mobile */
         @media (min-width: 681px) and (max-width: 980px) {
@@ -227,6 +251,47 @@ export default function HeroPage() {
         </div>
       </section>
 
+      {/* ── About ── */}
+      <section className="hp-section-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto' }}>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>
+            Who we are
+          </p>
+          <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: 10 }}>
+            Built by a founder,<br />for founders.
+          </h2>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,.4)', fontStyle: 'italic', fontFamily: 'Georgia, serif', marginBottom: 36 }}>
+            Not a platform. Not a course. A path.
+          </p>
+
+          {/* Handwritten sticky note — reuses the marker-note style from the stage-complete
+              celebration screen. Placeholder text: swap in your real line before this ships. */}
+          <div style={{
+            display: 'inline-block', maxWidth: 360, textAlign: 'left', margin: '0 auto 36px',
+            background: '#fffdf2', border: '1.5px solid #e5e0c8', borderRadius: 8,
+            padding: '20px 24px', transform: 'rotate(-1.4deg)',
+            boxShadow: '3px 5px 12px rgba(0,0,0,.3)',
+          }}>
+            <p style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 23, color: '#4a4426', lineHeight: 1.35, margin: 0 }}>
+              I've built something before — not sure if I was building value, or just assumptions.
+            </p>
+          </div>
+
+          <p style={{ fontSize: 17, color: 'rgba(255,255,255,.45)', lineHeight: 1.8, fontFamily: 'Georgia, serif', fontStyle: 'italic', letterSpacing: -0.2, marginBottom: 36 }}>
+            There's no feed to scroll here, no course to finish, no dashboard full of features you'll never open. Just one question, answered honestly at every stage: what should you do next? Idea. Hone it. Validate it. Shape it. Get it done.
+          </p>
+
+          {/* Trust badge strip */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {['🆓  Free forever', '🚫  No ads', '🔓  Built in public'].map(b => (
+              <span key={b} style={{ fontSize: 12, fontWeight: 600, padding: '8px 16px', borderRadius: 100, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.55)' }}>
+                {b}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Journey section ── */}
       <section className="hp-section-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
@@ -244,6 +309,27 @@ export default function HeroPage() {
             <p style={{ fontSize: 20, color: 'rgba(255,255,255,.55)', lineHeight: 1.75, margin: 0, paddingBottom: 4, fontStyle: 'italic', fontFamily: 'Georgia, serif', letterSpacing: -0.3 }}>
               You're not the first founder to have your idea. But you might be the first to move through all five stages without skipping one. That's what separates the founders who launch from the ones who plan.
             </p>
+          </div>
+
+          {/* Winding trail map — visual overview before the detailed list below */}
+          <div className="hp-trail-map" style={{ position: 'relative', width: '100%', maxWidth: 900, margin: '0 auto 64px', aspectRatio: '900 / 210' }}>
+            <svg viewBox="0 0 900 210" style={{ width: '100%', height: '100%', display: 'block', overflow: 'visible' }}>
+              <path
+                d="M60,165 Q165,20 270,55 Q375,190 480,150 Q585,10 690,45 Q775,130 860,110"
+                fill="none" stroke="rgba(255,255,255,.15)" strokeWidth={2} strokeDasharray="2 10" strokeLinecap="round"
+              />
+              {stages.map((s, i) => (
+                <circle key={s.n} cx={trailPoints[i].x} cy={trailPoints[i].y} r={9} fill={s.color} stroke="#080808" strokeWidth={3} />
+              ))}
+            </svg>
+            {stages.map((s, i) => (
+              <div key={s.n} style={{
+                position: 'absolute', left: `${(trailPoints[i].x / 900) * 100}%`, top: `${(trailPoints[i].y / 210) * 100}%`,
+                transform: 'translate(-50%, 16px)', textAlign: 'center', pointerEvents: 'none', whiteSpace: 'nowrap',
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: s.color, fontFamily: 'Georgia, serif', letterSpacing: 0.3 }}>{s.label}</span>
+              </div>
+            ))}
           </div>
 
           {/* Stage rows */}
@@ -408,6 +494,64 @@ export default function HeroPage() {
               Join to see them all →
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="hp-section-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px' }}>
+        <div style={{ maxWidth: 700, margin: '0 auto' }}>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20, textAlign: 'center' }}>
+            Questions
+          </p>
+          <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: 44, textAlign: 'center' }}>
+            Good questions.
+          </h2>
+          <div>
+            {faqs.map((f, i) => {
+              const isOpen = faqOpen === i;
+              return (
+                <div key={f.q} style={{ borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+                  <button onClick={() => setFaqOpen(isOpen ? null : i)}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+                      background: 'none', border: 'none', cursor: 'pointer', padding: '20px 4px', textAlign: 'left',
+                    }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 16, fontWeight: 600, color: 'rgba(255,255,255,.85)' }}>
+                      <span style={{ fontSize: 18, flexShrink: 0 }}>{f.icon}</span>
+                      {f.q}
+                    </span>
+                    <span style={{ fontSize: 20, color: 'rgba(255,255,255,.3)', flexShrink: 0, transition: 'transform .2s', transform: isOpen ? 'rotate(45deg)' : 'rotate(0deg)' }}>
+                      +
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <p style={{ fontSize: 15, color: 'rgba(255,255,255,.45)', lineHeight: 1.75, margin: '0 4px 22px', paddingLeft: 30 }}>
+                      {f.a}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Contact ── */}
+      <section className="hp-section-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px', textAlign: 'center' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto' }}>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>
+            Contact
+          </p>
+          <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: 20 }}>
+            Get in touch.
+          </h2>
+          <p style={{ fontSize: 17, color: 'rgba(255,255,255,.45)', lineHeight: 1.8, fontFamily: 'Georgia, serif', fontStyle: 'italic', letterSpacing: -0.2, marginBottom: 36 }}>
+            MVP Club is small on purpose — one founder, no support queue. The fastest way to reach me is to create a free account and use the feedback button inside the app; I read every message myself.
+          </p>
+          <button onClick={() => open('register')}
+            style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 100, padding: '13px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+            Start for free →
+          </button>
         </div>
       </section>
 
