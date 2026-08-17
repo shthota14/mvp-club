@@ -254,7 +254,7 @@ function useStepAnimation() {
     if (document.getElementById(id)) return;
     const s = document.createElement('style');
     s.id = id;
-    s.textContent = `@keyframes wup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes tickPop{0%{opacity:0;transform:scale(.3) rotate(-20deg)}60%{opacity:1;transform:scale(1.25) rotate(6deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}`;
+    s.textContent = `@keyframes wup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes tickPop{0%{opacity:0;transform:scale(.3) rotate(-20deg)}60%{opacity:1;transform:scale(1.25) rotate(6deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}@keyframes stepIntroIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes stepIntroOut{from{opacity:1}to{opacity:0}}@media (prefers-reduced-motion: reduce){.step-intro{animation:none !important}}`;
     document.head.appendChild(s);
   }, []);
 }
@@ -10354,6 +10354,56 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
     );
 }
 
+
+// ── Step-intro reveal ────────────────────────────────────────────────────
+// A one-time, self-dismissing animated beat shown the first time a founder
+// reaches a step: the step's icon and its existing STEP_GOALS line animate
+// in, then fade out on their own a few seconds later (or on click). Never
+// blocks the step's own content, which is already mounted underneath it.
+// Seen-state is per user per step via localStorage, same pattern AppShell
+// uses for the onboarding wizard's one-time flag.
+function StepIntro({ mod, step }: { mod: Mod; step: number }) {
+  const { user } = useApp();
+  const text = STEP_GOALS[mod]?.[step];
+  const icon = STEP_ICONS[mod]?.[step];
+  const storageKey = `mvpclub_stepintro_${user?.id ?? 'anon'}_${mod}_${step}`;
+  const [phase, setPhase] = useState<'in' | 'out' | 'gone'>(() =>
+    (typeof window !== 'undefined' && localStorage.getItem(storageKey)) ? 'gone' : 'in'
+  );
+
+  useEffect(() => {
+    if (phase !== 'in') return;
+    localStorage.setItem(storageKey, '1');
+    const t = setTimeout(() => setPhase('out'), 2600);
+    return () => clearTimeout(t);
+  }, [phase, storageKey]);
+
+  useEffect(() => {
+    if (phase !== 'out') return;
+    const t = setTimeout(() => setPhase('gone'), 260);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  if (phase === 'gone' || !text) return null;
+  const c = STAGE_COLORS[mod];
+
+  return (
+    <div
+      className="step-intro"
+      onClick={() => setPhase('out')}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '10px 14px', borderRadius: 10, marginBottom: 14,
+        background: `${c}0c`, border: `1.5px solid ${c}25`, cursor: 'pointer',
+        animation: phase === 'out' ? 'stepIntroOut .25s ease forwards' : 'stepIntroIn .4s ease',
+      }}
+    >
+      <span style={{ fontSize: 17, flexShrink: 0 }}>{icon}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.4 }}>{text}</span>
+    </div>
+  );
+}
+
 export default function WorkPage() {
   useStepAnimation();
   const { activeIdea, user, setActiveIdea } = useApp();
@@ -12310,6 +12360,7 @@ export default function WorkPage() {
       return (
         <div key="vA" style={col}>
           <ModBadge mod="validate" /><StepBars mod="validate" step={0} />
+          <StepIntro mod="validate" step={0} />
           <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 28, fontStyle: 'italic', fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.validate[0]}</div>
 
           {/* ── Validation Goal Builder ───────────────────────────── */}
@@ -12579,6 +12630,7 @@ export default function WorkPage() {
       return (
         <div key="vB" style={col}>
           <ModBadge mod="validate" /><StepBars mod="validate" step={1} />
+          <StepIntro mod="validate" step={1} />
           <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.validate[1]}</div>
 
           <div style={{ border: `2px solid ${VC}25`, borderRadius: 14, overflow: 'hidden', marginBottom: 4 }}>
@@ -12736,6 +12788,7 @@ export default function WorkPage() {
       return (
         <div key="vC" style={col}>
           <ModBadge mod="validate" /><StepBars mod="validate" step={2} />
+          <StepIntro mod="validate" step={2} />
           <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.validate[2]}</div>
 
           <AssumptionsStep
@@ -12768,6 +12821,7 @@ export default function WorkPage() {
     // ── v0a: Who are you targeting? ───────────────────────────────────────
     <div key="v0a" style={col}>
       <ModBadge mod="validate" /><StepBars mod="validate" step={3} />
+          <StepIntro mod="validate" step={3} />
       <ValidateHero step={1} />
 
       {/* Target customer — confirmed from Hone */}
@@ -12962,6 +13016,7 @@ export default function WorkPage() {
     // ── v2: Build your interview script ───────────────────────────────────
     <div key="v0b" style={col}>
       <ModBadge mod="validate" /><StepBars mod="validate" step={4} />
+          <StepIntro mod="validate" step={4} />
       <div style={{ padding: '18px 20px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}14 0%, #f0f7ff 100%)`, borderRadius: 16, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4, boxShadow: `0 4px 16px ${STAGE_COLORS.validate}0d` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#fff', border: `1.5px solid ${STAGE_COLORS.validate}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0, boxShadow: `0 2px 6px ${STAGE_COLORS.validate}15` }}>📝</div>
@@ -13012,6 +13067,7 @@ export default function WorkPage() {
         return (
           <div key="v0b" style={col}>
             <ModBadge mod="validate" /><StepBars mod="validate" step={5} />
+            <StepIntro mod="validate" step={5} />
 
             <div style={{ minHeight: '50vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32, padding: '24px 16px', textAlign: 'center' as const }}>
 
@@ -13060,6 +13116,7 @@ export default function WorkPage() {
       return (
         <div key="v0b" style={col}>
           <ModBadge mod="validate" /><StepBars mod="validate" step={5} />
+            <StepIntro mod="validate" step={5} />
 
           {/* Fun card header */}
           <div style={{ padding: '16px 18px 14px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}18 0%, #f0f7ff 100%)`, borderRadius: 14, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4 }}>
@@ -13382,6 +13439,7 @@ export default function WorkPage() {
       return (
         <div key="v0sched" style={col}>
           <ModBadge mod="validate" /><StepBars mod="validate" step={6} />
+      <StepIntro mod="validate" step={6} />
 
           {/* Fun card header */}
           <div style={{ padding: '16px 18px 14px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}18 0%, #f0f7ff 100%)`, borderRadius: 14, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4 }}>
@@ -13699,6 +13757,7 @@ export default function WorkPage() {
     })(),
 
     <div key="v2b" style={col}>
+      <StepIntro mod="validate" step={7} />
       {(() => {
         const completed = interviews.filter(iv => iv.alignment_score).length;
         const confirmed = interviews.filter(iv => iv.alignment_score === 3).length;
@@ -14039,6 +14098,7 @@ export default function WorkPage() {
     // ── v3: Analyse ──────────────────────────────────────────────────────
     <div key="v3" style={col}>
       <ModBadge mod="validate" /><StepBars mod="validate" step={8} />
+      <StepIntro mod="validate" step={8} />
       <ValidateHero step={3} />
 
       {/* Fun card header */}
@@ -14758,6 +14818,7 @@ export default function WorkPage() {
     // ── v4: Decision & findings ──────────────────────────────────────────
     <div key="v4" style={col}>
       <ModBadge mod="validate" /><StepBars mod="validate" step={9} />
+      <StepIntro mod="validate" step={9} />
       <ValidateHero step={4} />
 
       {/* Fun card header */}
