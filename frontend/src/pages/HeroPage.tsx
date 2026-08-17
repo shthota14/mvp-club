@@ -53,10 +53,36 @@ export default function HeroPage() {
         .wave3 { animation: waveFloat  14s ease-in-out infinite reverse; transform-origin: center; }
         .stage-row:hover .stage-label { color: #fff; }
         .stage-row:hover .stage-bar   { opacity: 1; }
+
+        /* ── Mobile ── below this width the desktop two/three-column grids
+           (journey header, stage rows, features, community header, idea
+           cards) are cramped into columns far too narrow to read — this
+           collapses them to a single stacked column and tightens side
+           padding so content isn't fighting the screen edges. */
+        @media (max-width: 680px) {
+          .hp-nav { padding: 14px 18px !important; }
+          .hp-nav-tagline { display: none !important; }
+          .hp-nav-icon { width: 28px !important; height: 28px !important; }
+          .hp-mvp-text { font-size: 21px !important; }
+          .hp-club-text { font-size: 14px !important; letter-spacing: 2px !important; }
+          .hp-nav-signin { padding: 8px 10px !important; font-size: 13px !important; }
+          .hp-nav-getstarted { padding: 8px 14px !important; font-size: 13px !important; }
+          .hp-section-pad { padding-left: 20px !important; padding-right: 20px !important; padding-top: 56px !important; padding-bottom: 56px !important; }
+          .hp-cta-pad { padding-top: 72px !important; padding-bottom: 72px !important; padding-left: 20px !important; padding-right: 20px !important; }
+          .hp-2col { grid-template-columns: 1fr !important; gap: 28px !important; }
+          .hp-stage-row { grid-template-columns: 1fr !important; gap: 10px !important; padding: 28px 0 !important; }
+          .hp-feature-row { grid-template-columns: 1fr !important; gap: 6px !important; }
+          .hp-idea-grid { grid-template-columns: 1fr !important; }
+          .hp-footer { flex-direction: column !important; gap: 8px !important; text-align: center !important; }
+        }
+        /* Tablet — idea cards get some breathing room back before going full-width mobile */
+        @media (min-width: 681px) and (max-width: 980px) {
+          .hp-idea-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
       `}</style>
 
       {/* ── Nav ── */}
-      <nav style={{
+      <nav className="hp-nav" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '20px 40px', position: 'fixed', top: 0, left: 0, right: 0,
         background: 'rgba(8,8,8,.8)', backdropFilter: 'blur(16px)',
@@ -69,7 +95,7 @@ export default function HeroPage() {
           onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
         >
           {/* Sun SVG */}
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+          <svg className="hp-nav-icon" width="36" height="36" viewBox="0 0 36 36" fill="none">
             {Array.from({ length: 8 }, (_, i) => {
               const a = (i * 45 * Math.PI) / 180;
               return (
@@ -84,20 +110,20 @@ export default function HeroPage() {
           {/* Text block */}
           <div style={{ lineHeight: 1, textAlign: 'left' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
-              <span style={{ fontSize: 27, fontWeight: 900, color: '#fff', letterSpacing: -0.5 }}>MVP</span>
-              <span style={{ fontSize: 19, fontWeight: 300, color: 'rgba(255,255,255,.7)', letterSpacing: 3, textTransform: 'uppercase' }}>Club</span>
+              <span className="hp-mvp-text" style={{ fontSize: 27, fontWeight: 900, color: '#fff', letterSpacing: -0.5 }}>MVP</span>
+              <span className="hp-club-text" style={{ fontSize: 19, fontWeight: 300, color: 'rgba(255,255,255,.7)', letterSpacing: 3, textTransform: 'uppercase' }}>Club</span>
             </div>
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,.35)', fontWeight: 400, letterSpacing: 0.5, marginTop: 3 }}>
+            <div className="hp-nav-tagline" style={{ fontSize: 9, color: 'rgba(255,255,255,.35)', fontWeight: 400, letterSpacing: 0.5, marginTop: 3 }}>
               From idea to launched
             </div>
           </div>
         </button>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button onClick={() => open('login')}
+          <button onClick={() => open('login')} className="hp-nav-signin"
             style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.45)', fontSize: 14, fontWeight: 500, cursor: 'pointer', padding: '8px 16px', borderRadius: 8 }}>
             Sign in
           </button>
-          <button onClick={() => open('register')}
+          <button onClick={() => open('register')} className="hp-nav-getstarted"
             style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 100, padding: '9px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
             Get started
           </button>
@@ -202,11 +228,11 @@ export default function HeroPage() {
       </section>
 
       {/* ── Journey section ── */}
-      <section style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px' }}>
+      <section className="hp-section-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
           {/* Header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, marginBottom: 72, alignItems: 'end' }}>
+          <div className="hp-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, marginBottom: 72, alignItems: 'end' }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>
                 The journey
@@ -222,7 +248,7 @@ export default function HeroPage() {
 
           {/* Stage rows */}
           {stages.map((s, i) => (
-            <div key={s.n} className="stage-row" style={{ display: 'grid', gridTemplateColumns: '64px 200px 1fr', gap: 32, alignItems: 'start', borderTop: i === 0 ? '1px solid rgba(255,255,255,.07)' : 'none', borderBottom: '1px solid rgba(255,255,255,.07)', padding: '36px 0', cursor: 'default' }}>
+            <div key={s.n} className="stage-row hp-stage-row" style={{ display: 'grid', gridTemplateColumns: '64px 200px 1fr', gap: 32, alignItems: 'start', borderTop: i === 0 ? '1px solid rgba(255,255,255,.07)' : 'none', borderBottom: '1px solid rgba(255,255,255,.07)', padding: '36px 0', cursor: 'default' }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.2)', letterSpacing: 1, paddingTop: 6 }}>{s.n}</span>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, paddingTop: 4 }}>
                 <div className="stage-bar" style={{ width: 3, height: 40, borderRadius: 2, background: s.color, opacity: .6, flexShrink: 0, transition: 'opacity .2s', marginTop: 4 }} />
@@ -239,9 +265,9 @@ export default function HeroPage() {
       </section>
 
       {/* ── Features ── */}
-      <section style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px', background: 'rgba(255,255,255,.01)' }}>
+      <section className="hp-section-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px', background: 'rgba(255,255,255,.01)' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 80px', alignItems: 'start' }}>
+          <div className="hp-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 80px', alignItems: 'start' }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>What you get</p>
               <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'Georgia, serif', color: '#fff' }}>
@@ -250,7 +276,7 @@ export default function HeroPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0, paddingTop: 8 }}>
               {features.map((f, i) => (
-                <div key={f.label} style={{ borderBottom: '1px solid rgba(255,255,255,.07)', padding: '20px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                <div key={f.label} className="hp-feature-row" style={{ borderBottom: '1px solid rgba(255,255,255,.07)', padding: '20px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,.8)' }}>{f.label}</span>
                   <span style={{ fontSize: 14, color: 'rgba(255,255,255,.3)', lineHeight: 1.55 }}>{f.desc}</span>
                 </div>
@@ -261,11 +287,11 @@ export default function HeroPage() {
       </section>
 
       {/* ── Community ── */}
-      <section style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px' }}>
+      <section className="hp-section-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px' }}>
         <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
           {/* Header */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, marginBottom: 56, alignItems: 'end' }}>
+          <div className="hp-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, marginBottom: 56, alignItems: 'end' }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>Community</p>
               <h2 style={{ fontSize: 'clamp(30px,4vw,52px)', fontWeight: 700, letterSpacing: -1.8, lineHeight: 1.05, fontFamily: 'Georgia, serif', color: '#fff', margin: 0 }}>
@@ -284,7 +310,7 @@ export default function HeroPage() {
           </div>
 
           {/* Idea card grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          <div className="hp-idea-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {[
               {
                 name: 'Priya M.', initials: 'PM', avatar: '#6366f1',
@@ -386,7 +412,7 @@ export default function HeroPage() {
       </section>
 
       {/* ── CTA ── */}
-      <section style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '120px 40px', textAlign: 'center', background: 'radial-gradient(ellipse 60% 80% at 50% 0%, rgba(99,102,241,.08) 0%, transparent 70%)' }}>
+      <section className="hp-cta-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '120px 40px', textAlign: 'center', background: 'radial-gradient(ellipse 60% 80% at 50% 0%, rgba(99,102,241,.08) 0%, transparent 70%)' }}>
         <h2 style={{ fontSize: 'clamp(36px,6vw,72px)', fontWeight: 700, letterSpacing: -2.5, lineHeight: 1.05, fontFamily: 'Georgia, serif', marginBottom: 24 }}>
           Ready to build<br />something real?
         </h2>
@@ -400,7 +426,7 @@ export default function HeroPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '28px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <footer className="hp-footer" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '28px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 12, color: 'rgba(255,255,255,.15)' }}>© {new Date().getFullYear()} MVP Club</span>
         <span style={{ fontSize: 12, color: 'rgba(255,255,255,.2)', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>From idea to launched — one step at a time.</span>
       </footer>
