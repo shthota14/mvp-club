@@ -10540,6 +10540,11 @@ export default function WorkPage() {
   const [shapeHypothesisPosted, setShapeHypothesisPosted] = useState(false);
   const [shapeHypothesisPosting, setShapeHypothesisPosting] = useState(false);
   const [celebrateStage, setCelebrateStage] = useState<Mod | null>(null);
+  // "Not yet" nudge: shown instead of silently doing nothing when a founder
+  // clicks a stage that's still locked — reinforces the onboarding "slow is
+  // the fast way" message at the moment it's actually relevant, rather than
+  // only once on day one when nobody remembers it.
+  const [lockedNudge, setLockedNudge] = useState<Mod | null>(null);
 
   useEffect(() => {
     if (!activeIdea) return;
@@ -11245,11 +11250,11 @@ export default function WorkPage() {
           return (
             <button
               key={m}
-              onClick={() => { if (unlocked[m]) { goMod(m); setSidebarCollapsed(false); } }}
+              onClick={() => { if (unlocked[m]) { goMod(m); setSidebarCollapsed(false); } else { setLockedNudge(m); } }}
               title={`${META[m].label}${showCount ? ` — ${doneSteps}/${total} steps` : ' — locked'}`}
               style={{
                 width: 46, background: 'none', border: 'none', padding: '2px 0',
-                cursor: unlocked[m] ? 'pointer' : 'default', fontFamily: 'inherit',
+                cursor: 'pointer', fontFamily: 'inherit',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
                 opacity: unlocked[m] ? 1 : 0.35,
               }}
@@ -11408,13 +11413,12 @@ export default function WorkPage() {
                     paddingBottom: isGroupBottom ? 7 : 0,
                   }}>
                     <button
-                      onClick={() => { if (!isLocked) { if (isActive) { toggleExpand(m); } else { goMod(m); setExpandedStages(prev => ({ ...prev, [m]: true })); } } }}
-                      disabled={isLocked}
+                      onClick={() => { if (isLocked) { setLockedNudge(m); return; } if (isActive) { toggleExpand(m); } else { goMod(m); setExpandedStages(prev => ({ ...prev, [m]: true })); } }}
                       style={{
                         width: '100%', display: 'flex', alignItems: 'flex-start', gap: 12,
                         padding: '9px 10px 9px 0', border: 'none',
                         background: isNavActive ? `${c}0d` : 'transparent',
-                        borderRadius: 12, cursor: isLocked ? 'default' : 'pointer',
+                        borderRadius: 12, cursor: 'pointer',
                         opacity: isLocked ? 0.4 : 1, transition: 'background .15s',
                         textAlign: 'left' as const, fontFamily: 'inherit',
                       }}
@@ -17657,6 +17661,46 @@ export default function WorkPage() {
             </span>
           </div>
         </>
+      )}
+
+      {/* "Not yet" nudge — clicking a locked stage explains why, in the same
+          gentle-but-firm voice as the onboarding "slow is the fast way"
+          slide, instead of the click just silently doing nothing. */}
+      {lockedNudge && (
+        <div
+          onClick={() => setLockedNudge(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            background: 'rgba(0,0,0,.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 20, maxWidth: 400, width: '100%',
+              padding: '32px 28px', textAlign: 'center',
+              boxShadow: '0 24px 64px rgba(0,0,0,.25)',
+            }}
+          >
+            <div style={{ fontSize: 40, marginBottom: 14 }}>🐢</div>
+            <h3 style={{ fontSize: 19, fontWeight: 800, color: '#1d1d1f', margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+              Not yet — and that's on purpose
+            </h3>
+            <p style={{ fontSize: 14, color: '#6e6e73', lineHeight: 1.65, margin: '0 0 14px' }}>
+              {META[lockedNudge].label} unlocks once you finish {META[mod].label}. Skipping ahead is the most common reason startups fail — not a bad idea, but a foundation nobody checked first.
+            </p>
+            <p style={{ fontSize: 17, color: '#aeaeb2', lineHeight: 1.6, margin: '0 0 24px', fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui" }}>
+              Slow is the fast way. Promise.
+            </p>
+            <button
+              onClick={() => setLockedNudge(null)}
+              style={{ background: '#1d1d1f', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Got it — back to {META[mod].label} →
+            </button>
+          </div>
+        </div>
       )}
     </>
   );

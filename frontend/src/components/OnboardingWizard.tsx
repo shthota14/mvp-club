@@ -38,7 +38,7 @@ export default function OnboardingWizard({ onComplete }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (step === 2) setTimeout(() => textareaRef.current?.focus(), 50);
+    if (step === 3) setTimeout(() => textareaRef.current?.focus(), 50);
   }, [step]);
 
   const handleFinish = async () => {
@@ -111,7 +111,79 @@ export default function OnboardingWizard({ onComplete }: Props) {
       </div>
     </div>,
 
-    // 2 — Idea capture
+    // 2 — Patience / don't skip steps
+    <div key="patience">
+      <style>{`
+        @keyframes obPatienceRow {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes obPatienceBar {
+          from { transform: scaleX(0); }
+          to   { transform: scaleX(1); }
+        }
+      `}</style>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1d1d1f', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+        Slow is the fast way
+      </h2>
+      <p style={{ fontSize: 13, color: '#6e6e73', margin: '0 0 20px', lineHeight: 1.6 }}>
+        The #1 reason startups fail isn't a bad idea — it's building on a step nobody actually finished.
+      </p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* Path A — rushes ahead */}
+        <div style={{
+          padding: '14px 16px', borderRadius: 14, background: '#fff5f5', border: '1px solid #fecaca',
+          textAlign: 'left', animation: 'obPatienceRow .45s ease both', animationDelay: '0ms',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#dc2626', textTransform: 'uppercase' as const, letterSpacing: 0.6, marginBottom: 8 }}>
+            ⚡ Rushes ahead
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            {STAGES.map(({ key }, i) => (
+              <div key={key} style={{
+                flex: 1, height: 6, borderRadius: 4, transformOrigin: 'left',
+                background: i === 1 || i === 2 ? '#fecaca' : '#dc262660',
+                animation: 'obPatienceBar .5s cubic-bezier(.16,1,.3,1) both',
+                animationDelay: `${150 + i * 70}ms`,
+              }} />
+            ))}
+          </div>
+          <div style={{ fontSize: 12, color: '#b91c1c', lineHeight: 1.5 }}>
+            Builds fast, skips validation — ships something nobody asked for.
+          </div>
+        </div>
+
+        {/* Path B — every step, in order */}
+        <div style={{
+          padding: '14px 16px', borderRadius: 14, background: '#f0fdf4', border: '1px solid #bbf7d0',
+          textAlign: 'left', animation: 'obPatienceRow .45s ease both', animationDelay: '550ms',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: '#15803d', textTransform: 'uppercase' as const, letterSpacing: 0.6, marginBottom: 8 }}>
+            🐢 Every step, in order
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            {STAGES.map(({ key }, i) => (
+              <div key={key} style={{
+                flex: 1, height: 6, borderRadius: 4, transformOrigin: 'left',
+                background: STAGE_COLORS[key],
+                animation: 'obPatienceBar .5s cubic-bezier(.16,1,.3,1) both',
+                animationDelay: `${700 + i * 70}ms`,
+              }} />
+            ))}
+          </div>
+          <div style={{ fontSize: 12, color: '#15803d', lineHeight: 1.5 }}>
+            Slower at first. Real by the end — validated by actual people, not assumptions.
+          </div>
+        </div>
+      </div>
+
+      <p style={{ fontSize: 12, color: '#aeaeb2', marginTop: 18, lineHeight: 1.6 }}>
+        That's why each stage stays locked until the one before it is done — not to slow you down, but to keep you from spending months on the wrong thing.
+      </p>
+    </div>,
+
+    // 3 — Idea capture
     <div key="idea">
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1d1d1f', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
         What's your idea?
@@ -187,7 +259,7 @@ export default function OnboardingWizard({ onComplete }: Props) {
 
         {/* Progress dots */}
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 36 }}>
-          {[0, 1, 2, 3].map(i => (
+          {[0, 1, 2, 3, 4].map(i => (
             <div key={i} style={{
               width: i === step ? 22 : 7, height: 7,
               borderRadius: 4,
@@ -213,20 +285,20 @@ export default function OnboardingWizard({ onComplete }: Props) {
             </button>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {step === 2 && (
+            {step === 3 && (
               <button
-                onClick={() => { setIdeaText(''); setStep(3); }}
+                onClick={() => { setIdeaText(''); setStep(4); }}
                 style={btn(false)}
               >
                 Skip
               </button>
             )}
             <button
-              onClick={() => step < 3 ? setStep(s => s + 1) : handleFinish()}
+              onClick={() => step < 4 ? setStep(s => s + 1) : handleFinish()}
               disabled={saving}
               style={btn(true)}
             >
-              {step === 3 ? (saving ? 'Setting up…' : "Let's go →") : 'Continue →'}
+              {step === 4 ? (saving ? 'Setting up…' : "Let's go →") : 'Continue →'}
             </button>
           </div>
         </div>
