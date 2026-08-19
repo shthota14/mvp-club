@@ -2059,11 +2059,17 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
   useEffect(() => {
     if (init.current || !value) return;
     init.current = true;
-    const m = value.match(/^(\[.+?\])\s*([\s\S]+?)\s*Why me:\s*([\s\S]+)$/);
+    // Saved format is `[Title]\n<story>` — no "Why me:" segment is ever written,
+    // so the parser here must match what save actually produces (previously it
+    // required a "Why me:" segment that never existed, which meant every saved
+    // preset-type entry silently fell back to raw "manual" text with the
+    // literal [Title] bracket tag visible on reload).
+    const m = value.match(/^\[(.+?)\]\s*([\s\S]*)$/);
     if (m) {
-      const t = SPARK_TYPES.find(s => `[${s.title}]` === m[1]);
-      if (t) { setType(t.key); setStory(m[2].trim()); setWhyMe(m[3].trim()); }
-      else { setType('manual'); setManual(value); }
+      const t = SPARK_TYPES.find(s => s.title === m[1]);
+      if (t) { setType(t.key); setStory(m[2].trim()); }
+      // Unknown/legacy bracket tag — still strip it so it never renders raw.
+      else { setType('manual'); setManual(m[2].trim() || value); }
     } else { setType('manual'); setManual(value); }
   }, [value]);
 
