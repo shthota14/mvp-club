@@ -175,6 +175,11 @@ interface Props {
   stage: Mod;
   fields: Record<string, string>;
   onContinue: () => void;
+  // Only rendered on the final "done" stage — closes this modal without
+  // navigating away, so the founder lands back in the wizard (sidebar still
+  // shows every earlier stage as unlocked) instead of being pushed straight
+  // out to the idea vault with no obvious way back in.
+  onReviewSteps?: () => void;
 }
 
 // Whiteboard palette
@@ -183,7 +188,7 @@ const WB_TEXT = '#1a1a1a';
 const WB_DIM  = '#666';
 const WB_RULE = '#e8e8e8';
 
-export default function StageCompleteModal({ stage, onContinue }: Props) {
+export default function StageCompleteModal({ stage, onContinue, onReviewSteps }: Props) {
   const meta       = MOD_META[stage];
   const next       = NEXT_STAGE[stage];
   const quote      = useMemo(() => {
@@ -332,6 +337,22 @@ export default function StageCompleteModal({ stage, onContinue }: Props) {
         >
           {isDone ? 'Go to my idea vault →' : `Start ${next!.label} →`}
         </button>
+
+        {isDone && onReviewSteps && (
+          <button
+            onClick={onReviewSteps}
+            style={{
+              width: '100%', marginTop: 10,
+              background: 'transparent', color: WB_DIM,
+              border: 'none', borderRadius: 8,
+              padding: '10px 0', fontSize: 15, fontWeight: 600,
+              cursor: 'pointer', textDecoration: 'underline',
+              fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
+            }}
+          >
+            Review or edit any step →
+          </button>
+        )}
 
       </div>
     </div>

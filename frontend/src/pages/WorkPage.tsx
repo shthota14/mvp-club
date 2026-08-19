@@ -254,7 +254,7 @@ function useStepAnimation() {
     if (document.getElementById(id)) return;
     const s = document.createElement('style');
     s.id = id;
-    s.textContent = `@keyframes wup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes tickPop{0%{opacity:0;transform:scale(.3) rotate(-20deg)}60%{opacity:1;transform:scale(1.25) rotate(6deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}@keyframes stepIntroIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes stepIntroOut{from{opacity:1}to{opacity:0}}@media (prefers-reduced-motion: reduce){.step-intro{animation:none !important}}`;
+    s.textContent = `@keyframes wup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes tickPop{0%{opacity:0;transform:scale(.3) rotate(-20deg)}60%{opacity:1;transform:scale(1.25) rotate(6deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}@keyframes stepIntroIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes stepIntroOut{from{opacity:1}to{opacity:0}}@media (prefers-reduced-motion: reduce){.step-intro{animation:none !important}}@keyframes milestoneToastIn{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}@keyframes msConfettiFall{0%{transform:translateY(-24px) rotate(0deg);opacity:1}80%{opacity:1}100%{transform:translateY(110vh) rotate(600deg);opacity:0}}`;
     document.head.appendChild(s);
   }, []);
 }
@@ -1976,13 +1976,13 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
             <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, marginBottom: 4 }}>Competitors</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {draft.competitors.map((c, i) => (
-                <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' as const }}>
                   <input value={c.name} placeholder="Name" onChange={e => {
                     const next = [...draft.competitors]; next[i] = { ...next[i], name: e.target.value }; setDraft({ ...draft, competitors: next });
-                  }} style={{ width: 140, padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${BORDER}`, fontSize: 11, fontFamily: 'inherit' }} />
+                  }} style={{ width: 140, flexShrink: 0, padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${BORDER}`, fontSize: 11, fontFamily: 'inherit' }} />
                   <input value={c.note} placeholder="What they do" onChange={e => {
                     const next = [...draft.competitors]; next[i] = { ...next[i], note: e.target.value }; setDraft({ ...draft, competitors: next });
-                  }} style={{ flex: 1, padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${BORDER}`, fontSize: 11, fontFamily: 'inherit' }} />
+                  }} style={{ flex: 1, minWidth: 120, padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${BORDER}`, fontSize: 11, fontFamily: 'inherit' }} />
                   <button onClick={() => setDraft({ ...draft, competitors: draft.competitors.filter((_, j) => j !== i) })}
                     style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>✕</button>
                 </div>
@@ -3616,6 +3616,7 @@ function FounderReadinessStep({
   cofounderValue: string; onCofounderChange: (v: string) => void;
   founderFitValue: string; onFounderFitChange: (v: string) => void;
 }) {
+  const isMobile = useIsMobile();
   const selectedSkills = (skillsValue || '').split('|').filter(Boolean);
   const toggleSkill = (label: string) => {
     const next = selectedSkills.includes(label)
@@ -3741,7 +3742,7 @@ function FounderReadinessStep({
           title="What kind of co-founder might you need?"
           subtitle="No commitment yet — just exploring. What skills would complement yours most? You can seek community matches during Validate."
         />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
           {COFOUNDER_ARCHETYPES.map((arch, ai) => {
             const on = selectedCofounders.includes(arch.val);
             const WOBBLE = [
@@ -5366,6 +5367,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
     type Contact = { id: string; name: string; contact?: string; status: ContactStatus; notes?: string; source: string; icp_fit?: IcpFit; email?: string; phone?: string; linkedin_url?: string };
     type Meeting = { validation_contact_id: string; interview_id: string; booking_status: string; booking_token: string; scheduled_at: string | null; meeting_link: string | null; duration_mins: number };
 
+    const isMobile = useIsMobile();
     const [contacts, setContacts]   = React.useState<Contact[]>([]);
     const [loading, setLoading]     = React.useState(true);
     const [name, setName]           = React.useState('');
@@ -5596,7 +5598,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
 
         {/* ── Part 1: From your own network ── */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
             <div style={{ display: 'inline-block' }}>
               <span style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.4, lineHeight: 1.2 }}>
                 From your own network
@@ -5658,7 +5660,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
           return (
             <div>
               {/* Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: 8, marginBottom: 10 }}>
                 {/* Filled cards — whiteboard bubble avatars */}
                 {contacts.map(c => {
                   const isSelected = selectedId === c.id;
@@ -5760,6 +5762,43 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                   : doneCount >= 3 ? `✓ ${doneCount} conversations active or done — great momentum`
                   : `${contacts.length} named${contacts.length < 20 ? ' · aim for 20+' : ''} · ${doneCount} conversation${doneCount !== 1 ? 's' : ''} in progress`}
               </div>
+
+              {/* ── Pipeline funnel — same STATUS_FLOW/STATUS_COLOR the list below uses,
+                  just as a scannable at-a-glance row instead of only a flat list. ── */}
+              {contacts.length > 0 && (() => {
+                const statusCounts = STATUS_FLOW.reduce((acc, s) => {
+                  acc[s] = contacts.filter(c => c.status === s).length;
+                  return acc;
+                }, {} as Record<ContactStatus, number>);
+                // STATUS_COLOR has a 3-digit hex ('#aaa' for "Not sent") — appending an
+                // alpha suffix directly to that produces an invalid 5-digit color, so
+                // expand to 6 digits first.
+                const withAlpha = (hex: string, alpha: string) => {
+                  const h = hex.length === 4 ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}` : hex;
+                  return `${h}${alpha}`;
+                };
+                return (
+                  <div style={{ display: 'flex', alignItems: 'stretch', gap: 3, marginBottom: 14 }}>
+                    {STATUS_FLOW.map((s, i) => (
+                      <React.Fragment key={s}>
+                        <div style={{
+                          flex: 1, minWidth: 0, borderRadius: 8, padding: '7px 4px',
+                          background: withAlpha(STATUS_COLOR[s], '12'), border: `1.5px solid ${withAlpha(STATUS_COLOR[s], '30')}`,
+                          textAlign: 'center' as const,
+                        }}>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: STATUS_COLOR[s], lineHeight: 1.15 }}>{statusCounts[s]}</div>
+                          <div style={{ fontSize: 8.5, fontWeight: 700, color: STATUS_COLOR[s], opacity: 0.85, textTransform: 'uppercase' as const, letterSpacing: 0.3, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' as const }}>
+                            {s}
+                          </div>
+                        </div>
+                        {i < STATUS_FLOW.length - 1 && (
+                          <div style={{ display: 'flex', alignItems: 'center', color: '#d1d5db', fontSize: 11, flexShrink: 0 }}>→</div>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* Selected card detail */}
               {selectedContact && (
@@ -6828,10 +6867,11 @@ function ChipPopover({ icon, label, subLabel, color, width = 520, children }: {
 // collapsed by default, large/legible Do's & Don'ts grid once opened.
 function ValidateChip() {
   const c = STAGE_COLORS.validate;
+  const isMobile = useIsMobile();
   return (
     <ChipPopover icon={META.validate.icon} label={META.validate.label} subLabel="Mom Test" color={c} width={580}>
       <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#334155', marginBottom: 16 }}>📋 The Mom Test — Do's & Don'ts</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
         <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: 14, padding: '18px 20px' }}>
           <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 26, fontWeight: 700, color: '#059669', marginBottom: 12 }}>✅ Do</div>
           {['Ask about specific past behavior', 'Ask what they\'ve already tried', 'Ask what it costs them — time or money', 'Ask "why" and "tell me more"', 'Let silence sit — don\'t rush to fill it', 'Keep it to 20–30 min'].map(t => (
@@ -7709,7 +7749,7 @@ function ShipBuildSpecPanel({ genContext, initialSpec, onSave, color }: {
       }}>
         <div style={{ ...bentoCard, gridArea: 'def', border: `1.5px solid ${color}40`, background: `${color}08` }}>
           {bentoLabel('📋', '#fff', color, 'Product definition')}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 10 }}>
             <div>
               <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>Name</div>
               <EditableText value={spec.productDefinition.name} accent={color} textStyle={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f' }}
@@ -9132,6 +9172,7 @@ function ShipLaunchChecklistPanel({ checked, onToggle, launched, onLaunch, color
   onLaunch: () => void;
   color: string;
 }) {
+  const isMobile = useIsMobile();
   const allItems = LAUNCH_CHECKLIST_CATEGORY_OPTS.flatMap(c => LAUNCH_CHECKLIST_ITEMS[c]);
   const doneCount = allItems.filter(it => checked[it.key]).length;
   const remaining = allItems.length - doneCount;
@@ -9143,7 +9184,7 @@ function ShipLaunchChecklistPanel({ checked, onToggle, launched, onLaunch, color
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your launch readiness</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{doneCount} / {allItems.length} ready</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 6 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginTop: 6 }}>
         {LAUNCH_CHECKLIST_CATEGORY_OPTS.map(category => (
           <LaunchChecklistCategoryCard key={category} category={category} items={LAUNCH_CHECKLIST_ITEMS[category]} checked={checked} onToggle={onToggle} color={color} />
         ))}
@@ -9803,6 +9844,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
     defaultRole?: string;
     scriptQuestions: { q: string; hint: string; chips?: QuickResponseChip[] }[];
   }) {
+    const isMobile = useIsMobile();
     const [open, setOpen]             = useState(defaultOpen ?? false);
     // step 0 = name capture, steps 1–N = questions, step N+1 = summary
     const [step, setStep]             = useState(0);
@@ -10105,7 +10147,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                       <div style={{ fontSize: 11, color: '#b0b0b8', flexShrink: 0 }}>{step} / {totalQ}</div>
                     </div>
                     {/* Dot progress */}
-                    <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' as const }}>
                       {questions.map((_, i) => {
                         const hasAns = !!(answers[i]?.signals?.length || answers[i]?.quote);
                         const isCur  = i === qi;
@@ -10194,7 +10236,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                         <div style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 12, fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase' as const, color: '#8a8a90', marginBottom: 6 }}>
                           What did you observe?
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 5 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 5 }}>
                           {opts.map(opt => {
                             const on = ans.signals.includes(opt.k);
                             return (
@@ -10362,6 +10404,34 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
 // blocks the step's own content, which is already mounted underneath it.
 // Seen-state is per user per step via localStorage, same pattern AppShell
 // uses for the onboarding wizard's one-time flag.
+const MILESTONE_CONFETTI_COLORS = ['#ff3b30', '#ff9500', '#34c759', '#007aff', '#af52de', '#ff2d55', '#5ac8fa', '#ffcc00'];
+
+function MilestoneConfetti() {
+  const pieces = useRef(
+    Array.from({ length: 40 }, (_, i) => ({
+      left:     `${(i * 2.5 + Math.sin(i) * 14 + 50) % 100}%`,
+      delay:    `${(i * 0.06) % 1.4}s`,
+      duration: `${1.4 + (i % 5) * 0.25}s`,
+      color:    MILESTONE_CONFETTI_COLORS[i % MILESTONE_CONFETTI_COLORS.length],
+      size:     6 + (i % 5),
+      round:    i % 3 === 0 ? '50%' : '2px',
+    }))
+  ).current;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 9998 }}>
+      {pieces.map((p, i) => (
+        <div key={i} style={{
+          position: 'absolute', top: -24, left: p.left,
+          width: p.size, height: p.size,
+          borderRadius: p.round, background: p.color,
+          animation: `msConfettiFall ${p.duration} ${p.delay} ease-in forwards`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
 function StepIntro({ mod, step }: { mod: Mod; step: number }) {
   const { user } = useApp();
   const text = STEP_GOALS[mod]?.[step];
@@ -10424,6 +10494,28 @@ export default function WorkPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [interviews, setInterviews] = useState<any[]>([]);
   const [interviewsLoading, setInterviewsLoading] = useState(false);
+  // ── Milestone confetti: celebrate the 1st, 5th, and 10th conversation you
+  // actually log (status flips to 'completed' on save). Tracks the previous
+  // completed count per idea via a ref so it only fires on the transition
+  // that crosses a milestone within this session — not on page load/refresh
+  // when you're already past it, and not again after switching ideas. ──
+  const [milestoneCelebration, setMilestoneCelebration] = useState<number | null>(null);
+  const prevCompletedRef = useRef<{ ideaId: string | null; count: number | null }>({ ideaId: null, count: null });
+  useEffect(() => {
+    const completedCount = interviews.filter((iv: any) => iv.status === 'completed').length;
+    const ideaId = activeIdea?.id ?? null;
+    const prev = prevCompletedRef.current;
+    if (prev.ideaId === ideaId && prev.count !== null && completedCount > prev.count) {
+      const milestone = [1, 5, 10].find(m => prev.count! < m && completedCount >= m);
+      if (milestone) setMilestoneCelebration(milestone);
+    }
+    prevCompletedRef.current = { ideaId, count: completedCount };
+  }, [interviews, activeIdea?.id]);
+  useEffect(() => {
+    if (milestoneCelebration === null) return;
+    const t = setTimeout(() => setMilestoneCelebration(null), 3400);
+    return () => clearTimeout(t);
+  }, [milestoneCelebration]);
   // Full-screen interstitial shown instead of window.confirm() when the founder
   // tries to advance to Shape without having hit their own conversation goal.
   const [underValidatedModal, setUnderValidatedModal] = useState<{ done: number; goal: number } | null>(null);
@@ -11815,7 +11907,7 @@ export default function WorkPage() {
           )}
 
           {/* Outcome / Remember — marker-bordered boxes */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 28 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 28 }}>
             {[
               { label: 'Outcome', text: STAGE_OUTCOME[mod], italic: false },
               { label: 'Remember', text: STAGE_TIP[mod], italic: true },
@@ -11832,7 +11924,7 @@ export default function WorkPage() {
           </div>
 
           {/* Stage progress — marker track */}
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap' as const }}>
             {MODULES.map((m, mi) => {
               const isPast   = mi < modIndex;
               const isActive = m === mod;
@@ -11841,22 +11933,22 @@ export default function WorkPage() {
                 <React.Fragment key={m}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                     <div style={{
-                      width: 36, height: 36, borderRadius: '50%',
+                      width: isMobile ? 28 : 36, height: isMobile ? 28 : 36, borderRadius: '50%',
                       border: isActive ? `3px solid ${mc}` : isPast ? `2px solid ${mc}60` : `2px solid #ddd`,
                       background: isActive ? `${mc}18` : isPast ? `${mc}08` : '#f8f8f8',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? 11 : 14,
                     }}>
                       {isPast
                         ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L19 7" stroke={mc} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         : <span style={{ opacity: isActive ? 1 : 0.4 }}>{META[m].icon}</span>
                       }
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: isActive ? mc : '#aaa', letterSpacing: '.05em', textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
+                    <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: isActive ? mc : '#aaa', letterSpacing: '.05em', textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
                       {META[m].label}
                     </div>
                   </div>
                   {mi < MODULES.length - 1 && (
-                    <div style={{ flex: 1, height: 3, background: mi < modIndex ? `${color}50` : '#e0e0e0', margin: '0 5px', marginBottom: 24, borderRadius: 2 }} />
+                    <div style={{ flex: 1, minWidth: isMobile ? 8 : undefined, height: 3, background: mi < modIndex ? `${color}50` : '#e0e0e0', margin: isMobile ? '0 2px' : '0 5px', marginBottom: 24, borderRadius: 2 }} />
                   )}
                 </React.Fragment>
               );
@@ -12230,7 +12322,18 @@ export default function WorkPage() {
         cofounderValue={get('founderCofounder')} onCofounderChange={v => set('founderCofounder', v)}
         founderFitValue={get('founderFit')} onFounderFitChange={v => set('founderFit', v)}
       />
-      <NavRow onBack={back} onNext={async () => { await save('hone', { founderTime: get('founderTime'), founderSkills: get('founderSkills'), founderCofounder: get('founderCofounder'), founderFit: get('founderFit') }); next(); }} nextLabel="Scorecard →" disabled={!get('founderTime')} disabledReason="Choose how much time you can commit." stageColor={STAGE_COLORS.hone} stepTitle="Are you set up to win?" ideaId={activeIdea.id} />
+      <NavRow onBack={back} onNext={async () => { await save('hone', { founderTime: get('founderTime'), founderSkills: get('founderSkills'), founderCofounder: get('founderCofounder'), founderFit: get('founderFit') }); next(); }} nextLabel="Scorecard →" disabled={
+        !get('founderTime') ? true
+        : !get('founderSkills').split('|').filter(Boolean).length ? true
+        : !get('founderCofounder').split('|').filter(Boolean).length ? true
+        : !get('founderFit').trim() ? true
+        : false
+      } disabledReason={
+        !get('founderTime') ? 'Choose how much time you can commit.'
+        : !get('founderSkills').split('|').filter(Boolean).length ? 'Pick at least one relevant skill you bring.'
+        : !get('founderCofounder').split('|').filter(Boolean).length ? 'Answer whether you have a co-founder.'
+        : 'Answer why YOU are the right person to solve this.'
+      } stageColor={STAGE_COLORS.hone} stepTitle="Are you set up to win?" ideaId={activeIdea.id} />
     </div>,
     <div key="h4" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={5} />
@@ -12369,7 +12472,7 @@ export default function WorkPage() {
                 one row / four columns, whiteboard sticky-note style (no
                 borders — background tint + shadow + slight rotation only,
                 same as the sticky notes used elsewhere in this step). ── */}
-            <div style={{ padding: '16px 18px', background: `${VC}08`, borderBottom: `1px solid ${VC}18`, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, alignItems: 'center' }}>
+            <div style={{ padding: '16px 18px', background: `${VC}08`, borderBottom: `1px solid ${VC}18`, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: 16, alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 22 }}>🎯</span>
                 <div>
@@ -12475,7 +12578,7 @@ export default function WorkPage() {
                   const summary = get('valGoalSuccess') || '';
 
                   return (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 28, rowGap: 22 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', columnGap: 28, rowGap: 22 }}>
 
                       {/* Q1 */}
                       <div>
@@ -12647,7 +12750,7 @@ export default function WorkPage() {
             <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 18 }}>
 
               {/* Q2 + Q3: Sticky-note tag chips (2026-08-05, two-column layout) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
 
                 {/* Column 1: Most important thing to prove */}
                 {(() => {
@@ -12937,7 +13040,7 @@ export default function WorkPage() {
                 </div>
                 <div style={
                   layout === 'grid'
-                    ? { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: selected.length ? 8 : 0 }
+                    ? { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: selected.length ? 8 : 0 }
                     : { display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: selected.length ? 8 : 0 }
                 }>
                   {chips.map((chip, ci) => {
@@ -13866,8 +13969,40 @@ export default function WorkPage() {
               const initialsOf = (name: string) => name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase() || '?';
               const expandedExisting = interviews.find(iv => iv.id === expandedIvId) || null;
 
+              // ── Momentum counter: how many conversations you've actually logged
+              // (status flips to 'completed' the moment a PersonaInterviewCard is
+              // saved) in the last 7 days, plus a Duolingo-style day-streak — a
+              // streak counts if there's a logged conversation today OR yesterday,
+              // so it doesn't feel "broken" the instant midnight passes. ──
+              const completedLogged = interviews.filter(iv => iv.status === 'completed' && iv.updated_at);
+              const weeklyLoggedCount = completedLogged.filter(iv => Date.now() - new Date(iv.updated_at).getTime() <= 7 * 24 * 60 * 60 * 1000).length;
+              const loggedDays = new Set(completedLogged.map(iv => new Date(iv.updated_at).toDateString()));
+              let streakDays = 0;
+              {
+                const cursor = new Date();
+                if (!loggedDays.has(cursor.toDateString())) cursor.setDate(cursor.getDate() - 1);
+                while (loggedDays.has(cursor.toDateString())) { streakDays++; cursor.setDate(cursor.getDate() - 1); }
+              }
+
               return (
                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                  {weeklyLoggedCount > 0 && (
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 8, maxWidth: '100%', flexWrap: 'wrap' as const,
+                      padding: '9px 14px', borderRadius: 100,
+                      background: `${ac}12`, border: `1.5px solid ${ac}30`,
+                      fontSize: 12.5, fontWeight: 700, color: ac,
+                    }}>
+                      <span style={{ fontSize: 15 }}>🔥</span>
+                      {weeklyLoggedCount} conversation{weeklyLoggedCount === 1 ? '' : 's'} logged this week
+                      {streakDays >= 2 && (
+                        <>
+                          <span style={{ opacity: 0.4 }}>·</span>
+                          <span>{streakDays}-day streak</span>
+                        </>
+                      )}
+                    </div>
+                  )}
                   {interviews.length > 0 ? (
                     <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 12 }}>
                       {interviews.map(iv => {
@@ -14219,7 +14354,7 @@ export default function WorkPage() {
             </div>
 
             {/* ── Parent KPI tiles ─────────────────────────────────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: 8 }}>
               {kpiTiles.map(kpi => {
                 const isActive = v3Drill === kpi.key;
                 return (
@@ -17488,7 +17623,40 @@ export default function WorkPage() {
             const nextMod = NEXT[celebrateStage];
             if (nextMod) { goMod(nextMod); } else { navigate('/journey'); }
           }}
+          // Done-stage only: closes the celebration without navigating away,
+          // so the founder stays in the wizard — sidebar still shows every
+          // earlier stage as unlocked and clickable — instead of getting
+          // pushed straight to the idea vault with no way back in.
+          onReviewSteps={() => setCelebrateStage(null)}
         />
+      )}
+
+      {/* Milestone confetti — 1st / 5th / 10th conversation logged */}
+      {milestoneCelebration !== null && (
+        <>
+          <MilestoneConfetti />
+          <div
+            onClick={() => setMilestoneCelebration(null)}
+            style={{
+              position: 'fixed', top: 24, left: '50%',
+              zIndex: 9999, cursor: 'pointer',
+              background: '#1d1d1f', color: '#fff', borderRadius: 16,
+              padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10,
+              fontSize: 13.5, fontWeight: 700, width: 'max-content', maxWidth: 'calc(100vw - 40px)',
+              boxShadow: '0 12px 32px rgba(0,0,0,.28)',
+              animation: 'milestoneToastIn .4s ease forwards',
+            }}
+          >
+            <span style={{ fontSize: 20, flexShrink: 0 }}>🎉</span>
+            <span>
+              {milestoneCelebration === 1
+                ? "First conversation logged — you're doing the hard part most founders skip."
+                : milestoneCelebration === 5
+                ? '5 conversations in — real signal is starting to show.'
+                : "10 conversations logged — that's a real validation effort."}
+            </span>
+          </div>
+        </>
       )}
     </>
   );
