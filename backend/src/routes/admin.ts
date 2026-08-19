@@ -40,7 +40,7 @@ router.get('/ideas', async (req: Request, res: Response) => {
       `SELECT
          i.id, i.name, i.description, i.stage, i.moderation_status,
          i.created_at, i.updated_at,
-         u.name AS author_name, u.email AS author_email, u.avatar_initials
+         u.id AS author_id, u.name AS author_name, u.email AS author_email, u.avatar_initials
        FROM ideas i
        JOIN users u ON i.user_id = u.id
        WHERE u.is_admin = FALSE

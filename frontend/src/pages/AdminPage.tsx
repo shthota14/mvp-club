@@ -13,6 +13,7 @@ interface AdminIdea {
   stage: Stage;
   moderation_status: 'pending' | 'approved' | 'rejected';
   created_at: string;
+  author_id: string;
   author_name: string;
   author_email: string;
   avatar_initials: string;
@@ -170,10 +171,11 @@ function StatCard({ label, value, color }: { label: string; value: string | numb
 }
 
 // ── Idea row with expandable post management ──────────────────────────────────
-function IdeaRow({ idea, onModerate, onDelete }: {
+function IdeaRow({ idea, onModerate, onDelete, onViewAs }: {
   idea: AdminIdea;
   onModerate: (id: string, status: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onViewAs: (id: string) => Promise<void>;
 }) {
   const [expanded, setExpanded]           = useState(false);
   const [posts, setPosts]                 = useState<AdminPost[]>([]);
@@ -181,6 +183,7 @@ function IdeaRow({ idea, onModerate, onDelete }: {
   const [acting, setActing]               = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showCanvas, setShowCanvas]       = useState(false);
+  const [viewingAs, setViewingAs]         = useState(false);
 
   const loadPosts = async () => {
     if (posts.length) { setExpanded(e => !e); return; }
@@ -242,6 +245,13 @@ function IdeaRow({ idea, onModerate, onDelete }: {
 
           {/* Utility row */}
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' as const }}>
+            <Btn
+              label="👁 View as author"
+              color="#7c2d12"
+              filled
+              disabled={viewingAs}
+              onClick={async () => { setViewingAs(true); await onViewAs(idea.author_id); setViewingAs(false); }}
+            />
             <Btn label={expanded ? '▲ Hide comments' : '▾ View comments'} onClick={loadPosts} />
             <button
               onClick={() => setShowCanvas(true)}
@@ -332,9 +342,8 @@ function IdeaRow({ idea, onModerate, onDelete }: {
 }
 
 // ── User row with management actions ─────────────────────────────────────────
-function UserRow({ user: u, onViewAs, onResetPassword, onSuspend, onDelete }: {
+function UserRow({ user: u, onResetPassword, onSuspend, onDelete }: {
   user: AdminUser;
-  onViewAs: (id: string) => Promise<void>;
   onResetPassword: (id: string, pw: string) => Promise<void>;
   onSuspend: (id: string, suspended: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -378,7 +387,6 @@ function UserRow({ user: u, onViewAs, onResetPassword, onSuspend, onDelete }: {
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <Btn label="👁 View as" color="#7c2d12" filled onClick={async () => { setActing(true); await onViewAs(u.id); setActing(false); }} disabled={acting} />
           <Btn label="🔑 Reset password" color="#6366f1" onClick={() => { setShowReset(s => !s); setPwMsg(''); }} />
           {u.suspended
             ? <Btn label="✓ Unsuspend" color="#15803d" filled onClick={async () => { setActing(true); await onSuspend(u.id, false); setActing(false); }} disabled={acting} />
@@ -798,6 +806,7 @@ export default function AdminPage() {
                     idea={idea}
                     onModerate={handleModerateIdea}
                     onDelete={handleDeleteIdea}
+                    onViewAs={handleViewAs}
                   />
                 ))}
               </div>
@@ -884,7 +893,6 @@ export default function AdminPage() {
                   <UserRow
                     key={u.id}
                     user={u}
-                    onViewAs={handleViewAs}
                     onResetPassword={async (id, pw) => { await adminApi.resetPassword(id, pw); }}
                     onSuspend={async (id, s) => {
                       await adminApi.suspendUser(id, s);
