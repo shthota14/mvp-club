@@ -10762,6 +10762,12 @@ export default function WorkPage() {
   };
 
   const autoSaveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // What's still waiting out its 1.2s debounce, keyed the same as
+  // autoSaveTimers — keeps the actual stage/content around (not just a
+  // closure) so flushPendingSaves() can fire the real request immediately,
+  // and so the pagehide handler below can send it via a beacon-safe fetch
+  // instead of an axios call the browser may abort mid-flight.
+  const pendingSaves = useRef<Record<string, { stage: Mod; content: string }>>({});
   const autoNavigatedRef = useRef(false);
   const personaPickerRef = useRef<PersonaPickerHandle>(null);
   const assumptionsRef = useRef<AssumptionsHandle>(null);
@@ -10778,13 +10784,58 @@ export default function WorkPage() {
     const stage = FIELD_STAGE[k];
     if (!stage || !activeIdea) return;
     clearTimeout(autoSaveTimers.current[k]);
+    pendingSaves.current[k] = { stage, content: v };
     autoSaveTimers.current[k] = setTimeout(() => {
-      ideasApi.upsertEntry(activeIdea.id, { stage, field_key: k, content: v }).catch(() => {});
+      const entry = pendingSaves.current[k];
+      delete pendingSaves.current[k];
+      if (entry) ideasApi.upsertEntry(activeIdea.id, { stage: entry.stage, field_key: k, content: entry.content }).catch(() => {});
     }, 1200);
   };
-  const next   = () => setStep(s => s + 1);
-  const back   = () => setStep(s => Math.max(0, s - 1));
-  const goMod  = (m: Mod) => { if (!unlocked[m]) return; setMod(m); setStep(lastStepByMod.current[m] ?? 0); setShowLI(false); };
+  // Fires every still-debouncing field's save immediately instead of waiting
+  // out the 1.2s timer — otherwise an answer typed right before leaving the
+  // step (clicking Next/Back, jumping stages via the sidebar, or navigating
+  // away entirely) can be lost: the timer never gets to fire, so it looks
+  // saved in the UI but was never actually sent to the backend, and reloading
+  // shows that field blank again. Safe to call liberally since a field with
+  // nothing pending is just a no-op.
+  const flushPendingSaves = () => {
+    if (!activeIdea) return;
+    Object.entries(pendingSaves.current).forEach(([k, entry]) => {
+      clearTimeout(autoSaveTimers.current[k]);
+      delete pendingSaves.current[k];
+      ideasApi.upsertEntry(activeIdea.id, { stage: entry.stage, field_key: k, content: entry.content }).catch(() => {});
+    });
+  };
+  useEffect(() => () => flushPendingSaves(), []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Covers the case flushPendingSaves() (and the unmount cleanup above) can't:
+  // the tab/window actually closing. React's unmount cleanup doesn't reliably
+  // run on a hard close, and a normal axios request can be aborted mid-flight
+  // by the browser before it completes — `keepalive` tells the browser to let
+  // a request finish anyway even after the page starts unloading. `pagehide`
+  // fires more reliably than `beforeunload` for this (including on mobile
+  // Safari's swipe-to-close and bfcache navigation).
+  useEffect(() => {
+    const flushOnUnload = () => {
+      if (!activeIdea) return;
+      const token = localStorage.getItem('mvpclub_token');
+      if (!token) return;
+      Object.entries(pendingSaves.current).forEach(([field_key, entry]) => {
+        try {
+          fetch(`/api/ideas/${activeIdea.id}/entries`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ stage: entry.stage, field_key, content: entry.content }),
+            keepalive: true,
+          }).catch(() => {});
+        } catch { /* best effort */ }
+      });
+    };
+    window.addEventListener('pagehide', flushOnUnload);
+    return () => window.removeEventListener('pagehide', flushOnUnload);
+  }, [activeIdea]);
+  const next   = () => { flushPendingSaves(); setStep(s => s + 1); };
+  const back   = () => { flushPendingSaves(); setStep(s => Math.max(0, s - 1)); };
+  const goMod  = (m: Mod) => { if (!unlocked[m]) return; flushPendingSaves(); setMod(m); setStep(lastStepByMod.current[m] ?? 0); setShowLI(false); };
   const unlock = (m: Mod) => setUnlocked(u => ({ ...u, [m]: true }));
   const mark   = (m: Mod) => { setCompleted(c => ({ ...c, [m]: true })); setCelebrateStage(m); };
 
