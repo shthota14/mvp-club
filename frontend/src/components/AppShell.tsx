@@ -7,6 +7,7 @@ import NotificationBell from './NotificationBell';
 import OnboardingWizard from './OnboardingWizard';
 import GettingStartedPanel from './GettingStartedPanel';
 import FeedbackWidget from './FeedbackWidget';
+import ImpersonationBanner, { IMPERSONATION_BANNER_HEIGHT } from './ImpersonationBanner';
 import { messagesApi } from '@/api/client';
 import { useIsMobile } from '@/hooks/useIsMobile';
 
@@ -40,10 +41,11 @@ const BOTTOM_TABS = [
 ];
 
 export default function AppShell() {
-  const { user } = useApp();
+  const { user, isImpersonating } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const bannerOffset = isImpersonating ? IMPERSONATION_BANNER_HEIGHT : 0;
   const [profileOpen, setProfileOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [onboardingDone, setOnboardingDone] = useState(true); // assume done until user loads
@@ -79,8 +81,9 @@ export default function AppShell() {
 
   return (
     <>
+      <ImpersonationBanner />
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        position: 'fixed', top: bannerOffset, left: 0, right: 0, zIndex: 100,
         background: 'rgba(255,255,255,.92)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
@@ -178,7 +181,7 @@ export default function AppShell() {
           and the bottom tab bar is non-admin-only. */}
       {isMobile && (
         <div style={{
-          position: 'fixed', top: 64, left: 0, right: 0, zIndex: 99,
+          position: 'fixed', top: 64 + bannerOffset, left: 0, right: 0, zIndex: 99,
           background: 'rgba(255,255,255,.98)',
           borderBottom: '1px solid #e5e5ea',
           display: 'flex', gap: 8, alignItems: 'center',
@@ -200,7 +203,7 @@ export default function AppShell() {
         </div>
       )}
 
-      <main style={{ paddingTop: isMobile ? 108 : 64, paddingBottom: isMobile && !user?.is_admin ? 60 : 0, minHeight: '100vh', background: '#f5f5f7' }}>
+      <main style={{ paddingTop: (isMobile ? 108 : 64) + bannerOffset, paddingBottom: isMobile && !user?.is_admin ? 60 : 0, minHeight: '100vh', background: '#f5f5f7' }}>
         <Outlet />
       </main>
 

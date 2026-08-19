@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { query } from '../db';
 import { requireAdmin } from '../middleware/admin';
+import { signToken } from '../middleware/auth';
 import { runWeeklyDigest } from '../jobs/weeklyDigest';
 
 const router = Router();
@@ -148,6 +149,78 @@ router.get('/users', async (_req: Request, res: Response) => {
        FROM users WHERE is_admin = FALSE ORDER BY created_at DESC`
     );
     res.json({ users: result.rows });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+// ── Consolidated progress view: one row per member, bird's-eye status ─────────
+router.get('/progress', async (_req: Request, res: Response) => {
+  try {
+    const rowsResult = await query<{
+      id: string; name: string; email: string; current_stage: string; created_at: string;
+      idea_count: string; last_active: string | null;
+    }>(
+      `SELECT
+         u.id, u.name, u.email, u.current_stage, u.created_at,
+         (SELECT COUNT(*) FROM ideas WHERE user_id = u.id) AS idea_count,
+         (SELECT MAX(se.updated_at) FROM stage_entries se WHERE se.user_id = u.id) AS last_active
+       FROM users u
+       WHERE u.is_admin = FALSE
+       ORDER BY last_active DESC NULLS LAST, u.created_at DESC`
+    );
+
+    // Active-day streak per user, computed from the last 30 days of stage_entries
+    // activity (same "today-or-yesterday keeps it alive" rule as the Validate
+    // momentum streak) — one grouped query rather than N+1 per-user queries.
+    const activityResult = await query<{ user_id: string; d: string }>(
+      `SELECT DISTINCT user_id, DATE(updated_at) AS d
+       FROM stage_entries
+       WHERE updated_at > NOW() - INTERVAL '30 days'`
+    );
+    const daysByUser = new Map<string, Set<string>>();
+    for (const row of activityResult.rows) {
+      if (!daysByUser.has(row.user_id)) daysByUser.set(row.user_id, new Set());
+      daysByUser.get(row.user_id)!.add(row.d);
+    }
+    const streakFor = (userId: string): number => {
+      const days = daysByUser.get(userId);
+      if (!days || !days.size) return 0;
+      const cursor = new Date();
+      const fmt = (d: Date) => d.toISOString().slice(0, 10);
+      if (!days.has(fmt(cursor))) cursor.setDate(cursor.getDate() - 1);
+      let streak = 0;
+      while (days.has(fmt(cursor))) { streak++; cursor.setDate(cursor.getDate() - 1); }
+      return streak;
+    };
+
+    const rows = rowsResult.rows.map(r => ({ ...r, streak_days: streakFor(r.id) }));
+    res.json({ users: rows });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
+});
+
+// ── Impersonate a user: mint a short-lived token so the admin can view/act as
+//    them. Logged to admin_audit_log so there's a record of who viewed as
+//    whom and when. ─────────────────────────────────────────────────────────
+router.post('/users/:id/impersonate', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const adminId = req.userId!;
+  try {
+    const result = await query<{
+      id: string; email: string; name: string; current_stage: string;
+      community_opt: boolean; help_types: string[]; avatar_initials: string; is_admin: boolean;
+    }>(
+      `SELECT id, email, name, current_stage, community_opt, help_types, avatar_initials, is_admin
+       FROM users WHERE id = $1 AND is_admin = FALSE`,
+      [id]
+    );
+    const target = result.rows[0];
+    if (!target) { res.status(404).json({ error: 'User not found' }); return; }
+
+    const token = signToken(target.id, target.email, adminId);
+    await query(
+      `INSERT INTO admin_audit_log (admin_id, target_user_id, action) VALUES ($1, $2, 'impersonate_start')`,
+      [adminId, target.id]
+    );
+    res.json({ token, user: target });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 

@@ -244,6 +244,15 @@ ALTER TABLE interviews ADD COLUMN IF NOT EXISTS validation_contact_id UUID REFER
 CREATE INDEX IF NOT EXISTS idx_interviews_validation_contact ON interviews(validation_contact_id);
 CREATE INDEX IF NOT EXISTS idx_interviews_booking_token       ON interviews(booking_token);
 
+-- ── admin_audit_log: impersonation events, etc. ─────────────────────────────────
+CREATE TABLE IF NOT EXISTS admin_audit_log (
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  admin_id       UUID REFERENCES users(id) ON DELETE SET NULL,
+  target_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  action         TEXT NOT NULL,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ── admin user ────────────────────────────────────────────────────────────────
 -- Created LOCKED: the hash below is bcrypt of a 48-byte random string that was
 -- discarded at generation time, so nobody — including anyone reading this repo —

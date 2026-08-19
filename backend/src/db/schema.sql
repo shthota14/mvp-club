@@ -98,6 +98,15 @@ CREATE TABLE IF NOT EXISTS comments (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Admin audit log (impersonation events, etc.)
+CREATE TABLE IF NOT EXISTS admin_audit_log (
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  admin_id       UUID REFERENCES users(id) ON DELETE SET NULL,
+  target_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  action         TEXT NOT NULL,
+  created_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_ideas_user_id ON ideas(user_id);
 CREATE INDEX IF NOT EXISTS idx_stage_entries_idea ON stage_entries(idea_id, stage);

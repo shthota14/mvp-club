@@ -81,6 +81,7 @@ declare global {
     interface Request {
       userId?: string;
       user?: User;
+      impersonatedBy?: string;
     }
   }
 }

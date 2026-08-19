@@ -43,6 +43,17 @@ interface AdminUser {
   idea_count: string;
 }
 
+interface AdminProgressUser {
+  id: string;
+  name: string;
+  email: string;
+  current_stage: Stage;
+  created_at: string;
+  idea_count: string;
+  last_active: string | null;
+  streak_days: number;
+}
+
 interface AdminFeedback {
   id: string;
   category: 'feature' | 'bug' | 'improvement' | 'feedback';
@@ -63,7 +74,7 @@ interface Stats {
   feedback: { new: string; total: string };
 }
 
-type MainTab = 'ideas' | 'posts' | 'users' | 'feedback' | 'tools';
+type MainTab = 'ideas' | 'posts' | 'users' | 'progress' | 'feedback' | 'tools';
 type IdeaFilter = 'all' | 'pending' | 'approved' | 'rejected';
 type PostFilter = 'all' | 'flagged' | 'held' | 'rejected' | 'approved';
 type FeedbackFilter = 'new' | 'reviewing' | 'planned' | 'done' | 'dismissed' | 'all';
@@ -194,7 +205,7 @@ function IdeaRow({ idea, onModerate, onDelete }: {
   return (
     <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #d2d2d7', overflow: 'hidden' }}>
       {/* ── Main row ── */}
-      <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+      <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' as const }}>
         <Avatar initials={idea.avatar_initials} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
@@ -217,7 +228,7 @@ function IdeaRow({ idea, onModerate, onDelete }: {
         {/* Actions — stacked: moderation row + utility row */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, alignItems: 'flex-end' }}>
           {/* Moderation buttons */}
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
             {idea.moderation_status !== 'approved' && (
               <Btn label="✓ Approve" color="#15803d" filled onClick={async () => { setActing('idea'); await onModerate(idea.id, 'approved'); setActing(null); }} disabled={acting === 'idea'} />
             )}
@@ -230,7 +241,7 @@ function IdeaRow({ idea, onModerate, onDelete }: {
           </div>
 
           {/* Utility row */}
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' as const }}>
             <Btn label={expanded ? '▲ Hide comments' : '▾ View comments'} onClick={loadPosts} />
             <button
               onClick={() => setShowCanvas(true)}
@@ -247,7 +258,7 @@ function IdeaRow({ idea, onModerate, onDelete }: {
                 🗑 Delete idea
               </button>
             ) : (
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', background: '#fff7f7', border: '1.5px solid #fca5a5', borderRadius: 10, padding: '4px 10px' }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', background: '#fff7f7', border: '1.5px solid #fca5a5', borderRadius: 10, padding: '4px 10px', flexWrap: 'wrap' as const }}>
                 <span style={{ fontSize: 11, color: '#dc2626', fontWeight: 700 }}>Permanently delete?</span>
                 <Btn label="Yes, delete" danger onClick={async () => { await onDelete(idea.id); }} />
                 <Btn label="Cancel" onClick={() => setConfirmDelete(false)} />
@@ -285,7 +296,7 @@ function IdeaRow({ idea, onModerate, onDelete }: {
                       <div style={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.5, marginBottom: 10, whiteSpace: 'pre-wrap' }}>
                         {post.content}
                       </div>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
                         {post.moderation_status !== 'visible' && post.moderation_status !== 'approved' && (
                           <Btn label="✓ Approve" color="#15803d" filled onClick={() => moderatePost(post.id, 'approved')} disabled={acting === post.id} />
                         )}
@@ -321,8 +332,9 @@ function IdeaRow({ idea, onModerate, onDelete }: {
 }
 
 // ── User row with management actions ─────────────────────────────────────────
-function UserRow({ user: u, onResetPassword, onSuspend, onDelete }: {
+function UserRow({ user: u, onViewAs, onResetPassword, onSuspend, onDelete }: {
   user: AdminUser;
+  onViewAs: (id: string) => Promise<void>;
   onResetPassword: (id: string, pw: string) => Promise<void>;
   onSuspend: (id: string, suspended: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
@@ -366,6 +378,7 @@ function UserRow({ user: u, onResetPassword, onSuspend, onDelete }: {
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <Btn label="👁 View as" color="#7c2d12" filled onClick={async () => { setActing(true); await onViewAs(u.id); setActing(false); }} disabled={acting} />
           <Btn label="🔑 Reset password" color="#6366f1" onClick={() => { setShowReset(s => !s); setPwMsg(''); }} />
           {u.suspended
             ? <Btn label="✓ Unsuspend" color="#15803d" filled onClick={async () => { setActing(true); await onSuspend(u.id, false); setActing(false); }} disabled={acting} />
@@ -473,7 +486,7 @@ function FeedbackRow({ item, onUpdate }: {
 
 // ── Main admin page ───────────────────────────────────────────────────────────
 export default function AdminPage() {
-  const { logout } = useApp();
+  const { logout, impersonate } = useApp();
   const navigate = useNavigate();
   const [unread, setUnread] = useState(0);
   // Deep-linkable from the feedback-notification link (/admin?tab=feedback)
@@ -482,6 +495,8 @@ export default function AdminPage() {
   const [ideas, setIdeas]         = useState<AdminIdea[]>([]);
   const [posts, setPosts]         = useState<AdminPost[]>([]);
   const [users, setUsers]         = useState<AdminUser[]>([]);
+  const [progress, setProgress]   = useState<AdminProgressUser[]>([]);
+  const [progressSort, setProgressSort] = useState<{ key: 'name' | 'current_stage' | 'idea_count' | 'last_active' | 'streak_days'; dir: 'asc' | 'desc' }>({ key: 'last_active', dir: 'desc' });
   const [feedback, setFeedback]   = useState<AdminFeedback[]>([]);
   const [ideaFilter, setIdeaFilter] = useState<IdeaFilter>('all');
   const [postFilter, setPostFilter] = useState<PostFilter>('flagged');
@@ -532,6 +547,14 @@ export default function AdminPage() {
     } catch {} finally { setLoading(false); }
   }, []);
 
+  const loadProgress = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await adminApi.getProgress();
+      setProgress(r.data.users);
+    } catch {} finally { setLoading(false); }
+  }, []);
+
   const loadFeedback = useCallback(async (filter: FeedbackFilter) => {
     setLoading(true);
     try {
@@ -547,8 +570,17 @@ export default function AdminPage() {
     if (tab === 'ideas')          loadIdeas(ideaFilter);
     else if (tab === 'posts')     loadPosts(postFilter);
     else if (tab === 'users')     loadUsers();
+    else if (tab === 'progress')  loadProgress();
     else if (tab === 'feedback')  loadFeedback(feedbackFilter);
-  }, [tab, ideaFilter, postFilter, feedbackFilter, loadIdeas, loadPosts, loadUsers, loadFeedback]);
+  }, [tab, ideaFilter, postFilter, feedbackFilter, loadIdeas, loadPosts, loadUsers, loadProgress, loadFeedback]);
+
+  // Admin "view as user": mint an impersonation token, swap it into the
+  // session, and drop into that member's own Journey view.
+  const handleViewAs = async (id: string) => {
+    const r = await adminApi.impersonate(id);
+    impersonate(r.data.token, r.data.user);
+    navigate('/journey');
+  };
 
   const handleModerateIdea = async (id: string, status: string) => {
     await adminApi.moderateIdea(id, status);
@@ -591,6 +623,26 @@ export default function AdminPage() {
   const filteredUsers = users.filter(u =>
     !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())
   );
+  const filteredProgress = progress
+    .filter(u => !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
+    .slice()
+    .sort((a, b) => {
+      const { key, dir } = progressSort;
+      const mul = dir === 'asc' ? 1 : -1;
+      if (key === 'name')          return a.name.localeCompare(b.name) * mul;
+      if (key === 'current_stage') return a.current_stage.localeCompare(b.current_stage) * mul;
+      if (key === 'idea_count')    return (Number(a.idea_count) - Number(b.idea_count)) * mul;
+      if (key === 'streak_days')   return (a.streak_days - b.streak_days) * mul;
+      // last_active — nulls (never active) sort last regardless of direction
+      const at = a.last_active ? new Date(a.last_active).getTime() : -1;
+      const bt = b.last_active ? new Date(b.last_active).getTime() : -1;
+      if (at === -1 && bt === -1) return 0;
+      if (at === -1) return 1;
+      if (bt === -1) return -1;
+      return (at - bt) * mul;
+    });
+  const toggleProgressSort = (key: typeof progressSort.key) =>
+    setProgressSort(s => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: key === 'name' || key === 'current_stage' ? 'asc' : 'desc' });
   const filteredFeedback = feedback.filter(f =>
     !search || f.message.toLowerCase().includes(search.toLowerCase()) || f.author_name.toLowerCase().includes(search.toLowerCase())
   );
@@ -613,15 +665,15 @@ export default function AdminPage() {
   const alertCount = (stats ? Number(stats.ideas.pending) + Number(stats.posts.flagged) + Number(stats.feedback?.new ?? 0) : 0);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f5f7', fontFamily: 'inherit' }}>
+    <div style={{ minHeight: '100dvh', background: '#f5f5f7', fontFamily: 'inherit' }}>
 
       {/* ── Top bar ── */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #d2d2d7', height: 56, display: 'flex', alignItems: 'center', padding: '0 28px', gap: 14 }}>
+      <div style={{ background: '#fff', borderBottom: '1px solid #d2d2d7', minHeight: 56, display: 'flex', alignItems: 'center', padding: '10px 28px', gap: 14, flexWrap: 'wrap' as const }}>
         <div>
           <div style={{ fontWeight: 900, fontSize: 15, color: '#1d1d1f', letterSpacing: -0.3 }}>🛡 Admin Control Panel</div>
           <div style={{ fontSize: 9, color: '#86868b', fontWeight: 500, marginTop: 1 }}>MVP Club · From idea to launched — one step at a time.</div>
         </div>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
           {alertCount > 0 && (<>
             {stats && Number(stats.ideas.pending) > 0 && (
               <span style={{ background: '#fef3c7', color: '#d97706', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 800 }}>
@@ -693,10 +745,10 @@ export default function AdminPage() {
 
         {/* ── Main tabs + search ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 14, padding: 4 }}>
-            {(['ideas', 'posts', 'users', 'feedback', 'tools'] as const).map(t => (
+          <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 14, padding: 4, flexWrap: 'wrap' as const }}>
+            {(['ideas', 'posts', 'users', 'progress', 'feedback', 'tools'] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} style={mainTab(tab === t)}>
-                {t === 'ideas' ? '💡 Ideas' : t === 'posts' ? '💬 Comments' : t === 'users' ? '👥 Members' : t === 'feedback' ? '📮 Feedback' : '⚙️ Tools'}
+                {t === 'ideas' ? '💡 Ideas' : t === 'posts' ? '💬 Comments' : t === 'users' ? '👥 Members' : t === 'progress' ? '📊 Progress' : t === 'feedback' ? '📮 Feedback' : '⚙️ Tools'}
                 {t === 'feedback' && stats && Number(stats.feedback?.new ?? 0) > 0 && (
                   <span style={{ marginLeft: 6, background: '#8b5cf6', color: '#fff', borderRadius: 20, padding: '1px 6px', fontSize: 10, fontWeight: 800 }}>
                     {stats.feedback.new}
@@ -715,7 +767,7 @@ export default function AdminPage() {
           )}
           {tab !== 'tools' && (
             <span style={{ fontSize: 12, color: '#86868b', marginLeft: 'auto' }}>
-              {tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : tab === 'users' ? filteredUsers.length : filteredFeedback.length} result{(tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : tab === 'users' ? filteredUsers.length : filteredFeedback.length) !== 1 ? 's' : ''}
+              {tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : tab === 'users' ? filteredUsers.length : tab === 'progress' ? filteredProgress.length : filteredFeedback.length} result{(tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : tab === 'users' ? filteredUsers.length : tab === 'progress' ? filteredProgress.length : filteredFeedback.length) !== 1 ? 's' : ''}
             </span>
           )}
         </div>
@@ -832,6 +884,7 @@ export default function AdminPage() {
                   <UserRow
                     key={u.id}
                     user={u}
+                    onViewAs={handleViewAs}
                     onResetPassword={async (id, pw) => { await adminApi.resetPassword(id, pw); }}
                     onSuspend={async (id, s) => {
                       await adminApi.suspendUser(id, s);
@@ -844,6 +897,65 @@ export default function AdminPage() {
                     }}
                   />
                 ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══════ PROGRESS (bird's-eye view across every member) ══════ */}
+        {tab === 'progress' && (
+          <>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#86868b' }}>Loading…</div>
+            ) : filteredProgress.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 60, color: '#86868b' }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>📊</div>
+                <div style={{ fontSize: 14 }}>No members yet</div>
+              </div>
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #d2d2d7', overflow: 'hidden' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto', gap: 8, padding: '10px 20px', borderBottom: '1px solid #f0f0f2', background: '#fafafa' }}>
+                  {([
+                    ['name', 'Member'],
+                    ['current_stage', 'Stage'],
+                    ['idea_count', 'Ideas'],
+                    ['streak_days', 'Streak'],
+                    ['last_active', 'Last active'],
+                  ] as [typeof progressSort.key, string][]).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => toggleProgressSort(key)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 800, color: '#86868b', textTransform: 'uppercase' as const, letterSpacing: 0.6 }}
+                    >
+                      {label}
+                      {progressSort.key === key && <span style={{ fontSize: 9 }}>{progressSort.dir === 'asc' ? '▲' : '▼'}</span>}
+                    </button>
+                  ))}
+                  <span />
+                </div>
+                {filteredProgress.map(u => {
+                  const sc = STAGE_COLORS[u.current_stage];
+                  return (
+                    <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr auto', gap: 8, alignItems: 'center', padding: '12px 20px', borderBottom: '1px solid #f5f5f7' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                        <Avatar initials={(u.name ?? '??').slice(0, 2)} size={30} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 12.5, color: '#1d1d1f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name}</div>
+                          <div style={{ fontSize: 10.5, color: '#86868b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
+                        </div>
+                      </div>
+                      <span style={{ background: `${sc}15`, color: sc, borderRadius: 20, padding: '2px 9px', fontSize: 10, fontWeight: 700, width: 'fit-content' }}>
+                        {STAGE_LABELS[u.current_stage]}
+                      </span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#1d1d1f' }}>{u.idea_count}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: u.streak_days >= 2 ? '#d97706' : '#c7c7cc' }}>
+                        {u.streak_days >= 2 ? `🔥 ${u.streak_days}d` : '—'}
+                      </span>
+                      <span style={{ fontSize: 11.5, color: '#6e6e73' }}>{u.last_active ? timeAgo(u.last_active) : 'never'}</span>
+                      <Btn label="👁 View as" color="#7c2d12" filled onClick={() => handleViewAs(u.id)} />
+                    </div>
+                  );
+                })}
               </div>
             )}
           </>
