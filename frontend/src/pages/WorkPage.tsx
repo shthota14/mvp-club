@@ -11767,7 +11767,7 @@ export default function WorkPage() {
     // ── Whiteboard palette ───────────────────────────────────
     const WB_BG   = '#fefefe';
     const WB_TEXT = '#1a1a1a';
-    const WB_DIM  = '#555';
+    const WB_DIM  = '#3a3a3a'; // darkened for readability (was #555)
     const WB_RULE = '#e0e0e0';
 
     return (
@@ -11811,13 +11811,13 @@ export default function WorkPage() {
           {/* Marker underline — thick colored stroke */}
           <div style={{ height: 5, background: color, borderRadius: 3, width: 80, marginBottom: 14 }} />
 
-          <p style={{ fontSize: 19, color: WB_DIM, lineHeight: 1.65, margin: '0 0 18px', maxWidth: 500 }}>{meta.desc}</p>
+          <p style={{ fontSize: 21, color: WB_DIM, lineHeight: 1.65, margin: '0 0 18px', maxWidth: 500 }}>{meta.desc}</p>
 
           {/* Meta tags */}
           <div style={{ display: 'flex', gap: 12 }}>
             {[`${meta.steps} steps`, STAGE_TIME[mod]].map(tag => (
               <span key={tag} style={{
-                fontSize: 15, color: WB_DIM, fontWeight: 600,
+                fontSize: 16, color: WB_DIM, fontWeight: 600,
                 border: `2px solid #ccc`,
                 padding: '4px 16px', borderRadius: 6,
                 background: '#fff',
@@ -11922,7 +11922,7 @@ export default function WorkPage() {
           })() : (
             <>
               {/* Section label */}
-              <p style={{ fontSize: 20, fontWeight: 700, color: '#888', letterSpacing: '.12em', textTransform: 'uppercase' as const, margin: '0 0 16px' }}>
+              <p style={{ fontSize: 22, fontWeight: 700, color: '#6b6b6b', letterSpacing: '.1em', textTransform: 'uppercase' as const, margin: '0 0 16px' }}>
                 What you'll do
               </p>
 
@@ -11947,12 +11947,12 @@ export default function WorkPage() {
                     </div>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 22, fontWeight: 700, color: WB_TEXT, marginBottom: 4, lineHeight: 1.2 }}>{title}</div>
-                      <div style={{ fontSize: 17, color: WB_DIM, lineHeight: 1.65, marginBottom: callouts[i] ? 8 : 0, fontStyle: 'normal' }}>{goals[i]}</div>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: WB_TEXT, marginBottom: 4, lineHeight: 1.25 }}>{title}</div>
+                      <div style={{ fontSize: 19, color: WB_DIM, lineHeight: 1.65, marginBottom: callouts[i] ? 8 : 0, fontStyle: 'normal' }}>{goals[i]}</div>
                       {callouts[i] && (
                         <span style={{
                           display: 'inline-block',
-                          fontSize: 15, color, fontWeight: 700,
+                          fontSize: 16, color, fontWeight: 700,
                           background: `${color}14`,
                           border: `1.5px solid ${color}40`,
                           borderRadius: 4, padding: '3px 12px',
@@ -11978,8 +11978,8 @@ export default function WorkPage() {
                 borderRadius: 8, padding: '16px 18px',
                 background: `${color}06`,
               }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color, letterSpacing: '.14em', textTransform: 'uppercase' as const, marginBottom: 8 }}>{card.label}</div>
-                <div style={{ fontSize: 16, color: WB_TEXT, lineHeight: 1.65, fontStyle: card.italic ? 'italic' : 'normal' }}>{card.text}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color, letterSpacing: '.12em', textTransform: 'uppercase' as const, marginBottom: 8 }}>{card.label}</div>
+                <div style={{ fontSize: 18, color: WB_TEXT, lineHeight: 1.65, fontStyle: card.italic ? 'italic' : 'normal' }}>{card.text}</div>
               </div>
             ))}
           </div>
