@@ -11788,10 +11788,28 @@ export default function WorkPage() {
 
         {/* ── Marker-cap header strip ──────────────────────── */}
         <div style={{
+          position: 'relative',
           background: `${color}22`,
           borderBottom: `3px solid ${color}`,
           padding: '28px 30px 22px',
         }}>
+          {/* Explainer marker — a pinned sticky note signals "this is a guide,
+              not a step to fill in", so it's never mistaken for a real form. */}
+          <div style={{
+            position: 'absolute', top: 18, right: 26,
+            width: 96, minHeight: 68,
+            background: '#f0e6a8', color: '#3a3220',
+            fontSize: 14, fontWeight: 800, lineHeight: 1.2,
+            padding: '10px 8px',
+            transform: 'rotate(-5deg)',
+            boxShadow: '2px 5px 12px rgba(0,0,0,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' as const,
+            fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
+            borderRadius: 2,
+          }}>
+            Stage<br />explainer
+          </div>
+
           {/* Stage badge */}
           <div style={{ marginBottom: 12 }}>
             <span style={{
@@ -13617,6 +13635,28 @@ export default function WorkPage() {
               </div>
             </div>
           </div>
+
+          {/* Availability nudge — the single most-missed action on this step:
+              if it's not set, nothing below is actually bookable. Shown until
+              at least one day/week is open, then it gets out of the way. */}
+          {availSummary && availSummary.daysOn === 0 && (
+            <div style={{
+              background: '#d9770614', border: '1.5px solid #d9770655', borderLeft: '5px solid #d97706',
+              borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <span style={{ fontSize: 22, flexShrink: 0 }}>🗓️</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#92400e' }}>Set your availability so contacts can book time</div>
+                <div style={{ fontSize: 12.5, color: '#6e6e73', marginTop: 2 }}>Nobody can schedule with you until this is done.</div>
+              </div>
+              <button
+                onClick={() => setShowAvail(true)}
+                style={{ background: '#d97706', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}
+              >
+                Set up
+              </button>
+            </div>
+          )}
 
           {/* Validation window: sticky-note trio (Target/Booked/Awaiting/Open days) — whiteboard style, matching the Assumptions cards' handwritten language */}
           {!schedLoading && schedContacts.length > 0 && (
