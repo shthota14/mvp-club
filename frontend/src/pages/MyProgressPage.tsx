@@ -407,6 +407,7 @@ function generateConversationPlan(ideaName: string, count: number, targetDays: n
 // ── Timeline Modal (Gantt) ────────────────────────────────────────────────────
 
 function TimelineModal({ idea, onClose }: { idea: Idea; onClose: () => void }) {
+  const isMobile = useIsMobile();
   const [selectedStep, setSelectedStep] = useState<{ stageKey: string; stepName: string } | null>(null);
   const [validateTarget, setValidateTarget] = useState(5);
   const [validateExpanded, setValidateExpanded] = useState(false);
@@ -559,7 +560,7 @@ function TimelineModal({ idea, onClose }: { idea: Idea; onClose: () => void }) {
         </div>
 
         {/* Stats row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', borderBottom: '1px solid #f0f0f5', flexShrink: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', borderBottom: '1px solid #f0f0f5', flexShrink: 0 }}>
           {[
             { val: `${totalDays}d`, lbl: 'Total elapsed' },
             { val: `${daysInStage}d`, lbl: 'In current stage', color: rag === 'red' ? '#dc2626' : rag === 'amber' ? '#d97706' : '#059669' },
@@ -573,7 +574,7 @@ function TimelineModal({ idea, onClose }: { idea: Idea; onClose: () => void }) {
         </div>
 
         {/* Body: Gantt + optional drilldown */}
-        <div style={{ display: 'flex', minHeight: 0 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, minHeight: 0 }}>
 
           {/* ── Gantt panel ── */}
           <div id="gantt-print-area" style={{ flex: 1, minWidth: 0, padding: '20px 24px 24px', borderRight: selectedStep ? '1px solid #f0f0f5' : 'none' }}>
@@ -748,7 +749,7 @@ function TimelineModal({ idea, onClose }: { idea: Idea; onClose: () => void }) {
 
           {/* ── Drilldown panel ── */}
           {selectedStep && drillDetail && (
-            <div style={{ width: 300, flexShrink: 0, padding: '20px 20px 24px', overflowY: 'auto' as const, background: '#fafafa' }}>
+            <div style={{ width: isMobile ? '100%' : 300, flexShrink: 0, padding: '20px 20px 24px', overflowY: 'auto' as const, background: '#fafafa' }}>
               {/* Stage + step title */}
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase' as const, color: drillStageColor, marginBottom: 4 }}>
@@ -804,6 +805,7 @@ function TimelineModal({ idea, onClose }: { idea: Idea; onClose: () => void }) {
 // ── New Idea Modal ────────────────────────────────────────────────────────────
 
 function NewIdeaModal({ onClose, onCreated }: { onClose: () => void; onCreated: (idea: Idea) => void }) {
+  const isMobile = useIsMobile();
   const [name, setName]     = useState('');
   const [desc, setDesc]     = useState('');
   const [stage, setStage]   = useState<Stage>('idea');
@@ -874,7 +876,7 @@ function NewIdeaModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
             {/* Stage */}
             <div>
               <label style={{ fontSize: 12, fontWeight: 700, color: '#6e6e73', display: 'block', marginBottom: 10, textTransform: 'uppercase', letterSpacing: .5 }}>Where are you starting?</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: 6 }}>
                 {(['idea','hone','validate','shape','done'] as Stage[]).map(s => {
                   const sel = stage === s;
                   const color = STAGE_COLORS[s];
@@ -1154,7 +1156,7 @@ function VaultListRow({ idea, isActive, onClick }: {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'flex', alignItems: 'center', gap: 12,
+        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const,
         padding: '10px 14px',
         background: '#fff',
         border: `1.5px solid ${hovered ? color + '50' : isActive ? color + '40' : '#e5e5ea'}`,
@@ -1481,7 +1483,7 @@ export default function MyProgressPage() {
   };
 
   return (
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 40px 100px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '20px 16px 60px' : '40px 40px 100px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 40 }}>

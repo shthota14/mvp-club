@@ -417,6 +417,19 @@ export interface DiscoveryGuideResult {
 // a clear negative signal, and two neutral grays for weak/vague answers.
 const CHIP_PALETTE = new Set(['#059669', '#d97706', '#dc2626', '#6e6e73', '#b0b0b8']);
 
+// Small local models occasionally ignore the "no vague meta-labels" prompt
+// rule and describe the QUALITY of an answer instead of its CONTENT (e.g.
+// "Specific situation", "Emotional response") — this is a runtime safety
+// net that drops exactly that failure mode even if the prompt-level fix
+// above doesn't fully hold. Keep in sync with the "WRONG" example in both
+// system prompts below.
+const BANNED_GENERIC_CHIP_LABELS = new Set([
+  'specific situation', 'vivid story', 'recent', 'a recent instance', 'no recent instance',
+  'emotional response', 'consequences', 'detailed answer', 'brief answer', 'vague answer',
+  'strong signal', 'weak signal', 'mixed signal', 'positive response', 'negative response',
+  'unsure', 'not sure', 'n/a', 'no answer',
+]);
+
 // Shared validation for AI-returned chip arrays — used by both the
 // full-script path (generateDiscoveryGuide, below) and the single-question
 // on-demand path (generateQuestionChips, near the bottom of this file).
@@ -432,6 +445,7 @@ function sanitizeChips(raw: any): QuickResponseChip[] {
     const k = c.k.trim().slice(0, 40);
     const key = k.toLowerCase();
     if (seen.has(key)) continue;
+    if (BANNED_GENERIC_CHIP_LABELS.has(key)) continue;
     seen.add(key);
     out.push({
       k,
@@ -466,12 +480,19 @@ First, produce an "Interview Focus" section — for the INTERVIEWER's eyes only,
 - businessProcess: the specific workflow or business process being explored
 - keyAssumptions: an array of short strings — the assumptions the founder most needs this interview to explore, phrased for the INTERVIEWER's understanding only (never phrased as something to ask the interviewee, and never describing the founder's solution)
 
-Then write the complete interview guide as a sequence of time-boxed sections that together add up to 30 minutes or less, ordered from easy/concrete to deeper/harder — warm-up and rapport first, then recalling one specific recent instance of the problem, then how they handle it today and what they've already tried, then frustrations and cost, then how it affects them (or their business) if it stays unsolved, then a brief wrap-up. Use 5 to 7 sections with 1 to 3 questions each — skip a stage only if the founder's context truly gives you nothing to ground it in, but never reorder the stages you do include. Every question needs a short "purpose" — one sentence, interviewer-only, on what this question is meant to reveal (never mention the founder's solution in the purpose either).
+Then write the complete interview guide as a sequence of time-boxed sections that together add up to 30 minutes or less, ordered from easy/concrete to deeper/harder — warm-up and rapport first, then recalling one specific recent instance of the problem, then how they handle it today and what they've already tried, then frustrations and cost, then how it affects them (or their business) if it stays unsolved, then a brief wrap-up. Use 5 to 7 sections with 1 to 3 questions each — skip a stage only if the founder's context truly gives you nothing to ground it in, but never reorder the stages you do include. Every question needs a short "purpose" — one sentence, interviewer-only, on what THAT SPECIFIC question's answer is meant to reveal (not a goal generic enough to apply to several questions in the guide), and never mentioning the founder's solution.
 
 For EVERY question, also write "chips" — 4 to 6 short, tappable "quick response" options an interviewer can tag with one tap while the interviewee is talking, instead of typing notes. Each chip must be a PLAUSIBLE, CONCRETE thing this specific interviewee might actually say in answer to THIS specific question — grounded in the founder's domain/terminology, never generic. For example, for a question about what they've tried before, chips might be specific approaches people in that domain actually take (a manual workaround, a competing tool, asking a colleague, doing nothing); for a question about how often something happens, chips would be concrete frequencies or triggers. Never reuse vague meta-labels like "vivid story" or "recent" — those describe the QUALITY of an answer, not its content, and are handled separately by the app. Across each question's chip set, cover a spread of plausible answers rather than 4 variations on the same one — where it makes sense, include both strong/common answers and a weaker or "no/none" option so the set can capture most real answers with one tap. Each chip needs:
 - k: the label itself, 2-5 words, written as something the interviewee said or did (not a category name)
 - icon: one single emoji that fits the label
 - color: exactly one of these five hex codes, chosen by what the label signals — "#059669" for a strong/confirming signal (the problem is real and painful, urgency is high), "#d97706" for a mixed or "needs more digging" signal, "#dc2626" for a clear negative/disconfirming signal, "#6e6e73" or "#b0b0b8" for a weak, vague, or "not really" signal
+
+WORKED EXAMPLE — study this pairing closely, it shows the level of specificity every question/purpose/chips triple needs, and how tightly the purpose and chips must bind to THAT SPECIFIC question's own wording (not to the guide as a whole):
+Question: "Walk me through the last time you had to chase a client for an overdue payment — what did you actually do?"
+Purpose: "Reveals whether late payment is a recurring, costly problem or a rare annoyance, and what workaround (if any) they've already built."
+Chips: [{"k":"Called or emailed repeatedly","icon":"📞","color":"#d97706"},{"k":"Used a collections service","icon":"💸","color":"#059669"},{"k":"Wrote it off, moved on","icon":"🤷","color":"#dc2626"},{"k":"Never happened to me","icon":"🚫","color":"#b0b0b8"}]
+
+WRONG — do not do this (this is the exact failure mode to avoid): a purpose sentence generic enough to belong under any question in the guide ("Understand the frequency and impact of the problem"), paired with a question about something else entirely, and chips that are generic answer-quality labels instead of things a person would actually say ("Specific situation", "Emotional response", "Consequences", "No recent instance"). Before writing each question's purpose and chips, re-read that question's own exact wording — if what you're about to write could be pasted under a different question without sounding wrong, it is not specific enough yet; rewrite it grounded in that one question.
 
 If the user message includes a "Questions already asked in a previous guide" list, that guide has already been written and shown to the founder — do NOT repeat any of those questions, and do NOT write near-duplicates or trivial rephrasings of them. Write genuinely new questions that explore different angles, sub-topics, or follow-up depth within the same solution-agnostic discovery framework above.
 
@@ -599,6 +620,12 @@ Each chip needs:
 - k: the label itself, 2-5 words, written as something the interviewee said or did (not a category name)
 - icon: one single emoji that fits the label
 - color: exactly one of these five hex codes, chosen by what the label signals — "#059669" for a strong/confirming signal, "#d97706" for a mixed or "needs more digging" signal, "#dc2626" for a clear negative/disconfirming signal, "#6e6e73" or "#b0b0b8" for a weak, vague, or "not really" signal
+
+WORKED EXAMPLE:
+Question: "Walk me through the last time you had to chase a client for an overdue payment — what did you actually do?"
+Chips: [{"k":"Called or emailed repeatedly","icon":"📞","color":"#d97706"},{"k":"Used a collections service","icon":"💸","color":"#059669"},{"k":"Wrote it off, moved on","icon":"🤷","color":"#dc2626"},{"k":"Never happened to me","icon":"🚫","color":"#b0b0b8"}]
+
+WRONG — do not do this: generic answer-quality labels instead of things a person would actually say, e.g. "Specific situation", "Emotional response", "Consequences", "No recent instance". If a chip you're about to write could sit under almost any question, it is not specific enough — rewrite it grounded in this exact question's wording.
 
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"chips": [{"k": "<short label, 2-5 words>", "icon": "<single emoji>", "color": "<one of #059669, #d97706, #dc2626, #6e6e73, #b0b0b8>"}]}`;

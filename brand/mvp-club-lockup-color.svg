@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 350 120" width="350" height="120" role="img" aria-label="MVP Club — Idea to Shipped">
+  <title>MVP Club — Idea to Shipped</title>
+  <g fill="none" stroke="#1d1d1f" stroke-width="6">
+    <circle cx="60" cy="60" r="46"/>
+  </g>
+  <path d="M40 61 L54 75 L82 43" fill="none" stroke="#059669" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="130" y="57" font-family="'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif" font-size="38" font-weight="800" letter-spacing="-1" fill="#1d1d1f">MVP CLUB</text>
+  <text x="133" y="87" font-family="'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif" font-size="13" font-weight="600" letter-spacing="4.6" fill="#6e6e73">IDEA TO SHIPPED</text>
+</svg>

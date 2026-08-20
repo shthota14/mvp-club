@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react
 import { messagesApi } from '@/api/client';
 import { useApp } from '@/context/AppContext';
 import { STAGE_LABELS, STAGE_COLORS, type Stage } from '@/types';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Conversation {
@@ -172,6 +173,7 @@ function ComposeModal({ onClose, onSent }: { onClose: () => void; onSent: (convI
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function MessagesPage() {
+  const isMobile = useIsMobile();
   const { user } = useApp();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [active, setActive]   = useState<Conversation | null>(null);
@@ -294,7 +296,7 @@ export default function MessagesPage() {
     <div style={{ display: 'flex', height: 'calc(100vh - 56px)', background: '#f5f5f7', fontFamily: 'inherit', overflow: 'hidden' }}>
 
       {/* ══ LEFT PANEL — Inbox ══ */}
-      <div style={{ width: 300, borderRight: '1px solid #d2d2d7', background: '#fff', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+      <div style={{ width: isMobile ? '100%' : 300, borderRight: '1px solid #d2d2d7', background: '#fff', display: (isMobile && active) ? 'none' : 'flex', flexDirection: 'column', flexShrink: 0 }}>
 
         {/* Inbox header */}
         <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #f3f4f6' }}>
@@ -379,7 +381,7 @@ export default function MessagesPage() {
 
       {/* ══ RIGHT PANEL — Thread ══ */}
       {!active ? (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: '#86868b' }}>
+        <div style={{ flex: 1, display: isMobile ? 'none' : 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: '#86868b' }}>
           <div style={{ fontSize: 52, filter: 'grayscale(0.3)' }}>✉️</div>
           <div style={{ fontSize: 16, fontWeight: 800, color: '#1d1d1f' }}>Your private inbox</div>
           <div style={{ fontSize: 13, color: '#86868b', textAlign: 'center', lineHeight: 1.7, maxWidth: 280 }}>
@@ -395,6 +397,14 @@ export default function MessagesPage() {
 
           {/* Thread header */}
           <div style={{ padding: '14px 24px', borderBottom: '1px solid #d2d2d7', display: 'flex', alignItems: 'center', gap: 12 }}>
+            {isMobile && (
+              <button
+                onClick={() => setActive(null)}
+                style={{ padding: '6px 10px', borderRadius: 20, border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+              >
+                ← Inbox
+              </button>
+            )}
             <Avatar initials={active.other_initials} size={40} />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 900, fontSize: 15, color: '#1d1d1f' }}>{active.other_name}</div>
@@ -449,7 +459,7 @@ export default function MessagesPage() {
                         )}
                         <div style={{ maxWidth: '65%', display: 'flex', flexDirection: 'column', gap: 2, alignItems: mine ? 'flex-end' : 'flex-start' }}>
                           {isEditing ? (
-                            <div style={{ minWidth: 220, background: '#eef2ff', borderRadius: '18px 18px 4px 18px', overflow: 'hidden', boxShadow: '0 2px 12px #6366f130' }}>
+                            <div style={{ minWidth: isMobile ? 160 : 220, background: '#eef2ff', borderRadius: '18px 18px 4px 18px', overflow: 'hidden', boxShadow: '0 2px 12px #6366f130' }}>
                               <textarea
                                 ref={editRef}
                                 value={editDraft}

@@ -35,7 +35,7 @@ SWAP_GB="8"                          # 0 to skip swapfile creation
 
 # Paste your PUBLIC key here (the contents of ~/.ssh/id_ed25519.pub on your Mac).
 # If you don't have one: ssh-keygen -t ed25519 -C "shthota@gmail.com"
-SSH_PUBLIC_KEY="ssh-ed25519 AAAA...REPLACE_ME... your-comment"
+SSH_PUBLIC_KEY="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAN08FjxnVNUFRzJag2fVIkQpr96eWYbSGGHBdmLgapg shthota@gmail.com"
 
 # ─────────────────────────────────────────────────────────────────────────────
 

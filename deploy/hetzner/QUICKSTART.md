@@ -89,13 +89,28 @@ ssh deploy@65.109.81.205 'docker run --rm hello-world'
 
 ## Step 6 — Get the code up and configure it
 
-```bash
-# Copy the project to the server
-rsync -av --exclude node_modules --exclude dist --exclude .git \
-      --exclude _to_delete --exclude '_patches*' \
-      "/Users/shyamthota/Projects/MVP Club/" deploy@65.109.81.205:/opt/mvpclub/
+The server pulls from GitHub, so push first:
 
+```bash
+cd "/Users/shyamthota/Projects/MVP Club"
+git push origin main          # must succeed before continuing
+```
+
+Give the server read access to the repo (a **deploy key**):
+
+```bash
 ssh deploy@65.109.81.205
+ssh-keygen -t ed25519 -C "mvpclub-server-deploy-key" -f ~/.ssh/id_ed25519 -N ""
+cat ~/.ssh/id_ed25519.pub
+```
+
+Copy that line → github.com/shthota14/mvp-club → **Settings → Deploy keys →
+Add deploy key** → paste → leave "Allow write access" **unchecked** → Add.
+
+Then clone and configure:
+
+```bash
+git clone git@github.com:shthota14/mvp-club.git /opt/mvpclub
 cd /opt/mvpclub
 cp deploy/env.production.example .env.production
 chmod 600 .env.production
@@ -147,7 +162,11 @@ Then in a browser on **https://mvpclub.io**:
 
 ## From now on: deploying an update
 
+Push, then deploy — always that order:
+
 ```bash
+cd "/Users/shyamthota/Projects/MVP Club"
+git add -A && git commit -m "what changed" && git push origin main
 ssh deploy@65.109.81.205 'cd /opt/mvpclub && ./03-deploy.sh'
 ```
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 // ─── Content data ────────────────────────────────────────────────────────────
 
@@ -1593,6 +1594,7 @@ function BarComparison({ guide }: { guide: GuideContent }) {
 }
 
 function FundingLadder({ guide }: { guide: GuideContent }) {
+  const isMobile = useIsMobile();
   const stages = [
     { label:'Angel',    range:'£10k–£150k',  color:'#f59e0b', icon:'👼' },
     { label:'Seed VC',  range:'£150k–£2M',   color:'#16a34a', icon:'🌱' },
@@ -1608,7 +1610,7 @@ function FundingLadder({ guide }: { guide: GuideContent }) {
             display:'flex', alignItems:'center', gap:16,
             background:`${s.color}12`, border:`2px solid ${s.color}40`,
             borderRadius:14, padding:'14px 20px',
-            marginLeft: `${i*28}px`,
+            marginLeft: isMobile ? 0 : `${i*28}px`,
             boxShadow:`0 2px 8px ${s.color}20`,
           }}>
             <span style={{ fontSize:28 }}>{s.icon}</span>
@@ -1682,6 +1684,7 @@ function VestingTimeline({ guide }: { guide: GuideContent }) {
 }
 
 function NowNextLater({ guide }: { guide: GuideContent }) {
+  const isMobile = useIsMobile();
   const cols = [
     { label:'🎯 Now',  color:'#ef4444', items:['Define core problem','Validate with 10 users','Ship MVP v1'] },
     { label:'🔭 Next', color:'#f59e0b', items:['Add onboarding flow','Run first paid ads','Hire eng #1'] },
@@ -1690,7 +1693,7 @@ function NowNextLater({ guide }: { guide: GuideContent }) {
   ];
   return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:28 }}>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, width:'100%', maxWidth:700 }}>
+      <div style={{ display:'grid', gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)', gap:12, width:'100%', maxWidth:700 }}>
         {cols.map((col,i)=>(
           <div key={i} style={{
             background:'#fff', border:`2px solid ${col.color}40`, borderRadius:16,
@@ -1929,6 +1932,7 @@ function ClickableHint() {
 }
 
 function InfographicSteps({ guide, onItemClick }: { guide: GuideContent; onItemClick: (i: number) => void }) {
+  const isMobile = useIsMobile();
   const [hovered, setHovered] = useState<number | null>(null);
   const colors = INFOGRAPHIC_COLORS;
   return (
@@ -1955,7 +1959,7 @@ function InfographicSteps({ guide, onItemClick }: { guide: GuideContent; onItemC
             stroke="url(#pathGrad)" strokeWidth="4" fill="none" strokeDasharray="8 4" opacity="0.6"
           />
         </svg>
-        <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', gap: 0, position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', flexWrap: isMobile ? 'wrap' as const : 'nowrap' as const, justifyContent: 'space-around', alignItems: 'flex-end', gap: isMobile ? 16 : 0, position: 'relative', zIndex: 1 }}>
           {guide.visual.items.map((item, i) => {
             const c = colors[i % colors.length];
             const isHov = hovered === i;
@@ -2084,13 +2088,14 @@ function InfographicFlow({ guide, onItemClick }: { guide: GuideContent; onItemCl
 }
 
 function InfographicGrid({ guide, onItemClick }: { guide: GuideContent; onItemClick: (i: number) => void }) {
+  const isMobile = useIsMobile();
   const [hovered, setHovered] = useState<number | null>(null);
   const colors = INFOGRAPHIC_COLORS;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 40, padding: '0 24px' }}>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: `repeat(${Math.min(guide.visual.items.length, 3)}, 1fr)`,
+        gridTemplateColumns: isMobile ? `repeat(${Math.min(guide.visual.items.length, 2)}, 1fr)` : `repeat(${Math.min(guide.visual.items.length, 3)}, 1fr)`,
         gap: 20, width: '100%', maxWidth: 800,
       }}>
         {guide.visual.items.map((item, i) => {
@@ -2155,6 +2160,7 @@ function InfographicGrid({ guide, onItemClick }: { guide: GuideContent; onItemCl
 // ─── Item Detail Page ─────────────────────────────────────────────────────────
 
 function ItemDetail({ guide, itemIdx, onBack }: { guide: GuideContent; itemIdx: number; onBack: () => void }) {
+  const isMobile = useIsMobile();
   const item = guide.visual.items[itemIdx];
   const color = INFOGRAPHIC_COLORS[itemIdx % INFOGRAPHIC_COLORS.length];
   const resources = itemResources(guide, itemIdx);
@@ -2187,7 +2193,7 @@ function ItemDetail({ guide, itemIdx, onBack }: { guide: GuideContent; itemIdx: 
       <div style={{
         background: `linear-gradient(135deg, ${color}12 0%, #fff 100%)`,
         border: `2px solid ${color}30`,
-        borderRadius: 24, padding: '40px 40px 36px',
+        borderRadius: 24, padding: isMobile ? '24px 20px 20px' : '40px 40px 36px',
         marginBottom: 28,
         position: 'relative', overflow: 'hidden',
       }}>
@@ -2200,7 +2206,7 @@ function ItemDetail({ guide, itemIdx, onBack }: { guide: GuideContent; itemIdx: 
           {itemIdx + 1}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 28, position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', flexWrap: isMobile ? 'wrap' as const : 'nowrap' as const, alignItems: 'flex-start', gap: isMobile ? 16 : 28, position: 'relative', zIndex: 1 }}>
           {/* Icon + stickman */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, flexShrink: 0 }}>
             <div style={{
@@ -2330,6 +2336,7 @@ function ItemDetail({ guide, itemIdx, onBack }: { guide: GuideContent; itemIdx: 
 }
 
 function InfographicModal({ guide, onClose }: { guide: GuideContent; onClose: () => void }) {
+  const isMobile = useIsMobile();
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
 
   useEffect(() => {
@@ -2441,7 +2448,7 @@ function InfographicModal({ guide, onClose }: { guide: GuideContent; onClose: ()
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '40px 28px 48px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', padding: isMobile ? '24px 16px 32px' : '40px 28px 48px' }}>
           {renderContent()}
         </div>
       </div>
@@ -2554,6 +2561,7 @@ function GuideDoc({ guide }: { guide: GuideContent }) {
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function HelpPage() {
+  const isMobile = useIsMobile();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialIdx = GUIDES.findIndex(g => g.id === searchParams.get('guide'));
   const [active, setActive] = useState(initialIdx >= 0 ? initialIdx : 0);
@@ -2582,8 +2590,8 @@ export default function HelpPage() {
       {/* ── Layout: sidebar + content ── */}
       <div style={{
         flex: 1, maxWidth: 1360, margin: '0 auto', width: '100%',
-        padding: '28px 32px 48px', boxSizing: 'border-box',
-        display: 'grid', gridTemplateColumns: '220px 1fr', gap: 28, alignItems: 'start',
+        padding: isMobile ? '16px 16px 40px' : '28px 32px 48px', boxSizing: 'border-box',
+        display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '220px 1fr', gap: isMobile ? 16 : 28, alignItems: 'start',
       }}>
 
         {/* ── Sidebar nav ── */}

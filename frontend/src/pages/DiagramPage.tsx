@@ -942,7 +942,7 @@ export default function DiagramPage() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#b0b0b8', fontSize: 14 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100dvh', color: '#b0b0b8', fontSize: 14 }}>
       Loading scratchpad…
     </div>
   );
@@ -951,7 +951,7 @@ export default function DiagramPage() {
   const cursorMap: Record<ToolMode, string> = { sel: 'default', shape: 'crosshair', txt: 'text', arr: 'cell' };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#fff', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#fff', overflow: 'hidden' }}>
 
       {/* ── Top toolbar ───────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 12px', borderBottom: '1.5px solid #e5e7eb', flexShrink: 0, flexWrap: 'wrap', minHeight: 48 }}>
@@ -1024,7 +1024,7 @@ export default function DiagramPage() {
                 onClick={() => setItemColor(sel!, c)}
                 title={c}
                 style={{
-                  width: 18, height: 18, borderRadius: '50%', background: c,
+                  width: 24, height: 24, borderRadius: '50%', background: c,
                   border: (selItem.color === c || (!selItem.color && c === '#ffffff')) ? '2.5px solid #6366f1' : '1.5px solid #d1d5db',
                   cursor: 'pointer', padding: 0, flexShrink: 0,
                 }}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { communityApi, ideasApi, pitchDeckApi, interviewsApi } from '@/api/client';
 import { Stage, STAGE_LABELS, STAGE_COLORS } from '@/types';
 import IdeaCanvasModal from '@/components/IdeaCanvasModal';
@@ -1186,6 +1187,7 @@ export default function IdeaDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useApp();
+  const isMobile = useIsMobile();
   useAnimations();
 
   const [idea, setIdea]           = useState<IdeaDetail | null>(null);
@@ -1380,7 +1382,7 @@ export default function IdeaDetailPage() {
 
   return (
     <div style={{ background: LIT.pageBg, minHeight: '100vh', fontFamily: LIT.bodyFont }}>
-    <div style={{ maxWidth: 1360, margin: '0 auto', padding: '28px 40px 80px' }}>
+    <div style={{ maxWidth: 1360, margin: '0 auto', padding: isMobile ? '20px 16px 60px' : '28px 40px 80px' }}>
 
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, flexWrap: 'wrap' as const }}>
@@ -1490,7 +1492,7 @@ export default function IdeaDetailPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
             {/* KPI row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12 }}>
               {[
                 { label: 'Interviewed',    value: total,              color: '#1d1d1f', bg: '#f5f5f7' },
                 { label: 'Confirmed',      value: confirmed.length,   color: '#059669', bg: '#f0fdf4' },
@@ -1606,7 +1608,7 @@ export default function IdeaDetailPage() {
       })()}
 
       {/* Two-column layout — community view */}
-      {(activeView === 'community' || !isOwnIdea) && <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 48, alignItems: 'start' }}>
+      {(activeView === 'community' || !isOwnIdea) && <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 360px', gap: isMobile ? 24 : 48, alignItems: 'start' }}>
 
         {/* ── LEFT ─────────────────────────────────────────────────────────── */}
         <div>
