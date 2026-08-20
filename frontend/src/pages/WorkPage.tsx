@@ -11764,29 +11764,31 @@ export default function WorkPage() {
     const callouts = STEP_CALLOUTS[mod];
     const modIndex = MODULES.indexOf(mod);
 
-    // ── Whiteboard palette ───────────────────────────────────
-    const WB_BG   = '#fefefe';
-    const WB_TEXT = '#1a1a1a';
-    const WB_DIM  = '#3a3a3a'; // darkened for readability (was #555)
-    const WB_RULE = '#e0e0e0';
+    // ── Blackboard palette ───────────────────────────────────
+    // Explainer screens are intentionally dark/chalk so they read as distinct
+    // from the white step screens that follow each intro.
+    const WB_BG   = '#17160f';
+    const WB_TEXT = '#f4f1e6';
+    const WB_DIM  = '#b9b6a8';
+    const WB_RULE = '#3a372a';
 
     return (
       <div key={`${mod}-intro`} style={{
         display: 'flex', flexDirection: 'column', gap: 0,
-        fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
+        fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
         background: WB_BG,
         borderRadius: 16,
         overflow: 'hidden',
-        border: '2.5px solid #d0d0d0',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+        border: '2.5px solid #332f22',
+        boxShadow: '0 4px 28px rgba(0,0,0,0.45)',
       }}>
 
         {/* ── Font injection ───────────────────────────────── */}
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap');`}</style>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Walter+Turncoat&display=swap');`}</style>
 
         {/* ── Marker-cap header strip ──────────────────────── */}
         <div style={{
-          background: `${color}12`,
+          background: `${color}22`,
           borderBottom: `3px solid ${color}`,
           padding: '28px 30px 22px',
         }}>
@@ -11818,9 +11820,9 @@ export default function WorkPage() {
             {[`${meta.steps} steps`, STAGE_TIME[mod]].map(tag => (
               <span key={tag} style={{
                 fontSize: 16, color: WB_DIM, fontWeight: 600,
-                border: `2px solid #ccc`,
+                border: `2px solid #4a4636`,
                 padding: '4px 16px', borderRadius: 6,
-                background: '#fff',
+                background: '#211f16',
               }}>
                 {tag}
               </span>
@@ -11837,8 +11839,8 @@ export default function WorkPage() {
             const blk = (icon: string, ttl: string, sub: string, c: string, tag?: string) => (
               <div style={{ flex: 1, border: `2px solid ${c}`, borderRadius: 10, padding: '10px 12px', background: `${c}08`, display: 'flex', flexDirection: 'column' as const, gap: 3, minWidth: 0 }}>
                 <div style={{ fontSize: 18 }}>{icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', lineHeight: 1.2 }}>{ttl}</div>
-                <div style={{ fontSize: 12, color: '#555', lineHeight: 1.4 }}>{sub}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#f0ede1', lineHeight: 1.2 }}>{ttl}</div>
+                <div style={{ fontSize: 12, color: '#b9b6a8', lineHeight: 1.4 }}>{sub}</div>
                 {tag && <div style={{ fontSize: 10, fontWeight: 700, color: c, marginTop: 3, textTransform: 'uppercase' as const, letterSpacing: '.06em', opacity: 0.75 }}>{tag}</div>}
               </div>
             );
@@ -11875,7 +11877,7 @@ export default function WorkPage() {
             );
             return (
               <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 0, marginBottom: 28, fontFamily: 'system-ui,-apple-system,sans-serif' }}>
-                <p style={{ fontSize: 20, fontWeight: 700, color: '#888', letterSpacing: '.12em', textTransform: 'uppercase' as const, margin: '0 0 14px', fontFamily: "'Caveat','Comic Sans MS',cursive,system-ui" }}>How it works</p>
+                <p style={{ fontSize: 20, fontWeight: 700, color: '#a29d8c', letterSpacing: '.12em', textTransform: 'uppercase' as const, margin: '0 0 14px', fontFamily: "'Walter Turncoat','Comic Sans MS',cursive,system-ui" }}>How it works</p>
                 {ph('①','Before you talk', PCOLS.before)}
                 <div style={{ display: 'flex', gap: 8 }}>
                   {blk('🗂️','Validation Workspace','Live dashboard. Confidence score, top risks, next action.',PCOLS.before)}
@@ -11922,7 +11924,7 @@ export default function WorkPage() {
           })() : (
             <>
               {/* Section label */}
-              <p style={{ fontSize: 22, fontWeight: 700, color: '#6b6b6b', letterSpacing: '.1em', textTransform: 'uppercase' as const, margin: '0 0 16px' }}>
+              <p style={{ fontSize: 22, fontWeight: 700, color: '#a29d8c', letterSpacing: '.1em', textTransform: 'uppercase' as const, margin: '0 0 16px' }}>
                 What you'll do
               </p>
 
@@ -11995,8 +11997,8 @@ export default function WorkPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                     <div style={{
                       width: isMobile ? 28 : 36, height: isMobile ? 28 : 36, borderRadius: '50%',
-                      border: isActive ? `3px solid ${mc}` : isPast ? `2px solid ${mc}60` : `2px solid #ddd`,
-                      background: isActive ? `${mc}18` : isPast ? `${mc}08` : '#f8f8f8',
+                      border: isActive ? `3px solid ${mc}` : isPast ? `2px solid ${mc}60` : `2px solid #3a372a`,
+                      background: isActive ? `${mc}18` : isPast ? `${mc}08` : '#1d1b13',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? 11 : 14,
                     }}>
                       {isPast
@@ -12004,12 +12006,12 @@ export default function WorkPage() {
                         : <span style={{ opacity: isActive ? 1 : 0.4 }}>{META[m].icon}</span>
                       }
                     </div>
-                    <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: isActive ? mc : '#aaa', letterSpacing: '.05em', textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
+                    <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: isActive ? mc : '#8b8778', letterSpacing: '.05em', textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
                       {META[m].label}
                     </div>
                   </div>
                   {mi < MODULES.length - 1 && (
-                    <div style={{ flex: 1, minWidth: isMobile ? 8 : undefined, height: 3, background: mi < modIndex ? `${color}50` : '#e0e0e0', margin: isMobile ? '0 2px' : '0 5px', marginBottom: 24, borderRadius: 2 }} />
+                    <div style={{ flex: 1, minWidth: isMobile ? 8 : undefined, height: 3, background: mi < modIndex ? `${color}50` : '#3a372a', margin: isMobile ? '0 2px' : '0 5px', marginBottom: 24, borderRadius: 2 }} />
                   )}
                 </React.Fragment>
               );
@@ -12069,7 +12071,7 @@ export default function WorkPage() {
                   <span style={{ fontSize: 18 }}>🗂️</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: VC }}>Validation Workspace</div>
-                    <div style={{ fontSize: 11, color: '#6e6e73' }}>Your live progress dashboard</div>
+                    <div style={{ fontSize: 11, color: '#a29d8c' }}>Your live progress dashboard</div>
                   </div>
                   {confidence > 0 && (
                     <div style={{ textAlign: 'center' as const }}>
@@ -12150,7 +12152,7 @@ export default function WorkPage() {
               background: color, color: '#fff',
               border: 'none', borderRadius: 8,
               fontSize: 22, fontWeight: 700, cursor: 'pointer',
-              fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
+              fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
               letterSpacing: '.04em',
               boxShadow: `0 4px 16px ${color}40`,
               transition: 'opacity .15s, transform .15s',
