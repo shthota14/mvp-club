@@ -2679,6 +2679,21 @@ const AssumptionsStep = React.forwardRef<AssumptionsHandle, {
     flush: () => JSON.stringify(commitDraft()),
   }));
 
+  // parseAssumptions2() falls back to seeded starter assumptions (derived
+  // from the problem/who-exactly already on file) whenever `value` is empty,
+  // and those seeds render as real-looking cards right away. But nothing
+  // actually saved them — onChange only ever fired on an explicit add/remove
+  // — so the "Next" button's own assumption count stayed at 0 and asked for
+  // "one more" even though several were already on screen. Save the seed
+  // once, on mount, so it's real the moment it's visible.
+  const seededOnce = React.useRef(false);
+  React.useEffect(() => {
+    if (seededOnce.current || value) return;
+    seededOnce.current = true;
+    saveAsms2(asms2);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <>
       {/* Fun card header */}
@@ -10474,8 +10489,8 @@ function StepIntro({ mod, step }: { mod: Mod; step: number }) {
         animation: phase === 'out' ? 'stepIntroOut .25s ease forwards' : 'stepIntroIn .4s ease',
       }}
     >
-      <span style={{ fontSize: 17, flexShrink: 0 }}>{icon}</span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.4 }}>{text}</span>
+      <span style={{ fontSize: 19, flexShrink: 0 }}>{icon}</span>
+      <span style={{ fontSize: 16, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.45 }}>{text}</span>
     </div>
   );
 }
