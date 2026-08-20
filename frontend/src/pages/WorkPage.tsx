@@ -254,7 +254,7 @@ function useStepAnimation() {
     if (document.getElementById(id)) return;
     const s = document.createElement('style');
     s.id = id;
-    s.textContent = `@keyframes wup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes tickPop{0%{opacity:0;transform:scale(.3) rotate(-20deg)}60%{opacity:1;transform:scale(1.25) rotate(6deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}@keyframes stepIntroIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes stepIntroOut{from{opacity:1}to{opacity:0}}@media (prefers-reduced-motion: reduce){.step-intro{animation:none !important}}@keyframes milestoneToastIn{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}@keyframes msConfettiFall{0%{transform:translateY(-24px) rotate(0deg);opacity:1}80%{opacity:1}100%{transform:translateY(110vh) rotate(600deg);opacity:0}}`;
+    s.textContent = `@keyframes wup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes tickPop{0%{opacity:0;transform:scale(.3) rotate(-20deg)}60%{opacity:1;transform:scale(1.25) rotate(6deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}@keyframes stepIntroIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes stepIntroOut{from{opacity:1}to{opacity:0}}@keyframes stepFwdIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}@keyframes stepBackIn{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}@media (prefers-reduced-motion: reduce){.step-intro,.step-nav{animation:none !important}}@keyframes milestoneToastIn{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}@keyframes msConfettiFall{0%{transform:translateY(-24px) rotate(0deg);opacity:1}80%{opacity:1}100%{transform:translateY(110vh) rotate(600deg);opacity:0}}`;
     document.head.appendChild(s);
   }, []);
 }
@@ -10487,6 +10487,7 @@ export default function WorkPage() {
   const isMobile = useIsMobile();
   const [mod, setMod]   = useState<Mod>('idea');
   const [step, setStep] = useState(0);
+  const prevStepRef = React.useRef(0); // last-seen step, for direction-aware transitions
   const [fields, setFields] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [showLI, setShowLI] = useState(false);
@@ -10842,6 +10843,11 @@ export default function WorkPage() {
   const next   = () => { flushPendingSaves(); setStep(s => s + 1); };
   const back   = () => { flushPendingSaves(); setStep(s => Math.max(0, s - 1)); };
   const goMod  = (m: Mod) => { if (!unlocked[m]) return; flushPendingSaves(); setMod(m); setStep(lastStepByMod.current[m] ?? 0); setShowLI(false); };
+  // Which way the step transition should slide — forward (next/jump ahead) or
+  // back (back button/jump behind). Read once per render, then updated for the
+  // next comparison; covers every way `step` can change, not just next()/back().
+  const navDir = step >= prevStepRef.current ? 'fwd' : 'back';
+  prevStepRef.current = step;
   const unlock = (m: Mod) => setUnlocked(u => ({ ...u, [m]: true }));
   const mark   = (m: Mod) => { setCompleted(c => ({ ...c, [m]: true })); setCelebrateStage(m); };
 
@@ -17526,7 +17532,14 @@ export default function WorkPage() {
                     </div>
 
                     {/* ── Detail panel ── */}
-                    <div style={{ flex: 1, minWidth: 0, background: '#fff', padding: '40px', overflowY: 'auto' as const, position: 'relative' }}>
+                    <div
+                      key={`${mod}-${step}`}
+                      className="step-nav"
+                      style={{
+                        flex: 1, minWidth: 0, background: '#fff', padding: '40px', overflowY: 'auto' as const, position: 'relative',
+                        animation: `${navDir === 'fwd' ? 'stepFwdIn' : 'stepBackIn'} .28s cubic-bezier(.16,1,.3,1)`,
+                      }}
+                    >
                       {currentStep}
                     </div>
 
@@ -17535,7 +17548,8 @@ export default function WorkPage() {
               })() : (
                 <div
                   key={`${mod}-${step}`}
-                  style={{ background: '#fff', borderRadius: isMobile ? 12 : 16, border: `1.5px solid ${BORDER}`, padding: isMobile ? '20px 18px' : '40px', boxShadow: '0 2px 16px rgba(0,0,0,.07)', animation: 'wup .2s ease', position: 'relative' }}
+                  className="step-nav"
+                  style={{ background: '#fff', borderRadius: isMobile ? 12 : 16, border: `1.5px solid ${BORDER}`, padding: isMobile ? '20px 18px' : '40px', boxShadow: '0 2px 16px rgba(0,0,0,.07)', animation: `${navDir === 'fwd' ? 'stepFwdIn' : 'stepBackIn'} .28s cubic-bezier(.16,1,.3,1)`, position: 'relative' }}
                 >
                   {saving && <div style={{ position: 'absolute', top: 16, right: 16, fontSize: 11, color: T3 }}>Saving…</div>}
                   {currentStep}
