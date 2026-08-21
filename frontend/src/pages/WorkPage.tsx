@@ -1772,6 +1772,14 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<MarketSnapshotData | null>(null);
+  // Auto-retry: the self-hosted model can occasionally time out on this call.
+  // 0 = no retry in flight (first attempt); 1..MAX_AUTO_RETRIES = which
+  // automatic retry is currently running. The Idea Step 1 Next button stays
+  // disabled until a snapshot is actually saved (see the NavRow below), so
+  // this loop — plus the "hang tight" messaging in the generating view — is
+  // what keeps a single slow response from becoming a dead end.
+  const MAX_AUTO_RETRIES = 3;
+  const [retryAttempt, setRetryAttempt] = useState(0);
   // Brief "reveal" window right after a generation completes — pops the domain/TAM/SAM
   // block in and staggers the competitor tags in, instead of the panel just snapping
   // to its final state. Purely cosmetic; auto-clears itself shortly after.
@@ -1781,26 +1789,47 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
   // auto-trigger below fires once per idea rather than once per component mount.
   const autoTriedForIdeaRef = useRef<string | null>(null);
 
+  const generateOnce = async () => {
+    const res = await validationApi.marketSnapshot({ ideaName, oneLiner });
+    const next: MarketSnapshotData = {
+      domain: res.data?.domain || 'consumer',
+      tam: res.data?.tam || { value: '', basis: '' },
+      sam: res.data?.sam || { value: '', basis: '' },
+      competitors: Array.isArray(res.data?.competitors) ? res.data.competitors : [],
+    };
+    onChange(JSON.stringify(next));
+    setEditing(false);
+    setRevealing(true);
+    if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
+    revealTimeoutRef.current = setTimeout(() => setRevealing(false), 1400);
+  };
+
   const generate = async () => {
     setGenerating(true);
     setError('');
-    try {
-      const res = await validationApi.marketSnapshot({ ideaName, oneLiner });
-      const next: MarketSnapshotData = {
-        domain: res.data?.domain || 'consumer',
-        tam: res.data?.tam || { value: '', basis: '' },
-        sam: res.data?.sam || { value: '', basis: '' },
-        competitors: Array.isArray(res.data?.competitors) ? res.data.competitors : [],
-      };
-      onChange(JSON.stringify(next));
-      setEditing(false);
-      setRevealing(true);
-      if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
-      revealTimeoutRef.current = setTimeout(() => setRevealing(false), 1400);
-    } catch (e: any) {
-      setError(e?.response?.data?.error || 'Could not reach the AI right now — please try again.');
-    } finally {
-      setGenerating(false);
+    setRetryAttempt(0);
+    for (let attempt = 0; attempt <= MAX_AUTO_RETRIES; attempt++) {
+      try {
+        if (attempt > 0) {
+          setRetryAttempt(attempt);
+          // Brief pause before hammering the local model again — most useful
+          // right after a timeout, where the previous request has only just
+          // given up.
+          await new Promise(r => setTimeout(r, 1500));
+        }
+        await generateOnce();
+        setGenerating(false);
+        setRetryAttempt(0);
+        return;
+      } catch (e: any) {
+        if (attempt === MAX_AUTO_RETRIES) {
+          setError(e?.response?.data?.error || 'Could not reach the AI right now — please try Regenerate.');
+          setGenerating(false);
+          setRetryAttempt(0);
+          return;
+        }
+        // Otherwise: fall through and try again automatically.
+      }
     }
   };
 
@@ -1867,25 +1896,38 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
         </div>
       )}
       {generating && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div className="msnap-orbit-center" style={{ fontSize: 20 }}>💡</div>
-            <div className="msnap-orbit-path" style={{ position: 'absolute', inset: 0, border: `1.5px dashed ${STAGE_COLORS.idea}55`, borderRadius: '50%' }}>
-              <div style={{ position: 'absolute', top: -4, left: 'calc(50% - 4px)', width: 8, height: 8, borderRadius: '50%', background: STAGE_COLORS.idea, boxShadow: `0 0 6px ${STAGE_COLORS.idea}` }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ position: 'relative', width: 56, height: 56, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="msnap-orbit-center" style={{ fontSize: 20 }}>💡</div>
+              <div className="msnap-orbit-path" style={{ position: 'absolute', inset: 0, border: `1.5px dashed ${STAGE_COLORS.idea}55`, borderRadius: '50%' }}>
+                <div style={{ position: 'absolute', top: -4, left: 'calc(50% - 4px)', width: 8, height: 8, borderRadius: '50%', background: STAGE_COLORS.idea, boxShadow: `0 0 6px ${STAGE_COLORS.idea}` }} />
+              </div>
+              <div className="msnap-orbit-path2" style={{ position: 'absolute', inset: 9, border: '1.5px dotted #f0d9a3', borderRadius: '50%' }}>
+                <div style={{ position: 'absolute', top: -3, left: 'calc(50% - 3px)', width: 6, height: 6, borderRadius: '50%', background: '#d97706', boxShadow: '0 0 5px #d97706' }} />
+              </div>
             </div>
-            <div className="msnap-orbit-path2" style={{ position: 'absolute', inset: 9, border: '1.5px dotted #f0d9a3', borderRadius: '50%' }}>
-              <div style={{ position: 'absolute', top: -3, left: 'calc(50% - 3px)', width: 6, height: 6, borderRadius: '50%', background: '#d97706', boxShadow: '0 0 5px #d97706' }} />
-            </div>
+            {retryAttempt === 0 ? (
+              <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 11, color: '#93e5ab', lineHeight: 1.75, overflow: 'hidden' }}>
+                <div className="msnap-line">$ analyzing your idea<span style={{ opacity: .6 }}>…</span></div>
+                <div className="msnap-line">→ reading domain signals<span style={{ opacity: .6 }}>…</span></div>
+                <div className="msnap-line">→ sizing TAM / SAM<span style={{ opacity: .6 }}>…</span></div>
+                <div className="msnap-line">→ checking competitors <span className="msnap-cursor" style={{ display: 'inline-block', width: 6, height: 11, background: '#93e5ab', verticalAlign: 'middle' }} /></div>
+              </div>
+            ) : (
+              <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 11, color: '#fcd34d', lineHeight: 1.75, overflow: 'hidden' }}>
+                <div className="msnap-line">⚠ that attempt took too long<span style={{ opacity: .6 }}>…</span></div>
+                <div className="msnap-line">↻ retrying automatically (attempt {retryAttempt} of {MAX_AUTO_RETRIES})<span style={{ opacity: .6 }}>…</span></div>
+                <div className="msnap-line" style={{ color: '#93e5ab' }}>Hang tight — the local model can be slow, this can take a minute<span className="msnap-cursor" style={{ display: 'inline-block', width: 6, height: 11, background: '#93e5ab', verticalAlign: 'middle', marginLeft: 4 }} /></div>
+              </div>
+            )}
           </div>
-          <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 11, color: '#93e5ab', lineHeight: 1.75, overflow: 'hidden' }}>
-            <div className="msnap-line">$ analyzing your idea<span style={{ opacity: .6 }}>…</span></div>
-            <div className="msnap-line">→ reading domain signals<span style={{ opacity: .6 }}>…</span></div>
-            <div className="msnap-line">→ sizing TAM / SAM<span style={{ opacity: .6 }}>…</span></div>
-            <div className="msnap-line">→ checking competitors <span className="msnap-cursor" style={{ display: 'inline-block', width: 6, height: 11, background: '#93e5ab', verticalAlign: 'middle' }} /></div>
+          <div style={{ fontSize: 11, color: T3, lineHeight: 1.5, paddingLeft: 2 }}>
+            Sage is putting together your Market Snapshot — the Next button below will unlock automatically as soon as it's done. No need to do anything, just sit tight.
           </div>
         </div>
       )}
-      {error && <div style={{ fontSize: 12, color: '#dc2626', marginTop: 6 }}>⚠️ {error}</div>}
+      {error && <div style={{ fontSize: 12, color: '#dc2626', marginTop: 6 }}>⚠️ {error} — hit Regenerate above to try again.</div>}
 
       {snapshot && !editing && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }} className={revealing ? 'msnap-reveal-pop' : undefined}>
@@ -12257,7 +12299,7 @@ export default function WorkPage() {
           </>
         );
       })()}
-      <NavRow onNext={async () => { await save('idea', { ideaName: get('ideaName') || activeIdea.name, oneLiner: get('oneLiner') }); next(); }} nextLabel="Next →" disabled={!get('oneLiner').trim() || get('oneLiner').includes('___')} disabledReason="Finish your one-liner — every blank needs a real answer." stageColor={STAGE_COLORS.idea} stepTitle="What's your idea?" ideaId={activeIdea.id} />
+      <NavRow onNext={async () => { await save('idea', { ideaName: get('ideaName') || activeIdea.name, oneLiner: get('oneLiner') }); next(); }} nextLabel="Next →" disabled={!get('oneLiner').trim() || get('oneLiner').includes('___') || !parseMarketSnapshot(get('marketSnapshot'))} disabledReason={!get('oneLiner').trim() || get('oneLiner').includes('___') ? "Finish your one-liner — every blank needs a real answer." : `Waiting on Sage's Market Snapshot (domain, TAM/SAM, competitors) — it unlocks automatically once that finishes generating.`} stageColor={STAGE_COLORS.idea} stepTitle="What's your idea?" ideaId={activeIdea.id} />
     </div>,
     <div key="i1" style={col}>
       <div><ModBadge mod="idea" /><StepBars mod="idea" step={1} /></div>
