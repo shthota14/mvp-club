@@ -6,6 +6,7 @@ import { Stage, STAGE_LABELS, STAGE_COLORS } from '@/types';
 import IdeaCanvasModal from '@/components/IdeaCanvasModal';
 import NetworkOfferModal from '@/components/NetworkOfferModal';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { LIT } from '@/styles/communityTheme';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface IdeaCard {
@@ -122,23 +123,6 @@ function timeAgo(d: string) {
 // Functional/semantic color-coding (STAGE_COLORS, post-type badges, pain
 // point health/tension, challenge status, leaderboard ranks, etc.) is left
 // untouched throughout this file — only the neutral chrome is restyled.
-const LIT = {
-  pageBg:           '#fbf8f2',
-  card:             '#ffffff',
-  cardTint:         '#faf6ee',
-  text:             '#2b2318',
-  muted:            '#8a7d64',
-  secondary:        '#6b5d47',
-  accent:           '#8a5a2b',
-  accentSoft:       '#f3e7d4',
-  accentSoftBorder: '#dfc9a3',
-  border:           '#ece3d1',
-  radius:           4,
-  shadow:           '0 2px 14px rgba(70,50,15,.06)',
-  headFont:         "'Playfair Display', Georgia, serif",
-  bodyFont:         "'Cormorant Garamond', Georgia, serif",
-};
-
 // Tab bar active-state color — Classic Orange (#f07d19), chosen from the
 // 60-shade swatch review. Scoped to the tab bar only; every other button,
 // border, and accent on this page still uses LIT.accent.

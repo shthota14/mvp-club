@@ -6,6 +6,7 @@ import { communityApi, ideasApi, pitchDeckApi, interviewsApi } from '@/api/clien
 import { Stage, STAGE_LABELS, STAGE_COLORS } from '@/types';
 import IdeaCanvasModal from '@/components/IdeaCanvasModal';
 import NetworkOfferModal from '@/components/NetworkOfferModal';
+import { LIT } from '@/styles/communityTheme';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface IdeaDetail {
@@ -125,23 +126,6 @@ const MARKET_DOMAIN_LABELS: Record<string, string> = {
 // cards, and typography. Deliberately leaves the functional color-coding for
 // post types, help types, contribution types, and pipeline stages
 // (STAGE_COLORS) untouched, since those carry meaning beyond decoration.
-const LIT = {
-  pageBg:           '#fbf8f2',
-  card:             '#ffffff',
-  cardTint:         '#faf6ee',
-  text:             '#2b2318',
-  muted:            '#8a7d64',
-  secondary:        '#6b5d47',
-  accent:           '#8a5a2b',
-  accentSoft:       '#f3e7d4',
-  accentSoftBorder: '#dfc9a3',
-  border:           '#ece3d1',
-  radius:           4,
-  shadow:           '0 2px 14px rgba(70,50,15,.06)',
-  headFont:         "'Playfair Display', Georgia, serif",
-  bodyFont:         "'Cormorant Garamond', Georgia, serif",
-};
-
 const HELP_TYPES = [
   { key: 'talk',   emoji: '🗣️', label: 'Talk to me',  placeholder: 'e.g. Want to chat about my pricing model',    color: '#2563eb', bg: '#eff6ff' },
   { key: 'advise', emoji: '🧠', label: 'Advise me',   placeholder: 'e.g. Need advice on enterprise sales',         color: '#7c3aed', bg: '#f5f3ff' },
@@ -1684,8 +1668,8 @@ export default function IdeaDetailPage() {
               server-side, this just reflects what came back. */}
           {publicSections?.oneLiner && (
             <div style={{ background: '#fdfdfb', border: '1px solid #d7dbe0', borderRadius: 6, padding: '24px 28px', marginBottom: 28, boxShadow: '0 1px 0 #fff inset, 0 3px 12px rgba(30,40,55,.06)' }}>
-              <div style={{ fontFamily: "'Kalam', cursive", fontSize: 13, fontWeight: 700, color: '#5c6b7a', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 12, transform: 'rotate(-0.8deg)' }}>Their one-liner</div>
-              <div style={{ fontSize: 23, lineHeight: 1.55, color: '#1f3a5f', fontFamily: "'Kalam', cursive", fontWeight: 400, transform: 'rotate(-0.3deg)' }}>{publicSections.oneLiner}</div>
+              <div style={{ fontFamily: LIT.handFont, fontSize: 13, fontWeight: 700, color: '#5c6b7a', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 12, transform: 'rotate(-0.8deg)' }}>Their one-liner</div>
+              <div style={{ fontSize: 23, lineHeight: 1.55, color: '#1f3a5f', fontFamily: LIT.handFont, fontWeight: 400, transform: 'rotate(-0.3deg)' }}>{publicSections.oneLiner}</div>
             </div>
           )}
 
