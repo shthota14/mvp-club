@@ -481,7 +481,7 @@ export default function SurveyPage() {
                       {/* dog-ear */}
                       <div style={{ position: 'absolute', bottom: 0, right: 0, width: 0, height: 0, borderStyle: 'solid', borderWidth: '0 0 22px 22px', borderColor: `transparent transparent rgba(0,0,0,.10) transparent` }} />
                       <div style={{ fontSize: 9, fontWeight: 900, color: '#78540a99', letterSpacing: 1.6, textTransform: 'uppercase' as const, marginBottom: 14 }}>📌 The idea & problem</div>
-                      <p style={{ margin: 0, fontSize: 18, fontWeight: 700, fontStyle: 'italic', color: '#78540a', lineHeight: 1.8, fontFamily: `'Georgia', serif` }}>
+                      <p style={{ margin: 0, fontSize: 18, fontWeight: 700, fontStyle: 'italic', color: '#78540a', lineHeight: 1.8, fontFamily: 'var(--font-display)' }}>
                         {ctx?.problem ? `"${ctx.problem}"` : <span style={{ fontStyle: 'normal', fontSize: 14, color: '#a0896a', fontWeight: 500 }}>A founder is validating a new idea.</span>}
                       </p>
                     </div>
@@ -606,7 +606,7 @@ export default function SurveyPage() {
           color: postit.ink,
           lineHeight: 1.7,
           fontStyle: 'italic',
-          fontFamily: `'Georgia', 'Times New Roman', serif`,
+          fontFamily: 'var(--font-display)',
         }}>
           "{problemText}"
         </div>
@@ -685,7 +685,7 @@ export default function SurveyPage() {
                     {/* Pain description card */}
                     <div style={{ background: `linear-gradient(135deg,${AC}08,${AC}04)`, borderRadius: 18, padding: '22px 22px', border: `1.5px solid ${AC}20`, marginBottom: 28 }}>
                       <div style={{ fontSize: 11, fontWeight: 800, color: AC, letterSpacing: 1.2, textTransform: 'uppercase' as const, marginBottom: 10 }}>The pain we're testing</div>
-                      <div style={{ fontSize: 17, fontWeight: 700, color: T1, lineHeight: 1.55, letterSpacing: -.2, fontFamily: `'Georgia', serif` }}>
+                      <div style={{ fontSize: 17, fontWeight: 700, color: T1, lineHeight: 1.55, letterSpacing: -.2, fontFamily: 'var(--font-display)' }}>
                         "{shortPP(painPoints[qi])}"
                       </div>
                       {ctx?.audience && (

@@ -157,10 +157,10 @@ function NoIdeaCard({ onStart }: { onStart: () => void }) {
       textAlign: 'center', padding: '48px 40px',
     }}>
       <div style={{ fontSize: 52, marginBottom: 16 }}>💡</div>
-      <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: -0.8, fontFamily: 'Georgia, serif', color: '#1d1d1f', marginBottom: 8 }}>
+      <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: -0.8, fontFamily: 'var(--font-display)', color: '#1d1d1f', marginBottom: 8 }}>
         Start your first idea
       </div>
-      <div style={{ fontSize: 15, color: '#6e6e73', lineHeight: 1.6, marginBottom: 32, fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>
+      <div style={{ fontSize: 15, color: '#6e6e73', lineHeight: 1.6, marginBottom: 32, fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>
         Every startup begins with a thought worth chasing.
       </div>
       <button
@@ -227,7 +227,7 @@ function JourneyCard({
         <div style={{
           fontSize: 22, fontWeight: 700, letterSpacing: -0.6,
           color: '#1d1d1f', marginBottom: 10,
-          fontFamily: 'Georgia, serif', lineHeight: 1.25,
+          fontFamily: 'var(--font-display)', lineHeight: 1.25,
         }}>
           {next.headline}
         </div>
@@ -365,13 +365,13 @@ export default function JourneyPage() {
         <div style={{
           fontSize: 28, fontWeight: 700, letterSpacing: -0.8,
           color: '#1d1d1f', marginBottom: 4,
-          fontFamily: 'Georgia, serif', textAlign: 'center',
+          fontFamily: 'var(--font-display)', textAlign: 'center',
         }}>
           {greeting(user?.name ?? 'there')}
         </div>
         <div style={{
           fontSize: 15, color: '#9ca3af', marginBottom: 40,
-          fontStyle: 'italic', fontFamily: 'Georgia, serif', textAlign: 'center',
+          fontStyle: 'italic', fontFamily: 'var(--font-display)', textAlign: 'center',
         }}>
           {activeIdea ? "Here's where you left off." : 'Ready to build something real?'}
         </div>

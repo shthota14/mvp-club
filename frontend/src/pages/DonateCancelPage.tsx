@@ -21,7 +21,7 @@ export default function DonateCancelPage() {
 
           <h1 style={{
             fontSize: 26, fontWeight: 700, color: '#1d1d1f',
-            fontFamily: 'Georgia, serif', letterSpacing: -0.8, marginBottom: 12,
+            fontFamily: 'var(--font-display)', letterSpacing: -0.8, marginBottom: 12,
           }}>
             No worries at all.
           </h1>

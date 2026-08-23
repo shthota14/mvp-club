@@ -25,7 +25,7 @@ export default function DonateSuccessPage() {
 
           <h1 style={{
             fontSize: 28, fontWeight: 700, color: '#1d1d1f',
-            fontFamily: 'Georgia, serif', letterSpacing: -0.8,
+            fontFamily: 'var(--font-display)', letterSpacing: -0.8,
             marginBottom: 12,
           }}>
             Thank you{amount ? ` for your $${amount}` : ''}!

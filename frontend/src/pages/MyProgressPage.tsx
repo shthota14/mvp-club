@@ -176,7 +176,7 @@ function JourneyHero({ idea, onAction }: { idea: Idea; onAction: () => void }) {
             )}
           </div>
           <div style={{ fontSize: 10, fontWeight: 700, color: '#c0c0c8', letterSpacing: 1.8, textTransform: 'uppercase' as const, marginBottom: 6 }}>Your next step</div>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.5, color: '#1d1d1f', fontFamily: 'Georgia, serif', marginBottom: 8, lineHeight: 1.3 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: -0.5, color: '#1d1d1f', fontFamily: 'var(--font-display)', marginBottom: 8, lineHeight: 1.3 }}>
             {next.headline}
           </div>
           <div style={{ fontSize: 14, color: '#6e6e73', lineHeight: 1.65, marginBottom: 20 }}>{next.desc}</div>
@@ -838,7 +838,7 @@ function NewIdeaModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         <div style={{ height: 4, background: 'linear-gradient(90deg,#7c3aed,#2563eb,#059669)' }} />
 
         <div style={{ padding: '28px 32px 32px' }}>
-          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -.5, marginBottom: 4, color: '#1d1d1f', fontFamily: 'Georgia, serif' }}>New idea</div>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -.5, marginBottom: 4, color: '#1d1d1f', fontFamily: 'var(--font-display)' }}>New idea</div>
           <div style={{ fontSize: 13, color: '#6e6e73', marginBottom: 28 }}>Every startup starts with a thought worth chasing.</div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -988,7 +988,7 @@ function VaultCard({ idea, isActive, onClick, onStatusChange, onViewCanvas, onTi
         <div>
           <div style={{
             fontSize: 16, fontWeight: 700, letterSpacing: -.3, lineHeight: 1.35,
-            color: '#1d1d1f', fontFamily: 'Georgia, serif', marginBottom: 6,
+            color: '#1d1d1f', fontFamily: 'var(--font-display)', marginBottom: 6,
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>
             {idea.name}
@@ -1170,7 +1170,7 @@ function VaultListRow({ idea, isActive, onClick }: {
       <span style={{ fontSize: 18, flexShrink: 0 }}>{STAGE_ICONS[idea.stage as Stage]}</span>
       <div style={{ flex: '1 1 220px', minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f', fontFamily: 'Georgia, serif', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 320 }}>{idea.name}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f', fontFamily: 'var(--font-display)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 320 }}>{idea.name}</span>
           {isActive && <span style={{ fontSize: 10, fontWeight: 700, color: '#059669' }}>● Active</span>}
         </div>
         {idea.description && (
@@ -1233,7 +1233,7 @@ function VaultKanbanCard({ idea, isActive, onClick }: {
         </span>
         {isActive && <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, color: '#059669', flexShrink: 0 }}>● Active</span>}
       </div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#1d1d1f', fontFamily: 'Georgia, serif', lineHeight: 1.35 }}>{idea.name}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#1d1d1f', fontFamily: 'var(--font-display)', lineHeight: 1.35 }}>{idea.name}</div>
       {idea.description && (
         <div style={{ fontSize: 11, color: '#8a8a92', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>
           {idea.description}
@@ -1489,10 +1489,10 @@ export default function MyProgressPage() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 40 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: '#b0b0b8', marginBottom: 8 }}>My Idea Vault</div>
-          <h1 style={{ fontSize: 'clamp(28px,4vw,40px)', fontWeight: 800, letterSpacing: -1.2, lineHeight: 1.1, color: '#1d1d1f', fontFamily: 'Georgia, serif', margin: '0 0 8px' }}>
+          <h1 style={{ fontSize: 'clamp(28px,4vw,40px)', fontWeight: 800, letterSpacing: -1.2, lineHeight: 1.1, color: '#1d1d1f', fontFamily: 'var(--font-display)', margin: '0 0 8px' }}>
             Welcome{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
           </h1>
-          <p style={{ fontSize: 14, color: '#6e6e73', margin: 0, fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>
+          <p style={{ fontSize: 14, color: '#6e6e73', margin: 0, fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>
             Your ideas, all in one place. Click any idea to open the work wizard.
           </p>
         </div>
@@ -1518,10 +1518,10 @@ export default function MyProgressPage() {
       {ideas.length === 0 && (
         <div style={{ textAlign: 'center', padding: '80px 0' }}>
           <div style={{ fontSize: 56, marginBottom: 20 }}>💡</div>
-          <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: -.5, marginBottom: 8, color: '#1d1d1f', fontFamily: 'Georgia, serif' }}>
+          <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: -.5, marginBottom: 8, color: '#1d1d1f', fontFamily: 'var(--font-display)' }}>
             Your vault is empty
           </div>
-          <div style={{ fontSize: 15, color: '#6e6e73', marginBottom: 32, fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>
+          <div style={{ fontSize: 15, color: '#6e6e73', marginBottom: 32, fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>
             Every great startup started as a single thought.
           </div>
           <button onClick={() => setShowNewIdea(true)}

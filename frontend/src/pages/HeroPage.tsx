@@ -165,11 +165,11 @@ export default function HeroPage() {
           <h1 className="hero-text" style={{
             fontSize: 'clamp(32px, 5vw, 64px)', fontWeight: 700, lineHeight: 1.08,
             letterSpacing: '-3px', marginBottom: 24,
-            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontFamily: 'var(--font-display)',
           }}>
             A clear path<br />for every founder!
           </h1>
-          <p className="hero-sub" style={{ fontSize: 20, color: 'rgba(255,255,255,.45)', lineHeight: 1.7, maxWidth: 480, margin: '0 auto 36px', fontStyle: 'italic', fontFamily: 'Georgia, serif', letterSpacing: -0.3 }}>
+          <p className="hero-sub" style={{ fontSize: 20, color: 'rgba(255,255,255,.45)', lineHeight: 1.7, maxWidth: 480, margin: '0 auto 36px', fontStyle: 'italic', fontFamily: 'var(--font-display)', letterSpacing: -0.3 }}>
             From first idea to first customer — one clear next step at every stage.
           </p>
           <div className="hero-cta" style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
@@ -257,10 +257,10 @@ export default function HeroPage() {
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>
             Who we are
           </p>
-          <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: 10 }}>
+          <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'var(--font-display)', color: '#fff', marginBottom: 10 }}>
             Built by a founder,<br />for founders.
           </h2>
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,.4)', fontStyle: 'italic', fontFamily: 'Georgia, serif', marginBottom: 36 }}>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,.4)', fontStyle: 'italic', fontFamily: 'var(--font-display)', marginBottom: 36 }}>
             Not a platform. Not a course. A path.
           </p>
 
@@ -272,12 +272,12 @@ export default function HeroPage() {
             padding: '20px 24px', transform: 'rotate(-1.4deg)',
             boxShadow: '3px 5px 12px rgba(0,0,0,.3)',
           }}>
-            <p style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 23, color: '#4a4426', lineHeight: 1.35, margin: 0 }}>
+            <p style={{ fontFamily: 'var(--font-hand)', fontSize: 23, color: '#4a4426', lineHeight: 1.35, margin: 0 }}>
               I've shipped things before that nobody asked for. That's the whole reason MVP Club exists.
             </p>
           </div>
 
-          <p style={{ fontSize: 17, color: 'rgba(255,255,255,.45)', lineHeight: 1.8, fontFamily: 'Georgia, serif', fontStyle: 'italic', letterSpacing: -0.2, marginBottom: 36 }}>
+          <p style={{ fontSize: 17, color: 'rgba(255,255,255,.45)', lineHeight: 1.8, fontFamily: 'var(--font-display)', fontStyle: 'italic', letterSpacing: -0.2, marginBottom: 36 }}>
             There's no feed to scroll here, no course to finish, no dashboard full of features you'll never open. Just one question, answered honestly at every stage: what should you do next? Idea. Hone it. Validate it. Shape it. Get it done.
           </p>
 
@@ -302,11 +302,11 @@ export default function HeroPage() {
               <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>
                 The journey
               </p>
-              <h2 style={{ fontSize: 'clamp(32px,4.5vw,56px)', fontWeight: 700, letterSpacing: -2, lineHeight: 1.05, fontFamily: 'Georgia, serif', color: '#fff', margin: 0 }}>
+              <h2 style={{ fontSize: 'clamp(32px,4.5vw,56px)', fontWeight: 700, letterSpacing: -2, lineHeight: 1.05, fontFamily: 'var(--font-display)', color: '#fff', margin: 0 }}>
                 Five stages.<br />One clear path.
               </h2>
             </div>
-            <p style={{ fontSize: 20, color: 'rgba(255,255,255,.55)', lineHeight: 1.75, margin: 0, paddingBottom: 4, fontStyle: 'italic', fontFamily: 'Georgia, serif', letterSpacing: -0.3 }}>
+            <p style={{ fontSize: 20, color: 'rgba(255,255,255,.55)', lineHeight: 1.75, margin: 0, paddingBottom: 4, fontStyle: 'italic', fontFamily: 'var(--font-display)', letterSpacing: -0.3 }}>
               You're not the first founder to have your idea. But you might be the first to move through all five stages without skipping one. That's what separates the founders who launch from the ones who plan.
             </p>
           </div>
@@ -327,7 +327,7 @@ export default function HeroPage() {
                 position: 'absolute', left: `${(trailPoints[i].x / 900) * 100}%`, top: `${(trailPoints[i].y / 210) * 100}%`,
                 transform: 'translate(-50%, 16px)', textAlign: 'center', pointerEvents: 'none', whiteSpace: 'nowrap',
               }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: s.color, fontFamily: 'Georgia, serif', letterSpacing: 0.3 }}>{s.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: s.color, fontFamily: 'var(--font-display)', letterSpacing: 0.3 }}>{s.label}</span>
               </div>
             ))}
           </div>
@@ -339,11 +339,11 @@ export default function HeroPage() {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, paddingTop: 4 }}>
                 <div className="stage-bar" style={{ width: 3, height: 40, borderRadius: 2, background: s.color, opacity: .6, flexShrink: 0, transition: 'opacity .2s', marginTop: 4 }} />
                 <div>
-                  <span className="stage-label" style={{ fontSize: 'clamp(28px,3.5vw,44px)', fontWeight: 700, letterSpacing: -1.5, color: 'rgba(255,255,255,.8)', transition: 'color .2s', fontFamily: 'Georgia, serif', lineHeight: 1, display: 'block' }}>{s.label}</span>
+                  <span className="stage-label" style={{ fontSize: 'clamp(28px,3.5vw,44px)', fontWeight: 700, letterSpacing: -1.5, color: 'rgba(255,255,255,.8)', transition: 'color .2s', fontFamily: 'var(--font-display)', lineHeight: 1, display: 'block' }}>{s.label}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: s.color, opacity: .8, letterSpacing: 0.2, marginTop: 6, display: 'block' }}>{s.desc}</span>
                 </div>
               </div>
-              <p style={{ fontSize: 16, color: 'rgba(255,255,255,.45)', lineHeight: 1.75, margin: 0, paddingTop: 6, fontStyle: 'italic', fontFamily: 'Georgia, serif', letterSpacing: -0.2 }}>{s.detail}</p>
+              <p style={{ fontSize: 16, color: 'rgba(255,255,255,.45)', lineHeight: 1.75, margin: 0, paddingTop: 6, fontStyle: 'italic', fontFamily: 'var(--font-display)', letterSpacing: -0.2 }}>{s.detail}</p>
             </div>
           ))}
 
@@ -356,7 +356,7 @@ export default function HeroPage() {
           <div className="hp-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 80px', alignItems: 'start' }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>What you get</p>
-              <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'Georgia, serif', color: '#fff' }}>
+              <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'var(--font-display)', color: '#fff' }}>
                 Everything you need to start moving.
               </h2>
             </div>
@@ -380,12 +380,12 @@ export default function HeroPage() {
           <div className="hp-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, marginBottom: 56, alignItems: 'end' }}>
             <div>
               <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>Community</p>
-              <h2 style={{ fontSize: 'clamp(30px,4vw,52px)', fontWeight: 700, letterSpacing: -1.8, lineHeight: 1.05, fontFamily: 'Georgia, serif', color: '#fff', margin: 0 }}>
+              <h2 style={{ fontSize: 'clamp(30px,4vw,52px)', fontWeight: 700, letterSpacing: -1.8, lineHeight: 1.05, fontFamily: 'var(--font-display)', color: '#fff', margin: 0 }}>
                 Ideas from every<br />founder on the platform!
               </h2>
             </div>
             <div>
-              <p style={{ fontSize: 18, color: 'rgba(255,255,255,.5)', lineHeight: 1.8, marginBottom: 28, fontStyle: 'italic', fontFamily: 'Georgia, serif', letterSpacing: -0.3 }}>
+              <p style={{ fontSize: 18, color: 'rgba(255,255,255,.5)', lineHeight: 1.8, marginBottom: 28, fontStyle: 'italic', fontFamily: 'var(--font-display)', letterSpacing: -0.3 }}>
                 Click one to explore, respond, or connect. Every idea here belongs to a real founder working through the same five stages as you.
               </p>
               <button onClick={() => open('register')}
@@ -503,7 +503,7 @@ export default function HeroPage() {
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20, textAlign: 'center' }}>
             Questions
           </p>
-          <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: 44, textAlign: 'center' }}>
+          <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'var(--font-display)', color: '#fff', marginBottom: 44, textAlign: 'center' }}>
             Good questions.
           </h2>
           <div>
@@ -542,10 +542,10 @@ export default function HeroPage() {
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>
             Contact
           </p>
-          <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'Georgia, serif', color: '#fff', marginBottom: 20 }}>
+          <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'var(--font-display)', color: '#fff', marginBottom: 20 }}>
             Get in touch.
           </h2>
-          <p style={{ fontSize: 17, color: 'rgba(255,255,255,.45)', lineHeight: 1.8, fontFamily: 'Georgia, serif', fontStyle: 'italic', letterSpacing: -0.2, marginBottom: 36 }}>
+          <p style={{ fontSize: 17, color: 'rgba(255,255,255,.45)', lineHeight: 1.8, fontFamily: 'var(--font-display)', fontStyle: 'italic', letterSpacing: -0.2, marginBottom: 36 }}>
             MVP Club is small on purpose — one founder, no support queue. The fastest way to reach me is to create a free account and use the feedback button inside the app; I read every message myself.
           </p>
           <button onClick={() => open('register')}
@@ -557,7 +557,7 @@ export default function HeroPage() {
 
       {/* ── CTA ── */}
       <section className="hp-cta-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '120px 40px', textAlign: 'center', background: 'radial-gradient(ellipse 60% 80% at 50% 0%, rgba(99,102,241,.08) 0%, transparent 70%)' }}>
-        <h2 style={{ fontSize: 'clamp(36px,6vw,72px)', fontWeight: 700, letterSpacing: -2.5, lineHeight: 1.05, fontFamily: 'Georgia, serif', marginBottom: 24 }}>
+        <h2 style={{ fontSize: 'clamp(36px,6vw,72px)', fontWeight: 700, letterSpacing: -2.5, lineHeight: 1.05, fontFamily: 'var(--font-display)', marginBottom: 24 }}>
           Ready to build<br />something real?
         </h2>
         <p style={{ fontSize: 16, color: 'rgba(255,255,255,.35)', marginBottom: 40 }}>
@@ -572,7 +572,7 @@ export default function HeroPage() {
       {/* ── Footer ── */}
       <footer className="hp-footer" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '28px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: 12, color: 'rgba(255,255,255,.15)' }}>© {new Date().getFullYear()} MVP Club</span>
-        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.2)', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>From idea to launched — one step at a time.</span>
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.2)', fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>From idea to launched — one step at a time.</span>
       </footer>
 
       {authOpen && (
