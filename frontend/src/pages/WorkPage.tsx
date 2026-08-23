@@ -1789,6 +1789,38 @@ function parseMarketSnapshot(raw: string): MarketSnapshotData | null {
   } catch { return null; }
 }
 
+// ── Market Snapshot chart helpers ───────────────────────────────────────
+// Sage's competitor figures are free-text by design ("$9.2B+", "1M+",
+// "$5.99/mo", "Free") — the AI is told to leave a field blank rather than
+// invent false precision (see aiQuestionCheck.ts). These parsers turn
+// whatever IS present into a rough number a chart can size itself by;
+// anything they can't confidently parse returns null, and the charts below
+// quietly leave that row out rather than plotting a wrong number.
+function parseMonthlyPrice(v?: string): number | null {
+  if (!v) return null;
+  const s = v.trim().toLowerCase();
+  if (!s) return null;
+  if (s.includes('free')) return 0;
+  const m = s.match(/([\d.]+)/);
+  if (!m) return null;
+  const n = parseFloat(m[1]);
+  if (!isFinite(n)) return null;
+  if (s.includes('/yr') || s.includes('/year') || s.includes('yearly') || s.includes('annual')) return n / 12;
+  if (s.includes('/wk') || s.includes('/week')) return n * 4.33;
+  return n;
+}
+
+const COVERAGE_SCORE: Record<FeatureCoverage, number> = { yes: 1, partial: 0.5, no: 0 };
+
+// A point on an n-axis radar, axis 0 pointing straight up, going clockwise.
+function radarPoint(i: number, n: number, value: number, cx: number, cy: number, r: number): string {
+  const angle = -Math.PI / 2 + i * (2 * Math.PI / n);
+  return `${cx + r * value * Math.cos(angle)},${cy + r * value * Math.sin(angle)}`;
+}
+function radarPolygon(values: number[], cx: number, cy: number, r: number): string {
+  return values.map((v, i) => radarPoint(i, values.length, v, cx, cy, r)).join(' ');
+}
+
 function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value, onChange, currentDomain, onApplyDomain, publicOn, onTogglePublic }: {
   ideaId: string;
   ideaName: string;
@@ -2011,6 +2043,104 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
               before those fields existed. */}
           {snapshot.differentiators.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {(() => {
+                const n = snapshot.differentiators.length;
+                const yourValues = snapshot.yourCoverage.map(v => COVERAGE_SCORE[v] ?? 0);
+                const competitorsWithFeatures = snapshot.competitors.filter(c => c.features && c.features.length === n);
+                const avgValues = n > 0 && competitorsWithFeatures.length > 0
+                  ? Array.from({ length: n }, (_, i) =>
+                      competitorsWithFeatures.reduce((sum, c) => sum + (COVERAGE_SCORE[c.features![i]] ?? 0), 0) / competitorsWithFeatures.length)
+                  : null;
+
+                const winCounts = [
+                  { label: ideaName?.trim() || 'Your idea', you: true, score: yourValues.reduce((a, b) => a + b, 0) },
+                  ...snapshot.competitors.map(c => ({
+                    label: c.name, you: false,
+                    score: (c.features || []).reduce((sum, v) => sum + (COVERAGE_SCORE[v] ?? 0), 0),
+                  })),
+                ];
+                const maxScore = Math.max(1, ...winCounts.map(w => w.score));
+
+                const priceRows = snapshot.competitors
+                  .map(c => ({ label: c.name, price: parseMonthlyPrice(c.price) }))
+                  .filter((r): r is { label: string; price: number } => r.price !== null);
+                const maxPrice = Math.max(1, ...priceRows.map(r => r.price));
+
+                return (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .5, marginBottom: 8 }}>Visual comparison</div>
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+
+                      {n >= 3 && (
+                        <div style={{ flex: '1 1 220px', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px' }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, color: T2, marginBottom: 8 }}>Feature coverage{avgValues ? ' — you vs. the field' : ''}</div>
+                          <div style={{ position: 'relative', width: '100%', maxWidth: 210, margin: '0 auto' }}>
+                            <svg viewBox="0 0 200 200" style={{ width: '100%', height: 'auto', display: 'block' }}>
+                              <polygon points={radarPolygon(Array(n).fill(1), 100, 100, 78)} fill="none" stroke={BORDER} strokeWidth={1} />
+                              <polygon points={radarPolygon(Array(n).fill(0.5), 100, 100, 78)} fill="none" stroke={BORDER} strokeWidth={1} />
+                              {avgValues && (
+                                <polygon points={radarPolygon(avgValues, 100, 100, 78)} fill="rgba(176,176,184,.25)" stroke={T3} strokeWidth={1.3} />
+                              )}
+                              <polygon points={radarPolygon(yourValues, 100, 100, 78)} fill={`${STAGE_COLORS.idea}30`} stroke={STAGE_COLORS.idea} strokeWidth={2} />
+                            </svg>
+                            {snapshot.differentiators.map((d, i) => {
+                              const angle = -Math.PI / 2 + i * (2 * Math.PI / n);
+                              const lx = 50 + 46 * Math.cos(angle);
+                              const ly = 50 + 46 * Math.sin(angle);
+                              return (
+                                <div key={i} style={{
+                                  position: 'absolute', left: `${lx}%`, top: `${ly}%`, transform: 'translate(-50%, -50%)',
+                                  fontSize: 8.5, fontWeight: 600, color: T3, textAlign: 'center' as const, width: 60, lineHeight: 1.2, pointerEvents: 'none' as const,
+                                }}>{d}</div>
+                              );
+                            })}
+                          </div>
+                          {avgValues && (
+                            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 6, fontSize: 9.5 }}>
+                              <span style={{ color: STAGE_COLORS.idea, fontWeight: 700 }}>● {ideaName?.trim() || 'You'}</span>
+                              <span style={{ color: T3, fontWeight: 700 }}>● Field average</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div style={{ flex: '1 1 220px', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px' }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: T2, marginBottom: 10 }}>Feature coverage score</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                          {winCounts.map((w, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ width: 84, flexShrink: 0, fontSize: 10.5, fontWeight: w.you ? 700 : 500, color: w.you ? STAGE_COLORS.idea : T2, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>{w.label}</span>
+                              <div style={{ flex: 1, height: 8, borderRadius: 4, background: BORDER }}>
+                                <div style={{ width: `${(w.score / maxScore) * 100}%`, height: '100%', borderRadius: 4, background: w.you ? STAGE_COLORS.idea : '#c7c7cf' }} />
+                              </div>
+                              <span style={{ width: 34, flexShrink: 0, fontSize: 10, color: T3, textAlign: 'right' as const }}>{w.score % 1 === 0 ? w.score : w.score.toFixed(1)}/{n}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {priceRows.length >= 2 && (
+                        <div style={{ flex: '1 1 220px', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px' }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, color: T2, marginBottom: 10 }}>Price, monthly-equivalent</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                            {priceRows.map((r, i) => (
+                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ width: 84, flexShrink: 0, fontSize: 10.5, color: T2, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>{r.label}</span>
+                                <div style={{ flex: 1, height: 8, borderRadius: 4, background: BORDER }}>
+                                  <div style={{ width: `${Math.max(4, (r.price / maxPrice) * 100)}%`, height: '100%', borderRadius: 4, background: '#b8862f' }} />
+                                </div>
+                                <span style={{ width: 46, flexShrink: 0, fontSize: 10, color: T3, textAlign: 'right' as const }}>{r.price === 0 ? 'Free' : `$${r.price.toFixed(2)}`}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .5, marginBottom: 8 }}>Feature comparison</div>
                 <div style={{ overflowX: 'auto' }}>
