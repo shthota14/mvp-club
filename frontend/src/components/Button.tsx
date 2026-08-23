@@ -7,7 +7,7 @@ import React from 'react';
 // and shadow drift happened in the first place.
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
-type ButtonSize = 'sm' | 'md';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'style'> {
   variant?: ButtonVariant;
@@ -31,6 +31,7 @@ const BASE: React.CSSProperties = {
 const SIZES: Record<ButtonSize, React.CSSProperties> = {
   sm: { padding: '5px 12px', borderRadius: 'var(--r-sm)', fontSize: 11 },
   md: { padding: '9px 18px', borderRadius: 'var(--r-sm)', fontSize: 13 },
+  lg: { padding: '13px 20px', borderRadius: 'var(--r-sm)', fontSize: 15 },
 };
 
 const VARIANTS: Record<ButtonVariant, React.CSSProperties> = {

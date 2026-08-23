@@ -1055,20 +1055,29 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
         {/* Nav buttons */}
         <div style={{ display: 'flex', gap: 10, marginBottom: disabled ? 6 : 14 }}>
           {onBack && (
-            <button onClick={onBack} style={{ flex: 1, padding: '13px 16px', borderRadius: 10, border: `1.5px solid ${BORDER2}`, background: '#fff', color: '#3a3a3c', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>← Back</button>
+            <Button variant="secondary" size="lg" onClick={onBack} style={{ flex: 1, padding: '13px 16px' }}>← Back</Button>
           )}
-          <button
+          <Button
+            variant="primary"
+            size="lg"
             onClick={disabled ? handleBlockedClick : onNext}
             aria-disabled={disabled || undefined}
             title={disabled ? (disabledReason || 'Fill in what\'s required above to continue.') : undefined}
-            style={{ flex: 2, padding: '13px 20px', borderRadius: 10, border: 'none', background: disabled ? '#e5e5ea' : '#1a1a1a', color: disabled ? T3 : '#fff', fontSize: 15, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer', transition: 'background .15s', animation: shaking ? 'navShake .5s ease' : undefined }}
-          >{nextLabel}</button>
+            style={{
+              flex: 2,
+              transition: 'background .15s',
+              animation: shaking ? 'navShake .5s ease' : undefined,
+              ...(disabled ? { background: '#e5e5ea', color: T3, cursor: 'not-allowed' } : { cursor: 'pointer' }),
+            }}
+          >{nextLabel}</Button>
           {ideaId && (
-            <button
+            <Button
+              variant="secondary"
+              size="lg"
               onClick={() => setModalOpen(true)}
               title="Ask the community about this step"
-              style={{ flex: '0 0 auto', width: 46, padding: '13px 0', borderRadius: 10, border: `1.5px solid ${BORDER2}`, background: '#fff', color: '#3a3a3c', fontSize: 17, cursor: 'pointer', lineHeight: 1 }}
-            >💬</button>
+              style={{ flex: '0 0 auto', width: 46, padding: '13px 0', fontSize: 17, lineHeight: 1 }}
+            >💬</Button>
           )}
         </div>
         {disabled && (
@@ -1109,7 +1118,7 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
                       </div>
                     )}
                   </div>
-                  <button onClick={() => setModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: '#b0b0b8', lineHeight: 1, padding: 4 }}>✕</button>
+                  <Button variant="ghost" onClick={() => setModalOpen(false)} style={{ fontSize: 20, color: '#b0b0b8', lineHeight: 1, padding: 4 }}>✕</Button>
                 </div>
 
                 <div style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#6e6e73', lineHeight: 1.55 }}>
@@ -1134,16 +1143,17 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
                 />
 
                 <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-                  <button onClick={() => setModalOpen(false)} style={{ flex: 1, padding: '12px', borderRadius: 10, border: `1.5px solid ${BORDER2}`, background: '#fff', color: '#6e6e73', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                  <Button variant="secondary" onClick={() => setModalOpen(false)} style={{ flex: 1, padding: '12px', fontSize: 14 }}>
                     Cancel
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="primary"
                     onClick={handlePost}
                     disabled={!question.trim() || posting}
-                    style={{ flex: 2, padding: '12px', borderRadius: 10, border: 'none', background: question.trim() && !posting ? '#1d1d1f' : '#e5e5ea', color: question.trim() && !posting ? '#fff' : '#b0b0b8', fontSize: 14, fontWeight: 700, cursor: question.trim() && !posting ? 'pointer' : 'default', transition: 'all .15s' }}
+                    style={{ flex: 2, padding: '12px', fontSize: 14, transition: 'all .15s' }}
                   >
                     {posting ? 'Posting…' : '💬 Post to community'}
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
