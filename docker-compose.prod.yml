@@ -32,6 +32,14 @@ services:
       UPLOADS_DIR: /app/uploads
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      # Optional Claude path for specific features — see
+      # backend/src/utils/aiQuestionCheck.ts. Leave blank to keep using the
+      # free local Ollama model everywhere. Set a real key to switch Market
+      # Snapshot to Claude with live web search (fixes its biggest caveat —
+      # no real market/competitor data) and idea-answer reactions to Claude.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+      ANTHROPIC_MODEL_CHEAP: ${ANTHROPIC_MODEL_CHEAP:-claude-haiku-4-5}
       # Full SMTP config — HOST/PORT/SECURE were missing, so nodemailer fell
       # back to its built-in default host and timed out (Hetzner blocks 25/465).
       SMTP_HOST: ${SMTP_HOST:-}

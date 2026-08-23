@@ -13,15 +13,23 @@ import Anthropic from '@anthropic-ai/sdk';
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2';
 
-// Market Snapshot (Idea stage) only, see generateMarketSnapshot below — an
-// optional, opt-in swap from the free local Ollama model to the Claude API
-// with live web search, so TAM/SAM and competitors can come from real
-// current data instead of a small offline model's best guess. Every other
-// AI feature in this file still runs on Ollama; this key is entirely
-// optional and the feature degrades to the Ollama path automatically when
-// it's unset or the Claude call fails for any reason.
+// Optional, opt-in swap from the free local Ollama model to the Claude API
+// for specific AI features (see generateMarketSnapshot and
+// reactToIdeaAnswer below) — every feature not explicitly wired to Claude
+// still runs on Ollama, and any feature that IS wired degrades back to the
+// Ollama path automatically when this key is unset or the Claude call
+// fails for any reason.
+//
+// Two model tiers, same key: ANTHROPIC_MODEL is the flagship tier, for
+// calls that need real reasoning quality and/or web search (Market
+// Snapshot). ANTHROPIC_MODEL_CHEAP is the small/fast tier, for
+// high-frequency, low-stakes calls where a bigger model buys better
+// judgment but not new capability (idea-answer reactions) — see the Sage
+// Prompt Library doc's per-function cost notes for which tier each
+// function should use as more get wired up.
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
-const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
+const ANTHROPIC_MODEL_CHEAP = process.env.ANTHROPIC_MODEL_CHEAP || 'claude-haiku-4-5';
 const anthropicClient = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY, maxRetries: 2 }) : null;
 
 export interface QuestionCheckResult {
@@ -183,7 +191,7 @@ async function reactToIdeaAnswerClaude(question: string, answer: string): Promis
   const userContent = `Question asked: "${question}"\nFounder's answer: "${answer}"`;
 
   const message = await anthropicClient!.messages.create({
-    model: ANTHROPIC_MODEL,
+    model: ANTHROPIC_MODEL_CHEAP,
     max_tokens: 300,
     temperature: 0.6,
     system: IDEA_REACT_SYSTEM_PROMPT,

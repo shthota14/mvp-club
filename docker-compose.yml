@@ -40,6 +40,10 @@ services:
       ZOOM_OAUTH_REDIRECT_URI: ${ZOOM_OAUTH_REDIRECT_URI:-http://localhost:4001/api/zoom/callback}
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      # See docker-compose.prod.yml — optional Claude path for specific features.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+      ANTHROPIC_MODEL_CHEAP: ${ANTHROPIC_MODEL_CHEAP:-claude-haiku-4-5}
     ports:
       - '4001:4000'
     volumes:
