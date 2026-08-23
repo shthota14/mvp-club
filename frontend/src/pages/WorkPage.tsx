@@ -7083,55 +7083,51 @@ function MergedInterviewLog({ manual, ai, framework, title }: {
               🖨
             </button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 16px' }}>
-            {groups.map(g => {
+          {/* Modeled on this component's own print one-pager: one continuous,
+              numbered script. Stage titles are quiet section rules; questions
+              are the only prominent text. No badges/pills per row — the
+              question's source (Sage vs. hand-written) is a small muted glyph
+              with a tooltip, so it never breaks up the reading flow. */}
+          <div style={{ padding: '0 18px' }}>
+            {(() => { let qn = 0; return groups.map((g, gi) => {
               const gc = INTERVIEW_STAGE_COLORS[g.key] || T3;
               return (
-              <div key={g.key}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: gc, flexShrink: 0, boxShadow: `0 0 0 3px ${gc}22` }} />
-                  <span style={{ fontSize: 11, fontWeight: 800, color: gc, textTransform: 'uppercase' as const, letterSpacing: 0.4 }}>{g.title}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: T3 }}>· {g.items.length}</span>
+              <div key={g.key} style={{ marginTop: gi > 0 ? 18 : 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: gc, textTransform: 'uppercase' as const, letterSpacing: 0.6, whiteSpace: 'nowrap' as const }}>{g.title}</span>
+                  <span style={{ flex: 1, height: 1, background: `${gc}30` }} />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  {g.items.map((it, i) => {
-                    const itemKey = `${g.key}::${i}`;
-                    const isOut = excluded.has(itemKey);
-                    return (
-                    <div key={i} style={{
-                      display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 4px',
-                      borderTop: i > 0 ? `1px solid ${BORDER}` : 'none', opacity: isOut ? 0.5 : 1, transition: 'opacity .12s',
-                    }}>
-                      <button
-                        onClick={() => toggleItem(itemKey)}
-                        title={isOut ? 'Deselected — click to include' : 'Selected — click to leave out'}
-                        style={{
-                          width: 18, height: 18, borderRadius: 5, flexShrink: 0, marginTop: 2, padding: 0,
-                          border: `1.5px solid ${isOut ? BORDER2 : ac}`, background: isOut ? '#fff' : ac, color: '#fff',
-                          fontSize: 11, fontWeight: 800, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          cursor: 'pointer', fontFamily: 'inherit',
-                        }}
-                      >
-                        {!isOut && '✓'}
-                      </button>
-                      <span style={{
-                        fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 8, flexShrink: 0, marginTop: 2,
-                        background: it.source === 'ai' ? '#EDE9FE' : '#dbeafe',
-                        color: it.source === 'ai' ? '#7c3aed' : '#1d4ed8',
-                      }}>
-                        {it.source === 'ai' ? '🧙 Sage' : '✍️ You'}
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: T1, lineHeight: 1.5, textDecoration: isOut ? 'line-through' : 'none' }}>{it.q}</div>
-                        {it.sub && <div style={{ fontSize: 11, color: T3, fontStyle: 'italic' as const, marginTop: 3 }}>💡 {it.sub}</div>}
+                {g.items.map((it, i) => {
+                  qn += 1;
+                  const itemKey = `${g.key}::${i}`;
+                  const isOut = excluded.has(itemKey);
+                  return (
+                  <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', opacity: isOut ? 0.45 : 1, transition: 'opacity .12s' }}>
+                    <button
+                      onClick={() => toggleItem(itemKey)}
+                      title={isOut ? `Q${qn} deselected — click to include` : `Q${qn} selected — click to leave out`}
+                      style={{
+                        width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 1, padding: 0,
+                        border: 'none', background: isOut ? BORDER : gc, color: '#fff',
+                        fontSize: 10.5, fontWeight: 800, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', fontFamily: 'inherit', textDecoration: isOut ? 'line-through' : 'none',
+                      }}
+                    >
+                      {qn}
+                    </button>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: T1, lineHeight: 1.55, textDecoration: isOut ? 'line-through' : 'none' }}>
+                        {it.q}
+                        <span title={it.source === 'ai' ? 'Drafted by Sage' : 'Written by you'} style={{ fontSize: 11, marginLeft: 7, opacity: 0.55, cursor: 'default' }}>{it.source === 'ai' ? '🧙' : '✍️'}</span>
                       </div>
+                      {it.sub && <div style={{ fontSize: 11.5, color: T3, fontStyle: 'italic' as const, marginTop: 2, lineHeight: 1.5 }}>{it.sub}</div>}
                     </div>
-                    );
-                  })}
-                </div>
+                  </div>
+                  );
+                })}
               </div>
               );
-            })}
+            }); })()}
           </div>
         </div>
       )}
