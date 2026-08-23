@@ -137,8 +137,8 @@ export default function PublicChallengePage() {
                 {challenge.conversation_count}/{challenge.conversations_goal} · {days}d left
               </span>
             </div>
-            <div style={{ height: 6, background: '#f0f0f5', borderRadius: 99, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${prog * 100}%`, background: 'linear-gradient(90deg,#7c3aed,#2563eb)', borderRadius: 99 }} />
+            <div style={{ height: 6, background: '#f0f0f5', borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${prog * 100}%`, background: 'linear-gradient(90deg,#7c3aed,#2563eb)', borderRadius: 999 }} />
             </div>
           </div>
         </div>

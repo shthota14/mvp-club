@@ -131,7 +131,7 @@ export default function GettingStartedPanel({ onboardingDone }: Props) {
         style={{
           position: 'fixed', bottom: 24, right: 24, zIndex: 300,
           background: '#1d1d1f', color: '#fff', border: 'none',
-          borderRadius: 100, padding: '10px 18px',
+          borderRadius: 999, padding: '10px 18px',
           fontSize: 13, fontWeight: 600, cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 8,
           boxShadow: '0 4px 20px rgba(0,0,0,0.22)',

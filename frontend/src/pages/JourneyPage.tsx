@@ -166,7 +166,7 @@ function NoIdeaCard({ onStart }: { onStart: () => void }) {
       <button
         onClick={onStart}
         style={{
-          padding: '14px 32px', borderRadius: 100,
+          padding: '14px 32px', borderRadius: 999,
           background: '#1d1d1f', color: '#fff',
           border: 'none', fontSize: 15, fontWeight: 700,
           cursor: 'pointer', letterSpacing: -0.3,
@@ -206,7 +206,7 @@ function JourneyCard({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '5px 12px', borderRadius: 100,
+            padding: '5px 12px', borderRadius: 999,
             background: `${color}15`,
             fontSize: 11, fontWeight: 700, color,
             letterSpacing: 0.5, textTransform: 'uppercase',
@@ -396,7 +396,7 @@ export default function JourneyPage() {
               key={path}
               onClick={() => navigate(path)}
               style={{
-                padding: '8px 18px', borderRadius: 100,
+                padding: '8px 18px', borderRadius: 999,
                 background: 'transparent', border: '1.5px solid #e5e5ea',
                 fontSize: 13, fontWeight: 600, color: '#6e6e73',
                 cursor: 'pointer', transition: 'all .15s',

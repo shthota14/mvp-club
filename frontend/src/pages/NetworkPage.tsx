@@ -36,7 +36,7 @@ function colorFor(str: string) {
 function TagPill({ label }: { label: string }) {
   return (
     <span style={{
-      fontSize: 11, padding: '2px 8px', borderRadius: 100,
+      fontSize: 11, padding: '2px 8px', borderRadius: 999,
       background: '#f5f5f7', color: '#6e6e73',
       border: '1px solid #e5e7eb', display: 'inline-block',
     }}>
@@ -52,7 +52,7 @@ function StagePill({ stage }: { stage: Stage }) {
       fontSize: 12, fontWeight: 600,
       background: STAGE_COLORS[stage] + '18',
       color: STAGE_COLORS[stage],
-      padding: '4px 10px', borderRadius: 100,
+      padding: '4px 10px', borderRadius: 999,
     }}>
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: STAGE_COLORS[stage] }} />
       {STAGE_LABELS[stage]}
@@ -434,7 +434,7 @@ export default function NetworkPage() {
           {sentCount > 0 && (
             <span style={{
               background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0',
-              fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 100,
+              fontSize: 12, fontWeight: 700, padding: '2px 10px', borderRadius: 999,
             }}>
               {sentCount} sent
             </span>
@@ -488,7 +488,7 @@ export default function NetworkPage() {
                     key={s.value}
                     onClick={() => setFilterStage(s.value as Stage | 'all')}
                     style={{
-                      padding: '5px 12px', borderRadius: 100, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none',
+                      padding: '5px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: 'none',
                       background: filterStage === s.value ? '#111827' : '#f5f5f7',
                       color: filterStage === s.value ? '#fff' : '#6e6e73',
                     }}
@@ -523,7 +523,7 @@ export default function NetworkPage() {
                             {matchesStage && (
                               <span style={{
                                 fontSize: 10, fontWeight: 700, background: '#f0ecff', color: '#7c3aed',
-                                padding: '2px 8px', borderRadius: 100, letterSpacing: '0.04em',
+                                padding: '2px 8px', borderRadius: 999, letterSpacing: '0.04em',
                               }}>
                                 MATCHES YOUR STAGE
                               </span>

@@ -364,7 +364,7 @@ function ComposeBox({
                 style={{
                   display: 'flex', alignItems: 'center', gap: 5,
                   padding: sel ? '5px 12px' : '5px 10px',
-                  borderRadius: 100,
+                  borderRadius: 999,
                   border: `1.5px solid ${sel ? t.color : 'transparent'}`,
                   background: sel ? t.bg : 'transparent',
                   color: sel ? t.color : '#b0b0b8',
@@ -581,7 +581,7 @@ function PostCard({
               onClick={() => onReact(post.id, 'encourage')}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
-                padding: '4px 12px', borderRadius: 100,
+                padding: '4px 12px', borderRadius: 999,
                 fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 border: `1.5px solid ${post.user_reacted === 'encourage' ? '#16a34a' : '#e5e5ea'}`,
                 background: post.user_reacted === 'encourage' ? '#f0fdf4' : '#fafafa',
@@ -599,7 +599,7 @@ function PostCard({
               onClick={() => onReact(post.id, 'ask')}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
-                padding: '4px 12px', borderRadius: 100,
+                padding: '4px 12px', borderRadius: 999,
                 fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 border: `1.5px solid ${post.user_reacted === 'ask' ? '#2563eb' : '#e5e5ea'}`,
                 background: post.user_reacted === 'ask' ? '#eff6ff' : '#fafafa',
@@ -618,7 +618,7 @@ function PostCard({
               onClick={toggleReplies}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
-                padding: '4px 12px', borderRadius: 100,
+                padding: '4px 12px', borderRadius: 999,
                 fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 border: `1.5px solid ${showReplies ? LIT.accent : '#e5e5ea'}`,
                 background: showReplies ? LIT.accentSoft : '#fafafa',
@@ -693,7 +693,7 @@ function PostCard({
                       style={{
                         display: 'flex', alignItems: 'center', gap: 4,
                         padding: sel ? '4px 10px' : '4px 8px',
-                        borderRadius: 100,
+                        borderRadius: 999,
                         border: `1.5px solid ${sel ? ct.color : 'transparent'}`,
                         background: sel ? ct.bg : 'transparent',
                         color: sel ? ct.color : '#b0b0b8',
@@ -942,7 +942,7 @@ function HelpBoard({
                   key={ht.key}
                   onClick={() => setNewType(ht.key)}
                   style={{
-                    padding: '5px 12px', borderRadius: 100, fontSize: 12, fontWeight: 700,
+                    padding: '5px 12px', borderRadius: 999, fontSize: 12, fontWeight: 700,
                     border: `1.5px solid ${newType === ht.key ? ht.color : '#e5e5ea'}`,
                     background: newType === ht.key ? ht.bg : '#fff',
                     color: newType === ht.key ? ht.color : '#6e6e73',

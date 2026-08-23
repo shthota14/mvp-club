@@ -420,7 +420,7 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
                     className="bmc-completion-segment"
                     title={b.title}
                     style={{
-                      width: 18, height: 5, borderRadius: 99,
+                      width: 18, height: 5, borderRadius: 999,
                       background: values[b.id]?.trim() ? b.accent : '#e5e7eb',
                       opacity: values[b.id]?.trim() ? 1 : 0.5,
                     }}
@@ -594,7 +594,7 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
                               </div>
                             </div>
                             {i === 0 && (
-                              <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+                              <span style={{ flexShrink: 0, fontSize: 12, fontWeight: 800, padding: '2px 7px', borderRadius: 999, background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
                                 LATEST
                               </span>
                             )}

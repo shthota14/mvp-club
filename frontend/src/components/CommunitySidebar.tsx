@@ -229,7 +229,7 @@ export default function CommunitySidebar({ currentStage, autoDraft, onAutoDraftD
                   const sel = postType === t;
                   return (
                     <button key={t} onClick={() => setPostType(t)} style={{
-                      flex: 1, padding: '4px 0', borderRadius: 100, fontSize: 10, fontWeight: 700,
+                      flex: 1, padding: '4px 0', borderRadius: 999, fontSize: 10, fontWeight: 700,
                       cursor: 'pointer', border: `1.5px solid ${sel ? b.color : '#e5e5ea'}`,
                       background: sel ? b.bg : '#fff', color: sel ? b.color : '#9ca3af',
                       fontFamily: 'inherit', transition: 'all .12s',
@@ -353,7 +353,7 @@ export default function CommunitySidebar({ currentStage, autoDraft, onAutoDraftD
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' as const }}>
                       <span style={{
                         fontSize: 9, fontWeight: 700, padding: '1px 6px',
-                        borderRadius: 100, background: badge.bg, color: badge.color,
+                        borderRadius: 999, background: badge.bg, color: badge.color,
                       }}>
                         {badge.label}
                       </span>
@@ -373,7 +373,7 @@ export default function CommunitySidebar({ currentStage, autoDraft, onAutoDraftD
                   style={{
                     alignSelf: 'flex-start' as const,
                     display: 'flex', alignItems: 'center', gap: 4,
-                    padding: '4px 10px', borderRadius: 100,
+                    padding: '4px 10px', borderRadius: 999,
                     border: `1.5px solid ${isEnc ? '#059669' : '#e5e5ea'}`,
                     background: isEnc ? '#f0fdf4' : '#fff',
                     color: isEnc ? '#059669' : '#6e6e73',

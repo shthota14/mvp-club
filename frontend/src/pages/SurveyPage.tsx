@@ -379,7 +379,7 @@ export default function SurveyPage() {
             <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,.06)', pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', bottom: -60, left: -20, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,.04)', pointerEvents: 'none' }} />
             <div style={{ maxWidth: 520, margin: '0 auto', position: 'relative' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,.15)', borderRadius: 100, padding: '5px 14px', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.9)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,.15)', borderRadius: 999, padding: '5px 14px', fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.9)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20 }}>
                 ✦ Validation Survey
               </div>
               <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1.3, letterSpacing: -.5, marginBottom: 12 }}>

@@ -648,7 +648,7 @@ function WhiteboardChip({ active, color, onClick, children, size = 'md' }: { act
         border: `2px ${active ? 'solid' : 'dashed'} ${color}`,
         background: active ? color : '#fff',
         color: active ? '#fff' : color,
-        borderRadius: 100,
+        borderRadius: 999,
         boxShadow: active ? '1.5px 2px 0 rgba(0,0,0,.12)' : 'none',
         transition: 'all .12s',
       }}
@@ -705,7 +705,7 @@ function SuggestionChips({ chips, onSelect, accent = '#7c3aed' }: {
           type="button"
           onClick={() => onSelect(chip)}
           style={{
-            padding: '3px 9px', borderRadius: 100,
+            padding: '3px 9px', borderRadius: 999,
             border: `1px solid ${accent}25`,
             background: 'transparent',
             color: `${accent}99`,
@@ -1171,7 +1171,7 @@ function CompleteBadge({ mod, onContinue }: { mod: Mod; onContinue: () => void }
       <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
       <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.5, marginBottom: 8, fontFamily: 'Georgia, serif', color: T1 }}>{META[mod].label} complete!</div>
       <div style={{ fontSize: 15, color: '#3a3a3c', marginBottom: 32, lineHeight: 1.6 }}>Move to the next stage when you're ready.</div>
-      <button onClick={onContinue} style={{ background: c, color: '#fff', border: 'none', borderRadius: 100, padding: '14px 36px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>Continue →</button>
+      <button onClick={onContinue} style={{ background: c, color: '#fff', border: 'none', borderRadius: 999, padding: '14px 36px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>Continue →</button>
     </div>
   );
 }
@@ -3260,7 +3260,7 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
               const sel = size === s.key;
               return (
                 <button key={s.key} onClick={() => setSize(s.key)} style={{
-                  padding: '8px 14px', borderRadius: 100, cursor: 'pointer', fontFamily: 'inherit',
+                  padding: '8px 14px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
                   border: `1.5px solid ${sel ? accent : '#d2d2d7'}`,
                   background: sel ? `${accent}10` : '#fff',
                   color: sel ? accent : '#6e6e73',
@@ -4464,7 +4464,7 @@ function PainGaugeStep({
             const isOn = freq === f;
             return (
               <button key={f} onClick={() => updateFreqLabel(f)} style={{
-                padding: '4px 12px', borderRadius: 99, cursor: 'pointer', fontFamily: 'inherit',
+                padding: '4px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
                 fontSize: 12, fontWeight: isOn ? 700 : 500, transition: 'all .12s',
                 border: `1.5px solid ${isOn ? gauge.color : BORDER2}`,
                 background: isOn ? `${gauge.color}15` : 'transparent',
@@ -4630,7 +4630,7 @@ function ProblemContextCard({ who, problems, pain }: { who: string; problems: st
                   return (
                     <span key={p} style={{
                       fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 14, fontWeight: 700,
-                      padding: '2px 9px', borderRadius: 99, background: '#fef3c7', color: '#92400e',
+                      padding: '2px 9px', borderRadius: 999, background: '#fef3c7', color: '#92400e',
                       border: '1px solid #fde68a', transform: `rotate(${rot}deg)`, display: 'inline-block',
                     }}>{p}</span>
                   );
@@ -6086,8 +6086,8 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
               </div>
 
               {/* Progress bar — out of 20 */}
-              <div style={{ height: 4, background: BORDER, borderRadius: 100, overflow: 'hidden', marginBottom: 6 }}>
-                <div style={{ height: '100%', width: `${Math.min(100, (contacts.length / 20) * 100)}%`, background: VC, borderRadius: 100, transition: 'width .3s' }} />
+              <div style={{ height: 4, background: BORDER, borderRadius: 999, overflow: 'hidden', marginBottom: 6 }}>
+                <div style={{ height: '100%', width: `${Math.min(100, (contacts.length / 20) * 100)}%`, background: VC, borderRadius: 999, transition: 'width .3s' }} />
               </div>
               <div style={{ fontSize: 12, color: doneCount >= 3 ? '#059669' : '#4b5563', fontWeight: 600, marginBottom: 10 }}>
                 {contacts.length === 0 ? 'Aim for at least 20 people who feel this pain'
@@ -7407,7 +7407,7 @@ function MvpHypothesisPanel({ genContext, onApply, hasApplied }: {
           </div>
         </div>
         {error && <div style={{ fontFamily: "'Kalam', cursive", fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '2px dashed #dc2626', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
-        <button onClick={runGenerate} disabled={loading} style={{ padding: '9px 18px', borderRadius: 100, border: `2px solid ${SC}`, cursor: loading ? 'default' : 'pointer', background: loading ? `${SC}80` : SC, color: '#fff', fontSize: 13.5, fontWeight: 700, fontFamily: "'Kalam', cursive", whiteSpace: 'nowrap' as const }}>
+        <button onClick={runGenerate} disabled={loading} style={{ padding: '9px 18px', borderRadius: 999, border: `2px solid ${SC}`, cursor: loading ? 'default' : 'pointer', background: loading ? `${SC}80` : SC, color: '#fff', fontSize: 13.5, fontWeight: 700, fontFamily: "'Kalam', cursive", whiteSpace: 'nowrap' as const }}>
           {loading ? '🧙 Sage is thinking…' : hasApplied ? '✨ Ask Sage for other options' : '✨ Draft my MVP hypothesis'}
         </button>
       </div>
@@ -7424,7 +7424,7 @@ function MvpHypothesisPanel({ genContext, onApply, hasApplied }: {
         <div key={i} style={whiteboardBoxStyle(SC, i % 2 === 0 ? -0.6 : 0.6, { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 })}>
           <div style={{ fontFamily: "'Kalam', cursive", fontSize: 17, fontWeight: 700, color: '#1f2937', lineHeight: 1.4 }}>"{assembled(c)}"</div>
           {c.rationale && <div style={{ fontFamily: "'Kalam', cursive", fontSize: 11.5, color: '#6b7280', lineHeight: 1.4 }}>💡 {c.rationale}</div>}
-          <button onClick={() => { onApply(c); setAppliedIdx(i); }} style={{ alignSelf: 'flex-start', marginTop: 2, padding: '6px 14px', borderRadius: 100, border: `2px solid ${SC}`, background: appliedIdx === i ? SC : '#fff', color: appliedIdx === i ? '#fff' : SC, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Kalam', cursive" }}>
+          <button onClick={() => { onApply(c); setAppliedIdx(i); }} style={{ alignSelf: 'flex-start', marginTop: 2, padding: '6px 14px', borderRadius: 999, border: `2px solid ${SC}`, background: appliedIdx === i ? SC : '#fff', color: appliedIdx === i ? '#fff' : SC, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Kalam', cursive" }}>
             {appliedIdx === i ? '✓ Applied below' : 'Use this →'}
           </button>
         </div>
@@ -7705,7 +7705,7 @@ function DistributionSuggestPanel({ genContext, onApplyOne, onApplyAll, appliedC
           </div>
         </div>
         {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
-        <button onClick={runGenerate} disabled={loading} style={{ padding: '9px 18px', borderRadius: 100, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${SC}80` : SC, color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
+        <button onClick={runGenerate} disabled={loading} style={{ padding: '9px 18px', borderRadius: 999, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${SC}80` : SC, color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
           {loading ? '🧙 Sage is thinking…' : hasApplied ? '✨ Suggest more channels' : '✨ Suggest my distribution channels'}
         </button>
       </div>
@@ -7717,7 +7717,7 @@ function DistributionSuggestPanel({ genContext, onApplyOne, onApplyAll, appliedC
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' as const }}>
         <SageAvatar size={26} />
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Sage's channel picks</span>
-        <button onClick={() => { onApplyAll(channels.map(c => c.channel)); setAppliedAll(true); setAppliedChannels(new Set(channels.map(c => c.channel))); }} style={{ marginLeft: 'auto', padding: '5px 12px', borderRadius: 100, border: 'none', background: appliedAll ? '#e5e7eb' : SC, color: appliedAll ? '#6e6e73' : '#fff', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={() => { onApplyAll(channels.map(c => c.channel)); setAppliedAll(true); setAppliedChannels(new Set(channels.map(c => c.channel))); }} style={{ marginLeft: 'auto', padding: '5px 12px', borderRadius: 999, border: 'none', background: appliedAll ? '#e5e7eb' : SC, color: appliedAll ? '#6e6e73' : '#fff', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
           {appliedAll ? '✓ Applied all' : `Apply all ${channels.length} →`}
         </button>
       </div>
@@ -7726,13 +7726,13 @@ function DistributionSuggestPanel({ genContext, onApplyOne, onApplyAll, appliedC
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' as const }}>
             <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700, color: '#1e293b' }}>{c.channel}</span>
             {c.evidenceBased ? (
-              <span style={{ fontSize: 9.5, fontWeight: 800, color: '#059669', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 100, padding: '1px 7px', textTransform: 'uppercase' as const, letterSpacing: 0.3 }}>📊 from your data</span>
+              <span style={{ fontSize: 9.5, fontWeight: 800, color: '#059669', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 999, padding: '1px 7px', textTransform: 'uppercase' as const, letterSpacing: 0.3 }}>📊 from your data</span>
             ) : (
-              <span style={{ fontSize: 9.5, fontWeight: 800, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 100, padding: '1px 7px', textTransform: 'uppercase' as const, letterSpacing: 0.3 }}>untested guess</span>
+              <span style={{ fontSize: 9.5, fontWeight: 800, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 999, padding: '1px 7px', textTransform: 'uppercase' as const, letterSpacing: 0.3 }}>untested guess</span>
             )}
           </div>
           {c.rationale && <div style={{ fontSize: 11.5, color: T2, lineHeight: 1.4 }}>💡 {c.rationale}</div>}
-          <button onClick={() => { onApplyOne(c.channel); setAppliedChannels(prev => new Set(prev).add(c.channel)); }} style={{ alignSelf: 'flex-start', marginTop: 2, padding: '5px 12px', borderRadius: 100, border: `1.5px solid ${SC}`, background: appliedChannels.has(c.channel) ? SC : '#fff', color: appliedChannels.has(c.channel) ? '#fff' : SC, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={() => { onApplyOne(c.channel); setAppliedChannels(prev => new Set(prev).add(c.channel)); }} style={{ alignSelf: 'flex-start', marginTop: 2, padding: '5px 12px', borderRadius: 999, border: `1.5px solid ${SC}`, background: appliedChannels.has(c.channel) ? SC : '#fff', color: appliedChannels.has(c.channel) ? '#fff' : SC, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             {appliedChannels.has(c.channel) ? '✓ Added' : 'Use this →'}
           </button>
         </div>
@@ -7796,7 +7796,7 @@ function PricingSuggestPanel({ genContext, onApply }: {
           <div style={{ fontSize: 12, color: T2, lineHeight: 1.4 }}>Sage suggests a model + price, and tells you honestly whether it's backed by your evidence or a general pattern.</div>
         </div>
         {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
-        <button onClick={runGenerate} disabled={loading} style={{ padding: '9px 18px', borderRadius: 100, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${SC}80` : SC, color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
+        <button onClick={runGenerate} disabled={loading} style={{ padding: '9px 18px', borderRadius: 999, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${SC}80` : SC, color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
           {loading ? '🧙 Sage is thinking…' : '✨ Suggest pricing'}
         </button>
       </div>
@@ -7814,13 +7814,13 @@ function PricingSuggestPanel({ genContext, onApply }: {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
             <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700, color: '#1e293b' }}>{c.revenueModel.join(' + ')} — {c.pricePoint}</span>
             {c.evidenceBased ? (
-              <span style={{ fontSize: 9.5, fontWeight: 800, color: '#059669', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 100, padding: '1px 7px', textTransform: 'uppercase' as const, letterSpacing: 0.3 }}>📊 from your evidence</span>
+              <span style={{ fontSize: 9.5, fontWeight: 800, color: '#059669', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 999, padding: '1px 7px', textTransform: 'uppercase' as const, letterSpacing: 0.3 }}>📊 from your evidence</span>
             ) : (
-              <span style={{ fontSize: 9.5, fontWeight: 800, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 100, padding: '1px 7px', textTransform: 'uppercase' as const, letterSpacing: 0.3 }}>general pattern</span>
+              <span style={{ fontSize: 9.5, fontWeight: 800, color: '#92400e', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 999, padding: '1px 7px', textTransform: 'uppercase' as const, letterSpacing: 0.3 }}>general pattern</span>
             )}
           </div>
           {c.rationale && <div style={{ fontSize: 11.5, color: T2, lineHeight: 1.4 }}>💡 {c.rationale}</div>}
-          <button onClick={() => { onApply(c); setAppliedIdx(i); }} style={{ alignSelf: 'flex-start', marginTop: 2, padding: '6px 14px', borderRadius: 100, border: `1.5px solid ${SC}`, background: appliedIdx === i ? SC : '#fff', color: appliedIdx === i ? '#fff' : SC, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={() => { onApply(c); setAppliedIdx(i); }} style={{ alignSelf: 'flex-start', marginTop: 2, padding: '6px 14px', borderRadius: 999, border: `1.5px solid ${SC}`, background: appliedIdx === i ? SC : '#fff', color: appliedIdx === i ? '#fff' : SC, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             {appliedIdx === i ? '✓ Applied below' : 'Use this →'}
           </button>
         </div>
@@ -7882,7 +7882,7 @@ function PricingSanityCheckPanel({ revenueModel, pricePoint, genContext }: {
   return (
     <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <button onClick={runCheck} disabled={loading || !hasPicks} style={{
-        alignSelf: 'flex-start', padding: '8px 16px', borderRadius: 100,
+        alignSelf: 'flex-start', padding: '8px 16px', borderRadius: 999,
         border: `1.5px solid ${STAGE_COLORS.shape}`, background: loading ? `${STAGE_COLORS.shape}20` : '#fff', color: STAGE_COLORS.shape,
         fontSize: 12.5, fontWeight: 700, cursor: (loading || !hasPicks) ? 'default' : 'pointer', fontFamily: 'inherit',
         opacity: hasPicks ? 1 : 0.5,
@@ -8039,7 +8039,7 @@ function ShipBuildSpecPanel({ genContext, initialSpec, onSave, color }: {
           <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.5 }}>Sage drafts a product definition, MVP hypothesis, feature list, technical requirements, and an ordered build sequence — grounded in everything you've validated so far. Everything else in Ship gets generated from this.</div>
         </div>
         {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
-        <button onClick={runGenerate} disabled={loading} style={{ padding: '11px 22px', borderRadius: 100, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
+        <button onClick={runGenerate} disabled={loading} style={{ padding: '11px 22px', borderRadius: 999, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
           {loading ? '🧙 Sage is drafting…' : '✨ Build my specification'}
         </button>
       </div>
@@ -8283,7 +8283,7 @@ function ShipBuildPathPanel({ genContext, initialPath, initialTool, onPick, onEx
             <div style={{ fontSize: 12, color: T2, lineHeight: 1.4 }}>Sage weighs your spec's complexity against how comfortable you said you are with code.</div>
           </div>
           {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
-          <button onClick={runRecommend} disabled={loading} style={{ padding: '9px 18px', borderRadius: 100, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
+          <button onClick={runRecommend} disabled={loading} style={{ padding: '9px 18px', borderRadius: 999, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
             {loading ? '🧙 Sage is weighing it…' : '✨ Recommend a path'}
           </button>
         </div>
@@ -8317,7 +8317,7 @@ function ShipBuildPathPanel({ genContext, initialPath, initialTool, onPick, onEx
               borderRadius: w.borderRadius, position: 'relative' as const,
             }}>
               {isSagePick && (
-                <span style={{ position: 'absolute' as const, top: -9, right: 10, fontSize: 9.5, fontWeight: 800, color: '#fff', background: color, borderRadius: 100, padding: '2px 8px', letterSpacing: 0.3 }}>SAGE PICK</span>
+                <span style={{ position: 'absolute' as const, top: -9, right: 10, fontSize: 9.5, fontWeight: 800, color: '#fff', background: color, borderRadius: 999, padding: '2px 8px', letterSpacing: 0.3 }}>SAGE PICK</span>
               )}
               <div style={{ fontSize: 20, marginBottom: 4 }}>{opt.icon}</div>
               <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700 }}>{opt.label}</div>
@@ -8353,7 +8353,7 @@ function ShipBuildPathPanel({ genContext, initialPath, initialTool, onPick, onEx
           <div style={{ fontSize: 10.5, color: T3, marginTop: 8, fontStyle: 'italic' as const }}>Pricing is approximate — check the tool's current pricing before committing.</div>
 
           {path === 'dev-handoff' && (
-            <button onClick={onExportBrief} style={{ marginTop: 12, padding: '9px 16px', borderRadius: 100, border: 'none', background: color, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={onExportBrief} style={{ marginTop: 12, padding: '9px 16px', borderRadius: 999, border: 'none', background: color, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               ⬇ Download developer brief
             </button>
           )}
@@ -8506,7 +8506,7 @@ function ShipFlowScreenPanel({ genContext, initialData, onSave, color }: {
           <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.5 }}>Sage turns your feature list into the primary journeys users will take and the minimum set of screens to build them — each mapped back to the feature it serves.</div>
         </div>
         {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
-        <button onClick={runGenerate} disabled={loading} style={{ padding: '11px 22px', borderRadius: 100, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
+        <button onClick={runGenerate} disabled={loading} style={{ padding: '11px 22px', borderRadius: 999, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
           {loading ? '🧙 Sage is mapping…' : '✨ Map my flows and screens'}
         </button>
       </div>
@@ -8636,7 +8636,7 @@ function ScreenPromptCard({ screen, prompt, onGenerate, onEdit, loading, error, 
           <div style={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f' }}>{SCREEN_CATEGORY_META[screen.category]?.icon} {screen.name}</div>
           <div style={{ fontSize: 11.5, color: T2, marginTop: 1 }}>{screen.purpose}</div>
         </div>
-        <button onClick={onGenerate} disabled={loading} style={{ padding: '8px 16px', borderRadius: 100, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const, flexShrink: 0 }}>
+        <button onClick={onGenerate} disabled={loading} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const, flexShrink: 0 }}>
           {loading ? '🧙 Writing…' : prompt ? '↺ Regenerate' : '✨ Generate prompt'}
         </button>
       </div>
@@ -8645,10 +8645,10 @@ function ScreenPromptCard({ screen, prompt, onGenerate, onEdit, loading, error, 
         <>
           <textarea value={prompt} onChange={e => onEdit(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 200, marginTop: 10, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: "'SF Mono', Menlo, Consolas, monospace", fontSize: 11.5, color: '#1d1d1f', lineHeight: 1.6, resize: 'vertical' as const }} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
-            <button onClick={doCopy} style={{ padding: '7px 14px', borderRadius: 100, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={doCopy} style={{ padding: '7px 14px', borderRadius: 999, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               {copiedPulse ? '✓ Copied' : '📋 Copy prompt'}
             </button>
-            <button onClick={doSend} style={{ padding: '7px 14px', borderRadius: 100, border: 'none', background: color, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={doSend} style={{ padding: '7px 14px', borderRadius: 999, border: 'none', background: color, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               {sentPulse ? `✓ Copied — paste into ${buildTool || 'your tool'}` : `→ Send to ${buildTool || 'AI builder'}`}
             </button>
           </div>
@@ -8785,10 +8785,10 @@ function MasterPromptOutput({ prompt, buildTool, color }: { prompt: string; buil
     <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px', background: '#fff' }}>
       <textarea readOnly value={prompt} style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 280, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: "'SF Mono', Menlo, Consolas, monospace", fontSize: 11.5, color: '#1d1d1f', lineHeight: 1.6, resize: 'vertical' as const, background: '#fafafa' }} />
       <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' as const, alignItems: 'center' }}>
-        <button onClick={doCopy} style={{ padding: '8px 16px', borderRadius: 100, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={doCopy} style={{ padding: '8px 16px', borderRadius: 999, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
           {copiedPulse ? '✓ Copied' : '📋 Copy prompt'}
         </button>
-        <button onClick={doSend} style={{ padding: '8px 16px', borderRadius: 100, border: 'none', background: color, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={doSend} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', background: color, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
           {sentPulse ? `✓ Copied — paste into ${buildTool || 'your tool'}` : `→ Send to ${buildTool || 'AI builder'}`}
         </button>
       </div>
@@ -8936,14 +8936,14 @@ function FeatureBuildCardPanel({ feature, index, data, onGenerate, onEdit, onSta
           <span style={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{feature}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: statusMeta.color, background: `${statusMeta.color}18`, borderRadius: 100, padding: '3px 10px', whiteSpace: 'nowrap' as const }}>{statusMeta.icon} {statusMeta.label}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: statusMeta.color, background: `${statusMeta.color}18`, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' as const }}>{statusMeta.icon} {statusMeta.label}</span>
           <span style={{ fontSize: 12, color: T2 }}>{open ? '▾' : '▸'}</span>
         </div>
       </div>
       {open && (
         <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 12, borderTop: `1px solid ${BORDER}` }}>
           <div style={{ paddingTop: 12 }}>
-            <button onClick={onGenerate} disabled={loading} style={{ padding: '8px 16px', borderRadius: 100, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit' }}>
+            <button onClick={onGenerate} disabled={loading} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit' }}>
               {loading ? '🧙 Writing…' : data ? '↺ Regenerate build card' : '✨ Generate build card'}
             </button>
           </div>
@@ -9140,7 +9140,7 @@ function VibeCoachRequestCard({ index, request, onChange, onRemove, onGenerate, 
       <div onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '12px 16px', cursor: 'pointer' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <span style={{ fontSize: 13, fontWeight: 800, color: T2, flexShrink: 0 }}>{index + 1}.</span>
-          <span style={{ fontSize: 11.5, fontWeight: 700, color, background: `${color}18`, borderRadius: 100, padding: '3px 9px', flexShrink: 0, whiteSpace: 'nowrap' as const }}>{meta.icon} {meta.label}</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color, background: `${color}18`, borderRadius: 999, padding: '3px 9px', flexShrink: 0, whiteSpace: 'nowrap' as const }}>{meta.icon} {meta.label}</span>
           <span style={{ fontSize: 13, color: '#1d1d1f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{request.description || 'No description yet'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
@@ -9163,7 +9163,7 @@ function VibeCoachRequestCard({ index, request, onChange, onRemove, onGenerate, 
             <textarea style={ta(70)} placeholder="e.g. Let users filter the trending topics list by date, newest first" value={request.description} onChange={e => onChange({ description: e.target.value })} />
           </div>
           <div>
-            <button onClick={onGenerate} disabled={loading || !request.description.trim()} style={{ padding: '8px 16px', borderRadius: 100, border: 'none', cursor: (loading || !request.description.trim()) ? 'default' : 'pointer', background: (loading || !request.description.trim()) ? `${color}80` : color, color: '#fff', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit' }}>
+            <button onClick={onGenerate} disabled={loading || !request.description.trim()} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', cursor: (loading || !request.description.trim()) ? 'default' : 'pointer', background: (loading || !request.description.trim()) ? `${color}80` : color, color: '#fff', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit' }}>
               {loading ? '🧙 Writing…' : request.prompt ? '↺ Regenerate coding prompt' : '✨ Turn into a coding prompt'}
             </button>
           </div>
@@ -9361,7 +9361,7 @@ function QACheckpointCard({ checkpoint, prompt, status, onStatusChange, buildToo
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: statusMeta.color, background: `${statusMeta.color}18`, borderRadius: 100, padding: '3px 10px', whiteSpace: 'nowrap' as const }}>{statusMeta.icon} {statusMeta.label}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: statusMeta.color, background: `${statusMeta.color}18`, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' as const }}>{statusMeta.icon} {statusMeta.label}</span>
           <span style={{ fontSize: 12, color: T2 }}>{open ? '▾' : '▸'}</span>
         </div>
       </div>
@@ -11462,7 +11462,7 @@ export default function WorkPage() {
       <div style={{ fontSize: 48, marginBottom: 16 }}>💡</div>
       <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6, fontFamily: 'Georgia, serif', color: T1 }}>No active idea</div>
       <div style={{ fontSize: 14, color: T2, marginBottom: 24 }}>Go to My Idea Vault to create or select an idea first.</div>
-      <button onClick={() => navigate('/progress')} style={{ background: '#1d1d1f', color: '#fff', border: 'none', borderRadius: 100, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+      <button onClick={() => navigate('/progress')} style={{ background: '#1d1d1f', color: '#fff', border: 'none', borderRadius: 999, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
         ← Go to My Idea Vault
       </button>
     </div>
@@ -11727,7 +11727,7 @@ export default function WorkPage() {
                   key={m}
                   title={META[m].label}
                   style={{
-                    flex: 1, height: 5, borderRadius: 100,
+                    flex: 1, height: 5, borderRadius: 999,
                     background: completed[m] ? STAGE_COLORS[m]
                                : mod === m   ? `${STAGE_COLORS[m]}60`
                                : '#e5e5ea',
@@ -11845,28 +11845,28 @@ export default function WorkPage() {
                             <span style={{
                               fontSize: 9, fontWeight: 800, letterSpacing: .3,
                               background: '#dcfce7', color: '#059669',
-                              borderRadius: 100, padding: '2px 7px',
+                              borderRadius: 999, padding: '2px 7px',
                             }}>DONE</span>
                           )}
                           {isNavActive && (
                             <span style={{
                               fontSize: 9, fontWeight: 800, letterSpacing: .3,
                               background: `${c}18`, color: c,
-                              borderRadius: 100, padding: '2px 7px',
+                              borderRadius: 999, padding: '2px 7px',
                             }}>NOW</span>
                           )}
                           {!isNavActive && hasContent && !isDone && (
                             <span style={{
                               fontSize: 9, fontWeight: 700,
                               background: `${c}15`, color: c,
-                              borderRadius: 100, padding: '2px 7px',
+                              borderRadius: 999, padding: '2px 7px',
                             }}>ACTIVE</span>
                           )}
                           {isLocked && !isDone && (
                             <span style={{
                               fontSize: 9, fontWeight: 700,
                               background: '#f5f5f7', color: '#b0b0b8',
-                              borderRadius: 100, padding: '2px 7px',
+                              borderRadius: 999, padding: '2px 7px',
                             }}>LOCKED</span>
                           )}
                         </div>
@@ -11967,7 +11967,7 @@ export default function WorkPage() {
                                   Validation Summary
                                 </span>
                                 {ivConfirmed > 0 && (
-                                  <span style={{ marginLeft: 'auto', background: '#059669', color: '#fff', fontSize: 9, fontWeight: 800, borderRadius: 100, padding: '2px 5px' }}>
+                                  <span style={{ marginLeft: 'auto', background: '#059669', color: '#fff', fontSize: 9, fontWeight: 800, borderRadius: 999, padding: '2px 5px' }}>
                                     {ivConfirmed}✓
                                   </span>
                                 )}
@@ -14443,7 +14443,7 @@ export default function WorkPage() {
                   {weeklyLoggedCount > 0 && (
                     <div style={{
                       display: 'inline-flex', alignItems: 'center', gap: 8, maxWidth: '100%', flexWrap: 'wrap' as const,
-                      padding: '9px 14px', borderRadius: 100,
+                      padding: '9px 14px', borderRadius: 999,
                       background: `${ac}12`, border: `1.5px solid ${ac}30`,
                       fontSize: 12.5, fontWeight: 700, color: ac,
                     }}>
@@ -14611,8 +14611,8 @@ export default function WorkPage() {
                                       {qa.signals.map((sig: string) => {
                                         const opt = ALL_SIGNAL_OPTS.find(o => o.k === sig);
                                         return opt
-                                          ? <span key={sig} style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 100, background: `${opt.color}12`, color: opt.color, border: `1px solid ${opt.color}25` }}>{opt.icon} {sig}</span>
-                                          : <span key={sig} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 100, background: '#f0f0f0', color: '#6e6e73' }}>{sig}</span>;
+                                          ? <span key={sig} style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: `${opt.color}12`, color: opt.color, border: `1px solid ${opt.color}25` }}>{opt.icon} {sig}</span>
+                                          : <span key={sig} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 999, background: '#f0f0f0', color: '#6e6e73' }}>{sig}</span>;
                                       })}
                                     </div>
                                   )}
@@ -15058,8 +15058,8 @@ export default function WorkPage() {
                           {iv.interviewee_role && <div style={{ fontSize: 11, color: T3 }}>{iv.interviewee_role}</div>}
                           {sigs.length > 0 && <div style={{ fontSize: 10, color: STAGE_COLORS.validate, marginTop: 3 }}>✦ {sigs.length} signal{sigs.length !== 1 ? 's' : ''} captured</div>}
                         </div>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: ivBadge.color, background: `${ivBadge.color}12`, border: `1px solid ${ivBadge.color}30`, padding: '3px 9px', borderRadius: 100, whiteSpace: 'nowrap' as const }}>{ivBadge.icon} {ivBadge.label}</span>
-                        <span style={{ fontSize: 9, color: '#94a3b8', background: '#f1f5f9', padding: '2px 7px', borderRadius: 100 }}>🎙</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: ivBadge.color, background: `${ivBadge.color}12`, border: `1px solid ${ivBadge.color}30`, padding: '3px 9px', borderRadius: 999, whiteSpace: 'nowrap' as const }}>{ivBadge.icon} {ivBadge.label}</span>
+                        <span style={{ fontSize: 9, color: '#94a3b8', background: '#f1f5f9', padding: '2px 7px', borderRadius: 999 }}>🎙</span>
                         <span style={{ color: '#c0c0c8', fontSize: 14 }}>›</span>
                       </div>
                     );
@@ -15326,7 +15326,7 @@ export default function WorkPage() {
                             if (already) saveInsights(insightList.filter(x => !(x.bucket === b.key && x.text === sugg)));
                             else saveInsights([...insightList, { id: `${Date.now().toString(36)}_${si}`, text: sugg, bucket: b.key }]);
                           }} style={{
-                            padding: '5px 11px', borderRadius: 100, fontFamily: 'inherit', cursor: 'pointer',
+                            padding: '5px 11px', borderRadius: 999, fontFamily: 'inherit', cursor: 'pointer',
                             border: `1.5px solid ${already ? b.color : b.color + '35'}`,
                             background: already ? `${b.color}15` : '#fff',
                             color: already ? b.color : T2,
@@ -16083,7 +16083,7 @@ export default function WorkPage() {
                   const vm = VERDICT_META[signal];
                   if (!vm) return null;
                   return (
-                    <div style={{ display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: vm.color, background: `${vm.color}12`, border: `1.5px solid ${vm.color}40`, borderRadius: 100, padding: '4px 12px', fontFamily: "'Kalam', cursive" }}>
+                    <div style={{ display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: vm.color, background: `${vm.color}12`, border: `1.5px solid ${vm.color}40`, borderRadius: 999, padding: '4px 12px', fontFamily: "'Kalam', cursive" }}>
                       {vm.icon} You confirmed: {signal}
                     </div>
                   );
@@ -16230,7 +16230,7 @@ export default function WorkPage() {
               await communityApi.addIdeaPost(activeIdea.id, { content, post_type: 'update' });
               setShapeReflectionPosted(true);
             } catch { /* silent */ }
-          }} style={{ alignSelf: 'flex-start', padding: '9px 18px', borderRadius: 100, border: 'none', background: (get('validationLearnings') || '').split('|').filter(Boolean).length ? STAGE_COLORS.shape : '#e5e7eb', color: (get('validationLearnings') || '').split('|').filter(Boolean).length ? '#fff' : '#9ca3af', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          }} style={{ alignSelf: 'flex-start', padding: '9px 18px', borderRadius: 999, border: 'none', background: (get('validationLearnings') || '').split('|').filter(Boolean).length ? STAGE_COLORS.shape : '#e5e7eb', color: (get('validationLearnings') || '').split('|').filter(Boolean).length ? '#fff' : '#9ca3af', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             Share to community →
           </button>
         </div>
@@ -16323,7 +16323,7 @@ export default function WorkPage() {
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => set('hypothesisMode', 'chips')} style={{
-                padding: '7px 16px', borderRadius: 100, cursor: 'pointer', fontFamily: "'Kalam', cursive",
+                padding: '7px 16px', borderRadius: 999, cursor: 'pointer', fontFamily: "'Kalam', cursive",
                 fontSize: 13.5, fontWeight: 700,
                 border: `2px ${hypoMode === 'chips' ? 'solid' : 'dashed'} ${SC}`,
                 background: hypoMode === 'chips' ? SC : '#fff',
@@ -16334,7 +16334,7 @@ export default function WorkPage() {
                 🧩 Pick from options
               </button>
               <button onClick={() => set('hypothesisMode', 'manual')} style={{
-                padding: '7px 16px', borderRadius: 100, cursor: 'pointer', fontFamily: "'Kalam', cursive",
+                padding: '7px 16px', borderRadius: 999, cursor: 'pointer', fontFamily: "'Kalam', cursive",
                 fontSize: 13.5, fontWeight: 700,
                 border: `2px ${hypoMode === 'manual' ? 'solid' : 'dashed'} ${SC}`,
                 background: hypoMode === 'manual' ? SC : '#fff',
@@ -16467,7 +16467,7 @@ export default function WorkPage() {
                   setShapeHypothesisPosted(true);
                 } catch { /* silent */ } finally { setShapeHypothesisPosting(false); }
               }} style={{
-                alignSelf: 'flex-start', padding: '9px 18px', borderRadius: 100,
+                alignSelf: 'flex-start', padding: '9px 18px', borderRadius: 999,
                 border: `2px ${get('simplestVersion').trim() ? 'solid' : 'dashed'} ${get('simplestVersion').trim() ? '#d97706' : '#cbd5e1'}`,
                 background: get('simplestVersion').trim() ? '#d97706' : '#fff',
                 color: get('simplestVersion').trim() ? '#fff' : '#9ca3af',
@@ -16537,7 +16537,7 @@ export default function WorkPage() {
             {!shapeHypothesisPosted && (
               <div style={{ borderRadius: 10, border: '1.5px solid #e5e7eb', background: '#fff', padding: '10px 14px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 13, color: T2 }}>Haven't shared with community yet?</span>
-                <button onClick={back} style={{ padding: '6px 14px', borderRadius: 100, border: `1.5px solid ${SC}`, background: 'transparent', color: SC, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>← Go back</button>
+                <button onClick={back} style={{ padding: '6px 14px', borderRadius: 999, border: `1.5px solid ${SC}`, background: 'transparent', color: SC, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>← Go back</button>
               </div>
             )}
             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginBottom: hasFeedback ? 10 : 0 }}>
@@ -16558,7 +16558,7 @@ export default function WorkPage() {
             {hasPivotSignal ? (
               <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 10, background: '#fff7ed', border: '1.5px solid #fdba7460', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
                 <span style={{ fontSize: 12.5, color: '#9a3412', fontWeight: 600 }}>⚠️ Worth a second look before you lock in features — want to revisit your hypothesis?</span>
-                <button onClick={back} style={{ padding: '6px 14px', borderRadius: 100, border: '1.5px solid #ea580c', background: 'transparent', color: '#ea580c', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>← Go back</button>
+                <button onClick={back} style={{ padding: '6px 14px', borderRadius: 999, border: '1.5px solid #ea580c', background: 'transparent', color: '#ea580c', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>← Go back</button>
               </div>
             ) : hasPositiveSignal ? (
               <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 10, background: '#f0fdf4', border: '1.5px solid #bbf7d0', fontSize: 12.5, color: '#15803d', fontWeight: 600 }}>
@@ -17671,8 +17671,8 @@ export default function WorkPage() {
       <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -1, marginBottom: 8, fontFamily: 'Georgia, serif', color: T1 }}>You shipped an MVP.</div>
       <div style={{ fontSize: 15, color: T2, lineHeight: 1.7, maxWidth: 360, margin: '0 auto 32px', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>From idea to launch — that's what MVP Club is for.</div>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-        <button onClick={() => window.location.href = '/community'} style={{ padding: '12px 28px', borderRadius: 100, border: 'none', background: '#1d1d1f', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Share in Community →</button>
-        <button onClick={() => { setMod('idea'); setStep(0); }} style={{ padding: '12px 28px', borderRadius: 100, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Start another idea</button>
+        <button onClick={() => window.location.href = '/community'} style={{ padding: '12px 28px', borderRadius: 999, border: 'none', background: '#1d1d1f', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Share in Community →</button>
+        <button onClick={() => { setMod('idea'); setStep(0); }} style={{ padding: '12px 28px', borderRadius: 999, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Start another idea</button>
       </div>
     </div>,
   ];
@@ -17937,19 +17937,19 @@ export default function WorkPage() {
                     <div style={{ fontSize: 16, fontWeight: 800, color: T1 }}>{iv.interviewee_name || 'Unnamed interviewee'}</div>
                     {iv.interviewee_role && <div style={{ fontSize: 12, color: T3, marginTop: 2 }}>{iv.interviewee_role}</div>}
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: ivBadge.color, background: ivBadge.bg, border: `1.5px solid ${ivBadge.br}`, padding: '4px 12px', borderRadius: 100 }}>{ivBadge.icon} {ivBadge.label}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: ivBadge.color, background: ivBadge.bg, border: `1.5px solid ${ivBadge.br}`, padding: '4px 12px', borderRadius: 999 }}>{ivBadge.icon} {ivBadge.label}</span>
                   <button onClick={() => setV3ModalIv(null)} style={{ width: 32, height: 32, borderRadius: '50%', border: `1.5px solid ${BORDER}`, background: '#f5f5f7', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T2, fontFamily: 'inherit', flexShrink: 0 }}>✕</button>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {(['transcript', 'edit'] as const).map(tab => (
                     <button key={tab} onClick={() => setV3IvTab(tab)}
-                      style={{ fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 100, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      style={{ fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                         background: ivTab === tab ? STAGE_COLORS.validate : '#f1f5f9',
                         color: ivTab === tab ? '#fff' : T3 }}>
                       {tab === 'transcript' ? '📄 Transcript' : '✎ Edit'}
                     </button>
                   ))}
-                  {allSigs.length > 0 && <span style={{ marginLeft: 4, fontSize: 11, color: STAGE_COLORS.validate, background: `${STAGE_COLORS.validate}10`, border: `1px solid ${STAGE_COLORS.validate}25`, padding: '4px 10px', borderRadius: 100 }}>✦ {allSigs.length} signals</span>}
+                  {allSigs.length > 0 && <span style={{ marginLeft: 4, fontSize: 11, color: STAGE_COLORS.validate, background: `${STAGE_COLORS.validate}10`, border: `1px solid ${STAGE_COLORS.validate}25`, padding: '4px 10px', borderRadius: 999 }}>✦ {allSigs.length} signals</span>}
                 </div>
               </div>
 
@@ -17972,8 +17972,8 @@ export default function WorkPage() {
                                   {qa.signals.map((sig: string) => {
                                     const opt = ALL_SIGNAL_OPTS.find(o => o.k === sig);
                                     return opt
-                                      ? <span key={sig} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: `${opt.color}12`, color: opt.color, border: `1px solid ${opt.color}25` }}>{opt.icon} {sig}</span>
-                                      : <span key={sig} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 100, background: '#f0f0f0', color: '#6e6e73' }}>{sig}</span>;
+                                      ? <span key={sig} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: `${opt.color}12`, color: opt.color, border: `1px solid ${opt.color}25` }}>{opt.icon} {sig}</span>
+                                      : <span key={sig} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 999, background: '#f0f0f0', color: '#6e6e73' }}>{sig}</span>;
                                   })}
                                 </div>
                               )}
@@ -17988,7 +17988,7 @@ export default function WorkPage() {
                             <div style={{ marginBottom: 12 }}>
                               <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 8 }}>Signals captured</div>
                               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
-                                {allSigs.map((sig: string) => { const opt = ALL_SIGNAL_OPTS.find(o => o.k === sig); return opt ? <span key={sig} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: `${opt.color}12`, color: opt.color, border: `1px solid ${opt.color}25` }}>{opt.icon} {sig}</span> : <span key={sig} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 100, background: '#f0f0f0', color: '#6e6e73' }}>{sig}</span>; })}
+                                {allSigs.map((sig: string) => { const opt = ALL_SIGNAL_OPTS.find(o => o.k === sig); return opt ? <span key={sig} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: `${opt.color}12`, color: opt.color, border: `1px solid ${opt.color}25` }}>{opt.icon} {sig}</span> : <span key={sig} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 999, background: '#f0f0f0', color: '#6e6e73' }}>{sig}</span>; })}
                               </div>
                             </div>
                           )}

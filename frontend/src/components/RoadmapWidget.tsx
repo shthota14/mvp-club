@@ -60,7 +60,7 @@ export default function RoadmapWidget({ result, profile, answers, ideaName, onRe
               <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -.4, color: '#1d1d1f' }}>{ideaName}</div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={onRecalculate} style={{ padding: '7px 14px', borderRadius: 100, border: '1.5px solid #e5e5ea', background: '#fff', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: '#6e6e73', cursor: 'pointer' }}>
+              <button onClick={onRecalculate} style={{ padding: '7px 14px', borderRadius: 999, border: '1.5px solid #e5e5ea', background: '#fff', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, color: '#6e6e73', cursor: 'pointer' }}>
                 ✏️ Recalculate
               </button>
               <button onClick={onClose} style={{ background: '#f5f5f7', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', color: '#6e6e73', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
@@ -122,7 +122,7 @@ export default function RoadmapWidget({ result, profile, answers, ideaName, onRe
                       {meta.icon}
                     </div>
                     <span style={{ fontSize: 13, fontWeight: 700, color: '#1d1d1f', flex: 1 }}>{meta.label}</span>
-                    <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 100, background: conf.bg, color: conf.color, fontWeight: 600 }}>{conf.label}</span>
+                    <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 999, background: conf.bg, color: conf.color, fontWeight: 600 }}>{conf.label}</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: meta.color, minWidth: 60, textAlign: 'right' as const }}>{est.hours}h · {weeks}w</span>
                     <span style={{ fontSize: 12, color: '#c0c0c8', transition: 'transform .2s', display: 'inline-block', transform: isOpen ? 'rotate(90deg)' : 'none' }}>▶</span>
                   </div>

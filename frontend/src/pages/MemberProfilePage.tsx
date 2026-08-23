@@ -297,8 +297,8 @@ export default function MemberProfilePage() {
                         <span style={{ fontSize: 14 }}>{ct.icon}</span>
                         <span style={{ fontSize: 11, fontWeight: 700, color: ct.color }}>{ct.label}</span>
                       </div>
-                      <div style={{ flex: 1, height: 8, background: '#f5f5f7', borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${barW}%`, background: ct.color, borderRadius: 99, transition: 'width .4s ease' }} />
+                      <div style={{ flex: 1, height: 8, background: '#f5f5f7', borderRadius: 999, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${barW}%`, background: ct.color, borderRadius: 999, transition: 'width .4s ease' }} />
                       </div>
                       <div style={{ width: 28, textAlign: 'right' as const, fontSize: 12, fontWeight: 800, color: '#1d1d1f', flexShrink: 0 }}>
                         {count}

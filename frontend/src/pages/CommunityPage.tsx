@@ -566,7 +566,7 @@ function ShareWinModal({ userStage, onClose, onPosted }: {
                   const sel = type === t;
                   return (
                     <button key={t} onClick={() => setType(t)} style={{
-                      padding: '6px 14px', borderRadius: 100, fontSize: 12, fontWeight: 700,
+                      padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 700,
                       cursor: 'pointer', border: `1.5px solid ${sel ? badge.color : LIT.border}`,
                       background: sel ? badge.bg : LIT.card, color: sel ? badge.color : LIT.muted,
                       fontFamily: 'inherit', transition: 'all .15s',
@@ -582,7 +582,7 @@ function ShareWinModal({ userStage, onClose, onPosted }: {
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
                   {WIN_STARTERS.map(s => (
                     <button key={s} onClick={() => setText(s)} style={{
-                      padding: '4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 500,
+                      padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500,
                       cursor: 'pointer', border: `1.5px solid ${LIT.border}`, background: text === s ? `${color}12` : LIT.cardTint,
                       color: text === s ? color : LIT.secondary, fontFamily: 'inherit',
                     }}>
@@ -682,7 +682,7 @@ function ActivityCard({ post, onEncourage, onViewIdea }: {
           <div style={{ fontSize: 13, fontWeight: 700, color: LIT.text, fontFamily: LIT.headFont }}>{post.author_name}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
             <span style={{
-              fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 100,
+              fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
               background: badge.bg, color: badge.color, letterSpacing: 0.3,
             }}>{badge.label}</span>
             <span style={{ fontSize: 11, color: LIT.muted }}>{ago}</span>
@@ -701,7 +701,7 @@ function ActivityCard({ post, onEncourage, onViewIdea }: {
           onClick={() => { setEncouraged(e => !e); onEncourage(post.id); }}
           style={{
             display: 'flex', alignItems: 'center', gap: 5,
-            padding: '6px 12px', borderRadius: 100,
+            padding: '6px 12px', borderRadius: 999,
             border: `1.5px solid ${encouraged ? '#059669' : LIT.border}`,
             background: encouraged ? '#f0fdf4' : LIT.card,
             color: encouraged ? '#059669' : LIT.secondary,
@@ -715,7 +715,7 @@ function ActivityCard({ post, onEncourage, onViewIdea }: {
             onClick={() => onViewIdea(post.idea_id!)}
             style={{
               display: 'flex', alignItems: 'center', gap: 4,
-              padding: '6px 12px', borderRadius: 100,
+              padding: '6px 12px', borderRadius: 999,
               border: `1.5px solid ${LIT.border}`, background: LIT.card,
               color: LIT.secondary, fontSize: 12, fontWeight: 600,
               cursor: 'pointer', fontFamily: 'inherit',
@@ -791,7 +791,7 @@ function ProofTab({ userStage, userId, onNavigate }: { userStage: Stage; userId?
         <button
           onClick={() => setShowCompose(true)}
           style={{
-            padding: '11px 22px', borderRadius: 100,
+            padding: '11px 22px', borderRadius: 999,
             background: color, color: '#fff',
             border: 'none', fontSize: 13, fontWeight: 700,
             cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
@@ -872,7 +872,7 @@ function ProofTab({ userStage, userId, onNavigate }: { userStage: Stage; userId?
             <button
               onClick={() => setShowCompose(true)}
               style={{
-                padding: '10px 22px', borderRadius: 100,
+                padding: '10px 22px', borderRadius: 999,
                 background: color, color: '#fff',
                 border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
               }}
@@ -918,7 +918,7 @@ function ProofTab({ userStage, userId, onNavigate }: { userStage: Stage; userId?
             <div style={{ fontSize: 14, fontWeight: 700, color: LIT.text, fontFamily: LIT.headFont }}>{myIdea.name}</div>
           </div>
           <button onClick={() => onNavigate(`/community/${myIdea.id}`)} style={{
-            padding: '8px 16px', borderRadius: 100, border: `1.5px solid ${color}`, background: 'transparent',
+            padding: '8px 16px', borderRadius: 999, border: `1.5px solid ${color}`, background: 'transparent',
             color, fontSize: 12, fontWeight: 700, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
           }}>
             View idea page →
@@ -1105,7 +1105,7 @@ function PostCollabModal({ onClose, onPosted }: {
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
                 {(Object.entries(STAGE_LABELS_COLLAB) as [Stage, string][]).map(([s, label]) => (
                   <button key={s} onClick={() => setStage(s)} style={{
-                    padding: '6px 14px', borderRadius: 100, fontSize: 12, fontWeight: 600,
+                    padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
                     cursor: 'pointer', fontFamily: 'inherit', transition: 'all .12s',
                     border: `1.5px solid ${stage === s ? STAGE_COLORS[s] : LIT.border}`,
                     background: stage === s ? `${STAGE_COLORS[s]}12` : LIT.card,
@@ -1306,21 +1306,21 @@ function CollabCard({ collab, currentUserId, onExpressInterest, onEncourage }: {
         {/* Badges row */}
         <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
           <span style={{
-            fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 100,
+            fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 999,
             background: commitStyle.bg, color: commitStyle.color, border: `1.5px solid ${commitStyle.border}`,
           }}>
             {commitStyle.label}
           </span>
           {data?.stage && (
             <span style={{
-              fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100,
+              fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 999,
               background: `${stageColor}12`, color: stageColor, border: `1.5px solid ${stageColor}30`,
             }}>
               {STAGE_LABELS_COLLAB[data.stage]}
             </span>
           )}
           {isSelf && (
-            <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 100, background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}>
               Your post
             </span>
           )}
@@ -1385,7 +1385,7 @@ function CollabCard({ collab, currentUserId, onExpressInterest, onEncourage }: {
             onClick={() => onExpressInterest(collab)}
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              padding: '9px 18px', borderRadius: 100,
+              padding: '9px 18px', borderRadius: 999,
               border: `2px solid ${isInterested ? LIT.accent : isSelf ? LIT.border : LIT.accent}`,
               background: isInterested ? LIT.accentSoft : isSelf ? LIT.cardTint : LIT.accent,
               color: isInterested ? LIT.accent : isSelf ? LIT.muted : '#fff',
@@ -1402,7 +1402,7 @@ function CollabCard({ collab, currentUserId, onExpressInterest, onEncourage }: {
             onClick={() => onEncourage(collab.id)}
             style={{
               display: 'flex', alignItems: 'center', gap: 5,
-              padding: '9px 14px', borderRadius: 100,
+              padding: '9px 14px', borderRadius: 999,
               border: `1.5px solid ${isEncouraging ? '#059669' : LIT.border}`,
               background: isEncouraging ? '#f0fdf4' : LIT.card,
               color: isEncouraging ? '#059669' : LIT.secondary,
@@ -1461,7 +1461,7 @@ function CollabsTab({ userId }: { userId?: string }) {
     .filter(c => stageFilter  === 'all' || decodeCollab(c.content)?.stage      === stageFilter);
 
   const chipBtn = (active: boolean, color?: string): React.CSSProperties => ({
-    padding: '6px 16px', borderRadius: 100, fontSize: 12, fontWeight: 600,
+    padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 600,
     whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
     border: `1.5px solid ${active ? (color ?? LIT.text) : LIT.border}`,
     background: active ? (color ?? LIT.text) : LIT.card,
@@ -1492,7 +1492,7 @@ function CollabsTab({ userId }: { userId?: string }) {
         <button
           onClick={() => setShowPost(true)}
           style={{
-            padding: '13px 26px', borderRadius: 100, border: 'none',
+            padding: '13px 26px', borderRadius: 999, border: 'none',
             background: LIT.accent,
             color: '#fff', fontSize: 14, fontWeight: 700,
             cursor: 'pointer', flexShrink: 0, fontFamily: LIT.headFont,
@@ -1531,7 +1531,7 @@ function CollabsTab({ userId }: { userId?: string }) {
             Be the first. Share what you're building and who you need.
           </div>
           <button onClick={() => setShowPost(true)} style={{
-            padding: '11px 24px', borderRadius: 100, border: 'none',
+            padding: '11px 24px', borderRadius: 999, border: 'none',
             background: LIT.accent,
             color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: LIT.headFont,
           }}>
@@ -2054,7 +2054,7 @@ function LogPainPointModal({ onClose, onLogged }: {
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 18 }}>
                 {FREQ_OPTS.map(f => (
                   <button key={f} onClick={() => setFrequency(f)} style={{
-                    padding: '6px 14px', borderRadius: 100, fontSize: 12, fontWeight: 600,
+                    padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
                     cursor: 'pointer', fontFamily: 'inherit', transition: 'all .12s',
                     border: `1.5px solid ${frequency === f ? LIT.accent : LIT.border}`,
                     background: frequency === f ? LIT.accentSoft : LIT.card,
@@ -2244,8 +2244,8 @@ function PainPointCards({ items, onOpen }: {
 
             {/* Confidence bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
-              <div style={{ flex: 1, height: 6, background: LIT.cardTint, borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${health.confidence}%`, background: col, borderRadius: 99, transition: 'width .4s' }} />
+              <div style={{ flex: 1, height: 6, background: LIT.cardTint, borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${health.confidence}%`, background: col, borderRadius: 999, transition: 'width .4s' }} />
               </div>
               <span style={{ fontSize: 11, fontWeight: 800, color: col, minWidth: 32 }}>{health.confidence}%</span>
             </div>
@@ -2422,8 +2422,8 @@ function PainPointDetailModal({ pp, onClose, onReact }: {
             Pain Point Investigation
           </span>
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 120, height: 6, background: LIT.cardTint, borderRadius: 99, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${health.confidence}%`, background: progressCol, borderRadius: 99 }} />
+            <div style={{ width: 120, height: 6, background: LIT.cardTint, borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${health.confidence}%`, background: progressCol, borderRadius: 999 }} />
             </div>
             <span style={{ fontSize: 12, fontWeight: 800, color: progressCol }}>{health.confidence}% confidence</span>
           </div>
@@ -2462,7 +2462,7 @@ function PainPointDetailModal({ pp, onClose, onReact }: {
               <button
                 onClick={() => handleReactLocal('encourage')}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 100,
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 999,
                   border: `1.5px solid ${myReacted === 'encourage' ? LIT.accent : LIT.border}`,
                   background: myReacted === 'encourage' ? LIT.accentSoft : LIT.card,
                   color: myReacted === 'encourage' ? LIT.accent : LIT.secondary,
@@ -2483,7 +2483,7 @@ function PainPointDetailModal({ pp, onClose, onReact }: {
                   }
                 }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 100,
+                  display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 999,
                   border: `1.5px solid ${myReacted === 'pursue' ? LIT.accent : LIT.border}`,
                   background: myReacted === 'pursue' ? LIT.accentSoft : LIT.card,
                   color: myReacted === 'pursue' ? LIT.accent : LIT.secondary,
@@ -2507,7 +2507,7 @@ function PainPointDetailModal({ pp, onClose, onReact }: {
                       key={ct.key}
                       onClick={() => setActiveType(ct.key)}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 4, padding: '5px 11px', borderRadius: 100,
+                        display: 'flex', alignItems: 'center', gap: 4, padding: '5px 11px', borderRadius: 999,
                         border: `1.5px solid ${activeType === ct.key ? ct.color : LIT.border}`,
                         background: activeType === ct.key ? ct.bg : LIT.card,
                         color: activeType === ct.key ? ct.color : LIT.muted,
@@ -2541,7 +2541,7 @@ function PainPointDetailModal({ pp, onClose, onReact }: {
                     onClick={handleContrib}
                     disabled={!contribText.trim() || submitting}
                     style={{
-                      padding: '8px 20px', borderRadius: 100, border: 'none',
+                      padding: '8px 20px', borderRadius: 999, border: 'none',
                       background: contribText.trim() ? activeContrib.color : LIT.border,
                       color: contribText.trim() ? '#fff' : LIT.muted,
                       fontSize: 13, fontWeight: 700, cursor: contribText.trim() ? 'pointer' : 'not-allowed',
@@ -2617,8 +2617,8 @@ function PainPointDetailModal({ pp, onClose, onReact }: {
                         <span style={{ fontSize: 11, fontWeight: 600, color: t.color }}>{t.label}</span>
                         <span style={{ fontSize: 11, fontWeight: 800, color: t.color }}>{t.pct}%</span>
                       </div>
-                      <div style={{ height: 6, background: LIT.cardTint, borderRadius: 99, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${t.pct}%`, background: t.color, borderRadius: 99 }} />
+                      <div style={{ height: 6, background: LIT.cardTint, borderRadius: 999, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${t.pct}%`, background: t.color, borderRadius: 999 }} />
                       </div>
                     </div>
                   ))}
@@ -3000,11 +3000,11 @@ function ChallengeCard({
             {challenge.conversation_count} / {challenge.conversations_goal}
           </span>
         </div>
-        <div style={{ height: 6, background: LIT.border, borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{ height: 6, background: LIT.border, borderRadius: 999, overflow: 'hidden' }}>
           <div style={{
             height: '100%', width: `${prog * 100}%`,
             background: done ? '#059669' : 'linear-gradient(90deg,#7c3aed,#2563eb)',
-            borderRadius: 99, transition: 'width .4s ease',
+            borderRadius: 999, transition: 'width .4s ease',
           }} />
         </div>
       </div>
@@ -3180,12 +3180,12 @@ function ChallengeDetailModal({
                 <span style={{ fontSize: 11, fontWeight: 700, color: LIT.muted }}>Conversations so far</span>
                 <span style={{ fontSize: 11, fontWeight: 800, color: LIT.text }}>{challenge.conversation_count} / {challenge.conversations_goal}</span>
               </div>
-              <div style={{ height: 6, background: LIT.border, borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: 6, background: LIT.border, borderRadius: 999, overflow: 'hidden' }}>
                 <div style={{
                   height: '100%',
                   width: `${Math.min(1, challenge.conversation_count / challenge.conversations_goal) * 100}%`,
                   background: 'linear-gradient(90deg,#7c3aed,#2563eb)',
-                  borderRadius: 99,
+                  borderRadius: 999,
                 }} />
               </div>
             </div>
@@ -3861,8 +3861,8 @@ function LeaderboardTab() {
                     </div>
                   </div>
                   {/* Progress bar */}
-                  <div style={{ height: 4, background: LIT.border, borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${barW}%`, background: `linear-gradient(90deg, ${LIT.accent}, #6b4520)`, borderRadius: 99 }} />
+                  <div style={{ height: 4, background: LIT.border, borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${barW}%`, background: `linear-gradient(90deg, ${LIT.accent}, #6b4520)`, borderRadius: 999 }} />
                   </div>
                 </div>
 
@@ -4174,8 +4174,8 @@ function PainPointCardLegend() {
               <div style={{ fontSize: 9, color: LIT.secondary, marginBottom: 9, fontFamily: LIT.bodyFont }}>👥 Early founders · 🔄 Constantly</div>
               {/* Confidence bar */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 9 }}>
-                <div style={{ flex: 1, height: 4, background: LIT.cardTint, borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: '62%', background: '#2563eb', borderRadius: 99 }} />
+                <div style={{ flex: 1, height: 4, background: LIT.cardTint, borderRadius: 999, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: '62%', background: '#2563eb', borderRadius: 999 }} />
                 </div>
                 <span style={{ fontSize: 9, fontWeight: 700, color: '#2563eb' }}>62%</span>
               </div>
@@ -4286,7 +4286,7 @@ function PainPointsTab({ onNavigate: _onNavigate }: { onNavigate: (path: string)
     : painPoints.filter(p => { const d = decodePP(p.content); return d?.impact === impactFilter; });
 
   const chipBtn = (active: boolean, color?: string): React.CSSProperties => ({
-    padding: '6px 16px', borderRadius: 100, fontSize: 12, fontWeight: 600,
+    padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 600,
     whiteSpace: 'nowrap' as const, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
     border: `1.5px solid ${active ? (color ?? LIT.text) : LIT.border}`,
     background: active ? (color ?? LIT.text) : LIT.card,
@@ -4317,7 +4317,7 @@ function PainPointsTab({ onNavigate: _onNavigate }: { onNavigate: (path: string)
         <button
           onClick={() => setShowLog(true)}
           style={{
-            padding: '13px 26px', borderRadius: 100, border: 'none',
+            padding: '13px 26px', borderRadius: 999, border: 'none',
             background: LIT.accent,
             color: '#fff', fontSize: 14, fontWeight: 700,
             cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
@@ -4365,7 +4365,7 @@ function PainPointsTab({ onNavigate: _onNavigate }: { onNavigate: (path: string)
               : 'Try a different filter or log one yourself.'}
           </div>
           <button onClick={() => setShowLog(true)} style={{
-            padding: '11px 24px', borderRadius: 100, border: 'none',
+            padding: '11px 24px', borderRadius: 999, border: 'none',
             background: LIT.accent,
             color: '#fff', fontSize: 13, fontWeight: 700,
             cursor: 'pointer', fontFamily: 'inherit',
@@ -4459,7 +4459,7 @@ function StartupNewsPillRow() {
     return (
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
         {[0, 1, 2, 3].map(i => (
-          <div key={i} style={{ height: 26, width: 120 + (i % 2) * 40, borderRadius: 100, background: '#111', border: '1px solid #333' }} />
+          <div key={i} style={{ height: 26, width: 120 + (i % 2) * 40, borderRadius: 999, background: '#111', border: '1px solid #333' }} />
         ))}
       </div>
     );
@@ -4500,7 +4500,7 @@ function StartupNewsPillRow() {
               title={`${item.source}${item.published_at ? ` · ${newsAgo(item.published_at)}` : ''}`}
               style={{
                 flexShrink: 0, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600, color: '#f2f2f2',
-                background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 100,
+                background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 999,
                 padding: '5px 14px', fontFamily: '"Courier New", Courier, monospace',
                 letterSpacing: .3, cursor: 'default',
               }}
@@ -4545,7 +4545,7 @@ function CommunityWinsSpotlight({ ideas, rxStore, onNavigate }: { ideas: IdeaCar
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#059669', background: '#f0fdf4', borderRadius: 100, padding: '2px 8px' }}>🚀 Shipped</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#059669', background: '#f0fdf4', borderRadius: 999, padding: '2px 8px' }}>🚀 Shipped</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: LIT.muted }}>{score} pts</span>
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: LIT.text, marginBottom: 3, fontFamily: LIT.headFont }}>{idea.name}</div>
@@ -4649,7 +4649,7 @@ function ResourcesTab() {
               onMouseEnter={e => { e.currentTarget.style.borderColor = LIT.accent + '60'; e.currentTarget.style.boxShadow = `0 4px 16px ${LIT.accent}18`; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = LIT.border; e.currentTarget.style.boxShadow = 'none'; }}
             >
-              <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 700, color: LIT.accent, background: `${LIT.accent}12`, borderRadius: 100, padding: '2px 9px', marginBottom: 8 }}>
+              <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 700, color: LIT.accent, background: `${LIT.accent}12`, borderRadius: 999, padding: '2px 9px', marginBottom: 8 }}>
                 {r.category}
               </span>
               <div style={{ fontSize: 14, fontWeight: 700, color: LIT.text, marginBottom: 5, fontFamily: LIT.headFont }}>{r.title} ↗</div>
@@ -4798,7 +4798,7 @@ function PollsTab() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: LIT.text, fontFamily: LIT.headFont, lineHeight: 1.4 }}>{poll.question}</div>
         {poll.is_closed && (
-          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: LIT.muted, background: LIT.cardTint, border: `1px solid ${LIT.border}`, borderRadius: 100, padding: '2px 9px', whiteSpace: 'nowrap' as const }}>Closed</span>
+          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: LIT.muted, background: LIT.cardTint, border: `1px solid ${LIT.border}`, borderRadius: 999, padding: '2px 9px', whiteSpace: 'nowrap' as const }}>Closed</span>
         )}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -4848,7 +4848,7 @@ function PollsTab() {
         <button
           onClick={() => setShowCompose(v => !v)}
           style={{
-            padding: '9px 18px', borderRadius: 100, background: LIT.accent, color: '#fff',
+            padding: '9px 18px', borderRadius: 999, background: LIT.accent, color: '#fff',
             border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
           }}
         >
@@ -4903,7 +4903,7 @@ function PollsTab() {
               onClick={handleCreate}
               disabled={submitting}
               style={{
-                padding: '9px 20px', borderRadius: 100, background: LIT.accent, color: '#fff',
+                padding: '9px 20px', borderRadius: 999, background: LIT.accent, color: '#fff',
                 border: 'none', fontSize: 12, fontWeight: 700, cursor: submitting ? 'default' : 'pointer',
                 fontFamily: 'inherit', opacity: submitting ? .6 : 1,
               }}
@@ -5042,7 +5042,7 @@ export default function CommunityPage() {
   });
 
   const filterBtn = (active: boolean): React.CSSProperties => ({
-    padding: '6px 16px', borderRadius: 100, fontSize: 12, fontWeight: 600,
+    padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 600,
     whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0,
     border: `1.5px solid ${active ? LIT.accent : LIT.border}`,
     background: active ? LIT.accent : LIT.card,
@@ -5079,7 +5079,7 @@ export default function CommunityPage() {
               key={t.key}
               onClick={() => setTab(t.key)}
               style={{
-                padding: '8px 20px', borderRadius: 100, fontSize: 13, fontWeight: 700,
+                padding: '8px 20px', borderRadius: 999, fontSize: 13, fontWeight: 700,
                 cursor: 'pointer',
                 border: `1.5px solid ${tab === t.key ? TAB_ACTIVE_COLOR : LIT.border}`,
                 background: tab === t.key ? TAB_ACTIVE_COLOR : LIT.card,
@@ -5117,7 +5117,7 @@ export default function CommunityPage() {
           onClick={() => setShowPayItForward(true)}
           style={{
             padding: '9px 20px',
-            borderRadius: 100,
+            borderRadius: 999,
             background: LIT.accent,
             color: '#fff',
             fontSize: 12,
@@ -5205,7 +5205,7 @@ export default function CommunityPage() {
           <div style={{ display: 'flex', gap: 6 }}>
             {SORT_OPTS.map(s => (
               <button key={s.value} onClick={() => setSortMode(s.value)} style={{
-                padding: '6px 14px', borderRadius: 100, fontSize: 12, fontWeight: 600,
+                padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
                 whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
                 border: `1.5px solid ${sortMode === s.value ? LIT.accent : LIT.border}`,
                 background: sortMode === s.value ? LIT.accent : LIT.card,
@@ -5224,7 +5224,7 @@ export default function CommunityPage() {
             {VIEW_MODES.map(v => (
               <button key={v.value} title={v.label} onClick={() => setViewMode(v.value)} style={{
                 display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 12px', borderRadius: 100, fontSize: 12, fontWeight: 600,
+                padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600,
                 whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
                 border: `1.5px solid ${viewMode === v.value ? LIT.accent : LIT.border}`,
                 background: viewMode === v.value ? LIT.accent : LIT.card,

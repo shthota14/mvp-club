@@ -2138,8 +2138,8 @@ function InfographicGrid({ guide, onItemClick }: { guide: GuideContent; onItemCl
               <div style={{ fontSize: 13, fontWeight: 800, color: '#1d1d1f', textAlign: 'center', lineHeight: 1.3 }}>
                 {item.label}
               </div>
-              <div style={{ width: '100%', height: 4, borderRadius: 99, background: `${c}25`, overflow: 'hidden' }}>
-                <div style={{ height: '100%', background: c, borderRadius: 99 }} />
+              <div style={{ width: '100%', height: 4, borderRadius: 999, background: `${c}25`, overflow: 'hidden' }}>
+                <div style={{ height: '100%', background: c, borderRadius: 999 }} />
               </div>
               {isHov && <ClickableHint />}
             </div>

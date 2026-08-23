@@ -166,7 +166,7 @@ function JourneyHero({ idea, onAction }: { idea: Idea; onAction: () => void }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <span style={{
               display: 'inline-flex', alignItems: 'center', gap: 5,
-              padding: '4px 10px', borderRadius: 100,
+              padding: '4px 10px', borderRadius: 999,
               background: `${color}12`, fontSize: 10, fontWeight: 700, color, letterSpacing: 0.5, textTransform: 'uppercase' as const,
             }}>
               {STAGE_ICONS[stage]} {STAGE_LABELS[stage]} · Stage {currentIdx + 1} of 5
@@ -541,7 +541,7 @@ function TimelineModal({ idea, onClose }: { idea: Idea; onClose: () => void }) {
               <span style={{ fontSize: 12, color: '#8e8e93' }}>
                 Started {startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · {totalDays} days ago
               </span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, background: rs.bg, color: rs.color, border: `1.5px solid ${rs.border}` }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: rs.bg, color: rs.color, border: `1.5px solid ${rs.border}` }}>
                 {rs.label}
               </span>
             </div>
@@ -970,7 +970,7 @@ function VaultCard({ idea, isActive, onClick, onStatusChange, onViewCanvas, onTi
             background: isDone ? '#f0fdf4' : `${color}10`,
             color: isDone ? '#059669' : color,
             border: `1px solid ${isDone ? '#86efac' : color + '30'}`,
-            borderRadius: 100, padding: '4px 10px', fontSize: 11, fontWeight: 700,
+            borderRadius: 999, padding: '4px 10px', fontSize: 11, fontWeight: 700,
           }}>
             <span>{STAGE_ICONS[idea.stage as Stage]}</span>
             <span>{isDone ? 'Shipped' : STAGE_LABELS[idea.stage as Stage]}</span>
@@ -1500,7 +1500,7 @@ export default function MyProgressPage() {
           onClick={() => setShowNewIdea(true)}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            padding: '12px 22px', borderRadius: 100,
+            padding: '12px 22px', borderRadius: 999,
             background: '#1d1d1f', color: '#fff',
             border: 'none', fontSize: 14, fontWeight: 700,
             cursor: 'pointer', flexShrink: 0,
@@ -1525,7 +1525,7 @@ export default function MyProgressPage() {
             Every great startup started as a single thought.
           </div>
           <button onClick={() => setShowNewIdea(true)}
-            style={{ background: '#1d1d1f', color: '#fff', border: 'none', borderRadius: 100, padding: '14px 32px', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,.18)' }}>
+            style={{ background: '#1d1d1f', color: '#fff', border: 'none', borderRadius: 999, padding: '14px 32px', fontSize: 15, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 12px rgba(0,0,0,.18)' }}>
             + Start my first idea
           </button>
         </div>
@@ -1539,7 +1539,7 @@ export default function MyProgressPage() {
             {VAULT_VIEW_MODES.map(v => (
               <button key={v.value} title={v.label} onClick={() => setViewMode(v.value)} style={{
                 display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 12px', borderRadius: 100, fontSize: 12, fontWeight: 600,
+                padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600,
                 whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
                 border: `1.5px solid ${viewMode === v.value ? '#1d1d1f' : '#e5e5ea'}`,
                 background: viewMode === v.value ? '#1d1d1f' : '#fff',

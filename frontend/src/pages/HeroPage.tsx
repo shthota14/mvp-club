@@ -148,7 +148,7 @@ export default function HeroPage() {
             Sign in
           </button>
           <button onClick={() => open('register')} className="hp-nav-getstarted"
-            style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 100, padding: '9px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+            style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '9px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
             Get started
           </button>
         </div>
@@ -176,7 +176,7 @@ export default function HeroPage() {
             <button onClick={() => open('register')}
               style={{
                 background: '#fff', color: '#080808', border: 'none',
-                borderRadius: 100, padding: '14px 32px', fontSize: 15, fontWeight: 700,
+                borderRadius: 999, padding: '14px 32px', fontSize: 15, fontWeight: 700,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
               }}>
               <span style={{ fontSize: 16 }}>→</span> Start for free
@@ -184,7 +184,7 @@ export default function HeroPage() {
             <button onClick={() => open('login')}
               style={{
                 background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.65)',
-                border: '1px solid rgba(255,255,255,.1)', borderRadius: 100,
+                border: '1px solid rgba(255,255,255,.1)', borderRadius: 999,
                 padding: '14px 28px', fontSize: 15, fontWeight: 500, cursor: 'pointer',
               }}>
               Sign in
@@ -284,7 +284,7 @@ export default function HeroPage() {
           {/* Trust badge strip */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
             {['🆓  Free forever', '🚫  No ads', '🔓  Built in public'].map(b => (
-              <span key={b} style={{ fontSize: 12, fontWeight: 600, padding: '8px 16px', borderRadius: 100, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.55)' }}>
+              <span key={b} style={{ fontSize: 12, fontWeight: 600, padding: '8px 16px', borderRadius: 999, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.55)' }}>
                 {b}
               </span>
             ))}
@@ -389,7 +389,7 @@ export default function HeroPage() {
                 Click one to explore, respond, or connect. Every idea here belongs to a real founder working through the same five stages as you.
               </p>
               <button onClick={() => open('register')}
-                style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 100, padding: '13px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '13px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
                 See all startup ideas →
               </button>
             </div>
@@ -456,7 +456,7 @@ export default function HeroPage() {
                       <div style={{ fontSize: 11, color: 'rgba(255,255,255,.25)', marginTop: 1 }}>{card.time}</div>
                     </div>
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: card.stageColor, background: `${card.stageColor}18`, border: `1px solid ${card.stageColor}30`, borderRadius: 100, padding: '3px 10px', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.8, color: card.stageColor, background: `${card.stageColor}18`, border: `1px solid ${card.stageColor}30`, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' }}>
                     {card.stage}
                   </span>
                 </div>
@@ -549,7 +549,7 @@ export default function HeroPage() {
             MVP Club is small on purpose — one founder, no support queue. The fastest way to reach me is to create a free account and use the feedback button inside the app; I read every message myself.
           </p>
           <button onClick={() => open('register')}
-            style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 100, padding: '13px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+            style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '13px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
             Start for free →
           </button>
         </div>
@@ -564,7 +564,7 @@ export default function HeroPage() {
           Join free. No credit card required.
         </p>
         <button onClick={() => open('register')}
-          style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 100, padding: '16px 40px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
+          style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '16px 40px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
           Get started for free →
         </button>
       </section>

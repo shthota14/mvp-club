@@ -195,7 +195,7 @@ export default function InterviewHub() {
             position: 'fixed', right: 20, bottom: isMobile ? 92 : 84, zIndex: 900,
             display: 'flex', alignItems: 'center', gap: 8,
             padding: isMobile ? '12px 14px' : '12px 18px',
-            borderRadius: 100, border: 'none', cursor: 'pointer',
+            borderRadius: 999, border: 'none', cursor: 'pointer',
             background: VC, color: '#fff',
             fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
             boxShadow: '0 6px 20px rgba(5,150,105,.35)',
@@ -324,7 +324,7 @@ export default function InterviewHub() {
                         return (
                           <button key={iv.id} onClick={() => selectInterview(iv)} style={{
                             display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
-                            padding: '7px 13px', borderRadius: 100, cursor: 'pointer', fontFamily: 'inherit',
+                            padding: '7px 13px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
                             border: `1.5px solid ${sel ? VC : BORDER}`,
                             background: sel ? VC : '#fff',
                             color: sel ? '#fff' : T1,
@@ -356,8 +356,8 @@ export default function InterviewHub() {
                               </div>
                               <div style={{ fontSize: 11, color: T3, marginTop: 2 }}>{fmtWhen(iv.scheduled_at)}</div>
                             </div>
-                            <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 100, background: st.bg, color: st.color }}>{st.label}</span>
-                            <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 100, background: ab.bg, color: ab.color }}>{ab.icon} {ab.label}</span>
+                            <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 999, background: st.bg, color: st.color }}>{st.label}</span>
+                            <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 999, background: ab.bg, color: ab.color }}>{ab.icon} {ab.label}</span>
                           </div>
                           <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' as const }}>
                             <button onClick={() => useScriptWith(iv)} style={{
