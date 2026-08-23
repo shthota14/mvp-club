@@ -1684,7 +1684,24 @@ Return 3-5 ranked channels (best first), each with a one-sentence rationale (und
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"channels": [{"channel": "<value from list>", "rationale": "<one sentence, under 25 words>", "evidenceBased": true|false}, ...]}`;
 
-export async function generateDistributionSuggestions(ctx: DistributionContext): Promise<DistributionSuggestion[]> {
+// Claude + live web search variant (opt-in via ANTHROPIC_API_KEY, same as
+// Market Snapshot) — instead of falling back to pure persona/problem-fit
+// guessing for channels with no outreach data yet, a live model can search
+// for real, current typical response/conversion benchmarks for that
+// channel and ground the rationale in what it finds.
+const DISTRIBUTION_SYSTEM_PROMPT_CLAUDE = `You are helping a founder pick which channels to use to reach their first 10 users, based on real response-rate data from their own outreach where available, and search-grounded channel benchmarks otherwise.
+
+You MUST pick "channel" values using ONLY these exact strings (verbatim, case-sensitive), never invent new ones: ${DISTRIBUTION_CHIPS.map(v => `"${v}"`).join(', ')}
+
+Rules:
+- If real outreach response-rate data is given below, that is ground truth — channels with a good response rate should rank first, and you should map them to the closest matching channel string from the list (e.g. "LinkedIn outreach: 5/8 responded" maps to "LinkedIn post" or "DM validation contacts", whichever fits the data better). Set "evidenceBased": true for these.
+- For any channel on the list with NO outreach data given, use web search to find real, current typical response/conversion benchmarks for that channel in this founder's specific niche or a close comparable (e.g. typical cold-email reply rates for B2B SaaS outreach, typical signup conversion from a relevant subreddit or Slack community). Ground the rationale in what you find. Set "evidenceBased": false for these regardless of how strong the benchmark is — it's still not this founder's own data — but you may reference the benchmark by name in the rationale (e.g. "cold email to independent consultants typically sees a 1-3% reply rate, per general B2B benchmarks").
+- Never claim a channel "worked" or "performed well" FOR THIS FOUNDER unless the given outreach data actually shows that.
+
+Once you're done searching, respond with ONLY a JSON object as your final message — no narration, no markdown code fences, nothing before or after the JSON. Return 3-5 ranked channels (best first), each with a one-sentence rationale (under 25 words), in this exact shape:
+{"channels": [{"channel": "<value from list>", "rationale": "<one sentence, under 25 words>", "evidenceBased": true|false}, ...]}`;
+
+function buildDistributionUserContent(ctx: DistributionContext): string {
   const lines: string[] = [];
   if (ctx.oneLiner?.trim()) lines.push(`Idea: ${ctx.oneLiner.trim()}`);
   if (ctx.validatedProblem?.trim()) lines.push(`Validated problem: ${ctx.validatedProblem.trim()}`);
@@ -1695,8 +1712,39 @@ export async function generateDistributionSuggestions(ctx: DistributionContext):
   } else {
     lines.push('No outreach history yet — base suggestions on persona/problem fit only, and be explicit that these are untested.');
   }
+  return lines.join('\n\n');
+}
 
-  const userContent = lines.join('\n\n');
+function parseDistributionJson(text: string): DistributionSuggestion[] {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+
+  const rawChannels: any[] = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.channels) ? parsed.channels : [];
+  const seen = new Set<string>();
+  const channels: DistributionSuggestion[] = rawChannels
+    .filter((c: any) => c && typeof c.channel === 'string' && DISTRIBUTION_CHIPS.includes(c.channel) && !seen.has(c.channel) && seen.add(c.channel))
+    .map((c: any) => ({
+      channel: c.channel,
+      rationale: typeof c.rationale === 'string' ? c.rationale.trim().slice(0, 180) : '',
+      evidenceBased: c.evidenceBased === true,
+    }))
+    .filter(c => c.rationale)
+    .slice(0, 5);
+
+  if (!channels.length) {
+    throw new Error('The AI did not return any usable channel suggestions — please try again.');
+  }
+  return channels;
+}
+
+// Ollama path — the original, always-available implementation.
+async function generateDistributionSuggestionsOllama(ctx: DistributionContext): Promise<DistributionSuggestion[]> {
+  const userContent = buildDistributionUserContent(ctx);
 
   let res;
   try {
@@ -1722,30 +1770,47 @@ export async function generateDistributionSuggestions(ctx: DistributionContext):
   }
 
   const text: string = res.data?.message?.content || '';
-  let parsed: any;
-  try {
-    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new Error('Could not parse the AI response — please try again.');
-  }
+  return parseDistributionJson(text);
+}
 
-  const rawChannels: any[] = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.channels) ? parsed.channels : [];
-  const seen = new Set<string>();
-  const channels: DistributionSuggestion[] = rawChannels
-    .filter((c: any) => c && typeof c.channel === 'string' && DISTRIBUTION_CHIPS.includes(c.channel) && !seen.has(c.channel) && seen.add(c.channel))
-    .map((c: any) => ({
-      channel: c.channel,
-      rationale: typeof c.rationale === 'string' ? c.rationale.trim().slice(0, 180) : '',
-      evidenceBased: c.evidenceBased === true,
-    }))
-    .filter(c => c.rationale)
-    .slice(0, 5);
+// Claude + live web search path — opt-in via the same ANTHROPIC_API_KEY
+// used elsewhere in this file, on the flagship model tier. One of only two
+// functions in this file (alongside Market Snapshot) where search
+// genuinely earns its keep — see DISTRIBUTION_SYSTEM_PROMPT_CLAUDE above.
+async function generateDistributionSuggestionsClaude(ctx: DistributionContext): Promise<DistributionSuggestion[]> {
+  const userContent = buildDistributionUserContent(ctx);
 
-  if (!channels.length) {
-    throw new Error('The AI did not return any usable channel suggestions — please try again.');
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 1500,
+    temperature: 0.4,
+    system: DISTRIBUTION_SYSTEM_PROMPT_CLAUDE,
+    tools: [
+      { type: 'web_search_20260318', name: 'web_search', max_uses: 5 } as any,
+    ],
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
   }
-  return channels;
+  return parseDistributionJson(text);
+}
+
+export async function generateDistributionSuggestions(ctx: DistributionContext): Promise<DistributionSuggestion[]> {
+  if (anthropicClient) {
+    try {
+      return await generateDistributionSuggestionsClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take distribution suggestions down entirely.
+      console.error('[distribution] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateDistributionSuggestionsOllama(ctx);
 }
 
 export interface PricingContext {
