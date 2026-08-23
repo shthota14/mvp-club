@@ -1182,7 +1182,7 @@ Respond with ONLY a JSON object, no other text, in this exact shape:
 {"reply": "<conversational response, under 60 words>", "updatedScore": 1 | 2 | 3 | null, "updatedReasoning": "<new 2-4 sentence reasoning, only if updatedScore is not null, else null>"}
 Only set updatedScore/updatedReasoning to non-null values when you are genuinely revising your classification because of THIS conversation — most replies should leave both as null.`;
 
-export async function reasonAboutAlignment(ctx: AlignmentReasonContext): Promise<AlignmentReasonResult> {
+function buildAlignmentReasonUserContent(ctx: AlignmentReasonContext): string {
   const lines: string[] = [buildAlignmentTranscript(ctx), ''];
   lines.push(`Your prior classification: ${ALIGNMENT_SCORE_LABELS[ctx.priorScore]} (score ${ctx.priorScore})`);
   lines.push(`Your prior reasoning: ${ctx.priorReasoning || '(none recorded)'}`);
@@ -1191,31 +1191,10 @@ export async function reasonAboutAlignment(ctx: AlignmentReasonContext): Promise
     ctx.history.forEach(turn => lines.push(`${turn.role === 'founder' ? 'Founder' : 'You'}: ${turn.text}`));
   }
   lines.push('', `Founder's newest message: ${ctx.founderMessage}`);
+  return lines.join('\n');
+}
 
-  let res;
-  try {
-    res = await axios.post(
-      `${OLLAMA_URL}/api/chat`,
-      {
-        model: OLLAMA_MODEL,
-        messages: [
-          { role: 'system', content: ALIGNMENT_REASON_SYSTEM_PROMPT },
-          { role: 'user', content: lines.join('\n') },
-        ],
-        stream: false,
-        format: 'json',
-        options: { temperature: 0.4 },
-      },
-      { timeout: 180000 }
-    );
-  } catch (err: any) {
-    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
-      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
-    }
-    throw err;
-  }
-
-  const text: string = res.data?.message?.content || '';
+function parseAlignmentReasonJson(text: string): AlignmentReasonResult {
   let parsed: any;
   try {
     const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -1236,6 +1215,75 @@ export async function reasonAboutAlignment(ctx: AlignmentReasonContext): Promise
     : (typeof parsed.updatedReasoning === 'string' && parsed.updatedReasoning.trim() ? parsed.updatedReasoning.trim() : reply);
 
   return { reply, updatedScore, updatedReasoning };
+}
+
+// Ollama path — the original, always-available implementation.
+async function reasonAboutAlignmentOllama(ctx: AlignmentReasonContext): Promise<AlignmentReasonResult> {
+  const userContent = buildAlignmentReasonUserContent(ctx);
+
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: ALIGNMENT_REASON_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.4 },
+      },
+      { timeout: 180000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+
+  const text: string = res.data?.message?.content || '';
+  return parseAlignmentReasonJson(text);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the cheap/fast model tier: a short (under 60 words),
+// grounded conversational reply, not a fresh full re-classification, so it
+// stays on the same tier as the other short-reply calls. No web search —
+// grounded entirely in the transcript and conversation already given.
+async function reasonAboutAlignmentClaude(ctx: AlignmentReasonContext): Promise<AlignmentReasonResult> {
+  const userContent = buildAlignmentReasonUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 600,
+    temperature: 0.4,
+    system: ALIGNMENT_REASON_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseAlignmentReasonJson(text);
+}
+
+export async function reasonAboutAlignment(ctx: AlignmentReasonContext): Promise<AlignmentReasonResult> {
+  if (anthropicClient) {
+    try {
+      return await reasonAboutAlignmentClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take this conversation down entirely.
+      console.error('[alignment-reason] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return reasonAboutAlignmentOllama(ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
