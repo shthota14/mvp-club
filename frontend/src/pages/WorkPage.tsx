@@ -5711,6 +5711,21 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
     const [requestingMeeting, setRequestingMeeting] = React.useState<string | null>(null);
     const [meetingDuration, setMeetingDuration] = React.useState<15 | 20 | 30>(20);
     const [meetingErr, setMeetingErr]         = React.useState('');
+    // Meeting invites lead to a booking page whose confirmed slots need a Zoom
+    // join link, hosted on the founder's own Zoom — so the platform checks the
+    // connection up front and points them at the connect flow instead of letting
+    // an invite go out that would book link-less meetings. (The backend enforces
+    // the same rule with a 428, this is just the friendly path.)
+    const [ozZoomConnected, setOzZoomConnected] = React.useState<boolean | null>(null);
+    const [ozZoomConnecting, setOzZoomConnecting] = React.useState(false);
+    React.useEffect(() => {
+      zoomApi.status().then(r => setOzZoomConnected(!!r.data.connected)).catch(() => setOzZoomConnected(false));
+    }, []);
+    const ozConnectZoom = async () => {
+      setOzZoomConnecting(true);
+      try { const res = await zoomApi.init(); window.location.href = res.data.url; }
+      catch { setOzZoomConnecting(false); }
+    };
 
     // Survey — still fetched for personalMsg() (1:1 outreach to already-added contacts), just no
     // longer has its own create/copy UI in Part 2 (see the 2026-07-22 Part 2 redesign note).
@@ -6248,6 +6263,19 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                                 color: meetingDuration === m ? '#fff' : '#aaa',
                               }}>{m}m</button>
                           ))}
+                          {ozZoomConnected === false ? (
+                            <button
+                              onClick={ozConnectZoom}
+                              disabled={ozZoomConnecting}
+                              title="Meeting invites need your Zoom connected so booked meetings get a join link"
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 20, border: 'none',
+                                background: '#fef6e6', color: '#b45309',
+                                fontSize: 11, fontWeight: 700, cursor: ozZoomConnecting ? 'default' : 'pointer', fontFamily: 'inherit',
+                              }}>
+                              {ozZoomConnecting ? 'Connecting…' : '⚠️ Connect Zoom to send invites'}
+                            </button>
+                          ) : (
                           <button
                             onClick={() => requestMeeting(selectedContact)}
                             disabled={!selectedContact.email || requestingMeeting === selectedContact.id}
@@ -6259,6 +6287,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                             }}>
                             {requestingMeeting === selectedContact.id ? 'Sending…' : '📅 Request a meeting'}
                           </button>
+                          )}
                         </div>
                       );
                     })()}
@@ -14310,6 +14339,21 @@ export default function WorkPage() {
                         })}
                       </div>
 
+                      {/* Zoom must be connected BEFORE invites go out — a contact
+                          who books against a founder with no Zoom gets a confirmed
+                          slot with no join link. The backend enforces this too
+                          (428); this banner is the friendly version. */}
+                      {zoomConnected === false && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const, padding: '10px 12px', borderRadius: 9, background: '#fef6e6', border: '1.5px solid #f5d9a8' }}>
+                          <span style={{ fontSize: 12, color: '#92400e', fontWeight: 600, flex: 1, minWidth: 220 }}>
+                            ⚠️ Connect your Zoom before sending invites — otherwise, when someone books a slot, their confirmed meeting won't have a join link.
+                          </span>
+                          <button onClick={connectZoom} disabled={zoomConnecting}
+                            style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#b45309', color: '#fff', fontSize: 11.5, fontWeight: 700, cursor: zoomConnecting ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                            {zoomConnecting ? 'Connecting…' : 'Connect Zoom'}
+                          </button>
+                        </div>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           {[15, 20, 30].map(m => (
@@ -14320,8 +14364,9 @@ export default function WorkPage() {
                                 color: schedDuration === m ? '#fff' : '#aaa' }}>{m}m</button>
                           ))}
                         </div>
-                        <button onClick={sendRequests} disabled={sending || !selectedList.length}
-                          style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: !selectedList.length ? '#e5e5ea' : STAGE_COLORS.validate, color: !selectedList.length ? '#aaa' : '#fff', fontSize: 12.5, fontWeight: 700, cursor: !selectedList.length ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                        <button onClick={sendRequests} disabled={sending || !selectedList.length || zoomConnected === false}
+                          title={zoomConnected === false ? 'Connect Zoom above first — booked meetings need a join link' : undefined}
+                          style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: (!selectedList.length || zoomConnected === false) ? '#e5e5ea' : STAGE_COLORS.validate, color: (!selectedList.length || zoomConnected === false) ? '#aaa' : '#fff', fontSize: 12.5, fontWeight: 700, cursor: (!selectedList.length || zoomConnected === false) ? 'default' : 'pointer', fontFamily: 'inherit' }}>
                           {sending ? 'Sending…' : `Send ${selectedList.length || ''} interview request${selectedList.length === 1 ? '' : 's'}`}
                         </button>
                         <div style={{ fontSize: 10.5, color: T3 }}>Email sends automatically. For phone-only contacts, click WhatsApp after sending.</div>

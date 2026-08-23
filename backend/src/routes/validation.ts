@@ -4,9 +4,34 @@ import crypto from 'crypto';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
 import { sendMeetingRequestEmail } from '../utils/mailer';
+import { zoomConfigured } from '../utils/meeting';
 import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext } from '../utils/aiQuestionCheck';
 
 const router = Router();
+
+// Meeting invites lead the contact to a booking page whose confirmed slots
+// get a Zoom join link — hosted on the founder's own connected Zoom account,
+// or the platform's shared Zoom account as a fallback. If NEITHER exists,
+// every booking would land without a join link, so refuse to send the invite
+// up front and tell the founder to connect Zoom first. 428 (Precondition
+// Required) so the frontend can distinguish this from a plain failure.
+async function assertZoomReady(userId: string, res: Response): Promise<boolean> {
+  let ownZoom = false;
+  try {
+    const zres = await query<{ zoom_user_id: string | null }>(
+      'SELECT zoom_user_id FROM users WHERE id = $1', [userId]
+    );
+    ownZoom = !!zres.rows[0]?.zoom_user_id;
+  } catch {
+    // add-zoom-oauth.sql not run yet — treat as not connected rather than 500.
+  }
+  if (ownZoom || zoomConfigured()) return true;
+  res.status(428).json({
+    error: 'Connect your Zoom account before sending meeting invites — without it, booked meetings would have no join link. Use the "Connect Zoom" button on the Schedule step.',
+    code: 'zoom_not_connected',
+  });
+  return false;
+}
 
 // Loosely-typed row for `vc.*` + joined idea_name — keeps the columns we
 // explicitly reference typed as strings instead of `unknown`, while an index
@@ -197,6 +222,7 @@ router.post('/contacts/:id/request-meeting', async (req: Request, res: Response)
     if (!contactRes.rows.length) return res.status(404).json({ error: 'Contact not found' });
     const c = contactRes.rows[0];
     if (!c.email) return res.status(400).json({ error: 'Add an email for this contact first — nothing to send the request to.' });
+    if (!(await assertZoomReady(req.userId!, res))) return;
 
     const userRes = await query<{ name: string }>(`SELECT name FROM users WHERE id = $1`, [req.userId]);
     const organizerName = userRes.rows[0]?.name || 'A founder';
@@ -270,6 +296,8 @@ router.post('/contacts/bulk-request-meeting', async (req: Request, res: Response
   const durationMins = [15, 20, 30].includes(Number(duration_mins)) ? Number(duration_mins) : 20;
 
   try {
+    if (!(await assertZoomReady(req.userId!, res))) return;
+
     const userRes = await query<{ name: string }>(`SELECT name FROM users WHERE id = $1`, [req.userId]);
     const organizerName = userRes.rows[0]?.name || 'A founder';
     const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
