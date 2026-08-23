@@ -2004,8 +2004,92 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
             </div>
           </div>
 
-          {/* Competitors */}
-          {snapshot.competitors.length > 0 && (
+          {/* Competitors — a feature matrix + an at-a-glance table (the
+              "Matrix & table" direction) when the snapshot has the newer
+              differentiators/yourCoverage/per-competitor fields, falling
+              back to the plain name+note tag grid for snapshots generated
+              before those fields existed. */}
+          {snapshot.differentiators.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .5, marginBottom: 8 }}>Feature comparison</div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 60 + snapshot.differentiators.length * 84 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left', padding: '4px 8px 8px 0', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}></th>
+                        {snapshot.differentiators.map((d, i) => (
+                          <th key={i} style={{ textAlign: 'center', padding: '4px 6px 8px', fontSize: 9.5, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}`, minWidth: 76 }}>{d}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className={revealing ? 'msnap-tag-pop' : undefined} style={{ background: `${STAGE_COLORS.idea}10` }}>
+                        <td style={{ padding: '7px 8px 7px 0', fontSize: 11.5, fontWeight: 700, color: STAGE_COLORS.idea, whiteSpace: 'nowrap' as const }}>{ideaName?.trim() || 'Your idea'}</td>
+                        {snapshot.differentiators.map((_, i) => {
+                          const v = snapshot.yourCoverage[i] || 'no';
+                          return (
+                            <td key={i} style={{ textAlign: 'center', padding: '7px 6px', fontSize: 13, fontWeight: 700, color: v === 'yes' ? '#059669' : v === 'partial' ? '#d97706' : T3 }}>
+                              {v === 'yes' ? '✓' : v === 'partial' ? '◐' : '—'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                      {snapshot.competitors.map((c, ci) => (
+                        <tr key={ci} className={revealing ? 'msnap-tag-pop' : undefined} style={{ animationDelay: revealing ? `${0.2 + ci * 0.1}s` : undefined }}>
+                          <td style={{ padding: '7px 8px 7px 0', fontSize: 11.5, fontWeight: 600, color: T1, whiteSpace: 'nowrap' as const, borderTop: `1px solid ${BORDER}` }}>{c.name}</td>
+                          {snapshot.differentiators.map((_, i) => {
+                            const v = c.features?.[i] || 'no';
+                            return (
+                              <td key={i} style={{ textAlign: 'center', padding: '7px 6px', fontSize: 13, fontWeight: 700, color: v === 'yes' ? '#059669' : v === 'partial' ? '#d97706' : T3, borderTop: `1px solid ${BORDER}` }}>
+                                {v === 'yes' ? '✓' : v === 'partial' ? '◐' : '—'}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{ fontSize: 9.5, color: T3, marginTop: 6 }}>✓ full coverage · ◐ partial · — none, as best Sage can tell</div>
+              </div>
+
+              {snapshot.competitors.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .5, marginBottom: 8 }}>At a glance</div>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 480 }}>
+                      <thead>
+                        <tr>
+                          <th style={{ textAlign: 'left', padding: '4px 8px 8px 0', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Product</th>
+                          <th style={{ textAlign: 'left', padding: '4px 8px 8px', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Area</th>
+                          <th style={{ textAlign: 'left', padding: '4px 8px 8px', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Price</th>
+                          <th style={{ textAlign: 'left', padding: '4px 8px 8px', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Rating</th>
+                          <th style={{ textAlign: 'left', padding: '4px 8px 8px', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Users</th>
+                          <th style={{ textAlign: 'left', padding: '4px 8px 8px', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Founded</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {snapshot.competitors.map((c, i) => (
+                          <tr key={i} className={revealing ? 'msnap-tag-pop' : undefined} style={{ animationDelay: revealing ? `${0.2 + i * 0.1}s` : undefined }}>
+                            <td style={{ padding: '7px 8px 7px 0', borderTop: `1px solid ${BORDER}`, verticalAlign: 'top' as const }}>
+                              <div style={{ fontSize: 11.5, fontWeight: 600, color: T1, whiteSpace: 'nowrap' as const }}>{c.name}</div>
+                              {c.note && <div style={{ fontSize: 9.5, color: T3, marginTop: 1, maxWidth: 160 }}>{c.note}</div>}
+                            </td>
+                            <td style={{ padding: '7px 8px', fontSize: 11, color: T2, borderTop: `1px solid ${BORDER}`, verticalAlign: 'top' as const }}>{c.area || '—'}</td>
+                            <td style={{ padding: '7px 8px', fontSize: 11, color: T2, borderTop: `1px solid ${BORDER}`, whiteSpace: 'nowrap' as const, verticalAlign: 'top' as const }}>{c.price || '—'}</td>
+                            <td style={{ padding: '7px 8px', fontSize: 11, color: T2, borderTop: `1px solid ${BORDER}`, verticalAlign: 'top' as const }}>{c.rating ? `${c.rating}★` : '—'}</td>
+                            <td style={{ padding: '7px 8px', fontSize: 11, color: T2, borderTop: `1px solid ${BORDER}`, verticalAlign: 'top' as const }}>{c.users || '—'}</td>
+                            <td style={{ padding: '7px 8px', fontSize: 11, color: T2, borderTop: `1px solid ${BORDER}`, verticalAlign: 'top' as const }}>{c.founded || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : snapshot.competitors.length > 0 && (
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .5, marginBottom: 8 }}>Who's already playing here</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 8 }}>
