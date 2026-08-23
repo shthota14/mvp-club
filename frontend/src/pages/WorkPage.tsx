@@ -6906,6 +6906,17 @@ const INTERVIEW_STAGES: { key: string; title: string; keywords: string[] }[] = [
   { key: 'other', title: '📌 Other Questions', keywords: [] },
 ];
 
+// Fixed-order, colorblind-validated identity color per interview stage —
+// same validation approach as MARKET_SERIES_COLORS above (dataviz skill's
+// validate_palette.js, run against a white card surface: ALL CHECKS PASS,
+// worst adjacent CVD ΔE 9.1). Gives each stage group a scannable identity
+// instead of uniform gray, without leaning on color alone — every group
+// still carries its own emoji + text title.
+const INTERVIEW_STAGE_COLORS: Record<string, string> = {
+  warmup: '#2a78d6', recent: '#eb6834', current: '#1baf7a', costs: '#eda100',
+  impact: '#e87ba4', alternatives: '#008300', other: '#4a3aa7',
+};
+
 // Manual questions sourced from the framework picker already carry a
 // category - map each one onto the same stage taxonomy above. Freeform
 // questions typed by hand (no framework match) fall into "Other".
@@ -7039,11 +7050,11 @@ function MergedInterviewLog({ manual, ai, framework, title }: {
     <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
       <button
         onClick={() => setOpen(o => !o)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#fafafa', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: `${ac}0c`, borderBottom: open ? `1px solid ${ac}25` : 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', cursor: 'pointer', textAlign: 'left' as const }}
       >
         <div>
           <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 20, fontWeight: 700, color: T1 }}>📋 Interview question backlog</div>
-          <div style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 600, marginTop: 2 }}>{selectedCount} of {total} selected for the interview</div>
+          <div style={{ fontSize: 10.5, color: ac, fontWeight: 700, marginTop: 2 }}>{selectedCount} of {total} selected for the interview</div>
         </div>
         <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
           {open ? 'collapse' : 'click to expand'}
@@ -7051,8 +7062,8 @@ function MergedInterviewLog({ manual, ai, framework, title }: {
         </span>
       </button>
       {open && (
-        <div style={{ padding: '4px 0 6px' }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, padding: '2px 16px 6px' }}>
+        <div style={{ padding: '10px 0 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, padding: '2px 16px 10px' }}>
             <button onClick={handleShare} title={shared ? 'Copied!' : 'Share'} style={{ width: 30, height: 30, borderRadius: 8, border: `1.5px solid ${BORDER}`, background: '#fff', color: shared ? '#059669' : T2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' }}>
               {shared ? (
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -7072,44 +7083,59 @@ function MergedInterviewLog({ manual, ai, framework, title }: {
               🖨
             </button>
           </div>
-          {groups.map(g => (
-            <div key={g.key} style={{ padding: '10px 16px', borderTop: `1px solid ${BORDER}` }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#8e8e93', textTransform: 'uppercase' as const, letterSpacing: 0.4, marginBottom: 8 }}>{g.title}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {g.items.map((it, i) => {
-                  const itemKey = `${g.key}::${i}`;
-                  const isOut = excluded.has(itemKey);
-                  return (
-                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', opacity: isOut ? 0.45 : 1 }}>
-                    <button
-                      onClick={() => toggleItem(itemKey)}
-                      title={isOut ? 'Deselected — click to include' : 'Selected — click to leave out'}
-                      style={{
-                        width: 18, height: 18, borderRadius: 5, flexShrink: 0, marginTop: 3, padding: 0,
-                        border: `1.5px solid ${isOut ? BORDER2 : ac}`, background: isOut ? '#fff' : ac, color: '#fff',
-                        fontSize: 11, fontWeight: 800, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', fontFamily: 'inherit',
-                      }}
-                    >
-                      {!isOut && '✓'}
-                    </button>
-                    <span style={{
-                      fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 8, flexShrink: 0, marginTop: 3,
-                      background: it.source === 'ai' ? '#EDE9FE' : '#dbeafe',
-                      color: it.source === 'ai' ? '#7c3aed' : '#1d4ed8',
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 16px' }}>
+            {groups.map(g => {
+              const gc = INTERVIEW_STAGE_COLORS[g.key] || T3;
+              return (
+              <div key={g.key}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: gc, flexShrink: 0, boxShadow: `0 0 0 3px ${gc}22` }} />
+                  <span style={{ fontSize: 11, fontWeight: 800, color: gc, textTransform: 'uppercase' as const, letterSpacing: 0.4 }}>{g.title}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: T3 }}>· {g.items.length}</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {g.items.map((it, i) => {
+                    const itemKey = `${g.key}::${i}`;
+                    const isOut = excluded.has(itemKey);
+                    return (
+                    <div key={i} style={{
+                      display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px',
+                      background: isOut ? '#fafafa' : '#fff', border: `1px solid ${BORDER}`, borderLeft: `3px solid ${isOut ? BORDER2 : gc}`,
+                      borderRadius: 10, opacity: isOut ? 0.55 : 1, transition: 'opacity .12s',
                     }}>
-                      {it.source === 'ai' ? '🧙 Sage' : '✍️ You'}
-                    </span>
-                    <div>
-                      <div style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: 15.5, color: T1, lineHeight: 1.5, textDecoration: isOut ? 'line-through' : 'none' }}>{it.q}</div>
-                      {it.sub && <div style={{ fontSize: 11, color: '#b0b0b8', fontStyle: 'italic' as const, marginTop: 2 }}>💡 {it.sub}</div>}
+                      <button
+                        onClick={() => toggleItem(itemKey)}
+                        title={isOut ? 'Deselected — click to include' : 'Selected — click to leave out'}
+                        style={{
+                          width: 18, height: 18, borderRadius: 5, flexShrink: 0, marginTop: 2, padding: 0,
+                          border: `1.5px solid ${isOut ? BORDER2 : ac}`, background: isOut ? '#fff' : ac, color: '#fff',
+                          fontSize: 11, fontWeight: 800, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer', fontFamily: 'inherit',
+                        }}
+                      >
+                        {!isOut && '✓'}
+                      </button>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                          <span style={{
+                            fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 8, flexShrink: 0,
+                            background: it.source === 'ai' ? '#EDE9FE' : '#dbeafe',
+                            color: it.source === 'ai' ? '#7c3aed' : '#1d4ed8',
+                          }}>
+                            {it.source === 'ai' ? '🧙 Sage' : '✍️ You'}
+                          </span>
+                        </div>
+                        <div style={{ fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: T1, lineHeight: 1.5, textDecoration: isOut ? 'line-through' : 'none' }}>{it.q}</div>
+                        {it.sub && <div style={{ fontSize: 11, color: T3, fontStyle: 'italic' as const, marginTop: 3 }}>💡 {it.sub}</div>}
+                      </div>
                     </div>
-                  </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
