@@ -264,7 +264,8 @@ Rules:
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"oneLiner": "I'm building ... for ... who ... so they can ..."}`;
 
-export async function assembleOneLinerSentence(building: string, audience: string, struggle: string, outcome: string): Promise<OneLinerAssembleResult> {
+// Ollama path — the original, always-available implementation.
+async function assembleOneLinerSentenceOllama(building: string, audience: string, struggle: string, outcome: string): Promise<OneLinerAssembleResult> {
   const userContent = `what: "${building}"\nwho: "${audience}"\nstruggle: "${struggle}"\noutcome: "${outcome}"`;
 
   let res;
@@ -291,6 +292,33 @@ export async function assembleOneLinerSentence(building: string, audience: strin
   }
 
   const text: string = res.data?.message?.content || '';
+  return parseOneLinerJson(text);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in this
+// file, on the cheap/fast model tier: this is pure grammar/phrasing work
+// grounded entirely in what the founder already typed, so a bigger model
+// buys cleaner prose, not new capability, and no web search tool is used.
+async function assembleOneLinerSentenceClaude(building: string, audience: string, struggle: string, outcome: string): Promise<OneLinerAssembleResult> {
+  const userContent = `what: "${building}"\nwho: "${audience}"\nstruggle: "${struggle}"\noutcome: "${outcome}"`;
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 300,
+    temperature: 0.4,
+    system: ONE_LINER_ASSEMBLE_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseOneLinerJson(text);
+}
+
+function parseOneLinerJson(text: string): OneLinerAssembleResult {
   let parsed: any;
   try {
     const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -302,6 +330,20 @@ export async function assembleOneLinerSentence(building: string, audience: strin
   return {
     oneLiner: typeof parsed.oneLiner === 'string' ? parsed.oneLiner.trim() : '',
   };
+}
+
+export async function assembleOneLinerSentence(building: string, audience: string, struggle: string, outcome: string): Promise<OneLinerAssembleResult> {
+  if (anthropicClient) {
+    try {
+      return await assembleOneLinerSentenceClaude(building, audience, struggle, outcome);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take the one-liner assembler down entirely.
+      console.error('[one-liner-assemble] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return assembleOneLinerSentenceOllama(building, audience, struggle, outcome);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
