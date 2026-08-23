@@ -2369,11 +2369,30 @@ function buildBuildPathLines(ctx: BuildPathContext): string[] {
   return lines;
 }
 
-export async function recommendBuildPath(ctx: BuildPathContext): Promise<BuildPathRecommendation> {
+function buildBuildPathUserContent(ctx: BuildPathContext): string {
   const lines = buildBuildPathLines(ctx);
-  const userContent = lines.length
+  return lines.length
     ? lines.join('\n')
     : "No signals given — default to a cautious, low-commitment recommendation.";
+}
+
+function parseBuildPathJson(text: string): BuildPathRecommendation {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+
+  const path: BuildPathRecommendation['path'] = BUILD_PATH_VALUES.includes(parsed?.path) ? parsed.path : 'app-builder';
+  const rationale = typeof parsed?.rationale === 'string' && parsed.rationale.trim() ? parsed.rationale.trim().slice(0, 220) : 'Could not determine a confident recommendation — pick whichever path feels right.';
+  return { path, rationale };
+}
+
+// Ollama path — the original, always-available implementation.
+async function recommendBuildPathOllama(ctx: BuildPathContext): Promise<BuildPathRecommendation> {
+  const userContent = buildBuildPathUserContent(ctx);
 
   let res;
   try {
@@ -2399,17 +2418,45 @@ export async function recommendBuildPath(ctx: BuildPathContext): Promise<BuildPa
   }
 
   const text: string = res.data?.message?.content || '';
-  let parsed: any;
-  try {
-    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new Error('Could not parse the AI response — please try again.');
-  }
+  return parseBuildPathJson(text);
+}
 
-  const path: BuildPathRecommendation['path'] = BUILD_PATH_VALUES.includes(parsed?.path) ? parsed.path : 'app-builder';
-  const rationale = typeof parsed?.rationale === 'string' && parsed.rationale.trim() ? parsed.rationale.trim().slice(0, 220) : 'Could not determine a confident recommendation — pick whichever path feels right.';
-  return { path, rationale };
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the cheap/fast model tier: a 3-way decision weighing two
+// given signals, not a lookup, so no web search tool is used. Deliberately
+// never asks the model to name specific tools or prices, same as the
+// Ollama path — those come from a curated frontend list.
+async function recommendBuildPathClaude(ctx: BuildPathContext): Promise<BuildPathRecommendation> {
+  const userContent = buildBuildPathUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 300,
+    temperature: 0.3,
+    system: BUILD_PATH_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseBuildPathJson(text);
+}
+
+export async function recommendBuildPath(ctx: BuildPathContext): Promise<BuildPathRecommendation> {
+  if (anthropicClient) {
+    try {
+      return await recommendBuildPathClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take build path recommendation down entirely.
+      console.error('[build-path] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return recommendBuildPathOllama(ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -2473,42 +2520,14 @@ Ground every flow and screen in the feature list and app type given below — do
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"userFlows": [{"name": "...", "steps": ["...", ...]}, ...], "screens": [{"name": "...", "purpose": "...", "category": "onboarding" | "navigation" | "core" | "results" | "account", "features": ["...", ...]}, ...]}`;
 
-export async function generateFlowsAndScreens(ctx: FlowScreenContext): Promise<FlowScreenMap> {
+function buildFlowScreenUserContent(ctx: FlowScreenContext): string {
   const lines = buildFlowScreenLines(ctx);
-  const userContent = lines.length
+  return lines.length
     ? lines.join('\n\n')
     : "No feature list given yet — draft a minimal, generic starting flow/screen map for a simple web app.";
+}
 
-  let res;
-  try {
-    res = await axios.post(
-      `${OLLAMA_URL}/api/chat`,
-      {
-        model: OLLAMA_MODEL,
-        messages: [
-          { role: 'system', content: FLOW_SCREEN_SYSTEM_PROMPT },
-          { role: 'user', content: userContent },
-        ],
-        stream: false,
-        format: 'json',
-        options: { temperature: 0.4 },
-      },
-      // Higher than the other Ship generators (60s) — this prompt asks for
-      // two nested arrays (flows + up to 20 screens), which the small local
-      // model can genuinely take longer than a minute to produce in full.
-      { timeout: 120000 }
-    );
-  } catch (err: any) {
-    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
-      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
-    }
-    if (err.code === 'ECONNABORTED') {
-      throw new Error('The AI is taking longer than usual to map this out — please try again.');
-    }
-    throw err;
-  }
-
-  const text: string = res.data?.message?.content || '';
+function parseFlowScreenJson(text: string): FlowScreenMap {
   let parsed: any;
   try {
     const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -2541,6 +2560,77 @@ export async function generateFlowsAndScreens(ctx: FlowScreenContext): Promise<F
     throw new Error('The AI did not return a usable flow/screen map — please try again.');
   }
   return { userFlows, screens };
+}
+
+// Ollama path — the original, always-available implementation.
+async function generateFlowsAndScreensOllama(ctx: FlowScreenContext): Promise<FlowScreenMap> {
+  const userContent = buildFlowScreenUserContent(ctx);
+
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: FLOW_SCREEN_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.4 },
+      },
+      // Higher than the other Ship generators (60s) — this prompt asks for
+      // two nested arrays (flows + up to 20 screens), which the small local
+      // model can genuinely take longer than a minute to produce in full.
+      { timeout: 120000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    if (err.code === 'ECONNABORTED') {
+      throw new Error('The AI is taking longer than usual to map this out — please try again.');
+    }
+    throw err;
+  }
+
+  const text: string = res.data?.message?.content || '';
+  return parseFlowScreenJson(text);
+}
+
+// Claude path — opt-in via ANTHROPIC_API_KEY, on the flagship tier: this
+// generates two nested arrays (flows + up to 20 screens) that need to stay
+// grounded in the specific feature list, closer in shape to Build
+// Specification than to the small quick-check functions.
+async function generateFlowsAndScreensClaude(ctx: FlowScreenContext): Promise<FlowScreenMap> {
+  const userContent = buildFlowScreenUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 3000,
+    temperature: 0.4,
+    system: FLOW_SCREEN_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseFlowScreenJson(text);
+}
+
+export async function generateFlowsAndScreens(ctx: FlowScreenContext): Promise<FlowScreenMap> {
+  if (anthropicClient) {
+    try {
+      return await generateFlowsAndScreensClaude(ctx);
+    } catch (err: any) {
+      console.error('[flows-screens] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateFlowsAndScreensOllama(ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -2602,9 +2692,13 @@ Ground everything in the product context, screen purpose, and features given bel
 
 Respond with ONLY the prompt text itself — no JSON, no code fences, no preamble like "Here's the prompt:", no meta-commentary before or after. Just the section headers and their content, ready to be copy-pasted as-is into an AI coding tool.`;
 
-export async function generateUIPrompt(ctx: UIPromptContext): Promise<string> {
-  const lines = buildUIPromptLines(ctx);
-  const userContent = lines.join('\n');
+function buildUIPromptUserContent(ctx: UIPromptContext): string {
+  return buildUIPromptLines(ctx).join('\n');
+}
+
+// Ollama path — the original, always-available implementation.
+async function generateUIPromptOllama(ctx: UIPromptContext): Promise<string> {
+  const userContent = buildUIPromptUserContent(ctx);
 
   let res;
   try {
@@ -2648,6 +2742,43 @@ export async function generateUIPrompt(ctx: UIPromptContext): Promise<string> {
     throw new Error('The AI did not return a usable prompt — please try again.');
   }
   return prompt;
+}
+
+// Claude path — opt-in via ANTHROPIC_API_KEY, on the flagship tier: this is
+// the prompt that gets pasted straight into an AI coding tool, so it's
+// worth the same quality bar as Build Specification and Flows & Screens.
+// No JSON mode needed here (Claude has none to request) — the same
+// sanitizePromptText() cleanup used on the Ollama path handles any
+// incidental code fences or wrapping quotes.
+async function generateUIPromptClaude(ctx: UIPromptContext): Promise<string> {
+  const userContent = buildUIPromptUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 2000,
+    temperature: 0.4,
+    system: UI_PROMPT_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  const prompt = sanitizePromptText(text).slice(0, 6000);
+  if (!prompt) {
+    throw new Error('Claude did not return a usable prompt — please try again.');
+  }
+  return prompt;
+}
+
+export async function generateUIPrompt(ctx: UIPromptContext): Promise<string> {
+  if (anthropicClient) {
+    try {
+      return await generateUIPromptClaude(ctx);
+    } catch (err: any) {
+      console.error('[ui-prompt] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateUIPromptOllama(ctx);
 }
 
 function sanitizePromptText(text: string): string {
@@ -2721,9 +2852,41 @@ Ground everything in the feature name and product context given below — do not
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"userStory": "...", "whyMatters": "...", "uiFlow": "...", "dataLogic": "...", "edgeCases": ["...", ...], "acceptanceCriteria": ["...", ...]}`;
 
-export async function generateFeatureBuildCard(ctx: FeatureBuildCardContext): Promise<FeatureBuildCard> {
-  const lines = buildFeatureBuildCardLines(ctx);
-  const userContent = lines.join('\n');
+function buildFeatureBuildCardUserContent(ctx: FeatureBuildCardContext): string {
+  return buildFeatureBuildCardLines(ctx).join('\n');
+}
+
+function parseFeatureBuildCardJson(text: string): FeatureBuildCard {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+
+  const sanitizeStr = (v: any, max = 400): string => typeof v === 'string' ? v.trim().slice(0, max) : '';
+  const sanitizeStrArr = (v: any, max = 8): string[] =>
+    (Array.isArray(v) ? v : []).filter((x: any) => typeof x === 'string' && x.trim()).map((x: string) => x.trim().slice(0, 220)).slice(0, max);
+
+  const card: FeatureBuildCard = {
+    userStory: sanitizeStr(parsed?.userStory, 220),
+    whyMatters: sanitizeStr(parsed?.whyMatters, 300),
+    uiFlow: sanitizeStr(parsed?.uiFlow, 600),
+    dataLogic: sanitizeStr(parsed?.dataLogic, 600),
+    edgeCases: sanitizeStrArr(parsed?.edgeCases),
+    acceptanceCriteria: sanitizeStrArr(parsed?.acceptanceCriteria),
+  };
+
+  if (!card.userStory && !card.uiFlow && !card.acceptanceCriteria.length) {
+    throw new Error('The AI did not return a usable build card — please try again.');
+  }
+  return card;
+}
+
+// Ollama path — the original, always-available implementation.
+async function generateFeatureBuildCardOllama(ctx: FeatureBuildCardContext): Promise<FeatureBuildCard> {
+  const userContent = buildFeatureBuildCardUserContent(ctx);
 
   let res;
   try {
@@ -2754,31 +2917,40 @@ export async function generateFeatureBuildCard(ctx: FeatureBuildCardContext): Pr
   }
 
   const text: string = res.data?.message?.content || '';
-  let parsed: any;
-  try {
-    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new Error('Could not parse the AI response — please try again.');
+  return parseFeatureBuildCardJson(text);
+}
+
+// Claude path — opt-in via ANTHROPIC_API_KEY, on the flagship tier: this
+// feeds straight into a per-feature coding prompt, same reasoning as
+// generateUIPrompt and generateFlowsAndScreens above.
+async function generateFeatureBuildCardClaude(ctx: FeatureBuildCardContext): Promise<FeatureBuildCard> {
+  const userContent = buildFeatureBuildCardUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 1500,
+    temperature: 0.4,
+    system: FEATURE_BUILD_CARD_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
   }
+  return parseFeatureBuildCardJson(text);
+}
 
-  const sanitizeStr = (v: any, max = 400): string => typeof v === 'string' ? v.trim().slice(0, max) : '';
-  const sanitizeStrArr = (v: any, max = 8): string[] =>
-    (Array.isArray(v) ? v : []).filter((x: any) => typeof x === 'string' && x.trim()).map((x: string) => x.trim().slice(0, 220)).slice(0, max);
-
-  const card: FeatureBuildCard = {
-    userStory: sanitizeStr(parsed?.userStory, 220),
-    whyMatters: sanitizeStr(parsed?.whyMatters, 300),
-    uiFlow: sanitizeStr(parsed?.uiFlow, 600),
-    dataLogic: sanitizeStr(parsed?.dataLogic, 600),
-    edgeCases: sanitizeStrArr(parsed?.edgeCases),
-    acceptanceCriteria: sanitizeStrArr(parsed?.acceptanceCriteria),
-  };
-
-  if (!card.userStory && !card.uiFlow && !card.acceptanceCriteria.length) {
-    throw new Error('The AI did not return a usable build card — please try again.');
+export async function generateFeatureBuildCard(ctx: FeatureBuildCardContext): Promise<FeatureBuildCard> {
+  if (anthropicClient) {
+    try {
+      return await generateFeatureBuildCardClaude(ctx);
+    } catch (err: any) {
+      console.error('[feature-build-card] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
   }
-  return card;
+  return generateFeatureBuildCardOllama(ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
