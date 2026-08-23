@@ -973,6 +973,28 @@ function swooshUnderline(color: string, width = 160) {
   );
 }
 
+// Shared "coach's voice" treatment for every step's STEP_GOALS line — a
+// tinted speech bubble with a small tail, so it reads as someone talking to
+// you rather than a shouted instruction. Replaces 28 call sites that had
+// drifted into 5 different ad hoc treatments (plain, Caveat, Caveat in red,
+// TYPE.stepSubtitle, Kalam) — all 28 now render identically and change
+// together if this one definition changes.
+function StepGoal({ text }: { text: string }) {
+  if (!text) return null;
+  return (
+    <div style={{ position: 'relative', margin: '16px 0 0' }}>
+      <div style={{
+        margin: 0, fontFamily: 'var(--font-ui)', fontSize: 14.5, lineHeight: 1.6,
+        color: '#3c4654', background: '#eef4fb', borderRadius: 12, padding: '13px 16px',
+      }}>{text}</div>
+      <div style={{
+        position: 'absolute', top: -6, left: 20, width: 12, height: 12,
+        background: '#eef4fb', transform: 'rotate(45deg)',
+      }} />
+    </div>
+  );
+}
+
 function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disabledReason, onDisabledClick, stepTitle, ideaId, stageColor }: {
   onBack?: () => void;
   onNext: () => void;
@@ -12525,7 +12547,7 @@ export default function WorkPage() {
         <H accent={STAGE_COLORS.idea}>What's your idea?</H>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <AgentAvatar size={36} />
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#1e293b', lineHeight: 1.4, marginBottom: 4, paddingTop: 5 }}>{STEP_GOALS.idea[0]}</div>
+          <StepGoal text={STEP_GOALS.idea[0]} />
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -12558,7 +12580,7 @@ export default function WorkPage() {
         <H accent={STAGE_COLORS.idea}>Where does your idea stand in the market?</H>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <AgentAvatar size={36} />
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#1e293b', lineHeight: 1.4, marginBottom: 4, paddingTop: 5 }}>{STEP_GOALS.idea[1]}</div>
+          <StepGoal text={STEP_GOALS.idea[1]} />
         </div>
       </div>
       {/* Sage Market Snapshot now lives on its own step — arriving here (via
@@ -12595,7 +12617,7 @@ export default function WorkPage() {
         <H accent={STAGE_COLORS.idea}>What's motivating you to build this?</H>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <AgentAvatar size={36} />
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 28, fontWeight: 700, color: '#1e293b', lineHeight: 1.4, marginBottom: 4, paddingTop: 3 }}>{STEP_GOALS.idea[2]}</div>
+          <StepGoal text={STEP_GOALS.idea[2]} />
         </div>
       </div>
       <SparkBuilder value={get('spark')} onChange={v => set('spark', v)} />
@@ -12625,7 +12647,7 @@ export default function WorkPage() {
           </div>
         </div>
       )}
-      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 28, fontWeight: 700, color: '#dc2626', lineHeight: 1.4, marginBottom: 4 }}>{STEP_GOALS.hone[0]}</div>
+      <StepGoal text={STEP_GOALS.hone[0]} />
       <BMCLabel blocks={['Customer Segments']} />
       <H accent={STAGE_COLORS.hone}>Who do you think has this problem?</H>
       <PersonaPickerStep ref={personaPickerRef} value={get('whoExactly')} onChange={v => set('whoExactly', v)} />
@@ -12673,7 +12695,7 @@ export default function WorkPage() {
     </div>,
     <div key="h1" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={1} />
-      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 28, fontWeight: 700, color: '#dc2626', lineHeight: 1.4, marginBottom: 4 }}>{STEP_GOALS.hone[1]}</div>
+      <StepGoal text={STEP_GOALS.hone[1]} />
       <BMCLabel blocks={['Value Proposition']} />
       <H accent={STAGE_COLORS.hone}>What are the problems?</H>
       <ProblemBuilder value={get('problemSentence')} onChange={v => set('problemSentence', v)} />
@@ -12706,7 +12728,7 @@ export default function WorkPage() {
     </div>,
     <div key="h2" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={2} />
-      <div style={{ fontSize: 28, fontWeight: 700, color: '#1e293b', lineHeight: 1.4, marginBottom: 4 }}>{STEP_GOALS.hone[2]}</div>
+      <StepGoal text={STEP_GOALS.hone[2]} />
       <BMCLabel blocks={['Value Proposition']} />
       <H accent={STAGE_COLORS.hone}>What breaks if these problems are unresolved?</H>
       <PainGaugeStep
@@ -12718,7 +12740,7 @@ export default function WorkPage() {
     </div>,
     <div key="h3" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={3} />
-      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 28, fontWeight: 700, color: '#1e293b', lineHeight: 1.4, marginBottom: 4 }}>{STEP_GOALS.hone[3]}</div>
+      <StepGoal text={STEP_GOALS.hone[3]} />
       <BMCLabel blocks={['Customer Relationships', 'Revenue Streams']} />
       <H accent={STAGE_COLORS.hone}>What do you think people are doing to solve this?</H>
 
@@ -12745,7 +12767,7 @@ export default function WorkPage() {
     </div>,
     <div key="h-readiness" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={4} />
-      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 28, fontWeight: 700, color: '#1e293b', lineHeight: 1.4, marginBottom: 4 }}>{STEP_GOALS.hone[4]}</div>
+      <StepGoal text={STEP_GOALS.hone[4]} />
       <BMCLabel blocks={['Founder Readiness']} />
       <H accent={STAGE_COLORS.hone}>Are you set up to win?</H>
       <FounderReadinessStep
@@ -12769,7 +12791,7 @@ export default function WorkPage() {
     </div>,
     <div key="h4" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={5} />
-      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 28, fontWeight: 700, color: '#1e293b', lineHeight: 1.4, marginBottom: 4 }}>{STEP_GOALS.hone[5]}</div>
+      <StepGoal text={STEP_GOALS.hone[5]} />
       <BMCLabel blocks={['Key Metrics']} />
       <H accent={STAGE_COLORS.hone}>How strong is your idea?</H>
       <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 600, color: '#334155', marginTop: -14, marginBottom: 18 }}>Rate each 0–5. You need 20+ to move forward.</div>
@@ -12896,7 +12918,7 @@ export default function WorkPage() {
         <div key="vA" style={col}>
           <ModBadge mod="validate" /><StepBars mod="validate" step={0} />
           <StepIntro mod="validate" step={0} />
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 28, fontStyle: 'italic', fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.validate[0]}</div>
+          <StepGoal text={STEP_GOALS.validate[0]} />
 
           {/* ── Validation Goal Builder ───────────────────────────── */}
           <div style={{ border: `2px solid ${VC}25`, borderRadius: 14, overflow: 'hidden', marginBottom: 4 }}>
@@ -13166,7 +13188,7 @@ export default function WorkPage() {
         <div key="vB" style={col}>
           <ModBadge mod="validate" /><StepBars mod="validate" step={1} />
           <StepIntro mod="validate" step={1} />
-          <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.validate[1]}</div>
+          <StepGoal text={STEP_GOALS.validate[1]} />
 
           <div style={{ border: `2px solid ${VC}25`, borderRadius: 14, overflow: 'hidden', marginBottom: 4 }}>
             <div style={{ padding: '16px 18px 14px', background: `linear-gradient(135deg, ${VC}18 0%, #f0f7ff 100%)`, borderBottom: `1px solid ${VC}25` }}>
@@ -13324,7 +13346,7 @@ export default function WorkPage() {
         <div key="vC" style={col}>
           <ModBadge mod="validate" /><StepBars mod="validate" step={2} />
           <StepIntro mod="validate" step={2} />
-          <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.validate[2]}</div>
+          <StepGoal text={STEP_GOALS.validate[2]} />
 
           <AssumptionsStep
             ref={assumptionsRef}
@@ -15999,7 +16021,7 @@ export default function WorkPage() {
        NavRow stay untouched so every other step keeps its normal look. */
     <div key="s0" style={{ ...col, background: '#fdfdfb', backgroundImage: 'radial-gradient(#11182722 1.4px, transparent 1.4px)', backgroundSize: '18px 18px', border: '1px solid #e8e6dd', borderRadius: 18, padding: '24px 22px 28px' }}>
       <ModBadge mod="shape" /><StepBars mod="shape" step={0} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6, fontFamily: "'Kalam', cursive", fontStyle: 'italic' as const }}>{STEP_GOALS.shape[0]}</div>
+      <StepGoal text={STEP_GOALS.shape[0]} />
       <div style={{ display: 'inline-block', marginBottom: 8 }}>
         <span style={{ fontFamily: "'Kalam', cursive", fontSize: 25, fontWeight: 700, color: '#1f2937', lineHeight: 1.25 }}>What did you learn from users?</span>
         <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3, maxWidth: 380 }}>
@@ -16244,7 +16266,7 @@ export default function WorkPage() {
     /* ── s1: Solution hypothesis ─────────────────────────────────────────── */
     <div key="s1" style={col}>
       <ModBadge mod="shape" /><StepBars mod="shape" step={1} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6, fontFamily: "'Kalam', cursive" }}>{STEP_GOALS.shape[1]}</div>
+      <StepGoal text={STEP_GOALS.shape[1]} />
       <H accent={STAGE_COLORS.shape}>What will you build?</H>
       {(() => {
         const SC = STAGE_COLORS.shape;
@@ -16487,7 +16509,7 @@ export default function WorkPage() {
     /* ── s2+s3 merged: community → features ─────────────────────────────── */
     <div key="s2" style={col}>
       <ModBadge mod="shape" /><StepBars mod="shape" step={2} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.shape[2]}</div>
+      <StepGoal text={STEP_GOALS.shape[2]} />
       <H accent={STAGE_COLORS.shape}>Shape your features</H>
 
       {/* ── Community feedback card ───────────────────────────── */}
@@ -16674,7 +16696,7 @@ export default function WorkPage() {
     /* ── s3 (was s4): Launch + revenue basics ────────────────────────────── */
     <div key="s4" style={col}>
       <ModBadge mod="shape" /><StepBars mod="shape" step={3} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.shape[3]}</div>
+      <StepGoal text={STEP_GOALS.shape[3]} />
       <H accent={STAGE_COLORS.shape}>How will you reach users and charge?</H>
       {(() => {
         const SC = STAGE_COLORS.shape;
@@ -16851,7 +16873,7 @@ export default function WorkPage() {
     /* ── s5: Build backlog ───────────────────────────────────────────────── */
     <div key="s5" style={col}>
       <ModBadge mod="shape" /><StepBars mod="shape" step={4} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.shape[4]}</div>
+      <StepGoal text={STEP_GOALS.shape[4]} />
       <H accent={STAGE_COLORS.shape}>Build your backlog</H>
       {(() => {
         type BLItem = { id: string; title: string; why: string; lane: string; priority: 'p0' | 'p1' | 'p2'; effort: 'S' | 'M' | 'L'; status: 'todo' | 'progress' | 'done' };
@@ -16975,7 +16997,7 @@ export default function WorkPage() {
   const doneSteps: JSX.Element[] = [stageIntro('done'),
     <div key="d_build" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={0} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[0]}</div>
+      <StepGoal text={STEP_GOALS.done[0]} />
       <H accent={STAGE_COLORS.done}>Build My MVP</H>
       {(() => {
         const DC = STAGE_COLORS.done;
@@ -17050,7 +17072,7 @@ export default function WorkPage() {
     </div>,
     <div key="d_path" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={1} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[1]}</div>
+      <StepGoal text={STEP_GOALS.done[1]} />
       <H accent={STAGE_COLORS.done}>Choose how you want to build</H>
       {(() => {
         const DC = STAGE_COLORS.done;
@@ -17163,7 +17185,7 @@ export default function WorkPage() {
     </div>,
     <div key="d_flows" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={2} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[2]}</div>
+      <StepGoal text={STEP_GOALS.done[2]} />
       <H accent={STAGE_COLORS.done}>Map your user flows & screens</H>
       {(() => {
         const DC = STAGE_COLORS.done;
@@ -17214,7 +17236,7 @@ export default function WorkPage() {
     </div>,
     <div key="d_uiprompts" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={3} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[3]}</div>
+      <StepGoal text={STEP_GOALS.done[3]} />
       <H accent={STAGE_COLORS.done}>Generate your UI prompts</H>
       {(() => {
         const DC = STAGE_COLORS.done;
@@ -17281,7 +17303,7 @@ export default function WorkPage() {
     </div>,
     <div key="d_masterprompt" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={4} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[4]}</div>
+      <StepGoal text={STEP_GOALS.done[4]} />
       <H accent={STAGE_COLORS.done}>Your master build prompt</H>
       {(() => {
         const DC = STAGE_COLORS.done;
@@ -17355,7 +17377,7 @@ export default function WorkPage() {
     </div>,
     <div key="d_features" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={5} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[5]}</div>
+      <StepGoal text={STEP_GOALS.done[5]} />
       <H accent={STAGE_COLORS.done}>Build your features</H>
       {(() => {
         const DC = STAGE_COLORS.done;
@@ -17422,7 +17444,7 @@ export default function WorkPage() {
     </div>,
     <div key="d_vibecoach" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={6} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[6]}</div>
+      <StepGoal text={STEP_GOALS.done[6]} />
       <H accent={STAGE_COLORS.done}>Describe your next change</H>
       {(() => {
         const DC = STAGE_COLORS.done;
@@ -17471,7 +17493,7 @@ export default function WorkPage() {
     </div>,
     <div key="d_qa" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={7} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[7]}</div>
+      <StepGoal text={STEP_GOALS.done[7]} />
       <H accent={STAGE_COLORS.done}>Run your QA checkpoints</H>
       {(() => {
         const DC = STAGE_COLORS.done;
@@ -17521,7 +17543,7 @@ export default function WorkPage() {
     </div>,
     <div key="d_launchcheck" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={8} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[8]}</div>
+      <StepGoal text={STEP_GOALS.done[8]} />
       <H accent={STAGE_COLORS.done}>Launch your MVP</H>
       {(() => {
         const DC = STAGE_COLORS.done;
@@ -17552,7 +17574,7 @@ export default function WorkPage() {
     </div>,
     <div key="d0" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={9} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[9]}</div>
+      <StepGoal text={STEP_GOALS.done[9]} />
       <H accent={STAGE_COLORS.done}>What actually shipped?</H>
       {(() => {
         const SC = STAGE_COLORS.shape;
@@ -17658,7 +17680,7 @@ export default function WorkPage() {
     </div>,
     <div key="d1" style={col}>
       <ModBadge mod="done" /><StepBars mod="done" step={10} />
-      <div style={{ ...TYPE.stepSubtitle, fontSize: 28, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{STEP_GOALS.done[10]}</div>
+      <StepGoal text={STEP_GOALS.done[10]} />
       <H accent={STAGE_COLORS.done}>Who are your first 5 users?</H>
       <div>
         <FieldLabel n={1} ask="Finding first 5 users" accent={STAGE_COLORS.done}>Names, not categories</FieldLabel>
