@@ -7103,18 +7103,13 @@ function MergedInterviewLog({ manual, ai, framework, title }: {
                   const isOut = excluded.has(itemKey);
                   return (
                   <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', opacity: isOut ? 0.45 : 1, transition: 'opacity .12s' }}>
-                    <button
-                      onClick={() => toggleItem(itemKey)}
-                      title={isOut ? `Q${qn} deselected — click to include` : `Q${qn} selected — click to leave out`}
-                      style={{
-                        width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 1, padding: 0,
-                        border: 'none', background: isOut ? BORDER : gc, color: '#fff',
-                        fontSize: 10.5, fontWeight: 800, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', fontFamily: 'inherit', textDecoration: isOut ? 'line-through' : 'none',
-                      }}
-                    >
+                    <span style={{
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+                      background: isOut ? BORDER : gc, color: '#fff',
+                      fontSize: 10.5, fontWeight: 800, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
                       {qn}
-                    </button>
+                    </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 500, color: T1, lineHeight: 1.55, textDecoration: isOut ? 'line-through' : 'none' }}>
                         {it.q}
@@ -7122,6 +7117,18 @@ function MergedInterviewLog({ manual, ai, framework, title }: {
                       </div>
                       {it.sub && <div style={{ fontSize: 11.5, color: T3, fontStyle: 'italic' as const, marginTop: 2, lineHeight: 1.5 }}>{it.sub}</div>}
                     </div>
+                    <button
+                      onClick={() => toggleItem(itemKey)}
+                      title={isOut ? 'Left out of the interview — click to include' : 'Included in the interview — click to leave out'}
+                      style={{
+                        width: 19, height: 19, borderRadius: 6, flexShrink: 0, marginTop: 2, padding: 0,
+                        border: `1.5px solid ${isOut ? BORDER2 : ac}`, background: isOut ? '#fff' : ac, color: '#fff',
+                        fontSize: 11, fontWeight: 800, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                      }}
+                    >
+                      {!isOut && '✓'}
+                    </button>
                   </div>
                   );
                 })}
