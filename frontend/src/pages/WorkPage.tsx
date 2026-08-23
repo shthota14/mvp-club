@@ -6889,26 +6889,34 @@ function mergeGuides(existing: DiscoveryGuideData, incoming: DiscoveryGuideData)
   return { focus: existing.focus, sections };
 }
 
-// ── Sage avatar - a small hand-drawn "wise old man with glasses" mark used
-// anywhere the AI-assisted mode is referenced, so it reads as a character
-// ("Sage") rather than a generic robot icon.
-function SageAvatar({ size = 28 }: { size?: number }) {
+// ── Sage avatar - the illustrated wizard mark used anywhere the
+// AI-assisted mode is referenced, so it reads as a character ("Sage")
+// rather than a generic robot icon. Backed by a real image (public/sage/
+// sage-avatar.png) instead of an inline SVG, framed in a circle that
+// matches the app's existing purple accent ring.
+function SageAvatar({ size = 84 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" style={{ flexShrink: 0 }}>
-      <circle cx="20" cy="20" r="19" fill="#EDE9FE" stroke="#C4B5FD" strokeWidth="1.2" />
-      <circle cx="20" cy="21" r="10" fill="#FDE7C7" stroke="#92653F" strokeWidth="1.1" />
-      <path d="M10 17 Q7.5 21 10 26" fill="none" stroke="#9CA3AF" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M30 17 Q32.5 21 30 26" fill="none" stroke="#9CA3AF" strokeWidth="1.6" strokeLinecap="round" />
-      <path d="M11 14 Q20 9 29 14" fill="none" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round" />
-      <path d="M13.2 17.5 Q15 16.3 16.8 17.5" fill="none" stroke="#6B4A2B" strokeWidth="1" strokeLinecap="round" />
-      <path d="M23.2 17.5 Q25 16.3 26.8 17.5" fill="none" stroke="#6B4A2B" strokeWidth="1" strokeLinecap="round" />
-      <circle cx="15" cy="20.5" r="3.3" fill="none" stroke="#374151" strokeWidth="1.3" />
-      <circle cx="25" cy="20.5" r="3.3" fill="none" stroke="#374151" strokeWidth="1.3" />
-      <line x1="18.3" y1="20.5" x2="21.7" y2="20.5" stroke="#374151" strokeWidth="1.3" />
-      <circle cx="15" cy="20.5" r="0.9" fill="#374151" />
-      <circle cx="25" cy="20.5" r="0.9" fill="#374151" />
-      <path d="M14.5 26.5 Q20 30 25.5 26.5" fill="none" stroke="#D1D5DB" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
+    <span
+      style={{
+        display: 'inline-flex',
+        flexShrink: 0,
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        background: '#EDE9FE',
+        border: '1.2px solid #C4B5FD',
+        boxSizing: 'border-box',
+      }}
+    >
+      <img
+        src="/sage/sage-avatar.png"
+        alt="Sage"
+        width={size}
+        height={size}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
+    </span>
   );
 }
 
@@ -7312,7 +7320,7 @@ function InterviewGuidePanel({ stored, onSave, genContext }: {
   if (!guide) {
     return (
       <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 14, padding: '32px 24px', textAlign: 'center' as const, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-        <SageAvatar size={48} />
+        <SageAvatar size={144} />
         <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 22, fontWeight: 700, color: T1 }}>Ask Sage@MVP Club to draft your guide</div>
         <div style={{ fontSize: 12.5, color: T2, maxWidth: 440, lineHeight: 1.5 }}>
           Sage reads your Idea and Hone answers, then writes a solution-agnostic 30-minute interview guide grounded in your problem space — without ever revealing what you're building.
@@ -7417,7 +7425,7 @@ function MvpHypothesisPanel({ genContext, onApply, hasApplied }: {
   if (!candidates) {
     return (
       <div style={whiteboardBoxStyle(hasApplied ? '#059669' : SC, -0.4, { padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const })}>
-        <SageAvatar size={36} />
+        <SageAvatar size={108} />
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ fontFamily: "'Kalam', cursive", fontSize: 19, fontWeight: 700, color: hasApplied ? '#059669' : '#1f2937' }}>
             {hasApplied ? '✓ Your hypothesis below is saved' : 'Not sure where to start?'}
@@ -7439,7 +7447,7 @@ function MvpHypothesisPanel({ genContext, onApply, hasApplied }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-        <SageAvatar size={26} />
+        <SageAvatar size={78} />
         <span style={{ fontFamily: "'Kalam', cursive", fontSize: 18, fontWeight: 700, color: '#1f2937' }}>Sage's draft — pick one, edit it, or ignore it</span>
       </div>
       {candidates.map((c, i) => (
@@ -7715,7 +7723,7 @@ function DistributionSuggestPanel({ genContext, onApplyOne, onApplyAll, appliedC
     const hasApplied = !!appliedCount;
     return (
       <div style={{ background: hasApplied ? '#f0fdf4' : '#fdfaf5', border: `1.5px dashed ${hasApplied ? '#86efac' : `${SC}80`}`, borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, marginBottom: 16 }}>
-        <SageAvatar size={36} />
+        <SageAvatar size={108} />
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>
             {hasApplied ? `✓ ${appliedCount} channel${appliedCount !== 1 ? 's' : ''} saved below` : 'Not sure where to find your first users?'}
@@ -7737,7 +7745,7 @@ function DistributionSuggestPanel({ genContext, onApplyOne, onApplyAll, appliedC
   return (
     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' as const }}>
-        <SageAvatar size={26} />
+        <SageAvatar size={78} />
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Sage's channel picks</span>
         <button onClick={() => { onApplyAll(channels.map(c => c.channel)); setAppliedAll(true); setAppliedChannels(new Set(channels.map(c => c.channel))); }} style={{ marginLeft: 'auto', padding: '5px 12px', borderRadius: 999, border: 'none', background: appliedAll ? '#e5e7eb' : SC, color: appliedAll ? '#6e6e73' : '#fff', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
           {appliedAll ? '✓ Applied all' : `Apply all ${channels.length} →`}
@@ -7812,7 +7820,7 @@ function PricingSuggestPanel({ genContext, onApply }: {
   if (!candidates) {
     return (
       <div style={{ background: '#fdfaf5', border: `1.5px dashed ${SC}80`, borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, marginBottom: 16 }}>
-        <SageAvatar size={36} />
+        <SageAvatar size={108} />
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Not sure what to charge?</div>
           <div style={{ fontSize: 12, color: T2, lineHeight: 1.4 }}>Sage suggests a model + price, and tells you honestly whether it's backed by your evidence or a general pattern.</div>
@@ -7828,7 +7836,7 @@ function PricingSuggestPanel({ genContext, onApply }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-        <SageAvatar size={26} />
+        <SageAvatar size={78} />
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Sage's pricing picks</span>
       </div>
       {candidates.map((c, i) => (
@@ -8055,7 +8063,7 @@ function ShipBuildSpecPanel({ genContext, initialSpec, onSave, color }: {
   if (!spec) {
     return (
       <div style={{ background: '#fdfaf5', border: `1.5px dashed ${color}80`, borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' as const }}>
-        <SageAvatar size={40} />
+        <SageAvatar size={120} />
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: T1 }}>Ready to turn this into a build spec?</div>
           <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.5 }}>Sage drafts a product definition, MVP hypothesis, feature list, technical requirements, and an ordered build sequence — grounded in everything you've validated so far. Everything else in Ship gets generated from this.</div>
@@ -8088,7 +8096,7 @@ function ShipBuildSpecPanel({ genContext, initialSpec, onSave, color }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-        <SageAvatar size={26} />
+        <SageAvatar size={78} />
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your build specification</span>
         {savedPulse && <span style={{ fontSize: 11, fontWeight: 700, color: '#059669' }}>✓ saved</span>}
       </div>
@@ -8299,7 +8307,7 @@ function ShipBuildPathPanel({ genContext, initialPath, initialTool, onPick, onEx
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {!recommendation && (
         <div style={{ background: '#fdfaf5', border: `1.5px dashed ${color}80`, borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const }}>
-          <SageAvatar size={36} />
+          <SageAvatar size={108} />
           <div style={{ flex: 1, minWidth: 180 }}>
             <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Not sure which path fits?</div>
             <div style={{ fontSize: 12, color: T2, lineHeight: 1.4 }}>Sage weighs your spec's complexity against how comfortable you said you are with code.</div>
@@ -8312,7 +8320,7 @@ function ShipBuildPathPanel({ genContext, initialPath, initialTool, onPick, onEx
       )}
       {recommendation && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: `${color}08`, border: `1px solid ${color}30`, borderRadius: 12, padding: '12px 16px' }}>
-          <SageAvatar size={28} />
+          <SageAvatar size={84} />
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700, color: T1 }}>
               Sage recommends {BUILD_PATH_OPTIONS.find(o => o.key === recommendation.path)?.label}
@@ -8522,7 +8530,7 @@ function ShipFlowScreenPanel({ genContext, initialData, onSave, color }: {
   if (!data) {
     return (
       <div style={{ background: '#fdfaf5', border: `1.5px dashed ${color}80`, borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' as const }}>
-        <SageAvatar size={40} />
+        <SageAvatar size={120} />
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: T1 }}>Ready to map your flows and screens?</div>
           <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.5 }}>Sage turns your feature list into the primary journeys users will take and the minimum set of screens to build them — each mapped back to the feature it serves.</div>
@@ -8541,7 +8549,7 @@ function ShipFlowScreenPanel({ genContext, initialData, onSave, color }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-        <SageAvatar size={26} />
+        <SageAvatar size={78} />
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your user flows & screens</span>
         {savedPulse && <span style={{ fontSize: 11, fontWeight: 700, color: '#059669' }}>✓ saved</span>}
       </div>
@@ -8723,7 +8731,7 @@ function ShipUIPromptsPanel({ screens, baseContext, buildTool, initialPrompts, o
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-        <SageAvatar size={26} />
+        <SageAvatar size={78} />
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your screen prompts</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{generatedCount} / {screens.length} generated</span>
       </div>
@@ -9066,7 +9074,7 @@ function ShipFeatureBuilderPanel({ features, genContext, spec, buildTool, buildP
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-        <SageAvatar size={26} />
+        <SageAvatar size={78} />
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your build cards</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{generatedCount} / {features.length} generated</span>
       </div>
@@ -9246,7 +9254,7 @@ function ShipVibeCoachPanel({ requests, genContext, buildTool, onSave, color }: 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-        <SageAvatar size={26} />
+        <SageAvatar size={78} />
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your change requests</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{generatedCount} / {list.length} turned into prompts</span>
       </div>
@@ -9427,7 +9435,7 @@ function ShipQACheckpointsPanel({ statuses, ideaName, spec, screens, featureCard
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-        <SageAvatar size={26} />
+        <SageAvatar size={78} />
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your QA checkpoints</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{reviewedCount} / {QA_CHECKPOINT_OPTS.length} reviewed</span>
       </div>
@@ -9534,7 +9542,7 @@ function ShipLaunchChecklistPanel({ checked, onToggle, launched, onLaunch, color
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-        <SageAvatar size={26} />
+        <SageAvatar size={78} />
         <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your launch readiness</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{doneCount} / {allItems.length} ready</span>
       </div>
