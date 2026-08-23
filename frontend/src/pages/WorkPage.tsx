@@ -1846,13 +1846,28 @@ function parseMonthlyPrice(v?: string): number | null {
 
 const COVERAGE_SCORE: Record<FeatureCoverage, number> = { yes: 1, partial: 0.5, no: 0 };
 
-// A point on an n-axis radar, axis 0 pointing straight up, going clockwise.
-function radarPoint(i: number, n: number, value: number, cx: number, cy: number, r: number): string {
-  const angle = -Math.PI / 2 + i * (2 * Math.PI / n);
-  return `${cx + r * value * Math.cos(angle)},${cy + r * value * Math.sin(angle)}`;
-}
-function radarPolygon(values: number[], cx: number, cy: number, r: number): string {
-  return values.map((v, i) => radarPoint(i, values.length, v, cx, cy, r)).join(' ');
+// Fixed-order, colorblind-validated identity colors for the competitor rows
+// in the unified comparison table (validated via the dataviz skill's
+// validate_palette.js as an adjacent sequence against STAGE_COLORS.idea,
+// which "your idea"'s row uses). Sage's prompt asks for 3-5 competitors, so
+// 5 slots covers the normal case; anything beyond that falls back to a
+// neutral gray rather than inventing a 6th hue.
+const MARKET_SERIES_COLORS = ['#eb6834', '#1baf7a', '#eda100', '#2a78d6', '#e87ba4'];
+const MARKET_SERIES_FALLBACK = '#c7c7cf';
+
+function MarketFeatureChip({ v }: { v: FeatureCoverage }) {
+  const styles: Record<FeatureCoverage, { bg: string; fg: string; content: string }> = {
+    yes: { bg: '#d1fae5', fg: '#065f46', content: '✓' },
+    partial: { bg: '#fef3c7', fg: '#92400e', content: '◐' },
+    no: { bg: BORDER, fg: T3, content: '—' },
+  };
+  const s = styles[v];
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22,
+      borderRadius: 7, fontWeight: 800, fontSize: 12, color: s.fg, background: s.bg,
+    }}>{s.content}</span>
+  );
 }
 
 function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value, onChange, currentDomain, onApplyDomain, publicOn, onTogglePublic }: {
@@ -2054,207 +2069,150 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
             {currentDomain === snapshot.domain && <span style={{ fontSize: 11, color: '#059669', fontWeight: 700 }}>✓ Set on your idea</span>}
           </div>
 
-          {/* TAM / SAM infographic — nested bands, sized illustratively (not to precise scale, since the AI gives rough figures not clean numbers) */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ borderRadius: 12, padding: '14px 16px', background: `${STAGE_COLORS.idea}0c`, border: `1.5px solid ${STAGE_COLORS.idea}25` }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 10, fontWeight: 800, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>TAM</span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: T1 }}>{snapshot.tam.value || '—'}</span>
-              </div>
-              <div style={{ fontSize: 11, color: T2, lineHeight: 1.5, marginBottom: 12 }}>{snapshot.tam.basis}</div>
-              {/* SAM nested inside TAM, ~60% width to read as "smaller, inside the bigger market" */}
-              <div style={{ width: '62%', minWidth: 180, borderRadius: 10, padding: '10px 14px', background: '#fff', border: `1.5px solid ${STAGE_COLORS.idea}40` }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>SAM</span>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: T1 }}>{snapshot.sam.value || '—'}</span>
+          {/* Market sizing — TAM as a headline figure with SAM shown as a
+              filled portion of the same bar (illustrative, not to scale —
+              Sage gives rough ranges, not precise figures) instead of two
+              separately-styled nested boxes. */}
+          <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
+            <div style={{ padding: '16px 18px 14px' }}>
+              <div style={{ fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10, fontWeight: 700, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Total addressable market</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: T1, letterSpacing: -.3 }}>{snapshot.tam.value || '—'}</div>
+              <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.6, marginTop: 4, maxWidth: '62ch' }}>{snapshot.tam.basis}</div>
+              <div style={{ position: 'relative', height: 38, margin: '14px 0 4px', borderRadius: 9, background: `linear-gradient(90deg, ${STAGE_COLORS.idea}1c, #eda1001c)`, overflow: 'hidden', border: `1px solid ${STAGE_COLORS.idea}22` }}>
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '38%', minWidth: 160, background: `linear-gradient(90deg, ${STAGE_COLORS.idea}, #a970ff)`, borderRadius: '9px 5px 5px 9px', boxShadow: '0 0 0 1px #ffffff30 inset, 3px 0 12px -2px #7c3aed90' }}>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 14px', color: '#fff', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' as const, textShadow: '0 1px 2px #00000030' }}>SAM {snapshot.sam.value || '—'}</div>
                 </div>
-                <div style={{ fontSize: 10, color: T2, lineHeight: 1.5 }}>{snapshot.sam.basis}</div>
+                <div style={{ position: 'absolute', right: 14, top: 0, bottom: 0, display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 800, color: '#92400e' }}>TAM {snapshot.tam.value || '—'}</div>
               </div>
+              <div style={{ fontSize: 11, color: T3 }}>Illustrative, not to scale — Sage gives rough ranges, not precise figures.</div>
+            </div>
+            <div style={{ padding: '12px 18px 16px', borderTop: `1px solid ${BORDER}`, background: `linear-gradient(135deg, ${STAGE_COLORS.idea}08, #eda10008)` }}>
+              <div style={{ fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 9.5, fontWeight: 700, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Why this SAM</div>
+              <div style={{ fontSize: 12, color: T2, lineHeight: 1.6, marginTop: 3 }}>{snapshot.sam.basis}</div>
             </div>
           </div>
 
-          {/* Competitors — a feature matrix + an at-a-glance table (the
-              "Matrix & table" direction) when the snapshot has the newer
-              differentiators/yourCoverage/per-competitor fields, falling
-              back to the plain name+note tag grid for snapshots generated
-              before those fields existed. */}
+          {/* Competitors — one unified table (product identity, feature
+              coverage score + per-feature checks, and the "at a glance"
+              fields) instead of a radar chart + two separate bar panels +
+              two separate tables that all repeated the same names. Falls
+              back to the plain name+note tag grid below for snapshots
+              generated before differentiators/yourCoverage existed. */}
           {snapshot.differentiators.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {(() => {
                 const n = snapshot.differentiators.length;
                 const yourValues = snapshot.yourCoverage.map(v => COVERAGE_SCORE[v] ?? 0);
-                const competitorsWithFeatures = snapshot.competitors.filter(c => c.features && c.features.length === n);
-                const avgValues = n > 0 && competitorsWithFeatures.length > 0
-                  ? Array.from({ length: n }, (_, i) =>
-                      competitorsWithFeatures.reduce((sum, c) => sum + (COVERAGE_SCORE[c.features![i]] ?? 0), 0) / competitorsWithFeatures.length)
-                  : null;
-
-                const winCounts = [
-                  { label: ideaName?.trim() || 'Your idea', you: true, score: yourValues.reduce((a, b) => a + b, 0) },
-                  ...snapshot.competitors.map(c => ({
-                    label: c.name, you: false,
-                    score: (c.features || []).reduce((sum, v) => sum + (COVERAGE_SCORE[v] ?? 0), 0),
-                  })),
-                ];
-                const maxScore = Math.max(1, ...winCounts.map(w => w.score));
-
-                const priceRows = snapshot.competitors
-                  .map(c => ({ label: c.name, price: parseMonthlyPrice(c.price) }))
-                  .filter((r): r is { label: string; price: number } => r.price !== null);
-                const maxPrice = Math.max(1, ...priceRows.map(r => r.price));
+                const yourScore = yourValues.reduce((a, b) => a + b, 0);
+                const rows = snapshot.competitors.map((c, i) => ({
+                  ...c,
+                  score: (c.features || []).reduce((sum, v) => sum + (COVERAGE_SCORE[v] ?? 0), 0),
+                  color: MARKET_SERIES_COLORS[i] || MARKET_SERIES_FALLBACK,
+                  monthlyPrice: parseMonthlyPrice(c.price),
+                }));
+                const maxScore = Math.max(1, yourScore, ...rows.map(r => r.score));
+                const maxPrice = Math.max(1, ...rows.map(r => r.monthlyPrice ?? 0));
+                const fmtScore = (s: number) => (s % 1 === 0 ? s : s.toFixed(1));
 
                 return (
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .5, marginBottom: 8 }}>Visual comparison</div>
-                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
-
-                      {n >= 3 && (
-                        <div style={{ flex: '1 1 220px', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px' }}>
-                          <div style={{ fontSize: 10.5, fontWeight: 700, color: T2, marginBottom: 8 }}>Feature coverage{avgValues ? ' — you vs. the field' : ''}</div>
-                          <div style={{ position: 'relative', width: '100%', maxWidth: 210, margin: '0 auto' }}>
-                            <svg viewBox="0 0 200 200" style={{ width: '100%', height: 'auto', display: 'block' }}>
-                              <polygon points={radarPolygon(Array(n).fill(1), 100, 100, 78)} fill="none" stroke={BORDER} strokeWidth={1} />
-                              <polygon points={radarPolygon(Array(n).fill(0.5), 100, 100, 78)} fill="none" stroke={BORDER} strokeWidth={1} />
-                              {avgValues && (
-                                <polygon points={radarPolygon(avgValues, 100, 100, 78)} fill="rgba(176,176,184,.25)" stroke={T3} strokeWidth={1.3} />
-                              )}
-                              <polygon points={radarPolygon(yourValues, 100, 100, 78)} fill={`${STAGE_COLORS.idea}30`} stroke={STAGE_COLORS.idea} strokeWidth={2} />
-                            </svg>
-                            {snapshot.differentiators.map((d, i) => {
-                              const angle = -Math.PI / 2 + i * (2 * Math.PI / n);
-                              const lx = 50 + 46 * Math.cos(angle);
-                              const ly = 50 + 46 * Math.sin(angle);
-                              return (
-                                <div key={i} style={{
-                                  position: 'absolute', left: `${lx}%`, top: `${ly}%`, transform: 'translate(-50%, -50%)',
-                                  fontSize: 8.5, fontWeight: 600, color: T3, textAlign: 'center' as const, width: 60, lineHeight: 1.2, pointerEvents: 'none' as const,
-                                }}>{d}</div>
-                              );
-                            })}
-                          </div>
-                          {avgValues && (
-                            <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 6, fontSize: 9.5 }}>
-                              <span style={{ color: STAGE_COLORS.idea, fontWeight: 700 }}>● {ideaName?.trim() || 'You'}</span>
-                              <span style={{ color: T3, fontWeight: 700 }}>● Field average</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div style={{ flex: '1 1 220px', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px' }}>
-                        <div style={{ fontSize: 10.5, fontWeight: 700, color: T2, marginBottom: 10 }}>Feature coverage score</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                          {winCounts.map((w, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ width: 84, flexShrink: 0, fontSize: 10.5, fontWeight: w.you ? 700 : 500, color: w.you ? STAGE_COLORS.idea : T2, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>{w.label}</span>
-                              <div style={{ flex: 1, height: 8, borderRadius: 4, background: BORDER }}>
-                                <div style={{ width: `${(w.score / maxScore) * 100}%`, height: '100%', borderRadius: 4, background: w.you ? STAGE_COLORS.idea : '#c7c7cf' }} />
-                              </div>
-                              <span style={{ width: 34, flexShrink: 0, fontSize: 10, color: T3, textAlign: 'right' as const }}>{w.score % 1 === 0 ? w.score : w.score.toFixed(1)}/{n}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {priceRows.length >= 2 && (
-                        <div style={{ flex: '1 1 220px', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px' }}>
-                          <div style={{ fontSize: 10.5, fontWeight: 700, color: T2, marginBottom: 10 }}>Price, monthly-equivalent</div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-                            {priceRows.map((r, i) => (
-                              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ width: 84, flexShrink: 0, fontSize: 10.5, color: T2, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>{r.label}</span>
-                                <div style={{ flex: 1, height: 8, borderRadius: 4, background: BORDER }}>
-                                  <div style={{ width: `${Math.max(4, (r.price / maxPrice) * 100)}%`, height: '100%', borderRadius: 4, background: '#b8862f' }} />
-                                </div>
-                                <span style={{ width: 46, flexShrink: 0, fontSize: 10, color: T3, textAlign: 'right' as const }}>{r.price === 0 ? 'Free' : `$${r.price.toFixed(2)}`}</span>
-                              </div>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>Competitive landscape</div>
+                    <div style={{ fontSize: 12, color: T3, marginBottom: 12 }}>
+                      {ideaName?.trim() || 'Your idea'} vs. {rows.length} competitor{rows.length === 1 ? '' : 's'} Sage found — feature coverage and monthly-equivalent price shown inline.
+                    </div>
+                    <div style={{ overflowX: 'auto', border: `1.5px solid ${BORDER}`, borderRadius: 12 }}>
+                      <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 560 + n * 90, fontSize: 12.5 }}>
+                        <thead>
+                          <tr>
+                            <th style={{ position: 'sticky', left: 0, top: 0, zIndex: 2, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const, minWidth: 168, boxShadow: `1px 0 0 ${BORDER}` }}>Product</th>
+                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'center' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Coverage</th>
+                            {snapshot.differentiators.map((d, i) => (
+                              <th key={i} style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'center' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>{d}</th>
                             ))}
-                          </div>
-                        </div>
-                      )}
-
+                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Area</th>
+                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Price</th>
+                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Rating</th>
+                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Users</th>
+                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Founded</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr className={revealing ? 'msnap-tag-pop' : undefined}>
+                            <td style={{ position: 'sticky', left: 0, background: `${STAGE_COLORS.idea}1f`, borderLeft: `3px solid ${STAGE_COLORS.idea}`, padding: '10px 12px', borderBottom: `1px solid ${BORDER}`, boxShadow: `1px 0 0 ${BORDER}` }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 700, color: STAGE_COLORS.idea, whiteSpace: 'nowrap' as const }}>
+                                <span style={{ width: 9, height: 9, borderRadius: '50%', background: STAGE_COLORS.idea, flexShrink: 0, boxShadow: `0 0 0 3px ${STAGE_COLORS.idea}22` }} />
+                                {ideaName?.trim() || 'Your idea'}
+                              </div>
+                              <div style={{ fontSize: 10.5, color: T3, marginTop: 1 }}>Your idea</div>
+                            </td>
+                            <td style={{ padding: '10px 12px', background: `${STAGE_COLORS.idea}12`, borderBottom: `1px solid ${BORDER}` }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 120 }}>
+                                <div style={{ flex: 1, height: 7, borderRadius: 4, background: BORDER }}><div style={{ width: `${(yourScore / maxScore) * 100}%`, height: '100%', borderRadius: 4, background: STAGE_COLORS.idea }} /></div>
+                                <span style={{ fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10.5, color: T2, width: 28, flexShrink: 0, textAlign: 'right' as const }}>{fmtScore(yourScore)}/{n}</span>
+                              </div>
+                            </td>
+                            {snapshot.differentiators.map((_, i) => (
+                              <td key={i} style={{ textAlign: 'center' as const, padding: '10px 12px', background: `${STAGE_COLORS.idea}12`, borderBottom: `1px solid ${BORDER}` }}>
+                                <MarketFeatureChip v={snapshot.yourCoverage[i] || 'no'} />
+                              </td>
+                            ))}
+                            <td colSpan={5} style={{ padding: '10px 12px', background: `${STAGE_COLORS.idea}12`, borderBottom: `1px solid ${BORDER}`, color: T3, fontSize: 11 }}>—</td>
+                          </tr>
+                          {rows.map((c, ci) => (
+                            <tr key={ci} className={revealing ? 'msnap-tag-pop' : undefined} style={{ animationDelay: revealing ? `${0.2 + ci * 0.1}s` : undefined }}>
+                              <td style={{ position: 'sticky', left: 0, background: '#fff', borderLeft: `3px solid ${c.color}`, padding: '10px 12px', borderBottom: `1px solid ${BORDER}`, boxShadow: `1px 0 0 ${BORDER}` }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 700, color: T1, whiteSpace: 'nowrap' as const }}>
+                                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: c.color, flexShrink: 0, boxShadow: `0 0 0 3px ${c.color}22` }} />
+                                  {c.name}
+                                  <a href={`https://www.google.com/search?q=${encodeURIComponent(c.name + ' official site')}`} target="_blank" rel="noopener noreferrer"
+                                    title={`Search for ${c.name}'s official site`}
+                                    style={{ display: 'inline-flex', color: T3, textDecoration: 'none', fontSize: 11, fontWeight: 400 }}
+                                    onClick={e => e.stopPropagation()}>🔗</a>
+                                  <a href={`https://www.google.com/search?q=${encodeURIComponent(c.name + ' reviews')}`} target="_blank" rel="noopener noreferrer"
+                                    title={`Search for what customers say about ${c.name}`}
+                                    style={{ display: 'inline-flex', color: T3, textDecoration: 'none', fontSize: 11, fontWeight: 400 }}
+                                    onClick={e => e.stopPropagation()}>💬</a>
+                                </div>
+                                {c.note && <div style={{ fontSize: 10.5, color: T3, marginTop: 1, maxWidth: 180 }}>{c.note}</div>}
+                              </td>
+                              <td style={{ padding: '10px 12px', borderBottom: `1px solid ${BORDER}` }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 120 }}>
+                                  <div style={{ flex: 1, height: 7, borderRadius: 4, background: BORDER }}><div style={{ width: `${(c.score / maxScore) * 100}%`, height: '100%', borderRadius: 4, background: c.color }} /></div>
+                                  <span style={{ fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10.5, color: T2, width: 28, flexShrink: 0, textAlign: 'right' as const }}>{fmtScore(c.score)}/{n}</span>
+                                </div>
+                              </td>
+                              {snapshot.differentiators.map((_, i) => (
+                                <td key={i} style={{ textAlign: 'center' as const, padding: '10px 12px', borderBottom: `1px solid ${BORDER}` }}>
+                                  <MarketFeatureChip v={c.features?.[i] || 'no'} />
+                                </td>
+                              ))}
+                              <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.area || '—'}</td>
+                              <td style={{ padding: '10px 12px', borderBottom: `1px solid ${BORDER}` }}>
+                                {c.monthlyPrice !== null ? (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 108 }}>
+                                    <div style={{ width: 44, height: 6, borderRadius: 3, background: BORDER, flexShrink: 0 }}><div style={{ width: `${Math.max(4, (c.monthlyPrice / maxPrice) * 100)}%`, height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #d4a03a, #b8862f)' }} /></div>
+                                    <span style={{ fontSize: 11.5, color: T2, whiteSpace: 'nowrap' as const }}>{c.price}</span>
+                                  </div>
+                                ) : (
+                                  <span style={{ fontSize: 11.5, color: c.price ? T2 : T3, whiteSpace: 'nowrap' as const }}>{c.price || '—'}</span>
+                                )}
+                              </td>
+                              <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.rating ? `${c.rating}★` : '—'}</td>
+                              <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.users || '—'}</td>
+                              <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.founded || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const, fontSize: 11, color: T3, marginTop: 10 }}>
+                      <span>✓ full coverage · ◐ partial · — none, as best Sage can tell</span>
+                      <span>Price bar shown only where Sage could normalize to a monthly-equivalent (hourly pricing shown as text only, to avoid comparing across units)</span>
+                      <span>🔗 site · 💬 reviews — both open a search, since Sage can't confirm live URLs or market share/sentiment figures without web access</span>
                     </div>
                   </div>
                 );
               })()}
-
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .5, marginBottom: 8 }}>Feature comparison</div>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 60 + snapshot.differentiators.length * 84 }}>
-                    <thead>
-                      <tr>
-                        <th style={{ textAlign: 'left', padding: '4px 8px 8px 0', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}></th>
-                        {snapshot.differentiators.map((d, i) => (
-                          <th key={i} style={{ textAlign: 'center', padding: '4px 6px 8px', fontSize: 9.5, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}`, minWidth: 76 }}>{d}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className={revealing ? 'msnap-tag-pop' : undefined} style={{ background: `${STAGE_COLORS.idea}10` }}>
-                        <td style={{ padding: '7px 8px 7px 0', fontSize: 11.5, fontWeight: 700, color: STAGE_COLORS.idea, whiteSpace: 'nowrap' as const }}>{ideaName?.trim() || 'Your idea'}</td>
-                        {snapshot.differentiators.map((_, i) => {
-                          const v = snapshot.yourCoverage[i] || 'no';
-                          return (
-                            <td key={i} style={{ textAlign: 'center', padding: '7px 6px', fontSize: 13, fontWeight: 700, color: v === 'yes' ? '#059669' : v === 'partial' ? '#d97706' : T3 }}>
-                              {v === 'yes' ? '✓' : v === 'partial' ? '◐' : '—'}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                      {snapshot.competitors.map((c, ci) => (
-                        <tr key={ci} className={revealing ? 'msnap-tag-pop' : undefined} style={{ animationDelay: revealing ? `${0.2 + ci * 0.1}s` : undefined }}>
-                          <td style={{ padding: '7px 8px 7px 0', fontSize: 11.5, fontWeight: 600, color: T1, whiteSpace: 'nowrap' as const, borderTop: `1px solid ${BORDER}` }}>{c.name}</td>
-                          {snapshot.differentiators.map((_, i) => {
-                            const v = c.features?.[i] || 'no';
-                            return (
-                              <td key={i} style={{ textAlign: 'center', padding: '7px 6px', fontSize: 13, fontWeight: 700, color: v === 'yes' ? '#059669' : v === 'partial' ? '#d97706' : T3, borderTop: `1px solid ${BORDER}` }}>
-                                {v === 'yes' ? '✓' : v === 'partial' ? '◐' : '—'}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div style={{ fontSize: 9.5, color: T3, marginTop: 6 }}>✓ full coverage · ◐ partial · — none, as best Sage can tell</div>
-              </div>
-
-              {snapshot.competitors.length > 0 && (
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .5, marginBottom: 8 }}>At a glance</div>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 480 }}>
-                      <thead>
-                        <tr>
-                          <th style={{ textAlign: 'left', padding: '4px 8px 8px 0', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Product</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px 8px', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Area</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px 8px', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Price</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px 8px', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Rating</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px 8px', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Users</th>
-                          <th style={{ textAlign: 'left', padding: '4px 8px 8px', fontSize: 10, fontWeight: 700, color: T3, borderBottom: `1.5px solid ${BORDER}` }}>Founded</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {snapshot.competitors.map((c, i) => (
-                          <tr key={i} className={revealing ? 'msnap-tag-pop' : undefined} style={{ animationDelay: revealing ? `${0.2 + i * 0.1}s` : undefined }}>
-                            <td style={{ padding: '7px 8px 7px 0', borderTop: `1px solid ${BORDER}`, verticalAlign: 'top' as const }}>
-                              <div style={{ fontSize: 11.5, fontWeight: 600, color: T1, whiteSpace: 'nowrap' as const }}>{c.name}</div>
-                              {c.note && <div style={{ fontSize: 9.5, color: T3, marginTop: 1, maxWidth: 160 }}>{c.note}</div>}
-                            </td>
-                            <td style={{ padding: '7px 8px', fontSize: 11, color: T2, borderTop: `1px solid ${BORDER}`, verticalAlign: 'top' as const }}>{c.area || '—'}</td>
-                            <td style={{ padding: '7px 8px', fontSize: 11, color: T2, borderTop: `1px solid ${BORDER}`, whiteSpace: 'nowrap' as const, verticalAlign: 'top' as const }}>{c.price || '—'}</td>
-                            <td style={{ padding: '7px 8px', fontSize: 11, color: T2, borderTop: `1px solid ${BORDER}`, verticalAlign: 'top' as const }}>{c.rating ? `${c.rating}★` : '—'}</td>
-                            <td style={{ padding: '7px 8px', fontSize: 11, color: T2, borderTop: `1px solid ${BORDER}`, verticalAlign: 'top' as const }}>{c.users || '—'}</td>
-                            <td style={{ padding: '7px 8px', fontSize: 11, color: T2, borderTop: `1px solid ${BORDER}`, verticalAlign: 'top' as const }}>{c.founded || '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
             </div>
           ) : snapshot.competitors.length > 0 && (
             <div>
