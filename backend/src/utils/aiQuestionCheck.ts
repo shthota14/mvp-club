@@ -3009,9 +3009,13 @@ Ground everything in the product context, change category, and the founder's own
 
 Respond with ONLY the prompt text itself — no JSON, no code fences, no preamble like "Here's the prompt:", no meta-commentary before or after. Just the section headers and their content, ready to be copy-pasted as-is into an AI coding tool.`;
 
-export async function generateChangeCodingPrompt(ctx: ChangeCoachContext): Promise<string> {
-  const lines = buildChangeCoachLines(ctx);
-  const userContent = lines.join('\n');
+function buildChangeCoachUserContent(ctx: ChangeCoachContext): string {
+  return buildChangeCoachLines(ctx).join('\n');
+}
+
+// Ollama path — the original, always-available implementation.
+async function generateChangeCodingPromptOllama(ctx: ChangeCoachContext): Promise<string> {
+  const userContent = buildChangeCoachUserContent(ctx);
 
   let res;
   try {
@@ -3047,6 +3051,41 @@ export async function generateChangeCodingPrompt(ctx: ChangeCoachContext): Promi
     throw new Error('The AI did not return a usable prompt — please try again.');
   }
   return prompt;
+}
+
+// Claude path — opt-in via ANTHROPIC_API_KEY, on the flagship tier: same
+// reasoning as generateUIPrompt — this is pasted straight into a coding
+// tool against a live, existing product, so correctness matters more than
+// speed or cost here. Reuses the same sanitizePromptText() cleanup.
+async function generateChangeCodingPromptClaude(ctx: ChangeCoachContext): Promise<string> {
+  const userContent = buildChangeCoachUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 2000,
+    temperature: 0.4,
+    system: CHANGE_COACH_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  const prompt = sanitizePromptText(text).slice(0, 6000);
+  if (!prompt) {
+    throw new Error('Claude did not return a usable prompt — please try again.');
+  }
+  return prompt;
+}
+
+export async function generateChangeCodingPrompt(ctx: ChangeCoachContext): Promise<string> {
+  if (anthropicClient) {
+    try {
+      return await generateChangeCodingPromptClaude(ctx);
+    } catch (err: any) {
+      console.error('[change-coach] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateChangeCodingPromptOllama(ctx);
 }
 // ─────────────────────────────────────────────────────────────────────────
 // Market Snapshot — Idea Step 1. Once a founder has typed their idea (name +
