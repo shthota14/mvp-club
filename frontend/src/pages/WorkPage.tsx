@@ -496,7 +496,7 @@ function MarkerQuestion({ children, accent = '#2563eb' }: { children: React.Reac
     <span style={{ display: 'inline-block' }}>
       <span style={{
         fontSize: 22, fontWeight: 900, color: '#0f172a',
-        fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif',
+        fontFamily: "'Playfair Display', Georgia, serif",
         letterSpacing: -0.5, lineHeight: 1.2,
       }}>
         {children}
@@ -1925,7 +1925,7 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
   const saveEdit = () => { if (draft) onChange(JSON.stringify(draft)); setEditing(false); };
 
   return (
-    <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 14, padding: '18px 20px', background: '#fff' }}>
+    <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 16, padding: '18px 20px', background: '#fff' }}>
       <style>{`
         @keyframes msnapSpin { to { transform: rotate(360deg); } }
         @keyframes msnapPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
@@ -1949,7 +1949,7 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 15 }}>🔎</span>
           <span style={{ fontSize: 13, fontWeight: 800, color: T1 }}>Sage Market Snapshot</span>
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 20, padding: '2px 8px' }}>AI draft — verify</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 999, padding: '2px 8px' }}>AI draft — verify</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {snapshot && !editing && <PublicToggle on={publicOn} onToggle={onTogglePublic} label="Market Snapshot" />}
@@ -1963,7 +1963,10 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
       </div>
 
       {!snapshot && !generating && (
-        <div style={{ fontSize: 12, color: T3, lineHeight: 1.6 }}>
+        <div style={{
+          fontFamily: "'Caveat', cursive", fontSize: 19, lineHeight: 1.4, color: T1,
+          background: `${STAGE_COLORS.idea}12`, borderRadius: 12, padding: '10px 14px',
+        }}>
           Get an AI-drafted domain, rough market size, and a few competitors to research — a starting point, not a fact.
         </div>
       )}
@@ -2226,7 +2229,7 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
                 {snapshot.competitors.map((c, i) => (
                   <div key={i}
                     className={revealing ? 'msnap-tag-pop' : undefined}
-                    style={{ border: `1.5px solid ${BORDER}`, borderRadius: 10, padding: '8px 10px', animationDelay: revealing ? `${0.15 + i * 0.12}s` : undefined }}>
+                    style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '8px 10px', animationDelay: revealing ? `${0.15 + i * 0.12}s` : undefined }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: T1, marginBottom: 2 }}>{c.name}</div>
                     <div style={{ fontSize: 10.5, color: T2, lineHeight: 1.4 }}>{c.note}</div>
                   </div>
@@ -12068,7 +12071,7 @@ export default function WorkPage() {
         <MarkerQuestion accent={accent}>{children}</MarkerQuestion>
       </h2>
     ) : (
-      <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.5, lineHeight: 1.25, margin: '0 0 8px', color: T1 }}>{children}</h2>
+      <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.5, lineHeight: 1.25, margin: '0 0 8px', color: T1, fontFamily: "'Playfair Display', Georgia, serif" }}>{children}</h2>
     )
   );
 
