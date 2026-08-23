@@ -7,6 +7,8 @@ import IdeaCanvasModal from '@/components/IdeaCanvasModal';
 import StageCompleteModal from '@/components/StageCompleteModal';
 import AvailabilityModal from '@/components/AvailabilityModal';
 import InterviewScriptCard from '@/components/InterviewScriptCard';
+import Button from '@/components/Button';
+import Card from '@/components/Card';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { deriveAssumptionVerdicts } from '@/utils/assumptionVerdicts';
 import { deriveVeraVerdicts } from '@/utils/veraVerdicts';
@@ -1925,7 +1927,7 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
   const saveEdit = () => { if (draft) onChange(JSON.stringify(draft)); setEditing(false); };
 
   return (
-    <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 16, padding: '18px 20px', background: '#fff' }}>
+    <Card padding="md">
       <style>{`
         @keyframes msnapSpin { to { transform: rotate(360deg); } }
         @keyframes msnapPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
@@ -1954,11 +1956,11 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {snapshot && !editing && <PublicToggle on={publicOn} onToggle={onTogglePublic} label="Market Snapshot" />}
           {snapshot && !editing && (
-            <button onClick={startEdit} style={{ padding: '5px 12px', borderRadius: 8, border: `1.5px solid ${BORDER}`, background: '#fff', fontSize: 11, fontWeight: 700, color: T2, cursor: 'pointer', fontFamily: 'inherit' }}>✏️ Edit</button>
+            <Button variant="secondary" size="sm" onClick={startEdit}>✏️ Edit</Button>
           )}
-          <button onClick={generate} disabled={generating} style={{ padding: '5px 12px', borderRadius: 8, border: 'none', background: T1, color: '#fff', fontSize: 11, fontWeight: 700, cursor: generating ? 'default' : 'pointer', fontFamily: 'inherit', opacity: generating ? .6 : 1 }}>
+          <Button variant="primary" size="sm" onClick={generate} disabled={generating}>
             {generating ? 'Thinking…' : snapshot ? '↻ Regenerate' : '✨ Generate'}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -2291,12 +2293,12 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={saveEdit} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', background: T1, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
-            <button onClick={() => setEditing(false)} style={{ padding: '6px 14px', borderRadius: 8, border: `1.5px solid ${BORDER}`, background: '#fff', color: T2, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+            <Button variant="primary" size="sm" onClick={saveEdit} style={{ padding: '6px 14px', fontSize: 12 }}>Save</Button>
+            <Button variant="secondary" size="sm" onClick={() => setEditing(false)} style={{ padding: '6px 14px', fontSize: 12 }}>Cancel</Button>
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
