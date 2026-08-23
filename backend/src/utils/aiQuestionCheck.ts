@@ -3118,36 +3118,71 @@ export interface MarketSnapshotContext {
   oneLiner?: string;
 }
 
+export type FeatureCoverage = 'yes' | 'partial' | 'no';
+
+export interface MarketCompetitor {
+  name: string;
+  note: string;
+  // Everything below is best-effort and frequently blank ('') — an offline
+  // model has no way to verify a real competitor's actual price, rating,
+  // install base or founding year, and a generic/unnamed entry (see the
+  // competitors rule in the prompts below) has none of these by definition.
+  // Blank is the honest answer; a guessed number is not.
+  price?: string;
+  area?: string;
+  rating?: string;
+  users?: string;
+  founded?: string;
+  // Aligned 1:1 with MarketSnapshot.differentiators — features[i] describes
+  // this competitor's coverage of differentiators[i].
+  features?: FeatureCoverage[];
+}
+
 export interface MarketSnapshot {
   domain: string;
   tam: { value: string; basis: string };
   sam: { value: string; basis: string };
-  competitors: { name: string; note: string }[];
+  // 4-6 short, concrete capabilities worth comparing products on in this
+  // specific niche — chosen by the AI, not the founder (who hasn't defined
+  // features yet at this point in the flow).
+  differentiators: string[];
+  // Aligned 1:1 with differentiators — the AI's best guess at how the
+  // founder's own idea (from their one-liner alone) covers each one.
+  yourCoverage: FeatureCoverage[];
+  competitors: MarketCompetitor[];
 }
 
 const MARKET_SNAPSHOT_SYSTEM_PROMPT = `You are a cautious startup market-research analyst helping a founder get a rough first read on their idea. You do not have live web access or real market databases — you are working from general knowledge only, so be honest about that limitation rather than inventing false precision.
 
 Respond with ONLY a JSON object, no other text, in this exact shape:
-{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>"}]}
+{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "differentiators": ["<short capability>", ...], "yourCoverage": ["yes" | "partial" | "no", ...], "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>", "price": "<e.g. \\"$5.99/mo\\" or \\"Free\\", or \\"\\" if unknown>", "area": "<their market segment in a few words, or \\"\\">", "rating": "<e.g. \\"4.6\\", or \\"\\" if unknown>", "users": "<e.g. \\"1M+\\", or \\"\\" if unknown>", "founded": "<year, or \\"\\" if unknown>", "features": ["yes" | "partial" | "no", ...]}]}
 
 Rules:
 - domain: pick exactly 1 key from this list (verbatim, case-sensitive): ${MARKET_DOMAIN_KEYS.map(v => `"${v}"`).join(', ')}
 - tam/sam: give a rough order-of-magnitude estimate with a one-sentence basis. Be conservative — round numbers, not false precision. SAM must be smaller than TAM.
-- competitors: list 3-5. ONLY name a specific real company if you are confident it actually exists and is a genuine competitor in this specific niche — not just the broader category. If you are not confident a specific named company is a close, real match, use a short generic description instead (e.g. {"name": "Generic AI writing tools", "note": "broad category, no single dominant player you're confident about"}) rather than guessing a name. It is better to be generic and honest than specific and wrong.`;
+- differentiators: 4-6 short, concrete capabilities worth comparing products on in this specific niche (e.g. "Predictive reorder", "Price comparison") — not vague qualities like "good UX." These are what "features" below are scored against.
+- yourCoverage: exactly one "yes"/"partial"/"no" per differentiator, your best guess at whether the founder's own idea (from their one-liner) covers it. Default to "partial" rather than guessing "yes" when genuinely unclear.
+- competitors: list 3-5. ONLY name a specific real company if you are confident it actually exists and is a genuine competitor in this specific niche — not just the broader category. If you are not confident a specific named company is a close, real match, use a short generic description instead (e.g. {"name": "Generic AI writing tools", "note": "broad category, no single dominant player you're confident about"}) rather than guessing a name. It is better to be generic and honest than specific and wrong.
+- price/area/rating/users/founded: best-effort only for competitors you're confident are real — leave each as "" rather than inventing a number you're not confident in. A generic/unnamed competitor entry should leave all five as "".
+- features: exactly one "yes"/"partial"/"no" per differentiator, per competitor, in the same order as differentiators. For a generic/unnamed competitor entry, base this on the category norm rather than a specific product.`;
 
 // Claude path (optional — only used when ANTHROPIC_API_KEY is set) gets a
 // different framing: it actually has web search, so it's told to use it and
 // ground its answer in what it finds, instead of being told to fall back to
 // honesty about not having live data.
-const MARKET_SNAPSHOT_SYSTEM_PROMPT_CLAUDE = `You are a startup market-research analyst helping a founder get a first read on their idea. You have live web search — use it to find real, current information: companies actually operating in this specific niche, and real signals about market size (industry reports, recent funding rounds, adjacent public-company revenue if relevant). Search enough to ground your answer before responding; a few targeted searches are usually enough.
+const MARKET_SNAPSHOT_SYSTEM_PROMPT_CLAUDE = `You are a startup market-research analyst helping a founder get a first read on their idea. You have live web search — use it to find real, current information: companies actually operating in this specific niche, real signals about market size (industry reports, recent funding rounds, adjacent public-company revenue if relevant), and — for each named competitor — their actual pricing, app-store rating, rough user/install base, and founding year where those are publicly findable. Search enough to ground your answer before responding; a handful of targeted searches is usually enough, including at least one aimed at pricing/reviews for your top 1-2 competitors.
 
 Once you're done searching, respond with ONLY a JSON object as your final message — no narration, no markdown code fences, nothing before or after the JSON — in this exact shape:
-{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this, referencing what you found>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>"}]}
+{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this, referencing what you found>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "differentiators": ["<short capability>", ...], "yourCoverage": ["yes" | "partial" | "no", ...], "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>", "price": "<e.g. \\"$5.99/mo\\" or \\"Free\\", from what you found, or \\"\\" if you couldn't confirm it>", "area": "<their market segment in a few words>", "rating": "<e.g. \\"4.6\\", from what you found, or \\"\\" if unconfirmed>", "users": "<e.g. \\"1M+\\", from what you found, or \\"\\" if unconfirmed>", "founded": "<year, or \\"\\" if unconfirmed>", "features": ["yes" | "partial" | "no", ...]}]}
 
 Rules:
 - domain: pick exactly 1 key from this list (verbatim, case-sensitive): ${MARKET_DOMAIN_KEYS.map(v => `"${v}"`).join(', ')}
 - tam/sam: give a rough order-of-magnitude estimate with a one-sentence basis, grounded in what your search actually turned up. Be conservative — round numbers, not false precision. SAM must be smaller than TAM.
-- competitors: list 3-5 real companies you found via search that genuinely compete in this specific niche — not just the broader category. If, after searching, you're still not confident a specific named company is a close, real match, use a short generic description instead (e.g. {"name": "Generic AI writing tools", "note": "broad category, no single dominant player you're confident about"}) rather than guessing a name. It is better to be generic and honest than specific and wrong.`;
+- differentiators: 4-6 short, concrete capabilities worth comparing products on in this specific niche (e.g. "Predictive reorder", "Price comparison") — not vague qualities like "good UX." These are what "features" below are scored against.
+- yourCoverage: exactly one "yes"/"partial"/"no" per differentiator, your best guess at whether the founder's own idea (from their one-liner) covers it. Default to "partial" rather than guessing "yes" when genuinely unclear.
+- competitors: list 3-5 real companies you found via search that genuinely compete in this specific niche — not just the broader category. If, after searching, you're still not confident a specific named company is a close, real match, use a short generic description instead (e.g. {"name": "Generic AI writing tools", "note": "broad category, no single dominant player you're confident about"}) rather than guessing a name. It is better to be generic and honest than specific and wrong.
+- price/area/rating/users/founded: only fill these in from what your search actually confirmed — leave any you couldn't verify as "" rather than estimating. A generic/unnamed competitor entry should leave all five as "".
+- features: exactly one "yes"/"partial"/"no" per differentiator, per competitor, in the same order as differentiators, based on what you found about that product. For a generic/unnamed competitor entry, base this on the category norm rather than a specific product.`;
 
 // Shared between both paths so a Claude response and an Ollama response are
 // sanitized identically — the frontend renders whichever one came back
@@ -3158,17 +3193,46 @@ function sanitizeMarketSnapshot(parsed: any): MarketSnapshot {
     value: sanitizeStr(v?.value, 40) || 'Not enough to estimate yet',
     basis: sanitizeStr(v?.basis, 200),
   });
+  const sanitizeCoverage = (v: any): FeatureCoverage => (v === 'yes' || v === 'partial' || v === 'no') ? v : 'no';
+  // Every coverage array (yourCoverage and each competitor's features) gets
+  // padded/truncated to exactly differentiators.length so every array in
+  // the response stays index-aligned, even if the model returned a
+  // mismatched count.
+  const sanitizeCoverageArr = (v: any, len: number): FeatureCoverage[] => {
+    const arr = Array.isArray(v) ? v.map(sanitizeCoverage) : [];
+    while (arr.length < len) arr.push('no');
+    return arr.slice(0, len);
+  };
 
   const domain = MARKET_DOMAIN_KEYS.includes(parsed?.domain) ? parsed.domain : MARKET_DOMAIN_KEYS[0];
-  const competitors = (Array.isArray(parsed?.competitors) ? parsed.competitors : [])
+
+  const differentiators = (Array.isArray(parsed?.differentiators) ? parsed.differentiators : [])
+    .filter((d: any) => typeof d === 'string' && d.trim())
+    .map((d: string) => sanitizeStr(d, 40))
+    .slice(0, 6);
+
+  const yourCoverage = sanitizeCoverageArr(parsed?.yourCoverage, differentiators.length);
+
+  const competitors: MarketCompetitor[] = (Array.isArray(parsed?.competitors) ? parsed.competitors : [])
     .filter((c: any) => c && typeof c.name === 'string' && c.name.trim())
-    .map((c: any) => ({ name: sanitizeStr(c.name, 60), note: sanitizeStr(c.note, 120) }))
+    .map((c: any) => ({
+      name: sanitizeStr(c.name, 60),
+      note: sanitizeStr(c.note, 120),
+      price: sanitizeStr(c.price, 40),
+      area: sanitizeStr(c.area, 80),
+      rating: sanitizeStr(c.rating, 10),
+      users: sanitizeStr(c.users, 20),
+      founded: sanitizeStr(c.founded, 10),
+      features: sanitizeCoverageArr(c.features, differentiators.length),
+    }))
     .slice(0, 5);
 
   return {
     domain,
     tam: sanitizeMoney(parsed?.tam),
     sam: sanitizeMoney(parsed?.sam),
+    differentiators,
+    yourCoverage,
     competitors,
   };
 }

@@ -105,7 +105,7 @@ const MODULES = ['idea', 'hone', 'validate', 'shape', 'done'] as const;
 type Mod = typeof MODULES[number];
 
 const META: Record<Mod, { icon: string; label: string; steps: number; desc: string }> = {
-  idea:     { icon: '💡', label: 'Idea',     steps: 2, desc: 'Capture a problem worth solving.' },
+  idea:     { icon: '💡', label: 'Idea',     steps: 3, desc: 'Capture a problem worth solving.' },
   hone:     { icon: '🎯', label: 'Hone',     steps: 6, desc: 'Sharpen until it\'s specific and real.' },
   validate: { icon: '🧪', label: 'Validate', steps: 10, desc: 'Test with people before you build.' },
   shape:    { icon: '🔨', label: 'Shape',    steps: 5, desc: 'Define the smallest possible MVP.' },
@@ -115,6 +115,7 @@ const META: Record<Mod, { icon: string; label: string; steps: number; desc: stri
 const STEP_GOALS: Record<Mod, string[]> = {
   idea: [
     'Put your idea into one sentence. If you can\'t say it simply, you can\'t build it clearly.',
+    'See how big this market might be — and who else is already circling it.',
     'The "why" behind your idea is as important as the idea itself.',
   ],
   hone: [
@@ -160,7 +161,7 @@ const STEP_GOALS: Record<Mod, string[]> = {
 };
 
 const STEP_TITLES: Record<Mod, string[]> = {
-  idea:     ["What's your idea?", "What's motivating you to build this?"],
+  idea:     ["What's your idea?", "Where does your idea stand in the market?", "What's motivating you to build this?"],
   hone:     ["Who do you think has this problem?", "What are the problems?", "What breaks if these problems are unresolved?", "What do you think people are doing to solve this?", "Are you set up to win?", "How strong is your idea?"],
   validate: ["Set your success bar", "Decide what you'll prove", "Name your assumptions", "Choose who to talk to", "Build your script", "Add your contacts", "Schedule interviews", "Log your conversations", "Analyse what you found", "Make the call"],
   shape:    ["What did you learn from users?", "What will you build?", "Shape your features", "How will you reach users and charge?", "Build your backlog"],
@@ -176,7 +177,7 @@ const STAGE_TIME: Record<Mod, string> = {
 };
 
 const STEP_ICONS: Record<Mod, string[]> = {
-  idea:     ['🎯', '🌟'],
+  idea:     ['🎯', '🔎', '🌟'],
   hone:     ['👥', '📝', '💪', '🔎', '🧠', '📊'],
   validate: ['🎯', '📋', '💭', '👤', '📝', '🙋', '🗓️', '🎤', '📈', '✅'],
   shape:    ['📖', '💡', '⚡', '💰', '🗂️'],
@@ -186,6 +187,7 @@ const STEP_ICONS: Record<Mod, string[]> = {
 const STEP_CALLOUTS: Record<Mod, string[]> = {
   idea:     [
     'Be specific: what you\'re building, who it\'s for, and why they need it.',
+    'A rough read on market size and competition — a starting point, not a fact.',
     'Big impact starts with a real, meaningful problem.',
   ],
   hone:     [
@@ -1734,11 +1736,29 @@ const MARKET_DOMAIN_LABELS: Record<string, string> = {
   marketplace: 'Marketplace', media: 'Media', proptech: 'Proptech',
 };
 
+type FeatureCoverage = 'yes' | 'partial' | 'no';
+
+interface MarketCompetitorData {
+  name: string;
+  note: string;
+  // Carried through so a future competitor-comparison view has real data to
+  // render — the current panel below doesn't display these yet, but they
+  // survive generate → save → edit → save instead of being dropped.
+  price?: string;
+  area?: string;
+  rating?: string;
+  users?: string;
+  founded?: string;
+  features?: FeatureCoverage[];
+}
+
 interface MarketSnapshotData {
   domain: string;
   tam: { value: string; basis: string };
   sam: { value: string; basis: string };
-  competitors: { name: string; note: string }[];
+  differentiators: string[];
+  yourCoverage: FeatureCoverage[];
+  competitors: MarketCompetitorData[];
 }
 
 function parseMarketSnapshot(raw: string): MarketSnapshotData | null {
@@ -1746,11 +1766,25 @@ function parseMarketSnapshot(raw: string): MarketSnapshotData | null {
   try {
     const p = JSON.parse(raw);
     if (!p || typeof p !== 'object') return null;
+    const isCoverage = (v: any): v is FeatureCoverage => v === 'yes' || v === 'partial' || v === 'no';
     return {
       domain: typeof p.domain === 'string' ? p.domain : 'consumer',
       tam: { value: p.tam?.value || '', basis: p.tam?.basis || '' },
       sam: { value: p.sam?.value || '', basis: p.sam?.basis || '' },
-      competitors: Array.isArray(p.competitors) ? p.competitors.filter((c: any) => c && typeof c.name === 'string') : [],
+      differentiators: Array.isArray(p.differentiators) ? p.differentiators.filter((d: any) => typeof d === 'string') : [],
+      yourCoverage: Array.isArray(p.yourCoverage) ? p.yourCoverage.filter(isCoverage) : [],
+      competitors: Array.isArray(p.competitors)
+        ? p.competitors.filter((c: any) => c && typeof c.name === 'string').map((c: any) => ({
+            name: c.name,
+            note: typeof c.note === 'string' ? c.note : '',
+            price: typeof c.price === 'string' ? c.price : undefined,
+            area: typeof c.area === 'string' ? c.area : undefined,
+            rating: typeof c.rating === 'string' ? c.rating : undefined,
+            users: typeof c.users === 'string' ? c.users : undefined,
+            founded: typeof c.founded === 'string' ? c.founded : undefined,
+            features: Array.isArray(c.features) ? c.features.filter(isCoverage) : undefined,
+          }))
+        : [],
     };
   } catch { return null; }
 }
@@ -1795,6 +1829,12 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
       domain: res.data?.domain || 'consumer',
       tam: res.data?.tam || { value: '', basis: '' },
       sam: res.data?.sam || { value: '', basis: '' },
+      differentiators: Array.isArray(res.data?.differentiators) ? res.data.differentiators : [],
+      yourCoverage: Array.isArray(res.data?.yourCoverage) ? res.data.yourCoverage : [],
+      // The backend already sanitizes each competitor to this exact shape
+      // (see sanitizeMarketSnapshot in aiQuestionCheck.ts) — passed through
+      // as-is rather than re-picking fields, so nothing new added there
+      // silently gets dropped here again.
       competitors: Array.isArray(res.data?.competitors) ? res.data.competitors : [],
     };
     onChange(JSON.stringify(next));
@@ -12273,41 +12313,60 @@ export default function WorkPage() {
         const setPublicSection = (key: keyof PublicSections, on: boolean) =>
           set('publicSections', JSON.stringify({ ...publicSections, [key]: on }));
         return (
-          <>
-            <OneLinerPreviewCard
-              value={get('oneLiner')}
-              onChange={v => set('oneLiner', v)}
-              publicOn={!!publicSections.oneLiner}
-              onTogglePublic={() => setPublicSection('oneLiner', !publicSections.oneLiner)}
-            />
-            <MarketSnapshotPanel
-              ideaId={activeIdea.id}
-              ideaName={get('ideaName') || activeIdea.name}
-              oneLiner={get('oneLiner')}
-              oneLinerReady={!!get('oneLiner').trim() && !get('oneLiner').includes('___')}
-              value={get('marketSnapshot')}
-              onChange={v => set('marketSnapshot', v)}
-              currentDomain={activeIdea.business_domain}
-              onApplyDomain={domainKey => {
-                ideasApi.update(activeIdea.id, { business_domain: domainKey })
-                  .then(() => setActiveIdea({ ...activeIdea, business_domain: domainKey }))
-                  .catch(() => {});
-              }}
-              publicOn={!!publicSections.marketSnapshot}
-              onTogglePublic={() => setPublicSection('marketSnapshot', !publicSections.marketSnapshot)}
-            />
-          </>
+          <OneLinerPreviewCard
+            value={get('oneLiner')}
+            onChange={v => set('oneLiner', v)}
+            publicOn={!!publicSections.oneLiner}
+            onTogglePublic={() => setPublicSection('oneLiner', !publicSections.oneLiner)}
+          />
         );
       })()}
-      <NavRow onNext={async () => { await save('idea', { ideaName: get('ideaName') || activeIdea.name, oneLiner: get('oneLiner') }); next(); }} nextLabel="Next →" disabled={!get('oneLiner').trim() || get('oneLiner').includes('___') || !parseMarketSnapshot(get('marketSnapshot'))} disabledReason={!get('oneLiner').trim() || get('oneLiner').includes('___') ? "Finish your one-liner — every blank needs a real answer." : `Waiting on Sage's Market Snapshot (domain, TAM/SAM, competitors) — it unlocks automatically once that finishes generating.`} stageColor={STAGE_COLORS.idea} stepTitle="What's your idea?" ideaId={activeIdea.id} />
+      <NavRow onNext={async () => { await save('idea', { ideaName: get('ideaName') || activeIdea.name, oneLiner: get('oneLiner') }); next(); }} nextLabel="Next →" disabled={!get('oneLiner').trim() || get('oneLiner').includes('___')} disabledReason="Finish your one-liner — every blank needs a real answer." stageColor={STAGE_COLORS.idea} stepTitle="What's your idea?" ideaId={activeIdea.id} />
+    </div>,
+    <div key="i-market" style={col}>
+      <div><ModBadge mod="idea" /><StepBars mod="idea" step={1} /></div>
+      <div>
+        <H accent={STAGE_COLORS.idea}>Where does your idea stand in the market?</H>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <AgentAvatar size={36} />
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#1e293b', lineHeight: 1.4, marginBottom: 4, paddingTop: 5 }}>{STEP_GOALS.idea[1]}</div>
+        </div>
+      </div>
+      {/* Sage Market Snapshot now lives on its own step — arriving here (via
+          Next from the one-liner step) is what kicks off generation, and the
+          Next button below stays disabled until it actually finishes. */}
+      {(() => {
+        const publicSections = parsePublicSections(get('publicSections'));
+        const setPublicSection = (key: keyof PublicSections, on: boolean) =>
+          set('publicSections', JSON.stringify({ ...publicSections, [key]: on }));
+        return (
+          <MarketSnapshotPanel
+            ideaId={activeIdea.id}
+            ideaName={get('ideaName') || activeIdea.name}
+            oneLiner={get('oneLiner')}
+            oneLinerReady={!!get('oneLiner').trim() && !get('oneLiner').includes('___')}
+            value={get('marketSnapshot')}
+            onChange={v => set('marketSnapshot', v)}
+            currentDomain={activeIdea.business_domain}
+            onApplyDomain={domainKey => {
+              ideasApi.update(activeIdea.id, { business_domain: domainKey })
+                .then(() => setActiveIdea({ ...activeIdea, business_domain: domainKey }))
+                .catch(() => {});
+            }}
+            publicOn={!!publicSections.marketSnapshot}
+            onTogglePublic={() => setPublicSection('marketSnapshot', !publicSections.marketSnapshot)}
+          />
+        );
+      })()}
+      <NavRow onBack={back} onNext={async () => { next(); }} nextLabel="Next →" disabled={!parseMarketSnapshot(get('marketSnapshot'))} disabledReason="Waiting on Sage's Market Snapshot (domain, TAM/SAM, competitors) — it unlocks automatically once that finishes generating." stageColor={STAGE_COLORS.idea} stepTitle="Where does your idea stand in the market?" ideaId={activeIdea.id} />
     </div>,
     <div key="i1" style={col}>
-      <div><ModBadge mod="idea" /><StepBars mod="idea" step={1} /></div>
+      <div><ModBadge mod="idea" /><StepBars mod="idea" step={2} /></div>
       <div>
         <H accent={STAGE_COLORS.idea}>What's motivating you to build this?</H>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <AgentAvatar size={36} />
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 28, fontWeight: 700, color: '#1e293b', lineHeight: 1.4, marginBottom: 4, paddingTop: 3 }}>{STEP_GOALS.idea[1]}</div>
+          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 28, fontWeight: 700, color: '#1e293b', lineHeight: 1.4, marginBottom: 4, paddingTop: 3 }}>{STEP_GOALS.idea[2]}</div>
         </div>
       </div>
       <SparkBuilder value={get('spark')} onChange={v => set('spark', v)} />
