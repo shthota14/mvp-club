@@ -2005,10 +2005,30 @@ One sentence (under 30 words), specific to what was or wasn't found, not generic
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"status": "backed" | "no-evidence" | "counter", "rationale": "<one sentence, under 30 words>"}`;
 
-export async function checkPricingEvidence(revenueModel: string[], pricePoint: string, ctx: PricingContext): Promise<PricingCheckResult> {
+function buildPricingCheckUserContent(revenueModel: string[], pricePoint: string, ctx: PricingContext): string {
   const lines = buildPricingLines(ctx);
   lines.push('', `Chosen revenue model: ${revenueModel.filter(Boolean).join(', ') || '(none picked)'}`, `Chosen price point: ${pricePoint || '(none picked)'}`);
-  const userContent = lines.join('\n\n');
+  return lines.join('\n\n');
+}
+
+function parsePricingCheckJson(text: string): PricingCheckResult {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+
+  const status: PricingCheckResult['status'] =
+    parsed?.status === 'backed' || parsed?.status === 'no-evidence' || parsed?.status === 'counter' ? parsed.status : 'no-evidence';
+  const rationale = typeof parsed?.rationale === 'string' && parsed.rationale.trim() ? parsed.rationale.trim().slice(0, 220) : 'Could not determine — treat as unverified.';
+  return { status, rationale };
+}
+
+// Ollama path — the original, always-available implementation.
+async function checkPricingEvidenceOllama(revenueModel: string[], pricePoint: string, ctx: PricingContext): Promise<PricingCheckResult> {
+  const userContent = buildPricingCheckUserContent(revenueModel, pricePoint, ctx);
 
   let res;
   try {
@@ -2034,18 +2054,43 @@ export async function checkPricingEvidence(revenueModel: string[], pricePoint: s
   }
 
   const text: string = res.data?.message?.content || '';
-  let parsed: any;
-  try {
-    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new Error('Could not parse the AI response — please try again.');
-  }
+  return parsePricingCheckJson(text);
+}
 
-  const status: PricingCheckResult['status'] =
-    parsed?.status === 'backed' || parsed?.status === 'no-evidence' || parsed?.status === 'counter' ? parsed.status : 'no-evidence';
-  const rationale = typeof parsed?.rationale === 'string' && parsed.rationale.trim() ? parsed.rationale.trim().slice(0, 220) : 'Could not determine — treat as unverified.';
-  return { status, rationale };
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the cheap/fast model tier: a 3-way sanity check against
+// evidence already given, not a lookup, so no web search tool is used.
+async function checkPricingEvidenceClaude(revenueModel: string[], pricePoint: string, ctx: PricingContext): Promise<PricingCheckResult> {
+  const userContent = buildPricingCheckUserContent(revenueModel, pricePoint, ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 300,
+    temperature: 0.3,
+    system: PRICING_CHECK_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parsePricingCheckJson(text);
+}
+
+export async function checkPricingEvidence(revenueModel: string[], pricePoint: string, ctx: PricingContext): Promise<PricingCheckResult> {
+  if (anthropicClient) {
+    try {
+      return await checkPricingEvidenceClaude(revenueModel, pricePoint, ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take the pricing evidence check down entirely.
+      console.error('[pricing-check] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return checkPricingEvidenceOllama(revenueModel, pricePoint, ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
