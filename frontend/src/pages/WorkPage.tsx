@@ -7093,15 +7093,14 @@ function MergedInterviewLog({ manual, ai, framework, title }: {
                   <span style={{ fontSize: 11, fontWeight: 800, color: gc, textTransform: 'uppercase' as const, letterSpacing: 0.4 }}>{g.title}</span>
                   <span style={{ fontSize: 10, fontWeight: 700, color: T3 }}>· {g.items.length}</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {g.items.map((it, i) => {
                     const itemKey = `${g.key}::${i}`;
                     const isOut = excluded.has(itemKey);
                     return (
                     <div key={i} style={{
-                      display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px',
-                      background: isOut ? '#fafafa' : '#fff', border: `1px solid ${BORDER}`, borderLeft: `3px solid ${isOut ? BORDER2 : gc}`,
-                      borderRadius: 10, opacity: isOut ? 0.55 : 1, transition: 'opacity .12s',
+                      display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 4px',
+                      borderTop: i > 0 ? `1px solid ${BORDER}` : 'none', opacity: isOut ? 0.5 : 1, transition: 'opacity .12s',
                     }}>
                       <button
                         onClick={() => toggleItem(itemKey)}
@@ -7115,16 +7114,14 @@ function MergedInterviewLog({ manual, ai, framework, title }: {
                       >
                         {!isOut && '✓'}
                       </button>
+                      <span style={{
+                        fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 8, flexShrink: 0, marginTop: 2,
+                        background: it.source === 'ai' ? '#EDE9FE' : '#dbeafe',
+                        color: it.source === 'ai' ? '#7c3aed' : '#1d4ed8',
+                      }}>
+                        {it.source === 'ai' ? '🧙 Sage' : '✍️ You'}
+                      </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                          <span style={{
-                            fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 8, flexShrink: 0,
-                            background: it.source === 'ai' ? '#EDE9FE' : '#dbeafe',
-                            color: it.source === 'ai' ? '#7c3aed' : '#1d4ed8',
-                          }}>
-                            {it.source === 'ai' ? '🧙 Sage' : '✍️ You'}
-                          </span>
-                        </div>
                         <div style={{ fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: T1, lineHeight: 1.5, textDecoration: isOut ? 'line-through' : 'none' }}>{it.q}</div>
                         {it.sub && <div style={{ fontSize: 11, color: T3, fontStyle: 'italic' as const, marginTop: 3 }}>💡 {it.sub}</div>}
                       </div>
