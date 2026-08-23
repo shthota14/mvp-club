@@ -834,10 +834,32 @@ WRONG — do not do this: generic answer-quality labels instead of things a pers
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"chips": [{"k": "<short label, 2-5 words>", "icon": "<single emoji>", "color": "<one of #059669, #d97706, #dc2626, #6e6e73, #b0b0b8>"}]}`;
 
-export async function generateQuestionChips(ctx: QuestionChipsContext): Promise<QuickResponseChip[]> {
+function buildQuestionChipsUserContent(ctx: QuestionChipsContext): string {
   const lines: string[] = [`Interview question: ${ctx.question.trim()}`];
   if (ctx.hint?.trim()) lines.push(`What this question is meant to reveal: ${ctx.hint.trim()}`);
   if (ctx.problemDomain?.trim()) lines.push(`Problem domain / industry this interview is about: ${ctx.problemDomain.trim()}`);
+  return lines.join('\n');
+}
+
+function parseQuestionChipsJson(text: string): QuickResponseChip[] {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+
+  const chips = sanitizeChips(parsed?.chips);
+  if (!chips.length) {
+    throw new Error('The AI did not return any usable chips — please try again.');
+  }
+  return chips;
+}
+
+// Ollama path — the original, always-available implementation.
+async function generateQuestionChipsOllama(ctx: QuestionChipsContext): Promise<QuickResponseChip[]> {
+  const userContent = buildQuestionChipsUserContent(ctx);
 
   let res;
   try {
@@ -847,7 +869,7 @@ export async function generateQuestionChips(ctx: QuestionChipsContext): Promise<
         model: OLLAMA_MODEL,
         messages: [
           { role: 'system', content: QUESTION_CHIPS_SYSTEM_PROMPT },
-          { role: 'user', content: lines.join('\n') },
+          { role: 'user', content: userContent },
         ],
         stream: false,
         format: 'json',
@@ -863,19 +885,45 @@ export async function generateQuestionChips(ctx: QuestionChipsContext): Promise<
   }
 
   const text: string = res.data?.message?.content || '';
-  let parsed: any;
-  try {
-    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new Error('Could not parse the AI response — please try again.');
-  }
+  return parseQuestionChipsJson(text);
+}
 
-  const chips = sanitizeChips(parsed?.chips);
-  if (!chips.length) {
-    throw new Error('The AI did not return any usable chips — please try again.');
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the cheap/fast model tier: same family as Discovery Guide
+// above but scoped to one question, so it stays on the small tier like
+// the other single-question/single-answer calls in this file. No web
+// search — grounded entirely in the question text and domain given.
+async function generateQuestionChipsClaude(ctx: QuestionChipsContext): Promise<QuickResponseChip[]> {
+  const userContent = buildQuestionChipsUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 500,
+    temperature: 0.5,
+    system: QUESTION_CHIPS_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
   }
-  return chips;
+  return parseQuestionChipsJson(text);
+}
+
+export async function generateQuestionChips(ctx: QuestionChipsContext): Promise<QuickResponseChip[]> {
+  if (anthropicClient) {
+    try {
+      return await generateQuestionChipsClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take question chips down entirely.
+      console.error('[question-chips] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateQuestionChipsOllama(ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
