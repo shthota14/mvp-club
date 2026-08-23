@@ -1865,33 +1865,26 @@ Return 2-3 candidates, each with a one-sentence rationale (under 30 words).
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"candidates": [{"revenueModel": ["<value from list>"], "pricePoint": "<value from list>", "rationale": "<one sentence, under 30 words>", "evidenceBased": true|false}, ...]}`;
 
-export async function generatePricingSuggestions(ctx: PricingContext): Promise<PricingSuggestion[]> {
-  const userContent = buildPricingLines(ctx).join('\n\n');
+// Claude + live web search variant (opt-in via ANTHROPIC_API_KEY, same as
+// Market Snapshot and Distribution Suggestions) — instead of falling back
+// to generic "typical SaaS pricing pattern" reasoning when the founder has
+// no signed LOIs, a live model can search for real comparable products'
+// actual pricing in this niche and ground the guess in something concrete.
+const PRICING_SUGGEST_SYSTEM_PROMPT_CLAUDE = `You are helping a founder pick a revenue model and price point for their MVP. This is the one place in the app where being confidently wrong costs real money later, so be precise about what's actually backed by the founder's evidence vs. what's just a general SaaS pricing pattern vs. what a live search of comparable products actually supports.
 
-  let res;
-  try {
-    res = await axios.post(
-      `${OLLAMA_URL}/api/chat`,
-      {
-        model: OLLAMA_MODEL,
-        messages: [
-          { role: 'system', content: PRICING_SUGGEST_SYSTEM_PROMPT },
-          { role: 'user', content: userContent },
-        ],
-        stream: false,
-        format: 'json',
-        options: { temperature: 0.4 },
-      },
-      { timeout: 180000 }
-    );
-  } catch (err: any) {
-    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
-      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
-    }
-    throw err;
-  }
+You MUST use ONLY these exact values (verbatim, case-sensitive):
+- revenueModel: pick 1 (rarely 2) values from exactly this list: ${REVENUE_MODEL_CHIPS.map(v => `"${v}"`).join(', ')}
+- pricePoint: pick exactly 1 value from exactly this list: ${PRICE_POINT_CHIPS.map(v => `"${v}"`).join(', ')}
 
-  const text: string = res.data?.message?.content || '';
+Rules:
+- If the founder has signed LOIs/pre-orders or a clearly quantified economic value, ground your top candidate in that and set "evidenceBased": true.
+- If you don't have the founder's own evidence to lean on, use web search to find what real, currently-operating comparable products in this niche actually charge, and ground your candidates in that instead of generic SaaS-pricing intuition. Set "evidenceBased": false regardless — it's a real comparable, but still not this founder's own validated willingness to pay — and name what you found in the rationale (e.g. "similar invoicing-automation tools for freelancers typically price around $20-40/mo").
+- Never state a general pricing pattern, searched or not, as if it were the founder's own validated data.
+
+Once you're done searching, respond with ONLY a JSON object as your final message — no narration, no markdown code fences, nothing before or after the JSON. Return 2-3 candidates, each with a one-sentence rationale (under 30 words), in this exact shape:
+{"candidates": [{"revenueModel": ["<value from list>"], "pricePoint": "<value from list>", "rationale": "<one sentence, under 30 words>", "evidenceBased": true|false}, ...]}`;
+
+function parsePricingSuggestJson(text: string): PricingSuggestion[] {
   let parsed: any;
   try {
     const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -1921,6 +1914,78 @@ export async function generatePricingSuggestions(ctx: PricingContext): Promise<P
     throw new Error('The AI did not return any usable pricing suggestions — please try again.');
   }
   return candidates;
+}
+
+// Ollama path — the original, always-available implementation.
+async function generatePricingSuggestionsOllama(ctx: PricingContext): Promise<PricingSuggestion[]> {
+  const userContent = buildPricingLines(ctx).join('\n\n');
+
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: PRICING_SUGGEST_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.4 },
+      },
+      { timeout: 180000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+
+  const text: string = res.data?.message?.content || '';
+  return parsePricingSuggestJson(text);
+}
+
+// Claude + live web search path — opt-in via the same ANTHROPIC_API_KEY
+// used elsewhere in this file, on the flagship model tier. The other of
+// only two functions in this file (alongside Distribution Suggestions and
+// Market Snapshot) where search genuinely earns its keep — see
+// PRICING_SUGGEST_SYSTEM_PROMPT_CLAUDE above.
+async function generatePricingSuggestionsClaude(ctx: PricingContext): Promise<PricingSuggestion[]> {
+  const userContent = buildPricingLines(ctx).join('\n\n');
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 1500,
+    temperature: 0.4,
+    system: PRICING_SUGGEST_SYSTEM_PROMPT_CLAUDE,
+    tools: [
+      { type: 'web_search_20260318', name: 'web_search', max_uses: 5 } as any,
+    ],
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parsePricingSuggestJson(text);
+}
+
+export async function generatePricingSuggestions(ctx: PricingContext): Promise<PricingSuggestion[]> {
+  if (anthropicClient) {
+    try {
+      return await generatePricingSuggestionsClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take pricing suggestions down entirely.
+      console.error('[pricing-suggest] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generatePricingSuggestionsOllama(ctx);
 }
 
 export interface PricingCheckResult {
