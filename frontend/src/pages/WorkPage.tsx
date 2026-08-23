@@ -1783,6 +1783,10 @@ interface MarketCompetitorData {
   rating?: string;
   users?: string;
   founded?: string;
+  // Sage's roughest, least reliable field — a hedged qualitative estimate
+  // ("~5-10%", "small niche player") or blank, never a bare confident
+  // percentage. Always rendered with an "AI estimate, unverified" affordance.
+  marketShare?: string;
   features?: FeatureCoverage[];
 }
 
@@ -1816,6 +1820,7 @@ function parseMarketSnapshot(raw: string): MarketSnapshotData | null {
             rating: typeof c.rating === 'string' ? c.rating : undefined,
             users: typeof c.users === 'string' ? c.users : undefined,
             founded: typeof c.founded === 'string' ? c.founded : undefined,
+            marketShare: typeof c.marketShare === 'string' ? c.marketShare : undefined,
             features: Array.isArray(c.features) ? c.features.filter(isCoverage) : undefined,
           }))
         : [],
@@ -2134,6 +2139,8 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
                             <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Rating</th>
                             <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Users</th>
                             <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Founded</th>
+                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}
+                              title="Sage's rough, unverified estimate — not a sourced figure">Market share †</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2156,7 +2163,7 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
                                 <MarketFeatureChip v={snapshot.yourCoverage[i] || 'no'} />
                               </td>
                             ))}
-                            <td colSpan={5} style={{ padding: '10px 12px', background: `${STAGE_COLORS.idea}12`, borderBottom: `1px solid ${BORDER}`, color: T3, fontSize: 11 }}>—</td>
+                            <td colSpan={6} style={{ padding: '10px 12px', background: `${STAGE_COLORS.idea}12`, borderBottom: `1px solid ${BORDER}`, color: T3, fontSize: 11 }}>—</td>
                           </tr>
                           {rows.map((c, ci) => (
                             <tr key={ci} className={revealing ? 'msnap-tag-pop' : undefined} style={{ animationDelay: revealing ? `${0.2 + ci * 0.1}s` : undefined }}>
@@ -2200,6 +2207,11 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
                               <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.rating ? `${c.rating}★` : '—'}</td>
                               <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.users || '—'}</td>
                               <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.founded || '—'}</td>
+                              <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>
+                                {c.marketShare ? (
+                                  <span title="Sage's rough, unverified estimate — not a sourced figure" style={{ fontStyle: 'italic', color: T2, borderBottom: '1px dotted ' + T3, cursor: 'help' }}>{c.marketShare}</span>
+                                ) : '—'}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -2208,7 +2220,8 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
                     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const, fontSize: 11, color: T3, marginTop: 10 }}>
                       <span>✓ full coverage · ◐ partial · — none, as best Sage can tell</span>
                       <span>Price bar shown only where Sage could normalize to a monthly-equivalent (hourly pricing shown as text only, to avoid comparing across units)</span>
-                      <span>🔗 site · 💬 reviews — both open a search, since Sage can't confirm live URLs or market share/sentiment figures without web access</span>
+                      <span>🔗 site · 💬 reviews — both open a search, since Sage can't confirm a live URL directly</span>
+                      <span>† Market share is Sage's roughest field — a hedged, unsourced estimate, not a researched figure. Treat it as a starting guess to verify, same as everything else on this card.</span>
                     </div>
                   </div>
                 );

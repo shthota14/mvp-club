@@ -3133,6 +3133,10 @@ export interface MarketCompetitor {
   rating?: string;
   users?: string;
   founded?: string;
+  // A rough, explicitly-labeled estimate ("~5-10%", "small niche player") —
+  // never a bare precise number. The frontend always renders this with an
+  // "AI estimate, unverified" affordance rather than as a stated fact.
+  marketShare?: string;
   // Aligned 1:1 with MarketSnapshot.differentiators — features[i] describes
   // this competitor's coverage of differentiators[i].
   features?: FeatureCoverage[];
@@ -3155,7 +3159,7 @@ export interface MarketSnapshot {
 const MARKET_SNAPSHOT_SYSTEM_PROMPT = `You are a cautious startup market-research analyst helping a founder get a rough first read on their idea. You do not have live web access or real market databases — you are working from general knowledge only, so be honest about that limitation rather than inventing false precision.
 
 Respond with ONLY a JSON object, no other text, in this exact shape:
-{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "differentiators": ["<short capability>", ...], "yourCoverage": ["yes" | "partial" | "no", ...], "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>", "price": "<e.g. \\"$5.99/mo\\" or \\"Free\\", or \\"\\" if unknown>", "area": "<their market segment in a few words, or \\"\\">", "rating": "<e.g. \\"4.6\\", or \\"\\" if unknown>", "users": "<e.g. \\"1M+\\", or \\"\\" if unknown>", "founded": "<year, or \\"\\" if unknown>", "features": ["yes" | "partial" | "no", ...]}]}
+{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "differentiators": ["<short capability>", ...], "yourCoverage": ["yes" | "partial" | "no", ...], "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>", "price": "<e.g. \\"$5.99/mo\\" or \\"Free\\", or \\"\\" if unknown>", "area": "<their market segment in a few words, or \\"\\">", "rating": "<e.g. \\"4.6\\", or \\"\\" if unknown>", "users": "<e.g. \\"1M+\\", or \\"\\" if unknown>", "founded": "<year, or \\"\\" if unknown>", "marketShare": "<rough estimate ONLY if you have a real basis, e.g. \\"~5-10%\\" or \\"small niche player\\" — or \\"\\" if you're just guessing>", "features": ["yes" | "partial" | "no", ...]}]}
 
 Rules:
 - domain: pick exactly 1 key from this list (verbatim, case-sensitive): ${MARKET_DOMAIN_KEYS.map(v => `"${v}"`).join(', ')}
@@ -3164,6 +3168,7 @@ Rules:
 - yourCoverage: exactly one "yes"/"partial"/"no" per differentiator, your best guess at whether the founder's own idea (from their one-liner) covers it. Default to "partial" rather than guessing "yes" when genuinely unclear.
 - competitors: list 3-5. ONLY name a specific real company if you are confident it actually exists and is a genuine competitor in this specific niche — not just the broader category. If you are not confident a specific named company is a close, real match, use a short generic description instead (e.g. {"name": "Generic AI writing tools", "note": "broad category, no single dominant player you're confident about"}) rather than guessing a name. It is better to be generic and honest than specific and wrong.
 - price/area/rating/users/founded: best-effort only for competitors you're confident are real — leave each as "" rather than inventing a number you're not confident in. A generic/unnamed competitor entry should leave all five as "".
+- marketShare: only if you have some real basis for it (a well-known dominant/niche player) — a rough qualitative estimate like "~5-10%" or "small niche player" is fine, a confident precise percentage is not. Leave "" rather than guessing. This is the softest, least reliable field here — treat it with more caution than price/rating/users/founded, not less.
 - features: exactly one "yes"/"partial"/"no" per differentiator, per competitor, in the same order as differentiators. For a generic/unnamed competitor entry, base this on the category norm rather than a specific product.`;
 
 // Claude path (optional — only used when ANTHROPIC_API_KEY is set) gets a
@@ -3173,7 +3178,7 @@ Rules:
 const MARKET_SNAPSHOT_SYSTEM_PROMPT_CLAUDE = `You are a startup market-research analyst helping a founder get a first read on their idea. You have live web search — use it to find real, current information: companies actually operating in this specific niche, real signals about market size (industry reports, recent funding rounds, adjacent public-company revenue if relevant), and — for each named competitor — their actual pricing, app-store rating, rough user/install base, and founding year where those are publicly findable. Search enough to ground your answer before responding; a handful of targeted searches is usually enough, including at least one aimed at pricing/reviews for your top 1-2 competitors.
 
 Once you're done searching, respond with ONLY a JSON object as your final message — no narration, no markdown code fences, nothing before or after the JSON — in this exact shape:
-{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this, referencing what you found>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "differentiators": ["<short capability>", ...], "yourCoverage": ["yes" | "partial" | "no", ...], "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>", "price": "<e.g. \\"$5.99/mo\\" or \\"Free\\", from what you found, or \\"\\" if you couldn't confirm it>", "area": "<their market segment in a few words>", "rating": "<e.g. \\"4.6\\", from what you found, or \\"\\" if unconfirmed>", "users": "<e.g. \\"1M+\\", from what you found, or \\"\\" if unconfirmed>", "founded": "<year, or \\"\\" if unconfirmed>", "features": ["yes" | "partial" | "no", ...]}]}
+{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this, referencing what you found>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "differentiators": ["<short capability>", ...], "yourCoverage": ["yes" | "partial" | "no", ...], "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>", "price": "<e.g. \\"$5.99/mo\\" or \\"Free\\", from what you found, or \\"\\" if you couldn't confirm it>", "area": "<their market segment in a few words>", "rating": "<e.g. \\"4.6\\", from what you found, or \\"\\" if unconfirmed>", "users": "<e.g. \\"1M+\\", from what you found, or \\"\\" if unconfirmed>", "founded": "<year, or \\"\\" if unconfirmed>", "marketShare": "<rough estimate from what you found, e.g. \\"~5-10%\\" or \\"small niche player\\" — or \\"\\" if you couldn't find a real basis>", "features": ["yes" | "partial" | "no", ...]}]}
 
 Rules:
 - domain: pick exactly 1 key from this list (verbatim, case-sensitive): ${MARKET_DOMAIN_KEYS.map(v => `"${v}"`).join(', ')}
@@ -3182,6 +3187,7 @@ Rules:
 - yourCoverage: exactly one "yes"/"partial"/"no" per differentiator, your best guess at whether the founder's own idea (from their one-liner) covers it. Default to "partial" rather than guessing "yes" when genuinely unclear.
 - competitors: list 3-5 real companies you found via search that genuinely compete in this specific niche — not just the broader category. If, after searching, you're still not confident a specific named company is a close, real match, use a short generic description instead (e.g. {"name": "Generic AI writing tools", "note": "broad category, no single dominant player you're confident about"}) rather than guessing a name. It is better to be generic and honest than specific and wrong.
 - price/area/rating/users/founded: only fill these in from what your search actually confirmed — leave any you couldn't verify as "" rather than estimating. A generic/unnamed competitor entry should leave all five as "".
+- marketShare: only from what your search actually found (e.g. a market report, "market leader" framing in coverage, a stated user-base comparison) — a rough qualitative estimate like "~5-10%" or "small niche player" is fine, a confident precise percentage you can't source is not. Leave "" rather than estimating.
 - features: exactly one "yes"/"partial"/"no" per differentiator, per competitor, in the same order as differentiators, based on what you found about that product. For a generic/unnamed competitor entry, base this on the category norm rather than a specific product.`;
 
 // Shared between both paths so a Claude response and an Ollama response are
@@ -3223,6 +3229,7 @@ function sanitizeMarketSnapshot(parsed: any): MarketSnapshot {
       rating: sanitizeStr(c.rating, 10),
       users: sanitizeStr(c.users, 20),
       founded: sanitizeStr(c.founded, 10),
+      marketShare: sanitizeStr(c.marketShare, 40),
       features: sanitizeCoverageArr(c.features, differentiators.length),
     }))
     .slice(0, 5);
