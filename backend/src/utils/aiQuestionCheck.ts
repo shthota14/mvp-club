@@ -1,4 +1,5 @@
 import axios from 'axios';
+import Anthropic from '@anthropic-ai/sdk';
 
 // Checks a single interview question against the app's own Do/Don't
 // interview guidance (see the "Build your interview script" step) using a
@@ -11,6 +12,17 @@ import axios from 'axios';
 
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2';
+
+// Market Snapshot (Idea stage) only, see generateMarketSnapshot below — an
+// optional, opt-in swap from the free local Ollama model to the Claude API
+// with live web search, so TAM/SAM and competitors can come from real
+// current data instead of a small offline model's best guess. Every other
+// AI feature in this file still runs on Ollama; this key is entirely
+// optional and the feature degrades to the Ollama path automatically when
+// it's unset or the Claude call fails for any reason.
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || '';
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+const anthropicClient = ANTHROPIC_API_KEY ? new Anthropic({ apiKey: ANTHROPIC_API_KEY, maxRetries: 2 }) : null;
 
 export interface QuestionCheckResult {
   verdict: 'do' | 'dont' | 'neutral';
@@ -131,7 +143,8 @@ If it's truly a non-answer: respond with a short, warm, honest nudge inviting th
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"reaction": "<short reaction or gentle nudge>", "needsFollowUp": true or false}`;
 
-export async function reactToIdeaAnswer(question: string, answer: string): Promise<IdeaReactionResult> {
+// Ollama path — the original, always-available implementation.
+async function reactToIdeaAnswerOllama(question: string, answer: string): Promise<IdeaReactionResult> {
   const userContent = `Question asked: "${question}"\nFounder's answer: "${answer}"`;
 
   let res;
@@ -158,6 +171,34 @@ export async function reactToIdeaAnswer(question: string, answer: string): Promi
   }
 
   const text: string = res.data?.message?.content || '';
+  return parseIdeaReactionJson(text);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used by Market
+// Snapshot below. No web search tool here: this call is judging the
+// founder's own just-typed answer, not looking anything up, so the only
+// real benefit a live model brings is better judgment on the accept/reject
+// line, not new capability — see the Sage Prompt Library doc.
+async function reactToIdeaAnswerClaude(question: string, answer: string): Promise<IdeaReactionResult> {
+  const userContent = `Question asked: "${question}"\nFounder's answer: "${answer}"`;
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 300,
+    temperature: 0.6,
+    system: IDEA_REACT_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseIdeaReactionJson(text);
+}
+
+function parseIdeaReactionJson(text: string): IdeaReactionResult {
   let parsed: any;
   try {
     const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -170,6 +211,20 @@ export async function reactToIdeaAnswer(question: string, answer: string): Promi
     reaction: typeof parsed.reaction === 'string' && parsed.reaction.trim() ? parsed.reaction.trim() : 'Got it.',
     needsFollowUp: parsed.needsFollowUp === true,
   };
+}
+
+export async function reactToIdeaAnswer(question: string, answer: string): Promise<IdeaReactionResult> {
+  if (anthropicClient) {
+    try {
+      return await reactToIdeaAnswerClaude(question, answer);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take idea-answer reactions down entirely.
+      console.error('[idea-react] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return reactToIdeaAnswerOllama(question, answer);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -2307,11 +2362,62 @@ Rules:
 - tam/sam: give a rough order-of-magnitude estimate with a one-sentence basis. Be conservative — round numbers, not false precision. SAM must be smaller than TAM.
 - competitors: list 3-5. ONLY name a specific real company if you are confident it actually exists and is a genuine competitor in this specific niche — not just the broader category. If you are not confident a specific named company is a close, real match, use a short generic description instead (e.g. {"name": "Generic AI writing tools", "note": "broad category, no single dominant player you're confident about"}) rather than guessing a name. It is better to be generic and honest than specific and wrong.`;
 
-export async function generateMarketSnapshot(ctx: MarketSnapshotContext): Promise<MarketSnapshot> {
+// Claude path (optional — only used when ANTHROPIC_API_KEY is set) gets a
+// different framing: it actually has web search, so it's told to use it and
+// ground its answer in what it finds, instead of being told to fall back to
+// honesty about not having live data.
+const MARKET_SNAPSHOT_SYSTEM_PROMPT_CLAUDE = `You are a startup market-research analyst helping a founder get a first read on their idea. You have live web search — use it to find real, current information: companies actually operating in this specific niche, and real signals about market size (industry reports, recent funding rounds, adjacent public-company revenue if relevant). Search enough to ground your answer before responding; a few targeted searches are usually enough.
+
+Once you're done searching, respond with ONLY a JSON object as your final message — no narration, no markdown code fences, nothing before or after the JSON — in this exact shape:
+{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this, referencing what you found>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>"}]}
+
+Rules:
+- domain: pick exactly 1 key from this list (verbatim, case-sensitive): ${MARKET_DOMAIN_KEYS.map(v => `"${v}"`).join(', ')}
+- tam/sam: give a rough order-of-magnitude estimate with a one-sentence basis, grounded in what your search actually turned up. Be conservative — round numbers, not false precision. SAM must be smaller than TAM.
+- competitors: list 3-5 real companies you found via search that genuinely compete in this specific niche — not just the broader category. If, after searching, you're still not confident a specific named company is a close, real match, use a short generic description instead (e.g. {"name": "Generic AI writing tools", "note": "broad category, no single dominant player you're confident about"}) rather than guessing a name. It is better to be generic and honest than specific and wrong.`;
+
+// Shared between both paths so a Claude response and an Ollama response are
+// sanitized identically — the frontend renders whichever one came back
+// without knowing or caring which model produced it.
+function sanitizeMarketSnapshot(parsed: any): MarketSnapshot {
+  const sanitizeStr = (v: any, max = 300): string => typeof v === 'string' ? v.trim().slice(0, max) : '';
+  const sanitizeMoney = (v: any): { value: string; basis: string } => ({
+    value: sanitizeStr(v?.value, 40) || 'Not enough to estimate yet',
+    basis: sanitizeStr(v?.basis, 200),
+  });
+
+  const domain = MARKET_DOMAIN_KEYS.includes(parsed?.domain) ? parsed.domain : MARKET_DOMAIN_KEYS[0];
+  const competitors = (Array.isArray(parsed?.competitors) ? parsed.competitors : [])
+    .filter((c: any) => c && typeof c.name === 'string' && c.name.trim())
+    .map((c: any) => ({ name: sanitizeStr(c.name, 60), note: sanitizeStr(c.note, 120) }))
+    .slice(0, 5);
+
+  return {
+    domain,
+    tam: sanitizeMoney(parsed?.tam),
+    sam: sanitizeMoney(parsed?.sam),
+    competitors,
+  };
+}
+
+function parseMarketSnapshotJson(text: string): any {
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    return JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+}
+
+function buildMarketSnapshotUserContent(ctx: MarketSnapshotContext): string {
   const lines: string[] = [];
   if (ctx.ideaName?.trim()) lines.push(`Idea name: ${ctx.ideaName.trim()}`);
   if (ctx.oneLiner?.trim()) lines.push(`One-liner: ${ctx.oneLiner.trim()}`);
-  const userContent = lines.length ? lines.join('\n') : 'The founder has not described their idea yet.';
+  return lines.length ? lines.join('\n') : 'The founder has not described their idea yet.';
+}
+
+async function generateMarketSnapshotOllama(ctx: MarketSnapshotContext): Promise<MarketSnapshot> {
+  const userContent = buildMarketSnapshotUserContent(ctx);
 
   let res;
   try {
@@ -2340,30 +2446,46 @@ export async function generateMarketSnapshot(ctx: MarketSnapshotContext): Promis
   }
 
   const text: string = res.data?.message?.content || '';
-  let parsed: any;
-  try {
-    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new Error('Could not parse the AI response — please try again.');
-  }
+  return sanitizeMarketSnapshot(parseMarketSnapshotJson(text));
+}
 
-  const sanitizeStr = (v: any, max = 300): string => typeof v === 'string' ? v.trim().slice(0, max) : '';
-  const sanitizeMoney = (v: any): { value: string; basis: string } => ({
-    value: sanitizeStr(v?.value, 40) || 'Not enough to estimate yet',
-    basis: sanitizeStr(v?.basis, 200),
+// Claude + live web search — opt-in via ANTHROPIC_API_KEY. web_search is a
+// server-side tool: Claude invokes it itself mid-response (one or more
+// times) and the results come back as part of the same API call, so this is
+// still a single request, not a manual tool loop. The model's actual answer
+// is its last text block, after any search/tool-result blocks.
+async function generateMarketSnapshotClaude(ctx: MarketSnapshotContext): Promise<MarketSnapshot> {
+  const userContent = buildMarketSnapshotUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 2000,
+    temperature: 0.3,
+    system: MARKET_SNAPSHOT_SYSTEM_PROMPT_CLAUDE,
+    tools: [
+      { type: 'web_search_20260318', name: 'web_search', max_uses: 5 } as any,
+    ],
+    messages: [{ role: 'user', content: userContent }],
   });
 
-  const domain = MARKET_DOMAIN_KEYS.includes(parsed?.domain) ? parsed.domain : MARKET_DOMAIN_KEYS[0];
-  const competitors = (Array.isArray(parsed?.competitors) ? parsed.competitors : [])
-    .filter((c: any) => c && typeof c.name === 'string' && c.name.trim())
-    .map((c: any) => ({ name: sanitizeStr(c.name, 60), note: sanitizeStr(c.note, 120) }))
-    .slice(0, 5);
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return sanitizeMarketSnapshot(parseMarketSnapshotJson(text));
+}
 
-  return {
-    domain,
-    tam: sanitizeMoney(parsed?.tam),
-    sam: sanitizeMoney(parsed?.sam),
-    competitors,
-  };
+export async function generateMarketSnapshot(ctx: MarketSnapshotContext): Promise<MarketSnapshot> {
+  if (anthropicClient) {
+    try {
+      return await generateMarketSnapshotClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take Market Snapshot down entirely.
+      console.error('[market-snapshot] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateMarketSnapshotOllama(ctx);
 }
