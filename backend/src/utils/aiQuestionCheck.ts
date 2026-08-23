@@ -664,7 +664,7 @@ Respond with ONLY a JSON object, no other text, in this exact shape:
 }
 The "minutes" values across all sections must sum to 30 or less.`;
 
-export async function generateDiscoveryGuide(ctx: DiscoveryGuideContext): Promise<DiscoveryGuideResult> {
+function buildDiscoveryGuideUserContent(ctx: DiscoveryGuideContext): string {
   const lines: string[] = [];
   if (ctx.ideaName?.trim()) lines.push(`Idea name: ${ctx.ideaName.trim()}`);
   if (ctx.oneLiner?.trim()) lines.push(`One-liner: ${ctx.oneLiner.trim()}`);
@@ -681,37 +681,12 @@ export async function generateDiscoveryGuide(ctx: DiscoveryGuideContext): Promis
   if (ctx.assumptions?.length) lines.push(`Assumptions the founder wants to validate (interviewer context ONLY — never reveal to the interviewee):\n${ctx.assumptions.map(a => `- ${a}`).join('\n')}`);
   if (ctx.existingQuestions?.length) lines.push(`Questions already asked in a previous guide — do NOT repeat these or write near-duplicates, write genuinely new ones instead:\n${ctx.existingQuestions.map(q => `- ${q}`).join('\n')}`);
 
-  const userContent = lines.length
+  return lines.length
     ? lines.join('\n\n')
     : "The founder hasn't filled in any Idea/Hone details yet — write a solid generic, solution-agnostic discovery interview guide.";
+}
 
-  let res;
-  try {
-    res = await axios.post(
-      `${OLLAMA_URL}/api/chat`,
-      {
-        model: OLLAMA_MODEL,
-        messages: [
-          { role: 'system', content: DISCOVERY_GUIDE_SYSTEM_PROMPT },
-          { role: 'user', content: userContent },
-        ],
-        stream: false,
-        format: 'json',
-        options: { temperature: 0.5 },
-      },
-      { timeout: 240000 }
-    );
-  } catch (err: any) {
-    if (err.code === 'ECONNABORTED') {
-      throw new Error('The AI is taking longer than usual on this one (it\'s a bigger request than most) — please try Regenerate again.');
-    }
-    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
-      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
-    }
-    throw err;
-  }
-
-  const text: string = res.data?.message?.content || '';
+function parseDiscoveryGuideJson(text: string): DiscoveryGuideResult {
   let parsed: any;
   try {
     const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -747,6 +722,81 @@ export async function generateDiscoveryGuide(ctx: DiscoveryGuideContext): Promis
   }
 
   return { focus, sections };
+}
+
+// Ollama path — the original, always-available implementation.
+async function generateDiscoveryGuideOllama(ctx: DiscoveryGuideContext): Promise<DiscoveryGuideResult> {
+  const userContent = buildDiscoveryGuideUserContent(ctx);
+
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: DISCOVERY_GUIDE_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.5 },
+      },
+      { timeout: 240000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNABORTED') {
+      throw new Error('The AI is taking longer than usual on this one (it\'s a bigger request than most) — please try Regenerate again.');
+    }
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+
+  const text: string = res.data?.message?.content || '';
+  return parseDiscoveryGuideJson(text);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the flagship model tier (not the cheap tier): this is the
+// biggest, highest-stakes generative call in the app — 5-7 sections of
+// solution-agnostic questions each with tailored chips — so it gets the
+// same quality tier as Market Snapshot. No web search tool: the guide is
+// grounded entirely in the founder's own Idea/Hone notes, not anything
+// external. Generous max_tokens since a full guide with chips is the
+// largest structured output any function in this file produces.
+async function generateDiscoveryGuideClaude(ctx: DiscoveryGuideContext): Promise<DiscoveryGuideResult> {
+  const userContent = buildDiscoveryGuideUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 4096,
+    temperature: 0.5,
+    system: DISCOVERY_GUIDE_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseDiscoveryGuideJson(text);
+}
+
+export async function generateDiscoveryGuide(ctx: DiscoveryGuideContext): Promise<DiscoveryGuideResult> {
+  if (anthropicClient) {
+    try {
+      return await generateDiscoveryGuideClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take Discovery Guide down entirely.
+      console.error('[discovery-guide] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateDiscoveryGuideOllama(ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
