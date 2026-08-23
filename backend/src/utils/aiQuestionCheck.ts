@@ -1053,10 +1053,26 @@ function sanitizeEvidence(raw: any, painPointCount: number, assumptionCount: num
   return out;
 }
 
-export async function classifyInterviewAlignment(ctx: AlignmentClassifyContext): Promise<AlignmentClassification> {
-  if (!ctx.qa?.length) {
-    throw new Error('No answered questions to classify yet.');
+function parseAlignmentJson(text: string, ctx: AlignmentClassifyContext): AlignmentClassification {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
   }
+
+  const score: 1 | 2 | 3 = parsed.score === 1 || parsed.score === 2 || parsed.score === 3 ? parsed.score : 2;
+  return {
+    score,
+    label: ALIGNMENT_SCORE_LABELS[score],
+    reasoning: typeof parsed.reasoning === 'string' && parsed.reasoning.trim() ? parsed.reasoning.trim() : 'The AI did not provide a detailed rationale for this classification.',
+    evidence: sanitizeEvidence(parsed.evidence, (ctx.painPoints || []).length, (ctx.assumptions || []).length),
+  };
+}
+
+// Ollama path — the original, always-available implementation.
+async function classifyInterviewAlignmentOllama(ctx: AlignmentClassifyContext): Promise<AlignmentClassification> {
   const userContent = buildAlignmentTranscript(ctx);
 
   let res;
@@ -1083,21 +1099,50 @@ export async function classifyInterviewAlignment(ctx: AlignmentClassifyContext):
   }
 
   const text: string = res.data?.message?.content || '';
-  let parsed: any;
-  try {
-    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new Error('Could not parse the AI response — please try again.');
+  return parseAlignmentJson(text, ctx);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the flagship model tier: this is the richest, most
+// naturally dashboard-ready output in the app (score + evidence quotes
+// tagged to specific pain points/assumptions), so it's worth the better
+// reasoning quality. No web search — grounded entirely in the founder's
+// own logged transcript.
+async function classifyInterviewAlignmentClaude(ctx: AlignmentClassifyContext): Promise<AlignmentClassification> {
+  const userContent = buildAlignmentTranscript(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 1500,
+    temperature: 0.3,
+    system: ALIGNMENT_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseAlignmentJson(text, ctx);
+}
+
+export async function classifyInterviewAlignment(ctx: AlignmentClassifyContext): Promise<AlignmentClassification> {
+  if (!ctx.qa?.length) {
+    throw new Error('No answered questions to classify yet.');
   }
 
-  const score: 1 | 2 | 3 = parsed.score === 1 || parsed.score === 2 || parsed.score === 3 ? parsed.score : 2;
-  return {
-    score,
-    label: ALIGNMENT_SCORE_LABELS[score],
-    reasoning: typeof parsed.reasoning === 'string' && parsed.reasoning.trim() ? parsed.reasoning.trim() : 'The AI did not provide a detailed rationale for this classification.',
-    evidence: sanitizeEvidence(parsed.evidence, (ctx.painPoints || []).length, (ctx.assumptions || []).length),
-  };
+  if (anthropicClient) {
+    try {
+      return await classifyInterviewAlignmentClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take alignment classification down entirely.
+      console.error('[alignment-classify] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return classifyInterviewAlignmentOllama(ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
