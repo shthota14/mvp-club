@@ -2189,36 +2189,14 @@ Other fields:
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"productDefinition": {"name": "...", "customer": "...", "problem": "...", "outcome": "..."}, "mvpHypothesis": "...", "coreUserJourney": ["...", ...], "featureList": ["...", ...], "scopeCuts": ["...", ...], "technicalRequirements": {"appType": "...", "database": "...", "authentication": "...", "integrations": ["...", ...], "payments": "...", "ai": "...", "analytics": "..."}, "buildSequence": ["...", ...]}`;
 
-export async function generateBuildSpec(ctx: BuildSpecContext): Promise<BuildSpec> {
+function buildBuildSpecUserContent(ctx: BuildSpecContext): string {
   const lines = buildBuildSpecLines(ctx);
-  const userContent = lines.length
+  return lines.length
     ? lines.join('\n\n')
     : "The founder hasn't captured much evidence yet — draft a cautious, minimal spec from whatever is given.";
+}
 
-  let res;
-  try {
-    res = await axios.post(
-      `${OLLAMA_URL}/api/chat`,
-      {
-        model: OLLAMA_MODEL,
-        messages: [
-          { role: 'system', content: BUILD_SPEC_SYSTEM_PROMPT },
-          { role: 'user', content: userContent },
-        ],
-        stream: false,
-        format: 'json',
-        options: { temperature: 0.4 },
-      },
-      { timeout: 180000 }
-    );
-  } catch (err: any) {
-    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
-      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
-    }
-    throw err;
-  }
-
-  const text: string = res.data?.message?.content || '';
+function parseBuildSpecJson(text: string): BuildSpec {
   let parsed: any;
   try {
     const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -2263,6 +2241,78 @@ export async function generateBuildSpec(ctx: BuildSpecContext): Promise<BuildSpe
     throw new Error('The AI did not return a usable build specification — please try again.');
   }
   return spec;
+}
+
+// Ollama path — the original, always-available implementation.
+async function generateBuildSpecOllama(ctx: BuildSpecContext): Promise<BuildSpec> {
+  const userContent = buildBuildSpecUserContent(ctx);
+
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: BUILD_SPEC_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.4 },
+      },
+      { timeout: 180000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+
+  const text: string = res.data?.message?.content || '';
+  return parseBuildSpecJson(text);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the flagship model tier: this is the single highest-leverage
+// document in the app — every later Ship step generates from its output —
+// so it gets the same quality tier as Discovery Guide and MVP Hypothesis.
+// No web search — grounded entirely in the founder's own validated
+// evidence, and the technical-requirement fields are fixed enums anyway.
+// Generous max_tokens for the full nested structure (journey, features,
+// scope cuts, technical requirements, build sequence).
+async function generateBuildSpecClaude(ctx: BuildSpecContext): Promise<BuildSpec> {
+  const userContent = buildBuildSpecUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 3000,
+    temperature: 0.4,
+    system: BUILD_SPEC_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseBuildSpecJson(text);
+}
+
+export async function generateBuildSpec(ctx: BuildSpecContext): Promise<BuildSpec> {
+  if (anthropicClient) {
+    try {
+      return await generateBuildSpecClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take build spec generation down entirely.
+      console.error('[build-spec] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateBuildSpecOllama(ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
