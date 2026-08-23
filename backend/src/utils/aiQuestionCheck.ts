@@ -69,10 +69,37 @@ Respond with ONLY a JSON object, no other text, in this exact shape:
 "dont" = the question is leading, hypothetical ("would you..."), or embeds a pitch/solution/assumption.
 "neutral" = it's fine but generic/vague — not wrong, just not a strong discovery question.`;
 
-export async function checkQuestion(question: string, hint?: string): Promise<QuestionCheckResult> {
-  const userContent = hint
+function buildCheckQuestionUserContent(question: string, hint?: string): string {
+  return hint
     ? `Question: "${question}"\nWhy this question is being asked (hint): "${hint}"`
     : `Question: "${question}"`;
+}
+
+function parseCheckQuestionJson(text: string): QuestionCheckResult {
+  let parsed: any;
+  try {
+    // Model is instructed (and asked via format:'json' on the Ollama path)
+    // to return raw JSON, but strip any accidental markdown code-fence
+    // wrapping defensively either way.
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+
+  const verdict: QuestionCheckResult['verdict'] =
+    parsed.verdict === 'do' || parsed.verdict === 'dont' ? parsed.verdict : 'neutral';
+
+  return {
+    verdict,
+    reason: typeof parsed.reason === 'string' ? parsed.reason : '',
+    suggestion: typeof parsed.suggestion === 'string' ? parsed.suggestion : null,
+  };
+}
+
+// Ollama path — the original, always-available implementation.
+async function checkQuestionOllama(question: string, hint?: string): Promise<QuestionCheckResult> {
+  const userContent = buildCheckQuestionUserContent(question, hint);
 
   let res;
   try {
@@ -98,24 +125,46 @@ export async function checkQuestion(question: string, hint?: string): Promise<Qu
   }
 
   const text: string = res.data?.message?.content || '';
-  let parsed: any;
-  try {
-    // Model is instructed (and asked via format:'json') to return raw JSON,
-    // but strip any accidental markdown code-fence wrapping defensively.
-    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
-    parsed = JSON.parse(cleaned);
-  } catch {
-    throw new Error('Could not parse the AI response — please try again.');
+  return parseCheckQuestionJson(text);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the cheap/fast model tier: this is judging phrasing
+// against a fixed rule set the founder already has, no lookup involved, so
+// a bigger model buys better judgment, not new capability. No schema
+// change here — see the Sage Prompt Library doc for the phrasingScore
+// field this could gain later if a leaderboard view gets built.
+async function checkQuestionClaude(question: string, hint?: string): Promise<QuestionCheckResult> {
+  const userContent = buildCheckQuestionUserContent(question, hint);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 300,
+    temperature: 0.3,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
   }
+  return parseCheckQuestionJson(text);
+}
 
-  const verdict: QuestionCheckResult['verdict'] =
-    parsed.verdict === 'do' || parsed.verdict === 'dont' ? parsed.verdict : 'neutral';
-
-  return {
-    verdict,
-    reason: typeof parsed.reason === 'string' ? parsed.reason : '',
-    suggestion: typeof parsed.suggestion === 'string' ? parsed.suggestion : null,
-  };
+export async function checkQuestion(question: string, hint?: string): Promise<QuestionCheckResult> {
+  if (anthropicClient) {
+    try {
+      return await checkQuestionClaude(question, hint);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take question-phrasing checks down entirely.
+      console.error('[check-question] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return checkQuestionOllama(question, hint);
 }
 // ─────────────────────────────────────────────────────────────────────────
 // A single short, warm reaction to one answer during the conversational
