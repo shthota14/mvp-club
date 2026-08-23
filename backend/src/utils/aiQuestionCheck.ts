@@ -1332,7 +1332,7 @@ Generate 2-3 distinct candidates, ordered from smallest/safest scope to more amb
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"candidates": [{"productType": ["<value from list>"], "primaryUser": "<short phrase>", "mvpAction": ["<value from list>"], "mvpOutcome": ["<value from list>"], "rationale": "<one sentence, under 30 words>"}, ...]}`;
 
-export async function generateMvpHypotheses(ctx: MvpHypothesisContext): Promise<MvpHypothesisCandidate[]> {
+function buildMvpHypothesisUserContent(ctx: MvpHypothesisContext): string {
   const lines: string[] = [];
   if (ctx.oneLiner?.trim()) lines.push(`Idea: ${ctx.oneLiner.trim()}`);
   if (ctx.validatedProblem?.trim()) lines.push(`Validated problem: ${ctx.validatedProblem.trim()}`);
@@ -1343,34 +1343,12 @@ export async function generateMvpHypotheses(ctx: MvpHypothesisContext): Promise<
   if (ctx.surprises?.length) lines.push(`Surprises during validation: ${ctx.surprises.join(', ')}`);
   if (typeof ctx.demandSignalCount === 'number' && ctx.demandSignalCount > 0) lines.push(`Demand signals collected (LOIs/pre-orders): ${ctx.demandSignalCount}`);
 
-  const userContent = lines.length
+  return lines.length
     ? lines.join('\n\n')
     : "The founder hasn't captured much validated evidence yet — draft cautious, narrowly-scoped candidates and lean on the persona/idea if given, otherwise keep it generic.";
+}
 
-  let res;
-  try {
-    res = await axios.post(
-      `${OLLAMA_URL}/api/chat`,
-      {
-        model: OLLAMA_MODEL,
-        messages: [
-          { role: 'system', content: MVP_HYPOTHESIS_SYSTEM_PROMPT },
-          { role: 'user', content: userContent },
-        ],
-        stream: false,
-        format: 'json',
-        options: { temperature: 0.5 },
-      },
-      { timeout: 180000 }
-    );
-  } catch (err: any) {
-    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
-      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
-    }
-    throw err;
-  }
-
-  const text: string = res.data?.message?.content || '';
+function parseMvpHypothesisJson(text: string): MvpHypothesisCandidate[] {
   let parsed: any;
   try {
     const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
@@ -1405,6 +1383,75 @@ export async function generateMvpHypotheses(ctx: MvpHypothesisContext): Promise<
     throw new Error('The AI did not return any usable hypotheses — please try again.');
   }
   return candidates;
+}
+
+// Ollama path — the original, always-available implementation.
+async function generateMvpHypothesesOllama(ctx: MvpHypothesisContext): Promise<MvpHypothesisCandidate[]> {
+  const userContent = buildMvpHypothesisUserContent(ctx);
+
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: MVP_HYPOTHESIS_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.5 },
+      },
+      { timeout: 180000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+
+  const text: string = res.data?.message?.content || '';
+  return parseMvpHypothesisJson(text);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the flagship model tier: this is the single highest-stakes
+// scoping decision in the app (per the prompt's own framing), so it gets
+// the same quality tier as Discovery Guide and Market Snapshot. No web
+// search — grounded entirely in the founder's own validated evidence.
+async function generateMvpHypothesesClaude(ctx: MvpHypothesisContext): Promise<MvpHypothesisCandidate[]> {
+  const userContent = buildMvpHypothesisUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 1200,
+    temperature: 0.5,
+    system: MVP_HYPOTHESIS_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseMvpHypothesisJson(text);
+}
+
+export async function generateMvpHypotheses(ctx: MvpHypothesisContext): Promise<MvpHypothesisCandidate[]> {
+  if (anthropicClient) {
+    try {
+      return await generateMvpHypothesesClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take MVP hypothesis generation down entirely.
+      console.error('[mvp-hypothesis] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateMvpHypothesesOllama(ctx);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
