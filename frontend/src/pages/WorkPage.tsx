@@ -12066,17 +12066,18 @@ export default function WorkPage() {
                     const nextM = MODULES[idx + 1];
                     const nextInCoreGroup     = nextM === 'idea' || nextM === 'hone' || nextM === 'validate';
                     const nextInOptionalGroup = nextM === 'shape' || nextM === 'done';
-                    // Any-order dot: only between two members of the CORE box
-                    // (Idea↔Hone, Hone↔Validate) — that's the one group that's
-                    // genuinely order-free.
-                    const dotConnector = inCoreGroup && nextInCoreGroup;
-                    // The Validate → Shape hop is the mandatory/optional fork itself —
-                    // it gets its own dashed marker, not the dot or the plain arrow.
-                    const isOptionalFork = m === 'validate' && nextM === 'shape';
-                    // Shape → Ship still sits inside one visual box, but Ship is
-                    // genuinely gated behind Shape being done, so it keeps a real
-                    // arrow (tinted to match the optional box) rather than a dot.
                     const sameGroupPair = (inCoreGroup && nextInCoreGroup) || (inOptionalGroup && nextInOptionalGroup);
+                    // Both boxes read as "any order" visually — Idea↔Hone↔Validate
+                    // AND Shape↔Ship all get the dot connector. Note this is a
+                    // display choice only: Ship still has a real code-level gate
+                    // (stays locked until Shape is done, same as Shape's own gate
+                    // behind a strong Validate signal) — the dot doesn't change
+                    // that, it just keeps the two boxes visually consistent.
+                    const dotConnector = sameGroupPair;
+                    // The Validate → Shape hop is the one connector between the
+                    // two boxes — the actual mandatory/optional fork — so it gets
+                    // its own dashed marker instead of a dot.
+                    const isOptionalFork = m === 'validate' && nextM === 'shape';
                     return (
                       <div style={{
                         paddingLeft: 9, paddingTop: 2, paddingBottom: 2,
@@ -12087,25 +12088,18 @@ export default function WorkPage() {
                       }}>
                         {dotConnector ? (
                           /* No arrow here on purpose — even a paired ↑↓ still reads as
-                             "flow between steps." Both neighbours sit inside the
-                             "iterate in any order" core box, so this connector just
-                             keeps the dashed box visually unbroken instead of
-                             implying a direction. */
+                             "flow between steps." Both neighbours sit inside the same
+                             "any order" box, so this connector just keeps the dashed
+                             box visually unbroken instead of implying a direction. */
                           <div style={{ width: 18, display: 'flex', justifyContent: 'center' }}>
-                            <span style={{ fontSize: 11, color: '#cbd5e1', lineHeight: 1 }}>•</span>
+                            <span style={{ fontSize: 11, color: inOptionalGroup ? `${STAGE_COLORS.shape}90` : '#cbd5e1', lineHeight: 1 }}>•</span>
                           </div>
                         ) : isOptionalFork ? (
                           <div style={{ width: 18, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2, paddingTop: 1 }}>
                             <div style={{ width: 0, height: 9, borderLeft: `1.5px dashed ${STAGE_COLORS.shape}90` }} />
                             <span style={{ fontSize: 7, fontWeight: 700, color: STAGE_COLORS.shape, fontStyle: 'italic' as const, letterSpacing: 0.2 }}>opt</span>
                           </div>
-                        ) : (
-                          /* ↓ — Shape → Ship is still a real sequential gate, just
-                             inside the optional box, so it's tinted to match. */
-                          <div style={{ width: 18, display: 'flex', justifyContent: 'center' }}>
-                            <span style={{ fontSize: 13, color: sameGroupPair ? STAGE_COLORS.shape : '#d0d5de', lineHeight: 1 }}>↓</span>
-                          </div>
-                        )}
+                        ) : null}
                       </div>
                     );
                   })()}
