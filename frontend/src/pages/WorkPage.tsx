@@ -3030,32 +3030,120 @@ type PersonaEntry = {
   type: 'b2b' | 'b2c';
   role: string; size: string;  // B2B
   who: string;  ctx: string;   // B2C
+  // Added 2026-08-24. Both are APPENDED to the serialized form, never
+  // inserted, because every other reader of whoExactly goes through
+  // parsePersonaText() which takes field [0] only — so older entries keep
+  // parsing and new fields are invisible to code that doesn't want them.
+  reach: string;      // where the founder could actually find ten of these people
+  primary: boolean;   // the one segment Validate will target
+  // Free text saved before the structured picker existed: it has a
+  // description but no facets. It is NOT scored — a specific sentence like
+  // "solo indie podcasters recording weekly" would otherwise be called
+  // "still broad" purely because of how it happens to be stored.
+  legacy?: boolean;
 };
 
 function serializePersona(e: PersonaEntry): string {
+  // Round-trip legacy text unchanged rather than silently promoting it to a
+  // b2b persona whose "role" is an entire sentence.
+  if (e.legacy) return e.role;
+  const flag = e.primary ? '1' : '';
   if (e.type === 'b2b') {
     const base = [e.role.trim(), e.size ? `at a ${e.size} company` : ''].filter(Boolean).join(' ');
     const text = e.ctx.trim() ? `${base} who ${e.ctx.trim()}` : base;
-    return [text, 'b2b', e.role, e.size, e.ctx].join(FIELD_SEP);
+    return [text, 'b2b', e.role, e.size, e.ctx, e.reach, flag].join(FIELD_SEP);
   }
   const text = [e.who.trim(), e.ctx.trim() ? `who ${e.ctx.trim()}` : ''].filter(Boolean).join(' ');
-  return [text, 'b2c', e.who, e.ctx].join(FIELD_SEP);
+  return [text, 'b2c', e.who, e.ctx, e.reach, flag].join(FIELD_SEP);
 }
 
 function initPersonas(raw: string): PersonaEntry[] {
-  return raw.split(MULTI_SEP).filter(Boolean).flatMap(seg => {
+  // Annotated return type: without it TS infers a union of two ARRAY types
+  // from the branches rather than an array of the union, and every downstream
+  // use of the result degrades to unknown[].
+  const list = raw.split(MULTI_SEP).filter(Boolean).flatMap((seg): PersonaEntry[] => {
     const p = seg.split(FIELD_SEP);
-    if (p[1] === 'b2b') return [{ id: Math.random().toString(36).slice(2), type: 'b2b' as const, role: p[2] ?? '', size: p[3] ?? '', who: '', ctx: p[4] ?? '' }];
-    if (p[1] === 'b2c') return [{ id: Math.random().toString(36).slice(2), type: 'b2c' as const, role: '', size: '', who: p[2] ?? '', ctx: p[3] ?? '' }];
-    if (p[0].trim().length > 2) return [{ id: Math.random().toString(36).slice(2), type: 'b2b' as const, role: p[0], size: '', who: '', ctx: '' }];
+    const nid = () => Math.random().toString(36).slice(2);
+    if (p[1] === 'b2b') return [{ id: nid(), type: 'b2b' as const, role: p[2] ?? '', size: p[3] ?? '', who: '', ctx: p[4] ?? '', reach: p[5] ?? '', primary: p[6] === '1' }];
+    if (p[1] === 'b2c') return [{ id: nid(), type: 'b2c' as const, role: '', size: '', who: p[2] ?? '', ctx: p[3] ?? '', reach: p[4] ?? '', primary: p[5] === '1' }];
+    if (p[0].trim().length > 2) return [{ id: nid(), type: 'b2b' as const, role: p[0], size: '', who: '', ctx: '', reach: '', primary: false, legacy: true }];
     return [];
   });
+  return ensurePrimary(list);
+}
+
+// Exactly one segment is primary. Entries saved before the flag existed have
+// none, so the first becomes primary by default rather than leaving Validate
+// with nothing to target.
+function ensurePrimary(list: PersonaEntry[]): PersonaEntry[] {
+  if (!list.length || list.some(p => p.primary)) return list;
+  return list.map((p, i) => (i === 0 ? { ...p, primary: true } : p));
+}
+
+// ── Segment sharpness ────────────────────────────────────────────────────
+// A COUNT of the dimensions this segment actually specifies, not a judgement
+// of their content — which is why it can always say exactly what is missing.
+// B2B has one more dimension than B2C (company size), so the bar count
+// differs by type; each bar has a matching chip above it.
+type SharpDim = { label: string; filled: boolean; hint: string };
+
+function personaDims(p: PersonaEntry): SharpDim[] {
+  if (p.legacy) return [];   // never scored — see PersonaEntry.legacy
+  const reach = { label: 'Where to find them', filled: !!p.reach.trim(), hint: 'somewhere you could reach ten of them' };
+  if (p.type === 'b2b') {
+    return [
+      { label: 'Role',         filled: !!p.role.trim(), hint: 'their job title' },
+      { label: 'Company size', filled: !!p.size.trim(), hint: 'how big a company they work at' },
+      { label: 'Struggle',     filled: !!p.ctx.trim(),  hint: 'what they actually struggle with' },
+      reach,
+    ];
+  }
+  return [
+    { label: 'Who',       filled: !!p.who.trim(), hint: 'who they are' },
+    { label: 'Struggle',  filled: !!p.ctx.trim(), hint: 'what they actually struggle with' },
+    reach,
+  ];
+}
+
+// Deliberately no "bad" state and no red: this reading must never read as a
+// grade on the founder, and it never gates the Next button.
+function personaSharpness(p: PersonaEntry): { filled: number; total: number; label: string; why: string; color: string } {
+  const dims = personaDims(p);
+  const filled = dims.filter(d => d.filled).length;
+  const missing = dims.filter(d => !d.filled);
+  // At most two, comma-joined. Listing four with "and" between each produced a
+  // run-on sentence that read as a telling-off rather than a next action.
+  const missingText = missing.slice(0, 2).map(d => d.hint).join(', ')
+    + (missing.length > 2 ? `, +${missing.length - 2} more` : '');
+  if (filled === dims.length) {
+    return { filled, total: dims.length, label: 'Sharp', why: 'specific enough to go and find ten of them this week.', color: '#059669' };
+  }
+  if (filled >= dims.length - 1) {
+    return { filled, total: dims.length, label: 'Nearly there', why: `add ${missingText}.`, color: '#d97706' };
+  }
+  return { filled, total: dims.length, label: 'Add detail', why: `still missing ${missingText}.`, color: '#8a8a91' };
+}
+
+// ── Seeding from the Idea one-liner ──────────────────────────────────────
+// The one-liner is assembled as "I'm building B for F who W so they can O"
+// (see assembleOneLinerFromParts). F is the audience and W is their struggle
+// — exactly the two fields this step asks for — so there is no reason to
+// start the founder from a blank form. Placeholder text from a partially
+// answered one-liner ("___") is rejected.
+function seedFromOneLiner(oneLiner: string): { who: string; ctx: string } | null {
+  if (!oneLiner) return null;
+  const m = oneLiner.match(/for\s+(.+?)\s+who\s+(.+?)\s+so they can\s+/i);
+  if (!m) return null;
+  const who = m[1].trim(), ctx = m[2].trim();
+  if (!who || !ctx || who.includes('___') || ctx.includes('___')) return null;
+  if (who.length < 3 || ctx.length < 3) return null;
+  return { who, ctx };
 }
 
 type PersonaPickerHandle = { flush: () => string; isDraftValid: () => boolean };
 
-const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string; onChange: (v: string) => void }>(function PersonaPickerStep({
-  value, onChange,
+const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string; onChange: (v: string) => void; oneLiner?: string }>(function PersonaPickerStep({
+  value, onChange, oneLiner = '',
 }, ref) {
   const AC = '#2563eb';
 
@@ -3091,8 +3179,9 @@ const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string;
 
   const addPersona = () => {
     if (!canAdd) return;
-    const entry: PersonaEntry = { id: Date.now().toString(36), type: formType, role: formRole, size: formSize, who: formWho, ctx: formCtx };
-    const next = [...personas, entry];
+    // First segment added is primary by default; ensurePrimary keeps exactly one.
+    const entry: PersonaEntry = { id: Date.now().toString(36), type: formType, role: formRole, size: formSize, who: formWho, ctx: formCtx, reach: '', primary: personas.length === 0 };
+    const next = ensurePrimary([...personas, entry]);
     setPersonas(next);
     emitList(next);
     setFormRole(''); setFormSize(''); setFormWho(''); setFormCtx('');
@@ -3105,8 +3194,8 @@ const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string;
     isDraftValid: () => showForm && canAdd,
     flush: () => {
       if (showForm && canAdd) {
-        const entry: PersonaEntry = { id: Date.now().toString(36), type: formType, role: formRole, size: formSize, who: formWho, ctx: formCtx };
-        const next = [...personas, entry];
+        const entry: PersonaEntry = { id: Date.now().toString(36), type: formType, role: formRole, size: formSize, who: formWho, ctx: formCtx, reach: '', primary: personas.length === 0 };
+        const next = ensurePrimary([...personas, entry]);
         setPersonas(next);
         setFormRole(''); setFormSize(''); setFormWho(''); setFormCtx('');
         setShowForm(false);
@@ -3119,10 +3208,35 @@ const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string;
   }));
 
   const removePersona = (id: string) => {
-    const next = personas.filter(p => p.id !== id);
+    // ensurePrimary promotes a survivor when the primary segment is removed,
+    // so Validate is never left pointing at nothing.
+    const next = ensurePrimary(personas.filter(p => p.id !== id));
     setPersonas(next);
     emitList(next);
     if (next.length === 0) setShowForm(true);
+  };
+
+  const patchPersona = (id: string, patch: Partial<PersonaEntry>) => {
+    const next = personas.map(p => (p.id === id ? { ...p, ...patch } : p));
+    setPersonas(next);
+    emitList(next);
+  };
+
+  const makePrimary = (id: string) => {
+    const next = personas.map(p => ({ ...p, primary: p.id === id }));
+    setPersonas(next);
+    emitList(next);
+  };
+
+  // Offered only while the founder has nothing yet — once they've written a
+  // segment, silently re-suggesting the one-liner would just be noise.
+  const seed = personas.length === 0 ? seedFromOneLiner(oneLiner) : null;
+  const applySeed = () => {
+    if (!seed) return;
+    setFormType('b2c');
+    setFormWho(seed.who);
+    setFormCtx(seed.ctx);
+    setShowForm(true);
   };
 
   const B2B_SIZES = ['1–10', '11–50', '51–200', '201–1000', '1000+'];
@@ -3138,21 +3252,116 @@ const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-      {/* Saved persona cards — handwritten postcard style */}
-      {personas.map((p, i) => (
-        <div key={p.id} style={{
-          ...postcardStyle(i % 2 === 0 ? -1 : 1),
-          display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px 12px 14px',
-        }}>
-          <PostcardStamp />
-          <div style={{ width: 28, height: 28, borderRadius: '50%', background: AC, color: '#fff', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: AC, letterSpacing: '.07em', textTransform: 'uppercase' as const, marginBottom: 1 }}>{p.type.toUpperCase()}</div>
-            <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700, color: T1, lineHeight: 1.35 }}>{parsePersonaText(serializePersona(p))}</div>
+      {/* Saved persona cards — handwritten postcard style, now carrying the
+          facets that were previously collected and then discarded. */}
+      {personas.map((p, i) => {
+        const dims  = personaDims(p);
+        const sharp = personaSharpness(p);
+        const showPrimaryUI = personas.length > 1;
+        return (
+          <div key={p.id} style={{
+            ...postcardStyle(i % 2 === 0 ? -1 : 1),
+            padding: '12px 16px 14px 14px',
+            ...(p.primary && showPrimaryUI ? { boxShadow: `0 0 0 2px ${AC}55` } : {}),
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <PostcardStamp />
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: AC, color: '#fff', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' as const, marginBottom: 1 }}>
+                  {/* B2B/B2C on a legacy entry is a storage default, not something
+                      the founder chose, so it isn't shown as though it were. */}
+                  {!p.legacy && <span style={{ fontSize: 10, fontWeight: 700, color: AC, letterSpacing: '.07em', textTransform: 'uppercase' as const }}>{p.type.toUpperCase()}</span>}
+                  {showPrimaryUI && p.primary && (
+                    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase' as const, color: '#fff', background: AC, borderRadius: 5, padding: '2px 7px' }}>Start here</span>
+                  )}
+                  {showPrimaryUI && !p.primary && (
+                    <button onClick={() => makePrimary(p.id)}
+                      style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase' as const, color: T2, background: 'transparent', border: `1px solid ${BORDER2}`, borderRadius: 5, padding: '2px 7px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Make this the one
+                    </button>
+                  )}
+                </div>
+                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700, color: T1, lineHeight: 1.35 }}>{parsePersonaText(serializePersona(p))}</div>
+              </div>
+              <button onClick={() => removePersona(p.id)} aria-label="Remove this segment" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 17, color: T3, padding: '2px 6px', lineHeight: 1, flexShrink: 0, alignSelf: 'flex-start' }}>✕</button>
+            </div>
+
+            {p.legacy ? (
+              <div style={{ marginTop: 9, paddingLeft: 38, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
+                <span style={{ fontSize: 12, color: T3 }}>Saved before we captured the details.</span>
+                <button onClick={() => { setFormType('b2c'); setFormWho(p.role); setFormCtx(''); setShowForm(true); removePersona(p.id); }}
+                  style={{ fontSize: 12, fontWeight: 600, color: AC, background: 'transparent', border: `1px solid ${AC}55`, borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Add details
+                </button>
+              </div>
+            ) : (
+             <>
+            {/* Which dimensions this segment actually pins down */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginTop: 10, paddingLeft: 38 }}>
+              {dims.map(d => (
+                <span key={d.label} style={{
+                  fontSize: 11, padding: '3px 9px', borderRadius: 999,
+                  border: `1px solid ${d.filled ? BORDER2 : BORDER}`,
+                  borderStyle: d.filled ? 'solid' : 'dashed',
+                  background: d.filled ? '#ffffffaa' : 'transparent',
+                  color: d.filled ? T2 : T3,
+                }}>
+                  {d.filled ? '' : '+ '}{d.label}
+                </span>
+              ))}
+            </div>
+
+            {/* Sharpness — names what's missing, never blocks Next */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' as const, marginTop: 10, paddingLeft: 38 }}>
+              <span style={{ display: 'flex', gap: 3 }} role="img" aria-label={`Segment detail: ${sharp.filled} of ${sharp.total} filled in — ${sharp.label}`}>
+                {dims.map((d, di) => (
+                  <i key={di} style={{ width: 20, height: 5, borderRadius: 2, background: di < sharp.filled ? sharp.color : BORDER, display: 'block' }} />
+                ))}
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: sharp.color }}>{sharp.label}</span>
+              <span style={{ fontSize: 12, color: T2 }}>— {sharp.why}</span>
+            </div>
+
+            {/* Reachability: the question that decides whether Validate is
+                even possible, asked here where changing your mind is free. */}
+            <div style={{ marginTop: 9, paddingLeft: 38 }}>
+              <InputField
+                value={p.reach}
+                placeholder="Where could you find ten of them? e.g. r/podcasting, a Slack you're in…"
+                style={(focused: boolean) => ({
+                  width: '100%', boxSizing: 'border-box' as const, padding: '8px 11px',
+                  border: `1.5px solid ${focused ? AC : BORDER}`, borderRadius: 9,
+                  fontSize: 13, lineHeight: 1.5, fontFamily: 'inherit', color: USER_INPUT_COLOR,
+                  background: focused ? '#f0f4ff' : '#ffffffaa', outline: 'none',
+                })}
+                onChange={(v: string) => patchPersona(p.id, { reach: v })}
+              />
+            </div>
+             </>
+            )}
           </div>
-          <button onClick={() => removePersona(p.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 17, color: T3, padding: '2px 6px', lineHeight: 1, flexShrink: 0 }}>✕</button>
+        );
+      })}
+
+      {/* Seeded from the Idea one-liner — the audience and their struggle are
+          already captured there, so the founder starts from something. */}
+      {seed && showForm && (
+        <div style={{ border: `1.5px solid ${STAGE_COLORS.idea}44`, background: `${STAGE_COLORS.idea}0c`, borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: 16, lineHeight: 1.3 }} aria-hidden="true">💡</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, color: T2, lineHeight: 1.55 }}>
+              <strong style={{ color: T1 }}>From your one-liner:</strong>{' '}
+              <span style={{ color: STAGE_COLORS.idea, fontWeight: 600 }}>{seed.who}</span>
+              {' '}who {seed.ctx}
+            </div>
+            <button onClick={applySeed}
+              style={{ marginTop: 9, padding: '6px 14px', borderRadius: 8, border: 'none', background: STAGE_COLORS.idea, color: '#fff', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              Start from this
+            </button>
+          </div>
         </div>
-      ))}
+      )}
 
       {/* Add form */}
       {showForm && (
@@ -13055,7 +13264,7 @@ export default function WorkPage() {
       <StepGoal text={STEP_GOALS.hone[0]} />
       <BMCLabel blocks={['Customer Segments']} />
       <H accent={STAGE_COLORS.hone}>Who do you think has this problem?</H>
-      <PersonaPickerStep ref={personaPickerRef} value={get('whoExactly')} onChange={v => set('whoExactly', v)} />
+      <PersonaPickerStep ref={personaPickerRef} value={get('whoExactly')} onChange={v => set('whoExactly', v)} oneLiner={get('oneLiner')} />
       {false && <MultiEntryShell
         fieldValue={get('whoExactly')}
         onFieldChange={v => set('whoExactly', v)}
