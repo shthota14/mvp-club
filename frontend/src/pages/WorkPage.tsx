@@ -1788,6 +1788,10 @@ interface MarketCompetitorData {
   // percentage. Always rendered with an "AI estimate, unverified" affordance.
   marketShare?: string;
   features?: FeatureCoverage[];
+  // A free-text list of this competitor's own real features/capabilities —
+  // NOT scored against differentiators and not bounded to them. Rendered as
+  // its own side-by-side comparison table (see CompetitorFeatureListSection).
+  featureList?: string[];
 }
 
 interface MarketSnapshotData {
@@ -1822,6 +1826,7 @@ function parseMarketSnapshot(raw: string): MarketSnapshotData | null {
             founded: typeof c.founded === 'string' ? c.founded : undefined,
             marketShare: typeof c.marketShare === 'string' ? c.marketShare : undefined,
             features: Array.isArray(c.features) ? c.features.filter(isCoverage) : undefined,
+            featureList: Array.isArray(c.featureList) ? c.featureList.filter((s: any) => typeof s === 'string' && s.trim()) : undefined,
           }))
         : [],
     };
@@ -1872,6 +1877,52 @@ function MarketFeatureChip({ v }: { v: FeatureCoverage }) {
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22,
       borderRadius: 7, fontWeight: 800, fontSize: 12, color: s.fg, background: s.bg,
     }}>{s.content}</span>
+  );
+}
+
+// Each competitor's own real feature list, side by side — independent of
+// (and not bounded to) the differentiators Sage chose to score everyone
+// against above. Only renders once at least one competitor has one, so
+// snapshots saved before this field existed just quietly skip it.
+function CompetitorFeatureListSection({ snapshot, revealing }: { snapshot: MarketSnapshotData; revealing: boolean }) {
+  const withFeatures = snapshot.competitors.filter(c => (c.featureList?.length ?? 0) > 0);
+  if (withFeatures.length === 0) return null;
+  const maxRows = Math.max(...withFeatures.map(c => c.featureList!.length));
+  return (
+    <div className={revealing ? 'msnap-tag-pop' : undefined} style={{ marginTop: 16 }}>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>Full feature list</div>
+      <div style={{ fontSize: 12, color: T3, marginBottom: 12 }}>Each competitor's own features, side by side — independent of the capabilities scored above.</div>
+      <div style={{ overflowX: 'auto', border: `1.5px solid ${BORDER}`, borderRadius: 12 }}>
+        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 160 * withFeatures.length, fontSize: 12.5 }}>
+          <thead>
+            <tr>
+              {withFeatures.map((c, i) => (
+                <th key={i} style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 11, fontWeight: 700, color: T1, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: MARKET_SERIES_COLORS[i] || MARKET_SERIES_FALLBACK, flexShrink: 0 }} />
+                    {c.name}
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: maxRows }).map((_, row) => (
+              <tr key={row}>
+                {withFeatures.map((c, ci) => {
+                  const item = c.featureList![row];
+                  return (
+                    <td key={ci} style={{ padding: '8px 12px', borderBottom: row < maxRows - 1 ? `1px solid ${BORDER}` : 'none', verticalAlign: 'top' as const, fontSize: 12, color: item ? T2 : T3, lineHeight: 1.4 }}>
+                      {item ? `• ${item}` : '—'}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -2223,6 +2274,7 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
                       <span>🔗 site · 💬 reviews — both open a search, since Sage can't confirm a live URL directly</span>
                       <span>† Market share is Sage's roughest field — a hedged, unsourced estimate, not a researched figure. Treat it as a starting guess to verify, same as everything else on this card.</span>
                     </div>
+                    <CompetitorFeatureListSection snapshot={snapshot} revealing={revealing} />
                   </div>
                 );
               })()}
@@ -2240,6 +2292,7 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
                   </div>
                 ))}
               </div>
+              <CompetitorFeatureListSection snapshot={snapshot} revealing={revealing} />
             </div>
           )}
         </div>
