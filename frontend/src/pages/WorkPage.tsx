@@ -11841,7 +11841,7 @@ export default function WorkPage() {
               const isGroupBottom   = m === 'validate' || m === 'done';
               const inGroup         = inCoreGroup || inOptionalGroup;
               const groupBorder     = inOptionalGroup ? `1.5px dashed ${STAGE_COLORS.shape}90` : '1.5px dashed #cbd5e1';
-              const groupBg         = inOptionalGroup ? `${STAGE_COLORS.shape}08` : '#f8fafc';
+              const groupBg         = inOptionalGroup ? `${STAGE_COLORS.shape}14` : '#eef2ff';
 
               return (
                 <React.Fragment key={m}>
