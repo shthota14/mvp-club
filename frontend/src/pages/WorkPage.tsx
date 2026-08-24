@@ -2053,9 +2053,13 @@ function MarketSwotPanel({ snapshot, ideaName }: { snapshot: MarketSnapshotData;
       strengths.push({
         rank: mine - bestScore,
         strong: d,
-        // With every rival on zero there is no "strongest" one to name.
+        // With every rival on zero there is no "strongest" one to name. No
+        // superlative either: several capabilities can be unclaimed at once,
+        // so "the clearest" would be a claim about the others it can't back.
         text: bestScore === 0
-          ? `you have ${label(mine)} and not one of the ${snapshot.competitors.length} competitors covers it at all — the clearest piece of open ground in this table.`
+          ? (mine === 1
+              ? `you cover this fully and not one of the ${snapshot.competitors.length} competitors covers it at all — open ground none of them has claimed.`
+              : `you cover this partly and not one of the ${snapshot.competitors.length} competitors covers it at all — you are ahead here, but only partly.`)
           : `you have ${label(mine)} where the strongest rival (${best.name}) has ${label(bestScore)} — this is the gap in the market you are actually walking into.`,
       });
     } else if (mine < bestScore) {
