@@ -107,8 +107,8 @@ const MODULES = ['idea', 'hone', 'validate', 'shape', 'done'] as const;
 type Mod = typeof MODULES[number];
 
 const META: Record<Mod, { icon: string; label: string; steps: number; desc: string }> = {
-  idea:     { icon: '💡', label: 'Idea',     steps: 3, desc: 'Capture a problem worth solving.' },
-  hone:     { icon: '🎯', label: 'Hone',     steps: 6, desc: 'Sharpen until it\'s specific and real.' },
+  idea:     { icon: '💡', label: 'Idea',     steps: 2, desc: 'Capture a problem worth solving.' },
+  hone:     { icon: '🎯', label: 'Hone',     steps: 7, desc: 'Sharpen until it\'s specific and real.' },
   validate: { icon: '🧪', label: 'Validate', steps: 10, desc: 'Test with people before you build.' },
   shape:    { icon: '🔨', label: 'Shape',    steps: 5, desc: 'Define the smallest possible MVP.' },
   done:     { icon: '🚀', label: 'Ship',     steps: 11, desc: 'Launch, learn, and iterate fast.' },
@@ -117,7 +117,6 @@ const META: Record<Mod, { icon: string; label: string; steps: number; desc: stri
 const STEP_GOALS: Record<Mod, string[]> = {
   idea: [
     'Put your idea into one sentence. If you can\'t say it simply, you can\'t build it clearly.',
-    'See how big this market might be — and who else is already circling it.',
     'The "why" behind your idea is as important as the idea itself.',
   ],
   hone: [
@@ -127,6 +126,7 @@ const STEP_GOALS: Record<Mod, string[]> = {
     'Your best guess — not facts yet. Validate will test it.',
     'Most startups fail not because the idea was bad — but because the team wasn\'t ready. Be honest here.',
     'Score 0–5 on each dimension. 20+ unlocks Validate.',
+    'See how big this market might be — and who else is already circling it. A wrap-up on your idea before you move to Validate.',
   ],
   validate: [
     'Set a clear bar for what success looks like before you start.',
@@ -163,8 +163,8 @@ const STEP_GOALS: Record<Mod, string[]> = {
 };
 
 const STEP_TITLES: Record<Mod, string[]> = {
-  idea:     ["What's your idea?", "Where does your idea stand in the market?", "What's motivating you to build this?"],
-  hone:     ["Who do you think has this problem?", "What are the problems?", "What breaks if these problems are unresolved?", "What do you think people are doing to solve this?", "Are you set up to win?", "How strong is your idea?"],
+  idea:     ["What's your idea?", "What's motivating you to build this?"],
+  hone:     ["Who do you think has this problem?", "What are the problems?", "What breaks if these problems are unresolved?", "What do you think people are doing to solve this?", "Are you set up to win?", "How strong is your idea?", "Where does your idea stand in the market?"],
   validate: ["Set your success bar", "Decide what you'll prove", "Name your assumptions", "Choose who to talk to", "Build your script", "Add your contacts", "Schedule interviews", "Log your conversations", "Analyse what you found", "Make the call"],
   shape:    ["What did you learn from users?", "What will you build?", "Shape your features", "How will you reach users and charge?", "Build your backlog"],
   done:     ["Build My MVP", "Choose how you want to build", "Map your user flows & screens", "Generate your UI prompts", "Your master build prompt", "Build your features", "Describe your next change", "Run your QA checkpoints", "Launch your MVP", "What did you build?", "Who are your first 5 users?"],
@@ -179,8 +179,8 @@ const STAGE_TIME: Record<Mod, string> = {
 };
 
 const STEP_ICONS: Record<Mod, string[]> = {
-  idea:     ['🎯', '🔎', '🌟'],
-  hone:     ['👥', '📝', '💪', '🔎', '🧠', '📊'],
+  idea:     ['🎯', '🌟'],
+  hone:     ['👥', '📝', '💪', '🔎', '🧠', '📊', '📈'],
   validate: ['🎯', '📋', '💭', '👤', '📝', '🙋', '🗓️', '🎤', '📈', '✅'],
   shape:    ['📖', '💡', '⚡', '💰', '🗂️'],
   done:     ['🧩', '🛠️', '🗺️', '📝', '🧙', '🧱', '💬', '🧪', '🚀', '🏗️', '🤝'],
@@ -189,7 +189,6 @@ const STEP_ICONS: Record<Mod, string[]> = {
 const STEP_CALLOUTS: Record<Mod, string[]> = {
   idea:     [
     'Be specific: what you\'re building, who it\'s for, and why they need it.',
-    'A rough read on market size and competition — a starting point, not a fact.',
     'Big impact starts with a real, meaningful problem.',
   ],
   hone:     [
@@ -199,6 +198,7 @@ const STEP_CALLOUTS: Record<Mod, string[]> = {
     'Write down your assumption now — so you know what to test.',
     'Honest self-assessment here could save you months of wasted effort.',
     'Score 20+ to unlock the next stage.',
+    'A rough read on market size and competition — a starting point, not a fact.',
   ],
   validate: [
     'Set the bar before you start — not after you already like the answer.',
@@ -6174,8 +6174,9 @@ function StartChallengeModal({ ideaId, targetHint, onClose, onCreated }: {
 // ── Field → canonical stage map (module-level so load effect can use it) ──
 const FIELD_STAGE_CANONICAL: Record<string, string> = {
   // Idea
-  ideaName: 'idea', oneLiner: 'idea', spark: 'idea', marketSnapshot: 'idea', publicSections: 'idea',
-  // Hone
+  ideaName: 'idea', oneLiner: 'idea', spark: 'idea', publicSections: 'idea',
+  // Hone — marketSnapshot moved here 2026-08-24 (see FIELD_STAGE above).
+  marketSnapshot: 'hone',
   whoExactly: 'hone', whoPays: 'hone', problemSentence: 'hone',
   painIfNothing: 'hone', frequency: 'hone',
   workaround: 'hone', competitors: 'hone',
@@ -11839,8 +11840,10 @@ export default function WorkPage() {
   // ── Field → stage map for auto-save ──────────────────────────────────────
   const FIELD_STAGE: Record<string, Mod> = {
     // Idea
-    ideaName: 'idea', oneLiner: 'idea', spark: 'idea', marketSnapshot: 'idea', publicSections: 'idea',
-    // Hone
+    ideaName: 'idea', oneLiner: 'idea', spark: 'idea', publicSections: 'idea',
+    // Hone — marketSnapshot moved here 2026-08-24 when its step relocated to
+    // the end of Hone; the field key and its data are unchanged.
+    marketSnapshot: 'hone',
     whoExactly: 'hone', whoPays: 'hone', problemSentence: 'hone',
     painIfNothing: 'hone', frequency: 'hone',
     workaround: 'hone', competitors: 'hone',
@@ -13398,50 +13401,13 @@ export default function WorkPage() {
       })()}
       <NavRow onNext={async () => { await save('idea', { ideaName: get('ideaName') || activeIdea.name, oneLiner: get('oneLiner') }); next(); }} nextLabel="Next →" disabled={!get('oneLiner').trim() || get('oneLiner').includes('___')} disabledReason="Finish your one-liner — every blank needs a real answer." stageColor={STAGE_COLORS.idea} stepTitle="What's your idea?" ideaId={activeIdea.id} />
     </div>,
-    <div key="i-market" style={col}>
-      <div><ModBadge mod="idea" /><StepBars mod="idea" step={1} /></div>
-      <div>
-        <H accent={STAGE_COLORS.idea}>Where does your idea stand in the market?</H>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <AgentAvatar size={36} />
-          <StepGoal text={STEP_GOALS.idea[1]} />
-        </div>
-      </div>
-      {/* Sage Market Snapshot now lives on its own step — arriving here (via
-          Next from the one-liner step) is what kicks off generation, and the
-          Next button below stays disabled until it actually finishes. */}
-      {(() => {
-        const publicSections = parsePublicSections(get('publicSections'));
-        const setPublicSection = (key: keyof PublicSections, on: boolean) =>
-          set('publicSections', JSON.stringify({ ...publicSections, [key]: on }));
-        return (
-          <MarketSnapshotPanel
-            ideaId={activeIdea.id}
-            ideaName={get('ideaName') || activeIdea.name}
-            oneLiner={get('oneLiner')}
-            oneLinerReady={!!get('oneLiner').trim() && !get('oneLiner').includes('___')}
-            value={get('marketSnapshot')}
-            onChange={v => set('marketSnapshot', v)}
-            currentDomain={activeIdea.business_domain}
-            onApplyDomain={domainKey => {
-              ideasApi.update(activeIdea.id, { business_domain: domainKey })
-                .then(() => setActiveIdea({ ...activeIdea, business_domain: domainKey }))
-                .catch(() => {});
-            }}
-            publicOn={!!publicSections.marketSnapshot}
-            onTogglePublic={() => setPublicSection('marketSnapshot', !publicSections.marketSnapshot)}
-          />
-        );
-      })()}
-      <NavRow onBack={back} onNext={async () => { next(); }} nextLabel="Next →" disabled={!parseMarketSnapshot(get('marketSnapshot'))} disabledReason="Waiting on Sage's Market Snapshot (domain, TAM/SAM, competitors) — it unlocks automatically once that finishes generating." stageColor={STAGE_COLORS.idea} stepTitle="Where does your idea stand in the market?" ideaId={activeIdea.id} />
-    </div>,
     <div key="i1" style={col}>
-      <div><ModBadge mod="idea" /><StepBars mod="idea" step={2} /></div>
+      <div><ModBadge mod="idea" /><StepBars mod="idea" step={1} /></div>
       <div>
         <H accent={STAGE_COLORS.idea}>What's motivating you to build this?</H>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <AgentAvatar size={36} />
-          <StepGoal text={STEP_GOALS.idea[2]} />
+          <StepGoal text={STEP_GOALS.idea[1]} />
         </div>
       </div>
       <SparkBuilder value={get('spark')} onChange={v => set('spark', v)} />
@@ -13641,7 +13607,7 @@ export default function WorkPage() {
           <NavRow onBack={back} onNext={async () => {
             const sc: Record<string, string> = {}; SCORE_DIMS.forEach(d => { sc[d.key] = get(d.key) || '0'; });
             await save('hone', { ...sc, founderStatement: get('founderStatement'), honeScore: String(honeScore) });
-            unlock('validate'); unlock('shape'); mark('hone'); next();
+            next();
           }} nextLabel="Continue →" disabled={!get('founderStatement').trim()} disabledReason="Add your founder statement to continue." stepTitle="Idea Interrogation Scorecard" ideaId={activeIdea.id} />
         </>
       ) : (
@@ -13652,10 +13618,49 @@ export default function WorkPage() {
           <NavRow onBack={back} onNext={async () => {
             const sc: Record<string, string> = {}; SCORE_DIMS.forEach(d => { sc[d.key] = get(d.key) || '0'; });
             await save('hone', { ...sc, founderStatement: get('founderStatement'), honeScore: String(honeScore) });
-            unlock('validate'); unlock('shape'); mark('hone'); next();
+            next();
           }} nextLabel="Continue anyway →" disabled={!get('founderStatement').trim()} disabledReason="Add your founder statement to continue." stepTitle="Idea Interrogation Scorecard" ideaId={activeIdea.id} />
         </div>
       )}
+    </div>,
+    <div key="h-market" style={col}>
+      <div><ModBadge mod="hone" /><StepBars mod="hone" step={6} /></div>
+      <div>
+        <H accent={STAGE_COLORS.hone}>Where does your idea stand in the market?</H>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <AgentAvatar size={36} />
+          <StepGoal text={STEP_GOALS.hone[6]} />
+        </div>
+      </div>
+      {/* Sage Market Snapshot — moved here 2026-08-24 to close out Hone as a
+          capstone (you've sharpened persona/problem/severity/competitors/
+          readiness/score; this is where it meets the market). Arriving here
+          (via Next from the scorecard step) is what kicks off generation,
+          and the Next button below stays disabled until it finishes. */}
+      {(() => {
+        const publicSections = parsePublicSections(get('publicSections'));
+        const setPublicSection = (key: keyof PublicSections, on: boolean) =>
+          set('publicSections', JSON.stringify({ ...publicSections, [key]: on }));
+        return (
+          <MarketSnapshotPanel
+            ideaId={activeIdea.id}
+            ideaName={get('ideaName') || activeIdea.name}
+            oneLiner={get('oneLiner')}
+            oneLinerReady={!!get('oneLiner').trim() && !get('oneLiner').includes('___')}
+            value={get('marketSnapshot')}
+            onChange={v => set('marketSnapshot', v)}
+            currentDomain={activeIdea.business_domain}
+            onApplyDomain={domainKey => {
+              ideasApi.update(activeIdea.id, { business_domain: domainKey })
+                .then(() => setActiveIdea({ ...activeIdea, business_domain: domainKey }))
+                .catch(() => {});
+            }}
+            publicOn={!!publicSections.marketSnapshot}
+            onTogglePublic={() => setPublicSection('marketSnapshot', !publicSections.marketSnapshot)}
+          />
+        );
+      })()}
+      <NavRow onBack={back} onNext={async () => { unlock('validate'); unlock('shape'); mark('hone'); next(); }} nextLabel="Continue →" disabled={!parseMarketSnapshot(get('marketSnapshot'))} disabledReason="Waiting on Sage's Market Snapshot (domain, TAM/SAM, competitors) — it unlocks automatically once that finishes generating." stageColor={STAGE_COLORS.hone} stepTitle="Where does your idea stand in the market?" ideaId={activeIdea.id} />
     </div>,
     <CompleteBadge key="h-done" mod="hone" onContinue={() => goMod('validate')} />,
   ];

@@ -746,8 +746,9 @@ router.get('/ideas/:id/public-sections', async (req: Request, res: Response) => 
        FROM stage_entries
        WHERE idea_id = $1
          AND (
-           (stage = 'idea' AND field_key IN ('oneLiner', 'marketSnapshot', 'publicSections'))
+           (stage = 'idea' AND field_key IN ('oneLiner', 'publicSections'))
            OR field_key IN (
+             'marketSnapshot',
              'buildSpec', 'validatedProblem', 'whoExactly', 'simplestVersion', 'problemSentence',
              'feature1','feature2','feature3','feature4','feature5',
              'feature6','feature7','feature8','feature9','feature10'
