@@ -12960,6 +12960,20 @@ export default function WorkPage() {
     const modIndex = MODULES.indexOf(mod);
     const coreIndex = ['idea', 'hone', 'validate'].indexOf(mod);
     const isOptionalStage = mod === 'shape' || mod === 'done';
+    // Idea has no earlier stage; every other explainer can step back into
+    // whatever stage precedes it.
+    const prevMod: Mod | null = modIndex > 0 ? MODULES[modIndex - 1] : null;
+    const goToPrevStage = () => {
+      if (!prevMod) return;
+      flushPendingSaves();
+      setMod(prevMod);
+      // Every step array is [intro, ...real steps, complete/celebration
+      // screen] — index 0 is that stage's own intro, so an index equal to
+      // its total step count lands on its last real (fillable) step, not
+      // the completion badge.
+      setStep(META[prevMod].steps);
+      setShowLI(false);
+    };
 
     // ── Blackboard palette ───────────────────────────────────
     // Explainer screens are intentionally dark/chalk so they read as distinct
@@ -13372,24 +13386,45 @@ export default function WorkPage() {
             );
           })()}
 
-          {/* CTA — thick marker button */}
-          <button
-            onClick={next}
-            style={{
-              width: '100%', padding: '18px 0',
-              background: color, color: '#fff',
-              border: 'none', borderRadius: 8,
-              fontSize: 22, fontWeight: 700, cursor: 'pointer',
-              fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
-              letterSpacing: '.04em',
-              boxShadow: `0 4px 16px ${color}40`,
-              transition: 'opacity .15s, transform .15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '.88'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
-          >
-            Start {meta.label} →
-          </button>
+          {/* CTA row — back into the previous stage (if any) + thick marker start button */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            {prevMod && (
+              <button
+                onClick={goToPrevStage}
+                style={{
+                  padding: '18px 22px',
+                  background: 'transparent', color: WB_DIM,
+                  border: `2px solid #4a4636`, borderRadius: 8,
+                  fontSize: 18, fontWeight: 700, cursor: 'pointer',
+                  fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
+                  letterSpacing: '.04em',
+                  flexShrink: 0,
+                  transition: 'opacity .15s, border-color .15s, color .15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = WB_TEXT; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#4a4636'; e.currentTarget.style.color = WB_DIM; }}
+              >
+                ← Back
+              </button>
+            )}
+            <button
+              onClick={next}
+              style={{
+                flex: 1, padding: '18px 0',
+                background: color, color: '#fff',
+                border: 'none', borderRadius: 8,
+                fontSize: 22, fontWeight: 700, cursor: 'pointer',
+                fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
+                letterSpacing: '.04em',
+                boxShadow: `0 4px 16px ${color}40`,
+                transition: 'opacity .15s, transform .15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '.88'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              Start {meta.label} →
+            </button>
+          </div>
         </div>
 
       </div>
