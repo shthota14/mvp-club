@@ -11816,7 +11816,12 @@ export default function WorkPage() {
 
             {MODULES.map((m, idx) => {
               const isActive    = mod === m;
-              const iterative   = m === 'hone' || m === 'validate' || m === 'shape';
+              // Hone/Validate are the true "iterate in any order" pair — Shape is
+              // a hard gate behind a strong Validate signal (see the unlock-derivation
+              // comment above), not something you bounce between with the other two.
+              // Keeping Shape out of `iterative` here is what makes it show a DONE
+              // checkmark like a normal stage, instead of being stuck on ACTIVE forever.
+              const iterative   = m === 'hone' || m === 'validate';
               const isDone      = !iterative && !!completed[m];
               const hasContent  = iterative && !!completed[m];
               const isLocked    = !unlocked[m];
@@ -11824,15 +11829,16 @@ export default function WorkPage() {
               const stepsTotal  = META[m].steps;
               const isSummaryActive = mod === 'validate' && step === 10;
               const isNavActive = isActive && !(m === 'validate' && step === 10);
-              // Hone/Validate/Shape all unlock the moment Idea is done and can be
-              // worked in any order — they are NOT a strict chain. Group them
-              // visually (dashed box + label) instead of stacking them like
-              // ordinary sequential steps, so the sidebar doesn't promise an
-              // order the app doesn't actually enforce.
+              // Hone/Validate unlock together the moment Idea is done and can be
+              // worked in any order — group them visually (dashed box + label)
+              // instead of stacking them like ordinary sequential steps, so the
+              // sidebar doesn't promise an order the app doesn't enforce. Shape
+              // is deliberately NOT in this group (2026-08-24): it's an optional
+              // continuation hard-gated behind a strong Validate signal, not a
+              // third thing you freely bounce between with Hone/Validate.
               const isGroupTop    = m === 'hone';
-              const isGroupMiddle = m === 'validate';
-              const isGroupBottom = m === 'shape';
-              const inGroup       = isGroupTop || isGroupMiddle || isGroupBottom;
+              const isGroupBottom = m === 'validate';
+              const inGroup       = isGroupTop || isGroupBottom;
               const groupBorder   = '1.5px dashed #cbd5e1';
 
               return (
@@ -12053,8 +12059,13 @@ export default function WorkPage() {
                   {/* ── Connector arrow between stages ── */}
                   {idx < MODULES.length - 1 && (() => {
                     const nextM = MODULES[idx + 1];
-                    const nextIterative = nextM === 'hone' || nextM === 'validate' || nextM === 'shape';
+                    const nextIterative = nextM === 'hone' || nextM === 'validate';
                     const bothIterative = iterative && nextIterative;
+                    // The Validate → Shape hop is neither a "same group, any order"
+                    // pairing nor an ordinary required gate — it's the mandatory/optional
+                    // fork, so it gets its own dashed marker instead of borrowing either
+                    // of the other two connectors.
+                    const isOptionalFork = m === 'validate' && nextM === 'shape';
                     return (
                       <div style={{
                         paddingLeft: 9, paddingTop: 2, paddingBottom: 2,
@@ -12071,6 +12082,11 @@ export default function WorkPage() {
                              direction. */
                           <div style={{ width: 18, display: 'flex', justifyContent: 'center' }}>
                             <span style={{ fontSize: 11, color: '#cbd5e1', lineHeight: 1 }}>•</span>
+                          </div>
+                        ) : isOptionalFork ? (
+                          <div style={{ width: 18, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2, paddingTop: 1 }}>
+                            <div style={{ width: 0, height: 9, borderLeft: `1.5px dashed ${STAGE_COLORS.shape}90` }} />
+                            <span style={{ fontSize: 7, fontWeight: 700, color: STAGE_COLORS.shape, fontStyle: 'italic' as const, letterSpacing: 0.2 }}>opt</span>
                           </div>
                         ) : (
                           /* ↓ for the two real sequential gates (Idea→Hone, Shape→Ship) */
@@ -17793,7 +17809,10 @@ export default function WorkPage() {
     }}>
       {MODULES.map(m => {
         const isActive = mod === m;
-        const iterative = m === 'hone' || m === 'validate' || m === 'shape';
+        // Same fix as the desktop sidebar: Shape is hard-gated behind Validate,
+        // not freely iterated with Hone/Validate, so it should show a DONE
+        // checkmark like a normal stage instead of being stuck on its icon.
+        const iterative = m === 'hone' || m === 'validate';
         const isDone   = !iterative && !!completed[m];
         const isLocked = !unlocked[m];
         const c = STAGE_COLORS[m];
