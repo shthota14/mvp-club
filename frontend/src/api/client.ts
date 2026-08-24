@@ -71,6 +71,17 @@ export const validationApi = {
   // confidence, so the frontend always labels this as an AI draft to verify.
   marketSnapshot: (data: { ideaName?: string; oneLiner?: string }) =>
     api.post('/validation/idea/market-snapshot', data),
+  // Hone Step 2 — "Sage interviews you": an opt-in conversational alternative
+  // to the preset-chip grid. Stateless — the frontend holds the transcript
+  // and re-sends it each turn; the response is Sage's next line plus the
+  // full cumulative list of problems extracted from the conversation so far.
+  problemInterview: (data: {
+    oneLiner?: string;
+    segmentRole?: string;
+    segmentDetail?: string;
+    history: { role: 'sage' | 'founder'; text: string }[];
+    founderMessage: string;
+  }) => api.post('/validation/idea/problem-interview', data),
   checkQuestion: (data: { question: string; hint?: string }) =>
     api.post('/validation/questions/check', data),
   generateChips: (data: { question: string; hint?: string; problemDomain?: string }) =>

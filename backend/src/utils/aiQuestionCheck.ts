@@ -1287,6 +1287,174 @@ export async function reasonAboutAlignment(ctx: AlignmentReasonContext): Promise
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Hone Step 2 — "Sage interviews you" (problem discovery interview)
+//
+// Replaces (as an opt-in alternative to) the static preset-chip grid: Sage
+// asks about the last time the problem actually happened to the founder's
+// named segment, one question per turn, and after each founder reply
+// decides what — if anything — is concrete enough to extract as a
+// standalone problem statement. Stateless like the alignment/market-snapshot
+// calls above: the frontend holds the full conversation and re-sends it
+// each turn; "extracted" is always the FULL cumulative list so far (the
+// frontend de-dupes by text) rather than a delta, so a dropped response
+// can't silently lose a problem the founder already saw captured.
+//
+// The one rule that matters most here: extraction must never put words in
+// the founder's mouth. A problem statement may only restate what the
+// founder actually said — no invented numbers, causes, or specifics.
+// ─────────────────────────────────────────────────────────────────────────
+
+export interface ProblemInterviewTurn {
+  role: 'sage' | 'founder';
+  text: string;
+}
+
+export interface ProblemInterviewContext {
+  oneLiner?: string;
+  segmentRole?: string;    // e.g. "solo indie podcasters" — named, not "your customer"
+  segmentDetail?: string;  // e.g. "recording 1-2 episodes a week"
+  history: ProblemInterviewTurn[];
+  founderMessage: string;
+}
+
+export type ProblemEvidence = 'observed' | 'heard' | 'assumed';
+
+export interface ExtractedProblem {
+  text: string;
+  evidence: ProblemEvidence;
+}
+
+export interface ProblemInterviewResult {
+  reply: string;
+  done: boolean;
+  extracted: ExtractedProblem[];
+}
+
+// Hard backstop independent of the model's own judgment — the prompt asks
+// it to wrap up by the 4th founder turn, but this guarantees the interview
+// can never run indefinitely even if a call misbehaves.
+const PROBLEM_INTERVIEW_MAX_FOUNDER_TURNS = 4;
+
+const PROBLEM_INTERVIEW_SYSTEM_PROMPT = `You are Sage, running a short discovery interview with a founder about the real problems their customers face. You are interviewing the FOUNDER about what they have personally observed or heard — you are never the customer, and you never invent a customer's words.
+
+Ground every question in the founder's named segment, never in "your customer" generically. Ask about ONE concrete moment: the last time this problem actually happened to someone in that segment. Follow up on specifics — what they were doing, what went wrong, what it cost them — rather than jumping to a new topic. Ask exactly one question per turn, under 30 words, in a direct and curious voice. Never suggest a problem the founder hasn't already described; you only ask, you never supply plausible answers.
+
+After the founder's newest reply, decide two things:
+
+1. EXTRACT: is anything said so far — across the whole conversation, not just the newest message — concrete enough to stand as a problem statement? A specific situation, not a vague generality. Write each as a short statement (under 25 words) built ONLY from what the founder actually said. Tag its evidence: "observed" if the founder personally watched it happen, "heard" if a customer told them directly, "assumed" if the founder is guessing or inferring. If nothing is concrete enough yet, extracted must be an empty array — never force a low-quality extraction just to have one. Return the FULL list of everything extractable so far, not only what's new.
+
+2. CONTINUE OR STOP: keep going only if there's a genuinely new angle worth asking about and the founder is still giving you concrete detail. Stop (done: true) once you have at least one solid extracted problem and either four founder turns have passed or the replies have gone thin or repetitive. When done, "reply" should be a brief, warm closing line (under 20 words) — not another question.
+
+Respond with ONLY a JSON object, no other text, in this exact shape:
+{"reply": "<your next question, or a short closing line if done>", "done": <boolean>, "extracted": [{"text": "<problem statement>", "evidence": "observed"|"heard"|"assumed"}, ...]}`;
+
+function buildProblemInterviewTranscript(ctx: ProblemInterviewContext): string {
+  const lines: string[] = [];
+  if (ctx.oneLiner) lines.push(`Founder's idea: ${ctx.oneLiner}`);
+  const segment = [ctx.segmentRole, ctx.segmentDetail].filter(Boolean).join(' — ');
+  lines.push(`Segment being interviewed about: ${segment || '(not yet named)'}`);
+  if (ctx.history.length) {
+    lines.push('', 'Conversation so far:');
+    ctx.history.forEach(turn => lines.push(`${turn.role === 'founder' ? 'Founder' : 'Sage'}: ${turn.text}`));
+  }
+  lines.push('', `Founder's newest reply: ${ctx.founderMessage}`);
+  const founderTurns = ctx.history.filter(t => t.role === 'founder').length + 1;
+  if (founderTurns >= PROBLEM_INTERVIEW_MAX_FOUNDER_TURNS) {
+    lines.push('', `This is founder turn ${founderTurns} — you must set "done": true.`);
+  }
+  return lines.join('\n');
+}
+
+function sanitizeExtractedProblems(raw: any): ExtractedProblem[] {
+  if (!Array.isArray(raw)) return [];
+  const EVIDENCE: ProblemEvidence[] = ['observed', 'heard', 'assumed'];
+  return raw
+    .map((item: any) => {
+      const text = typeof item?.text === 'string' ? item.text.trim().slice(0, 140) : '';
+      const evidence: ProblemEvidence = EVIDENCE.includes(item?.evidence) ? item.evidence : 'heard';
+      return text ? { text, evidence } : null;
+    })
+    .filter((x: ExtractedProblem | null): x is ExtractedProblem => x !== null)
+    .slice(0, 8);
+}
+
+function parseProblemInterviewJson(text: string, forceDone: boolean): ProblemInterviewResult {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+  const reply = typeof parsed.reply === 'string' && parsed.reply.trim() ? parsed.reply.trim() : 'Thanks — that gives me enough to work with.';
+  return {
+    reply,
+    done: forceDone || parsed.done === true,
+    extracted: sanitizeExtractedProblems(parsed.extracted),
+  };
+}
+
+async function generateProblemInterviewTurnOllama(ctx: ProblemInterviewContext, forceDone: boolean): Promise<ProblemInterviewResult> {
+  const userContent = buildProblemInterviewTranscript(ctx);
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: PROBLEM_INTERVIEW_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.5 },
+      },
+      { timeout: 180000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+  const text: string = res.data?.message?.content || '';
+  return parseProblemInterviewJson(text, forceDone);
+}
+
+// Claude path — cheap/fast tier, same rationale as reasonAboutAlignmentClaude:
+// a short, grounded conversational turn, not a research task.
+async function generateProblemInterviewTurnClaude(ctx: ProblemInterviewContext, forceDone: boolean): Promise<ProblemInterviewResult> {
+  const userContent = buildProblemInterviewTranscript(ctx);
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 700,
+    temperature: 0.5,
+    system: PROBLEM_INTERVIEW_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseProblemInterviewJson(text, forceDone);
+}
+
+export async function generateProblemInterviewTurn(ctx: ProblemInterviewContext): Promise<ProblemInterviewResult> {
+  const founderTurns = ctx.history.filter(t => t.role === 'founder').length + 1;
+  const forceDone = founderTurns >= PROBLEM_INTERVIEW_MAX_FOUNDER_TURNS;
+  if (anthropicClient) {
+    try {
+      return await generateProblemInterviewTurnClaude(ctx, forceDone);
+    } catch (err: any) {
+      console.error('[problem-interview] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateProblemInterviewTurnOllama(ctx, forceDone);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Shape Step 2 — "Draft my MVP hypothesis"
 // ─────────────────────────────────────────────────────────────────────────
 

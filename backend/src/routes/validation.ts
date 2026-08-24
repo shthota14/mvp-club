@@ -5,7 +5,7 @@ import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
 import { sendMeetingRequestEmail } from '../utils/mailer';
 import { zoomConfigured } from '../utils/meeting';
-import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext } from '../utils/aiQuestionCheck';
+import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn } from '../utils/aiQuestionCheck';
 
 const router = Router();
 
@@ -486,6 +486,40 @@ router.post('/idea/market-snapshot', async (req: Request, res: Response) => {
     res.json(result);
   } catch (err: any) {
     console.error('[validation] idea/market-snapshot', err?.response?.data || err);
+    res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
+  }
+});
+
+// POST /idea/problem-interview — Hone Step 2's "Sage interviews you" option:
+// an opt-in alternative to the static preset-chip grid. Stateless, same
+// pattern as idea/market-snapshot above — the frontend holds the whole
+// conversation and re-sends it (plus the newest founder message) each turn;
+// the response is the next question (or a closing line) plus the full
+// cumulative list of problems extracted so far, which the frontend merges
+// into its own problem list by de-duping on text.
+router.post('/idea/problem-interview', async (req: Request, res: Response) => {
+  const { oneLiner, segmentRole, segmentDetail, history, founderMessage } = req.body;
+  const cleanHistory: ProblemInterviewTurn[] = Array.isArray(history)
+    ? history
+        .filter((t: any) => t && (t.role === 'sage' || t.role === 'founder') && typeof t.text === 'string')
+        .map((t: any) => ({ role: t.role, text: String(t.text).slice(0, 800) }))
+    : [];
+  const ctx: ProblemInterviewContext = {
+    oneLiner: typeof oneLiner === 'string' ? oneLiner : undefined,
+    segmentRole: typeof segmentRole === 'string' ? segmentRole : undefined,
+    segmentDetail: typeof segmentDetail === 'string' ? segmentDetail : undefined,
+    history: cleanHistory,
+    founderMessage: typeof founderMessage === 'string' ? founderMessage.trim().slice(0, 800) : '',
+  };
+  if (!ctx.founderMessage) {
+    res.status(400).json({ error: 'A message is required.' });
+    return;
+  }
+  try {
+    const result = await generateProblemInterviewTurn(ctx);
+    res.json(result);
+  } catch (err: any) {
+    console.error('[validation] idea/problem-interview', err?.response?.data || err);
     res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
   }
 });

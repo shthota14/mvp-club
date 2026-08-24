@@ -4098,7 +4098,9 @@ const PROBLEM_SUGGESTIONS = [
   },
 ];
 
-function ProblemBuilder({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+type ProblemBuilderHandle = { addProblems: (texts: string[]) => void };
+
+const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; onChange: (v: string) => void }>(function ProblemBuilder({ value, onChange }, ref) {
   const [problems, setProblems] = useState<SeverityProblem[]>(() => initSeverityProblems(value));
   const [customText, setCustomText] = useState('');
   const [showCustom, setShowCustom] = useState(false);
@@ -4171,7 +4173,11 @@ function ProblemBuilder({ value, onChange }: { value: string; onChange: (v: stri
   };
 
   const updateSeverity = (id: string, severity: SeverityLevel) => {
-    const next = problems.map(p => p.id === id ? { ...p, severity: p.severity === severity ? '' : severity } : p);
+    // Pre-existing type gap fixed in passing: the '' branch of this ternary
+    // was inferred as plain string, not the '' | SeverityLevel union
+    // SeverityProblem.severity actually needs (caught by tsc --noEmit while
+    // verifying the Sage interview changes below).
+    const next = problems.map(p => p.id === id ? { ...p, severity: p.severity === severity ? ('' as const) : severity } : p);
     setProblems(next); emitList(next);
   };
 
@@ -4180,6 +4186,29 @@ function ProblemBuilder({ value, onChange }: { value: string; onChange: (v: stri
     const final = next.length === 0 ? [{ id: Date.now().toString(36), text: '', severity: '' as const }] : next;
     setProblems(final); emitList(final);
   };
+
+  // Fed by the "Sage interviews you" chat panel above — merges freshly
+  // extracted problem statements into the list, skipping anything that
+  // already matches an existing card by text (case/whitespace-insensitive)
+  // so re-sending the AI's cumulative extraction each turn never duplicates.
+  const addExtractedProblems = (texts: string[]) => {
+    const existing = new Set(problems.map(p => p.text.trim().toLowerCase()));
+    const blankIdx = problems.findIndex(p => !p.text.trim());
+    let next = blankIdx !== -1 ? problems.filter((_, i) => i !== blankIdx) : problems.slice();
+    let added = false;
+    texts.forEach(t => {
+      const norm = t.trim().toLowerCase();
+      if (!norm || existing.has(norm)) return;
+      existing.add(norm);
+      next.push({ id: Math.random().toString(36).slice(2), text: t.trim(), severity: '' as const });
+      added = true;
+    });
+    if (!added) return;
+    setProblems(next);
+    emitList(next);
+  };
+
+  React.useImperativeHandle(ref, () => ({ addProblems: addExtractedProblems }));
 
   const startEdit = (p: SeverityProblem) => { setEditingId(p.id); setEditText(p.text); };
   const commitEdit = (id: string) => {
@@ -4426,6 +4455,186 @@ function ProblemBuilder({ value, onChange }: { value: string; onChange: (v: stri
         </div>
       )}
     </div>
+  );
+});
+
+// ── "Sage interviews you" — conversational alternative to the chip grid ──
+//
+// An opt-in panel that sits above ProblemBuilder. Sage asks about the last
+// time the problem happened to the founder's named segment; each founder
+// reply is sent (with the running transcript) to /idea/problem-interview,
+// which returns Sage's next line, an evidence-tagged extraction of anything
+// concrete said so far, and whether the interview is done. Extracted problem
+// text — not the evidence tag, which stays visible only in this transcript —
+// is merged into ProblemBuilder's own list via addProblems, so grading
+// (critical/major/minor) still happens through the one severity UI that
+// already exists and that Validate already depends on.
+type ChatTurn = { role: 'sage' | 'founder'; text: string };
+type ProblemEvidence = 'observed' | 'heard' | 'assumed';
+type ExtractedProblem = { text: string; evidence: ProblemEvidence };
+
+const EVIDENCE_CONFIG: Record<ProblemEvidence, { label: string; color: string }> = {
+  observed: { label: 'Observed', color: '#059669' },
+  heard:    { label: 'Heard',    color: '#d97706' },
+  assumed:  { label: 'Assumed',  color: '#dc2626' },
+};
+
+function personaSegmentLabel(p: PersonaEntry | null): { role: string; detail: string } {
+  if (!p || p.legacy) return { role: '', detail: '' };
+  return p.type === 'b2c'
+    ? { role: p.who.trim(), detail: p.ctx.trim() }
+    : { role: p.role.trim(), detail: p.size ? `at a ${p.size.trim()} company` : p.ctx.trim() };
+}
+
+function SageProblemInterview({
+  oneLiner, segment, onAdd, onClose,
+}: {
+  oneLiner: string;
+  segment: { role: string; detail: string };
+  onAdd: (texts: string[]) => void;
+  onClose: () => void;
+}) {
+  const AC = '#2563eb';
+  const segmentLabel = segment.role || 'your customer';
+  const opener = `Think back to the last time this got in the way for ${segmentLabel}${segment.detail ? ` — ${segment.detail}` : ''}. What were they doing right before it happened?`;
+
+  const [history, setHistory] = useState<ChatTurn[]>(() => [{ role: 'sage', text: opener }]);
+  const [input, setInput]     = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+  const [done, setDone]       = useState(false);
+  const [extracted, setExtracted] = useState<ExtractedProblem[]>([]);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [history, loading]);
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || loading || done) return;
+    const priorHistory = history;
+    setHistory(h => [...h, { role: 'founder', text }]);
+    setInput('');
+    setLoading(true);
+    setError('');
+    try {
+      const res = await validationApi.problemInterview({
+        oneLiner,
+        segmentRole: segment.role || undefined,
+        segmentDetail: segment.detail || undefined,
+        history: priorHistory,
+        founderMessage: text,
+      });
+      const reply: string = typeof res.data?.reply === 'string' ? res.data.reply : "Thanks — that's useful.";
+      const isDone: boolean = !!res.data?.done;
+      const newExtracted: ExtractedProblem[] = Array.isArray(res.data?.extracted) ? res.data.extracted : [];
+      setHistory(h => [...h, { role: 'sage', text: reply }]);
+      setExtracted(newExtracted);
+      setDone(isDone);
+      if (newExtracted.length) onAdd(newExtracted.map(e => e.text));
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Could not reach Sage right now — please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ border: `1.5px solid ${AC}30`, borderRadius: 14, background: '#fff', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: `${AC}0a`, borderBottom: `1px solid ${AC}20` }}>
+        <span style={{ width: 20, height: 20, borderRadius: '50%', background: AC, color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>S</span>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: AC }}>Sage is interviewing you about {segmentLabel}</span>
+        <button onClick={onClose} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: '#8e8e93', fontSize: 13 }}>Close</button>
+      </div>
+
+      <div style={{ maxHeight: 320, overflowY: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+        {history.map((turn, i) => (
+          <div key={i} style={{
+            alignSelf: turn.role === 'founder' ? 'flex-end' : 'flex-start',
+            maxWidth: '84%', padding: '9px 13px', borderRadius: 12,
+            borderBottomLeftRadius: turn.role === 'sage' ? 4 : 12,
+            borderBottomRightRadius: turn.role === 'founder' ? 4 : 12,
+            background: turn.role === 'founder' ? `${AC}0d` : '#f7f3ff',
+            border: `1px solid ${turn.role === 'founder' ? AC + '30' : '#7c3aed30'}`,
+            fontSize: 13.5, lineHeight: 1.5, color: '#1d1d1f',
+          }}>
+            {turn.text}
+          </div>
+        ))}
+        {loading && (
+          <div style={{ alignSelf: 'flex-start', display: 'flex', gap: 3, padding: '9px 13px' }}>
+            {[0, 1, 2].map(i => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#b0b0b8' }} />)}
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {extracted.length > 0 && (
+        <div style={{ padding: '0 16px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#b0b0b8' }}>
+            Added to your problem list below
+          </div>
+          {extracted.map((e, i) => {
+            const cfg = EVIDENCE_CONFIG[e.evidence];
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#1d1d1f' }}>
+                <span style={{ flex: 1 }}>{e.text}</span>
+                <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: cfg.color, border: `1px solid ${cfg.color}50`, borderRadius: 999, padding: '2px 8px' }}>{cfg.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {error && <div style={{ padding: '0 16px 10px', fontSize: 12.5, color: '#dc2626' }}>{error}</div>}
+
+      <div style={{ borderTop: '1px solid #eef0f4', padding: 12, display: 'flex', gap: 8 }}>
+        {done ? (
+          <div style={{ flex: 1, fontSize: 13, color: '#166534', padding: '8px 4px' }}>
+            ✓ That's plenty to start with — pick a severity for each problem below, or keep describing more yourself.
+          </div>
+        ) : (
+          <>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+              placeholder="Type your answer…"
+              disabled={loading}
+              style={{ flex: 1, border: '1.5px solid #e5e5ea', borderRadius: 8, padding: '9px 12px', fontSize: 13.5, fontFamily: 'inherit', outline: 'none' }}
+            />
+            <button onClick={send} disabled={loading || !input.trim()} style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: input.trim() && !loading ? AC : '#e5e5ea', color: input.trim() && !loading ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: input.trim() && !loading ? 'pointer' : 'default' }}>
+              Send
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProblemInterviewLauncher({
+  oneLiner, segment, onAdd,
+}: {
+  oneLiner: string;
+  segment: { role: string; detail: string };
+  onAdd: (texts: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  if (open) {
+    return <SageProblemInterview oneLiner={oneLiner} segment={segment} onAdd={onAdd} onClose={() => setOpen(false)} />;
+  }
+  return (
+    <button
+      onClick={() => setOpen(true)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start',
+        padding: '10px 16px', borderRadius: 10, border: '1.5px dashed #2563eb60',
+        background: '#2563eb08', color: '#2563eb', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+      }}
+    >
+      <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#2563eb', color: '#fff', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>S</span>
+      Prefer to talk it through? Let Sage interview you →
+    </button>
   );
 }
 
@@ -11687,6 +11896,7 @@ export default function WorkPage() {
   const pendingSaves = useRef<Record<string, { stage: Mod; content: string }>>({});
   const autoNavigatedRef = useRef(false);
   const personaPickerRef = useRef<PersonaPickerHandle>(null);
+  const problemBuilderRef = useRef<ProblemBuilderHandle>(null);
   const assumptionsRef = useRef<AssumptionsHandle>(null);
   // Remembers the last step visited in each stage, so switching stages via the
   // sidebar (goMod) resumes where the founder left off instead of always
@@ -13312,7 +13522,12 @@ export default function WorkPage() {
       <StepGoal text={STEP_GOALS.hone[1]} />
       <BMCLabel blocks={['Value Proposition']} />
       <H accent={STAGE_COLORS.hone}>What are the problems?</H>
-      <ProblemBuilder value={get('problemSentence')} onChange={v => set('problemSentence', v)} />
+      <ProblemInterviewLauncher
+        oneLiner={get('oneLiner')}
+        segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
+        onAdd={texts => problemBuilderRef.current?.addProblems(texts)}
+      />
+      <ProblemBuilder ref={problemBuilderRef} value={get('problemSentence')} onChange={v => set('problemSentence', v)} />
       {(() => {
         const raw        = get('problemSentence');
         const hasProblem = raw.split(MULTI_SEP).filter(Boolean).some(s => s.trim().length > 5 && !s.includes('___'));
