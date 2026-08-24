@@ -86,6 +86,17 @@ const parseProblemText = (seg: string): string => seg.split(FIELD_SEP)[0];
 const parseProblemDisplay = (v: string): string =>
   v.split(MULTI_SEP).filter(Boolean).map(parseProblemText).filter(t => t.trim().length > 2).join(' · ');
 
+// Problems as a severity-tagged list, for feeding to an AI prompt as context
+// (e.g. Market Snapshot) — "(Critical) <text>" per line, one per problem.
+const formatProblemsForContext = (v: string): string =>
+  v.split(MULTI_SEP).filter(Boolean).map(seg => {
+    const [text, sev] = seg.split(FIELD_SEP);
+    const t = (text || '').trim();
+    if (t.length <= 2) return '';
+    const label = sev === 'critical' ? 'Critical' : sev === 'major' ? 'Major' : sev === 'minor' ? 'Minor' : '';
+    return label ? `- (${label}) ${t}` : `- ${t}`;
+  }).filter(Boolean).join('\n');
+
 // Pure utility — parse key_insights text into per-question blocks
 const parseInsights = (text: string): { question: string; signals: string[]; quote: string }[] => {
   if (!text) return [];
@@ -2164,7 +2175,10 @@ function MarketSwotPanel({ snapshot, ideaName }: { snapshot: MarketSnapshotData;
   );
 }
 
-function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value, onChange, currentDomain, onApplyDomain, publicOn, onTogglePublic }: {
+function MarketSnapshotPanel({
+  ideaId, ideaName, oneLiner, oneLinerReady, value, onChange, currentDomain, onApplyDomain, publicOn, onTogglePublic,
+  customerSegment, whoPays, problems, painConsequences, frequency, existingAlternatives, founderStatement,
+}: {
   ideaId: string;
   ideaName: string;
   oneLiner: string;
@@ -2175,6 +2189,17 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
   onApplyDomain: (domainKey: string) => void;
   publicOn: boolean;
   onTogglePublic: () => void;
+  // Optional extra founder context gathered across Hone — present once this
+  // panel is rendered as Hone's final step, where all of it is already
+  // filled in. Undefined/blank fields are simply omitted from the AI prompt
+  // (see buildMarketSnapshotUserContent on the backend).
+  customerSegment?: string;
+  whoPays?: string;
+  problems?: string;
+  painConsequences?: string;
+  frequency?: string;
+  existingAlternatives?: string;
+  founderStatement?: string;
 }) {
   const snapshot = parseMarketSnapshot(value);
   const [generating, setGenerating] = useState(false);
@@ -2199,7 +2224,11 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
   const autoTriedForIdeaRef = useRef<string | null>(null);
 
   const generateOnce = async () => {
-    const res = await validationApi.marketSnapshot({ ideaName, oneLiner });
+    const res = await validationApi.marketSnapshot({
+      ideaName, oneLiner,
+      customerSegment, whoPays, problems, painConsequences, frequency,
+      existingAlternatives, founderStatement,
+    });
     const next: MarketSnapshotData = {
       domain: res.data?.domain || 'consumer',
       tam: res.data?.tam || { value: '', basis: '' },
@@ -13657,6 +13686,16 @@ export default function WorkPage() {
             }}
             publicOn={!!publicSections.marketSnapshot}
             onTogglePublic={() => setPublicSection('marketSnapshot', !publicSections.marketSnapshot)}
+            // Extra Hone-stage context, now that this step is Hone's finale
+            // rather than Idea's step 2 — everything below is already filled
+            // in by the time a founder reaches here.
+            customerSegment={parseWhoDisplay(get('whoExactly'))}
+            whoPays={get('whoPays')}
+            problems={formatProblemsForContext(get('problemSentence'))}
+            painConsequences={(get('painIfNothing') || '').split('|').filter(Boolean).join(', ')}
+            frequency={get('frequency')}
+            existingAlternatives={(get('solutionAlternatives') || '').split('|||').filter(Boolean).map((s, i) => `${i + 1}. ${s}`).join('\n')}
+            founderStatement={get('founderStatement')}
           />
         );
       })()}

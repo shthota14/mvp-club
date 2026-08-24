@@ -3295,6 +3295,20 @@ const MARKET_DOMAIN_KEYS = [
 export interface MarketSnapshotContext {
   ideaName?: string;
   oneLiner?: string;
+  // Everything below is optional extra founder context gathered across Hone
+  // (persona, problems, pain, existing alternatives, founder's own
+  // synthesis) — available because this step now sits at the END of Hone
+  // rather than early in Idea, so the AI has far more to ground its answer
+  // in than the one-liner alone. All are best-effort free text the founder
+  // wrote themselves — unvalidated assumptions, not facts, so the prompts
+  // below treat them as directional signal, not ground truth.
+  customerSegment?: string;
+  whoPays?: string;
+  problems?: string;
+  painConsequences?: string;
+  frequency?: string;
+  existingAlternatives?: string;
+  founderStatement?: string;
 }
 
 export type FeatureCoverage = 'yes' | 'partial' | 'no';
@@ -3354,7 +3368,8 @@ Rules:
 - price/area/rating/users/founded: best-effort only for competitors you're confident are real — leave each as "" rather than inventing a number you're not confident in. A generic/unnamed competitor entry should leave all five as "".
 - marketShare: only if you have some real basis for it (a well-known dominant/niche player) — a rough qualitative estimate like "~5-10%" or "small niche player" is fine, a confident precise percentage is not. Leave "" rather than guessing. This is the softest, least reliable field here — treat it with more caution than price/rating/users/founded, not less.
 - features: exactly one "yes"/"partial"/"no" per differentiator, per competitor, in the same order as differentiators. For a generic/unnamed competitor entry, base this on the category norm rather than a specific product.
-- featureList: 3-8 short phrases (not full sentences, no leading dashes/bullets) naming this specific competitor's own real features/capabilities — independent of the differentiators list above and not limited to it. For a generic/unnamed competitor entry, list features typical of that category. Leave as [] only if you genuinely have nothing to go on.`;
+- featureList: 3-8 short phrases (not full sentences, no leading dashes/bullets) naming this specific competitor's own real features/capabilities — independent of the differentiators list above and not limited to it. For a generic/unnamed competitor entry, list features typical of that category. Leave as [] only if you genuinely have nothing to go on.
+- If the founder has supplied additional context beyond the one-liner (customer segment, problems, pain, how people cope today, their own summary), use it: let the customer segment and problems sharpen your domain pick and TAM/SAM basis, let "how people currently cope" be your strongest signal for real named competitors (a tool or workaround they describe may point straight at one), and let the problems/differentiators stay grounded in what the founder actually described rather than the product category in the abstract. Treat all of it as the founder's own unvalidated assumptions, not confirmed fact.`;
 
 // Claude path (optional — only used when ANTHROPIC_API_KEY is set) gets a
 // different framing: it actually has web search, so it's told to use it and
@@ -3374,7 +3389,8 @@ Rules:
 - price/area/rating/users/founded: only fill these in from what your search actually confirmed — leave any you couldn't verify as "" rather than estimating. A generic/unnamed competitor entry should leave all five as "".
 - marketShare: only from what your search actually found (e.g. a market report, "market leader" framing in coverage, a stated user-base comparison) — a rough qualitative estimate like "~5-10%" or "small niche player" is fine, a confident precise percentage you can't source is not. Leave "" rather than estimating.
 - features: exactly one "yes"/"partial"/"no" per differentiator, per competitor, in the same order as differentiators, based on what you found about that product. For a generic/unnamed competitor entry, base this on the category norm rather than a specific product.
-- featureList: 3-8 short phrases (not full sentences, no leading dashes/bullets) naming this specific competitor's own real features/capabilities, grounded in what you found — independent of the differentiators list above and not limited to it. For a generic/unnamed competitor entry, list features typical of that category. Leave as [] only if you truly found nothing to go on.`;
+- featureList: 3-8 short phrases (not full sentences, no leading dashes/bullets) naming this specific competitor's own real features/capabilities, grounded in what you found — independent of the differentiators list above and not limited to it. For a generic/unnamed competitor entry, list features typical of that category. Leave as [] only if you truly found nothing to go on.
+- If the founder has supplied additional context beyond the one-liner (customer segment, problems, pain, how people cope today, their own summary), use it to target your searches: search for the specific tools/workarounds they mention coping with today (these often ARE the real competitors), let the customer segment sharpen whether you search B2B or B2C sources, and let the problems described sharpen which differentiators and TAM/SAM basis you look for. Treat all of it as the founder's own unvalidated assumptions, not confirmed fact — verify rather than repeating it as-is.`;
 
 // Shared between both paths so a Claude response and an Ollama response are
 // sanitized identically — the frontend renders whichever one came back
@@ -3449,7 +3465,14 @@ function buildMarketSnapshotUserContent(ctx: MarketSnapshotContext): string {
   const lines: string[] = [];
   if (ctx.ideaName?.trim()) lines.push(`Idea name: ${ctx.ideaName.trim()}`);
   if (ctx.oneLiner?.trim()) lines.push(`One-liner: ${ctx.oneLiner.trim()}`);
-  return lines.length ? lines.join('\n') : 'The founder has not described their idea yet.';
+  if (ctx.customerSegment?.trim()) lines.push(`Customer segment (founder's own words): ${ctx.customerSegment.trim()}`);
+  if (ctx.whoPays?.trim()) lines.push(`Who pays: ${ctx.whoPays.trim()}`);
+  if (ctx.problems?.trim()) lines.push(`Problems the founder is targeting:\n${ctx.problems.trim()}`);
+  if (ctx.painConsequences?.trim()) lines.push(`What breaks if unresolved: ${ctx.painConsequences.trim()}`);
+  if (ctx.frequency?.trim()) lines.push(`How often this happens: ${ctx.frequency.trim()}`);
+  if (ctx.existingAlternatives?.trim()) lines.push(`How people currently cope, founder's ranked guess (most to least common):\n${ctx.existingAlternatives.trim()}`);
+  if (ctx.founderStatement?.trim()) lines.push(`Founder's own summary of the idea:\n${ctx.founderStatement.trim()}`);
+  return lines.length ? lines.join('\n\n') : 'The founder has not described their idea yet.';
 }
 
 async function generateMarketSnapshotOllama(ctx: MarketSnapshotContext): Promise<MarketSnapshot> {

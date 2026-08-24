@@ -476,10 +476,24 @@ router.post('/idea/assemble-one-liner', async (req: Request, res: Response) => {
 // in the app most prone to confidently naming a fabricated competitor, so
 // the frontend must always label this as an AI draft to verify.
 router.post('/idea/market-snapshot', async (req: Request, res: Response) => {
-  const { ideaName, oneLiner } = req.body;
+  const {
+    ideaName, oneLiner,
+    customerSegment, whoPays, problems, painConsequences, frequency,
+    existingAlternatives, founderStatement,
+  } = req.body;
+  const str = (v: unknown): string | undefined => typeof v === 'string' ? v : undefined;
   const ctx: MarketSnapshotContext = {
-    ideaName: typeof ideaName === 'string' ? ideaName : undefined,
-    oneLiner: typeof oneLiner === 'string' ? oneLiner : undefined,
+    ideaName: str(ideaName),
+    oneLiner: str(oneLiner),
+    // Optional — only populated once this step sits at the end of Hone and
+    // the founder has actually filled these fields in.
+    customerSegment: str(customerSegment),
+    whoPays: str(whoPays),
+    problems: str(problems),
+    painConsequences: str(painConsequences),
+    frequency: str(frequency),
+    existingAlternatives: str(existingAlternatives),
+    founderStatement: str(founderStatement),
   };
   try {
     const result = await generateMarketSnapshot(ctx);

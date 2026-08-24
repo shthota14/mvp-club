@@ -69,7 +69,17 @@ export const validationApi = {
   // generateMarketSnapshot in the backend before changing this — the model
   // has no live market data and can name a fabricated competitor with full
   // confidence, so the frontend always labels this as an AI draft to verify.
-  marketSnapshot: (data: { ideaName?: string; oneLiner?: string }) =>
+  // ideaName/oneLiner are the only fields ever required — everything else is
+  // optional extra founder context gathered across Hone (persona, problems,
+  // pain, existing alternatives, founder's own synthesis), passed once the
+  // market snapshot step moved to the end of Hone so the AI has much more
+  // to ground its answer in than the one-liner alone.
+  marketSnapshot: (data: {
+    ideaName?: string; oneLiner?: string;
+    customerSegment?: string; whoPays?: string; problems?: string;
+    painConsequences?: string; frequency?: string; existingAlternatives?: string;
+    founderStatement?: string;
+  }) =>
     api.post('/validation/idea/market-snapshot', data),
   // Hone Step 2 — "Sage interviews you": an opt-in conversational alternative
   // to the preset-chip grid. Stateless — the frontend holds the transcript
