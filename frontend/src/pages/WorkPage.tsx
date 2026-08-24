@@ -11650,7 +11650,6 @@ export default function WorkPage() {
     const ivTotal     = interviews.length;
     const ivScored    = interviews.filter(iv => iv.alignment_score).length;
     const ivConfirmed = interviews.filter(iv => iv.alignment_score === 3).length;
-    const stagesWithContent = MODULES.filter(m => !!completed[m]).length;
     // Which stages have their steps expanded — active stage always starts open
     const [expandedStages, setExpandedStages] = useState<Record<string, boolean>>(() => ({ [mod]: true }));
     const toggleExpand = (m: string) => setExpandedStages(prev => ({ ...prev, [m]: !prev[m] }));
@@ -11793,9 +11792,15 @@ export default function WorkPage() {
               ))}
             </div>
             <div style={{ fontSize: 11, color: '#8e8e93' }}>
-              {stagesWithContent === 0
-                ? 'Just getting started'
-                : `${stagesWithContent} of ${MODULES.length} stages with content`}
+              {(() => {
+                const coreDone = (['idea', 'hone', 'validate'] as const).filter(m => !!completed[m]).length;
+                const optionalDone = (['shape', 'done'] as const).filter(m => !!completed[m]).length;
+                if (coreDone === 0) return 'Just getting started';
+                if (coreDone < 3) return `${coreDone} of 3 core stages`;
+                return optionalDone > 0
+                  ? `Core complete ✓ · ${optionalDone} of 2 optional done`
+                  : 'Core complete ✓';
+              })()}
             </div>
           </div>
         </div>
@@ -11924,6 +11929,16 @@ export default function WorkPage() {
                               background: '#f5f5f7', color: '#b0b0b8',
                               borderRadius: 999, padding: '2px 7px',
                             }}>LOCKED</span>
+                          )}
+                          {!isLocked && (m === 'shape' || m === 'done') && (
+                            <span
+                              title="Idea, Hone, and Validate are the core MVP Club journey. Shape and Ship are here if you want to keep going."
+                              style={{
+                                fontSize: 9, fontWeight: 700,
+                                background: '#fff', color: '#8e8e93',
+                                border: '1px solid #e5e5ea',
+                                borderRadius: 999, padding: '2px 7px',
+                              }}>OPTIONAL</span>
                           )}
                         </div>
                         <div style={{ fontSize: 11, color: '#8e8e93', lineHeight: 1.4 }}>
@@ -12151,6 +12166,8 @@ export default function WorkPage() {
     const goals    = STEP_GOALS[mod];
     const callouts = STEP_CALLOUTS[mod];
     const modIndex = MODULES.indexOf(mod);
+    const coreIndex = ['idea', 'hone', 'validate'].indexOf(mod);
+    const isOptionalStage = mod === 'shape' || mod === 'done';
 
     // ── Blackboard palette ───────────────────────────────────
     // Explainer screens are intentionally dark/chalk so they read as distinct
@@ -12207,7 +12224,7 @@ export default function WorkPage() {
               letterSpacing: '.06em', textTransform: 'uppercase' as const,
               padding: '5px 16px', borderRadius: 4,
             }}>
-              {meta.icon} Stage {modIndex + 1} of 5
+              {isOptionalStage ? <>{meta.icon} Optional</> : <>{meta.icon} Core · Stage {coreIndex + 1} of 3</>}
             </span>
           </div>
 
@@ -12415,9 +12432,22 @@ export default function WorkPage() {
                     <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: isActive ? mc : '#8b8778', letterSpacing: '.05em', textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
                       {META[m].label}
                     </div>
+                    {(m === 'shape' || m === 'done') && (
+                      <div style={{ fontSize: isMobile ? 7 : 9, fontWeight: 600, color: '#8b8778', fontStyle: 'italic' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
+                        optional
+                      </div>
+                    )}
                   </div>
                   {mi < MODULES.length - 1 && (
-                    <div style={{ flex: 1, minWidth: isMobile ? 8 : undefined, height: 3, background: mi < modIndex ? `${color}50` : '#3a372a', margin: isMobile ? '0 2px' : '0 5px', marginBottom: 24, borderRadius: 2 }} />
+                    <div style={{
+                      flex: 1, minWidth: isMobile ? 8 : undefined, height: 3,
+                      background: mi < modIndex ? `${color}50` : '#3a372a',
+                      margin: isMobile ? '0 2px' : '0 5px', marginBottom: 24, borderRadius: 2,
+                      // The Validate → Shape hop is the mandatory/optional fork —
+                      // dashed here (vs solid everywhere else) so the rail itself
+                      // signals that Shape & Ship are a choice, not the next required step.
+                      ...(m === 'validate' ? { background: 'transparent', borderTop: `3px dashed ${mi < modIndex ? `${color}70` : '#3a372a'}`, height: 0 } : {}),
+                    }} />
                   )}
                 </React.Fragment>
               );

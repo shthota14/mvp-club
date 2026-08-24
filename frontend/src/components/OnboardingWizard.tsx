@@ -73,7 +73,7 @@ export default function OnboardingWizard({ onComplete }: Props) {
         A guided path from idea to your first real startup.
       </p>
       <p style={{ fontSize: 13, color: '#aeaeb2', marginTop: 6, lineHeight: 1.6 }}>
-        One clear next step. Every stage. Until you ship.
+        One clear next step at a time — validate your idea first, then build and ship if you want to.
       </p>
     </div>,
 
@@ -83,7 +83,7 @@ export default function OnboardingWizard({ onComplete }: Props) {
         Your path to launch
       </h2>
       <p style={{ fontSize: 13, color: '#6e6e73', margin: '0 0 20px' }}>
-        Five stages. One question each. Answer it and move forward.
+        Three core stages to validate your idea. Shape and Ship are there after if you want to keep going.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {STAGES.map(({ key, desc }, i) => (
@@ -101,8 +101,13 @@ export default function OnboardingWizard({ onComplete }: Props) {
               {i + 1}
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f', display: 'flex', alignItems: 'center', gap: 6 }}>
                 {STAGE_LABELS[key]}
+                {(key === 'shape' || key === 'done') && (
+                  <span style={{ fontSize: 9, fontWeight: 700, color: '#8e8e93', background: '#fff', border: '1px solid #e5e5ea', borderRadius: 999, padding: '1px 6px' }}>
+                    OPTIONAL
+                  </span>
+                )}
               </div>
               <div style={{ fontSize: 12, color: '#6e6e73', marginTop: 1 }}>{desc}</div>
             </div>

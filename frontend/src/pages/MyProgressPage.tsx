@@ -142,14 +142,26 @@ function JourneyHero({ idea, onAction }: { idea: Idea; onAction: () => void }) {
                 }}>
                   {s === 'done' ? 'Ship' : s}
                 </span>
+                {(s === 'shape' || s === 'done') && (
+                  <span style={{ fontSize: 8, fontWeight: 500, color: '#c0c0c8', fontStyle: 'italic' as const, whiteSpace: 'nowrap' as const }}>
+                    optional
+                  </span>
+                )}
               </div>
               {i < STAGE_ORDER.length - 1 && (
-                <div style={{
-                  flex: 1, height: 2, marginBottom: 18, marginLeft: 4, marginRight: 4,
-                  background: i < currentIdx
-                    ? `linear-gradient(90deg, ${STAGE_COLORS[STAGE_ORDER[i]]}66, ${STAGE_COLORS[STAGE_ORDER[i+1]]}66)`
-                    : '#e5e5ea',
-                }} />
+                s === 'validate' ? (
+                  <div style={{
+                    flex: 1, marginBottom: 18, marginLeft: 4, marginRight: 4,
+                    borderTop: `2px dashed ${i < currentIdx ? `${STAGE_COLORS.shape}70` : '#d2d2d7'}`,
+                  }} />
+                ) : (
+                  <div style={{
+                    flex: 1, height: 2, marginBottom: 18, marginLeft: 4, marginRight: 4,
+                    background: i < currentIdx
+                      ? `linear-gradient(90deg, ${STAGE_COLORS[STAGE_ORDER[i]]}66, ${STAGE_COLORS[STAGE_ORDER[i+1]]}66)`
+                      : '#e5e5ea',
+                  }} />
+                )
               )}
             </div>
           );
@@ -169,7 +181,9 @@ function JourneyHero({ idea, onAction }: { idea: Idea; onAction: () => void }) {
               padding: '4px 10px', borderRadius: 999,
               background: `${color}12`, fontSize: 10, fontWeight: 700, color, letterSpacing: 0.5, textTransform: 'uppercase' as const,
             }}>
-              {STAGE_ICONS[stage]} {STAGE_LABELS[stage]} · Stage {currentIdx + 1} of 5
+              {(stage === 'shape' || stage === 'done')
+                ? <>{STAGE_ICONS[stage]} {STAGE_LABELS[stage]} · Optional</>
+                : <>{STAGE_ICONS[stage]} {STAGE_LABELS[stage]} · Core stage {currentIdx + 1} of 3</>}
             </span>
             {stale >= 3 && (
               <span style={{ fontSize: 11, color: '#c0c0c8' }}>{stale}d idle</span>
@@ -939,7 +953,12 @@ function VaultCard({ idea, isActive, onClick, onStatusChange, onViewCanvas, onTi
   const stageIdx   = STAGE_ORDER.indexOf(idea.stage as Stage);
   const isDone     = idea.idea_status === 'done';
   const isArchived = idea.idea_status === 'archived';
-  const progress   = isDone ? 100 : Math.round(((stageIdx + 1) / STAGE_ORDER.length) * 100);
+  // Idea/Hone/Validate are the core, required journey — Shape/Ship are an
+  // optional continuation. Progress reflects the core (validate = 100%), so
+  // an idea that stops at Validate reads as "done," not "60% finished."
+  const CORE_STAGE_COUNT = 3;
+  const isOptionalStage  = stageIdx >= CORE_STAGE_COUNT;
+  const progress   = isDone ? 100 : Math.round((Math.min(stageIdx + 1, CORE_STAGE_COUNT) / CORE_STAGE_COUNT) * 100);
 
   return (
     <div
@@ -974,6 +993,9 @@ function VaultCard({ idea, isActive, onClick, onStatusChange, onViewCanvas, onTi
           }}>
             <span>{STAGE_ICONS[idea.stage as Stage]}</span>
             <span>{isDone ? 'Shipped' : STAGE_LABELS[idea.stage as Stage]}</span>
+            {!isDone && isOptionalStage && (
+              <span style={{ marginLeft: 2, fontSize: 9, fontWeight: 700, color: '#8e8e93' }}>· optional</span>
+            )}
           </div>
 
           {isActive && (
@@ -1019,12 +1041,12 @@ function VaultCard({ idea, isActive, onClick, onStatusChange, onViewCanvas, onTi
               const active = i === stageIdx && !isDone;
               return (
                 <div key={s} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                  <div style={{
-                    width: '100%', height: 3, borderRadius: 2,
-                    background: done ? STAGE_COLORS[s] : active ? `${color}50` : '#e5e5ea',
-                    transition: 'background .3s',
-                  }} />
-                  <span style={{ fontSize: 8, fontWeight: 600, color: done || active ? (done ? STAGE_COLORS[s] : color) : '#d2d2d7', textTransform: 'uppercase', letterSpacing: .3 }}>
+                  <div style={
+                    i >= 3
+                      ? { width: '100%', height: 0, borderTop: `2px dashed ${done ? STAGE_COLORS[s] : active ? `${color}50` : '#e5e5ea'}`, transition: 'border-color .3s' }
+                      : { width: '100%', height: 3, borderRadius: 2, background: done ? STAGE_COLORS[s] : active ? `${color}50` : '#e5e5ea', transition: 'background .3s' }
+                  } />
+                  <span style={{ fontSize: 8, fontWeight: 600, fontStyle: i >= 3 ? 'italic' as const : 'normal' as const, color: done || active ? (done ? STAGE_COLORS[s] : color) : '#d2d2d7', textTransform: 'uppercase', letterSpacing: .3 }}>
                     {s.slice(0, 4)}
                   </span>
                 </div>
