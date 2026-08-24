@@ -1854,6 +1854,41 @@ function parseMonthlyPrice(v?: string): number | null {
   return n;
 }
 
+// Sage writes market sizes as loose text too ("$2B+", "$150M-$300M",
+// "Not enough to estimate yet"). This turns those into a rough number so the
+// TAM/SAM bar can be drawn to actual scale instead of a fixed width. A range
+// collapses to its midpoint; anything unparseable returns null and the bar
+// falls back to its illustrative treatment rather than inventing a size.
+function parseMarketSize(v?: string): number | null {
+  if (!v) return null;
+  const s = v.trim().toLowerCase();
+  if (!s || s.includes('not enough') || s.includes('unknown')) return null;
+  const unit = (u: string): number =>
+    u === 'k' ? 1e3 : u === 'm' ? 1e6 : u === 'b' ? 1e9 : u === 't' ? 1e12 : 1;
+  // Every "<number><optional unit>" occurrence, so "$150M-$300M" yields both.
+  const found: number[] = [];
+  const re = /([\d][\d,]*\.?\d*)\s*(k|m|b|t)?/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(s)) !== null) {
+    const n = parseFloat(m[1].replace(/,/g, ''));
+    if (!isFinite(n) || n === 0) continue;
+    found.push(n * unit(m[2] || ''));
+  }
+  if (!found.length) return null;
+  // Midpoint of a range; the single value otherwise.
+  return found.length >= 2 ? (Math.min(...found) + Math.max(...found)) / 2 : found[0];
+}
+
+// Compact renderer for a parsed size, used for the derived "SAM is X% of TAM"
+// readout. Never replaces Sage's own wording — it sits alongside it.
+function fmtMarketSize(v: number): string {
+  if (v >= 1e12) return '$' + (v / 1e12).toFixed(1).replace(/\.0$/, '') + 'T';
+  if (v >= 1e9)  return '$' + (v / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (v >= 1e6)  return '$' + (v / 1e6).toFixed(0) + 'M';
+  if (v >= 1e3)  return '$' + (v / 1e3).toFixed(0) + 'K';
+  return '$' + Math.round(v);
+}
+
 const COVERAGE_SCORE: Record<FeatureCoverage, number> = { yes: 1, partial: 0.5, no: 0 };
 
 // Fixed-order, colorblind-validated identity colors for the competitor rows
@@ -1921,6 +1956,205 @@ function CompetitorFeatureListSection({ snapshot, revealing }: { snapshot: Marke
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+// ── Price / rating positioning plot ──────────────────────────────────────
+// Only the two "at a glance" fields that are actually comparable across
+// competitors get plotted. Sage leaves price and rating blank whenever it
+// isn't confident, so this renders only when at least two competitors have
+// BOTH — below that a scatter is a single dot pretending to be a chart.
+function MarketPositioningPlot({ snapshot }: { snapshot: MarketSnapshotData }) {
+  const pts = snapshot.competitors
+    .map((c, i) => ({
+      name: c.name,
+      price: parseMonthlyPrice(c.price),
+      rating: c.rating ? parseFloat(c.rating) : NaN,
+      color: MARKET_SERIES_COLORS[i] || MARKET_SERIES_FALLBACK,
+    }))
+    .filter(p => p.price !== null && isFinite(p.price) && isFinite(p.rating) && p.rating > 0);
+
+  if (pts.length < 2) return null;
+
+  const W = 560, H = 300, PAD = { t: 22, r: 20, b: 42, l: 46 };
+  const maxPrice = Math.max(...pts.map(p => p.price!)) * 1.18 || 1;
+  const minR = Math.min(3.5, ...pts.map(p => p.rating)) - 0.2;
+  const maxR = Math.max(5, ...pts.map(p => p.rating)) + 0.1;
+  const x = (v: number) => PAD.l + (v / maxPrice) * (W - PAD.l - PAD.r);
+  const y = (v: number) => H - PAD.b - ((v - minR) / (maxR - minR)) * (H - PAD.t - PAD.b);
+
+  const medPrice = [...pts].map(p => p.price!).sort((a, b) => a - b)[Math.floor(pts.length / 2)];
+  const medR = [...pts].map(p => p.rating).sort((a, b) => a - b)[Math.floor(pts.length / 2)];
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>Price vs. how much people like it</div>
+      <div style={{ fontSize: 12, color: T3, marginBottom: 12 }}>
+        Only competitors where Sage found both a price and a rating appear here ({pts.length} of {snapshot.competitors.length}).
+        Dividing lines sit at the median of those — the top-left corner is the hardest place to compete against.
+      </div>
+      <div style={{ overflowX: 'auto', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: 8 }}>
+        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ minWidth: 460, display: 'block' }} role="img"
+          aria-label={`Price versus rating for ${pts.map(p => p.name).join(', ')}`}>
+          {/* median reference lines — solid hairlines */}
+          <line x1={x(medPrice)} y1={PAD.t} x2={x(medPrice)} y2={H - PAD.b} stroke={BORDER2} strokeWidth={1} />
+          <line x1={PAD.l} y1={y(medR)} x2={W - PAD.r} y2={y(medR)} stroke={BORDER2} strokeWidth={1} />
+          {/* axes */}
+          <line x1={PAD.l} y1={H - PAD.b} x2={W - PAD.r} y2={H - PAD.b} stroke={BORDER2} strokeWidth={1} />
+          <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={H - PAD.b} stroke={BORDER2} strokeWidth={1} />
+          <text x={PAD.l} y={H - 10} fontSize={10} fill={T3}>$0/mo</text>
+          <text x={W - PAD.r} y={H - 10} fontSize={10} fill={T3} textAnchor="end">${maxPrice.toFixed(0)}/mo</text>
+          <text x={8} y={PAD.t + 6} fontSize={10} fill={T3}>{maxR.toFixed(1)}★</text>
+          <text x={8} y={H - PAD.b} fontSize={10} fill={T3}>{minR.toFixed(1)}★</text>
+          <text x={PAD.l + 6} y={PAD.t + 6} fontSize={9} fill={T3} letterSpacing={0.5}>LOVED &amp; CHEAP</text>
+          <text x={W - PAD.r - 6} y={PAD.t + 6} fontSize={9} fill={T3} textAnchor="end" letterSpacing={0.5}>PREMIUM &amp; LOVED</text>
+          {pts.map((p, i) => (
+            <g key={i}>
+              {/* 2px surface ring so overlapping dots stay separable */}
+              <circle cx={x(p.price!)} cy={y(p.rating)} r={7} fill={p.color} stroke="#fff" strokeWidth={2} />
+              <text x={x(p.price!)} y={y(p.rating) - 12} fontSize={11} fontWeight={700} fill={T1} textAnchor="middle">{p.name}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ── Derived SWOT ─────────────────────────────────────────────────────────
+// Nothing here is written copy: every line is computed from the snapshot the
+// founder already has — their own coverage against each differentiator, the
+// competitors' coverage, prices and ratings. It therefore changes whenever
+// the snapshot is regenerated or hand-edited, and says nothing when the data
+// is too thin to support a claim.
+function MarketSwotPanel({ snapshot, ideaName }: { snapshot: MarketSnapshotData; ideaName: string }) {
+  const me = ideaName?.trim() || 'Your idea';
+  const n = snapshot.differentiators.length;
+  if (!n || !snapshot.competitors.length) return null;
+
+  type Item = { rank: number; strong: string; text: string };
+  const strengths: Item[] = [], weaknesses: Item[] = [], opps: Item[] = [], threats: Item[] = [];
+
+  const scoreOf = (v?: FeatureCoverage) => COVERAGE_SCORE[v ?? 'no'] ?? 0;
+
+  snapshot.differentiators.forEach((d, i) => {
+    const mine = scoreOf(snapshot.yourCoverage[i]);
+    // Best competitor on this specific capability.
+    let best = snapshot.competitors[0], bestScore = -1;
+    snapshot.competitors.forEach(c => {
+      const s = scoreOf(c.features?.[i]);
+      if (s > bestScore) { bestScore = s; best = c; }
+    });
+    const label = (s: number) => s === 1 ? 'full coverage' : s === 0.5 ? 'partial coverage' : 'none';
+
+    if (mine > bestScore) {
+      strengths.push({
+        rank: mine - bestScore,
+        strong: d,
+        // With every rival on zero there is no "strongest" one to name.
+        text: bestScore === 0
+          ? `you have ${label(mine)} and not one of the ${snapshot.competitors.length} competitors covers it at all — the clearest piece of open ground in this table.`
+          : `you have ${label(mine)} where the strongest rival (${best.name}) has ${label(bestScore)} — this is the gap in the market you are actually walking into.`,
+      });
+    } else if (mine < bestScore) {
+      weaknesses.push({
+        rank: bestScore - mine,
+        strong: d,
+        text: `${best.name} has ${label(bestScore)} and you have ${label(mine)}. Expect this to come up the first time a customer compares you side by side.`,
+      });
+    }
+    // Open ground only counts as an opportunity where you don't ALREADY lead
+    // it — otherwise the same capability shows up as a Strength as well.
+    const anyStrong = snapshot.competitors.some(c => scoreOf(c.features?.[i]) === 1);
+    if (!anyStrong && mine < 1 && mine <= bestScore) {
+      opps.push({
+        rank: 0.9,
+        strong: d,
+        text: 'no competitor here covers this fully — it is unclaimed ground if you decide it matters to your buyer.',
+      });
+    }
+  });
+
+  // Price positioning, where Sage found real numbers.
+  const priced = snapshot.competitors
+    .map(c => ({ name: c.name, p: parseMonthlyPrice(c.price) }))
+    .filter(c => c.p !== null && isFinite(c.p!)) as { name: string; p: number }[];
+  if (priced.length >= 2) {
+    const cheapest = priced.reduce((a, b) => (b.p < a.p ? b : a));
+    const dearest = priced.reduce((a, b) => (b.p > a.p ? b : a));
+    opps.push({
+      rank: 0.8,
+      strong: 'Pricing room',
+      text: `the field runs from ${cheapest.name} at $${cheapest.p.toFixed(0)}/mo to ${dearest.name} at $${dearest.p.toFixed(0)}/mo — a ${(dearest.p / Math.max(cheapest.p, 0.01)).toFixed(1)}× spread, so there is no single price this market expects.`,
+    });
+  }
+
+  // Well-liked incumbents are the hardest to displace.
+  const rated = snapshot.competitors
+    .map(c => ({ name: c.name, r: c.rating ? parseFloat(c.rating) : NaN }))
+    .filter(c => isFinite(c.r) && c.r > 0);
+  rated.filter(c => c.r >= 4.5).forEach(c => {
+    threats.push({
+      rank: c.r,
+      strong: `${c.name} is well liked`,
+      text: `rated ${c.r.toFixed(1)}★ — customers who already like their tool need a strong reason to move, not a marginally better feature.`,
+    });
+  });
+
+  // Entrenchment signals, using only the fields Sage will vouch for.
+  snapshot.competitors.forEach(c => {
+    if (c.users) {
+      threats.push({ rank: 1.5, strong: `${c.name} has scale`, text: `roughly ${c.users} users already — distribution you would be starting from zero against.` });
+    }
+    if (c.marketShare) {
+      threats.push({ rank: 1.2, strong: `${c.name} holds share`, text: `Sage reads them as "${c.marketShare}". This is its least reliable field, so treat it as a lead to verify rather than a fact.` });
+    }
+  });
+
+  const covered = snapshot.yourCoverage.filter(v => v === 'yes').length;
+  if (covered === 0) {
+    weaknesses.push({ rank: 99, strong: 'No clear advantage yet', text: `you don't fully cover any of the ${n} capabilities Sage picked for this market. That's normal this early, but it means the wedge still has to be chosen.` });
+  }
+
+  const top = (a: Item[]) => a.sort((x, y) => y.rank - x.rank).slice(0, 4);
+  const quads = [
+    { label: 'Strengths', sub: `Where ${me} beats every competitor`, color: '#059669', items: top(strengths) },
+    { label: 'Weaknesses', sub: 'Where a competitor beats you', color: '#dc2626', items: top(weaknesses) },
+    { label: 'Opportunities', sub: 'Open ground in this market', color: STAGE_COLORS.idea, items: top(opps) },
+    { label: 'Threats', sub: 'What makes incumbents hard to move', color: '#d97706', items: top(threats) },
+  ];
+
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>What this adds up to</div>
+      <div style={{ fontSize: 12, color: T3, marginBottom: 12 }}>
+        Worked out from the table above — your coverage against each competitor's, plus their prices and ratings.
+        Nothing here is written by hand, so it changes whenever the snapshot does.
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+        {quads.map(q => (
+          <div key={q.label} style={{ border: `1.5px solid ${BORDER}`, borderTop: `3px solid ${q.color}`, borderRadius: 12, padding: '12px 14px 14px', background: '#fcfcfd' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' as const, color: q.color }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: q.color, flexShrink: 0 }} />
+              {q.label}
+            </div>
+            <div style={{ fontSize: 11, color: T3, marginTop: 4 }}>{q.sub}</div>
+            {q.items.length === 0 ? (
+              <div style={{ fontSize: 12, color: T3, marginTop: 10 }}>Nothing clear-cut here yet.</div>
+            ) : (
+              <ul style={{ margin: '10px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column' as const, gap: 9 }}>
+                {q.items.map((it, i) => (
+                  <li key={i} style={{ fontSize: 12.5, color: T2, lineHeight: 1.5, paddingLeft: 13, position: 'relative' as const }}>
+                    <span style={{ position: 'absolute', left: 0, color: T3 }}>—</span>
+                    <strong style={{ color: T1, fontWeight: 700 }}>{it.strong}</strong> — {it.text}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -2134,13 +2368,39 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
               <div style={{ fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10, fontWeight: 700, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Total addressable market</div>
               <div style={{ fontSize: 26, fontWeight: 800, color: T1, letterSpacing: -.3 }}>{snapshot.tam.value || '—'}</div>
               <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.6, marginTop: 4, maxWidth: '62ch' }}>{snapshot.tam.basis}</div>
-              <div style={{ position: 'relative', height: 38, margin: '14px 0 4px', borderRadius: 9, background: `linear-gradient(90deg, ${STAGE_COLORS.idea}1c, #eda1001c)`, overflow: 'hidden', border: `1px solid ${STAGE_COLORS.idea}22` }}>
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '38%', minWidth: 160, background: `linear-gradient(90deg, ${STAGE_COLORS.idea}, #a970ff)`, borderRadius: '9px 5px 5px 9px', boxShadow: '0 0 0 1px #ffffff30 inset, 3px 0 12px -2px #7c3aed90' }}>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 14px', color: '#fff', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' as const, textShadow: '0 1px 2px #00000030' }}>SAM {snapshot.sam.value || '—'}</div>
-                </div>
-                <div style={{ position: 'absolute', right: 14, top: 0, bottom: 0, display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 800, color: '#92400e' }}>TAM {snapshot.tam.value || '—'}</div>
-              </div>
-              <div style={{ fontSize: 11, color: T3 }}>Illustrative, not to scale — Sage gives rough ranges, not precise figures.</div>
+{(() => {
+                // The SAM bar used to be pinned at a fixed 38% width whatever
+                // the numbers said. When both figures parse we now draw it to
+                // true scale; when they don't we keep the old illustrative bar
+                // and say so, rather than implying a proportion we can't back.
+                const tamN = parseMarketSize(snapshot.tam.value);
+                const samN = parseMarketSize(snapshot.sam.value);
+                const toScale = tamN !== null && samN !== null && tamN > 0 && samN <= tamN;
+                const pct = toScale ? (samN! / tamN!) * 100 : null;
+                // Below ~26% the "SAM <value>" label can't sit inside the fill
+                // without being clipped, so it moves outside the bar end.
+                const labelInside = pct !== null && pct >= 26;
+                return (
+                  <>
+                    <div style={{ position: 'relative', height: 38, margin: '14px 0 4px', borderRadius: 9, background: `linear-gradient(90deg, ${STAGE_COLORS.idea}1c, #eda1001c)`, border: `1px solid ${STAGE_COLORS.idea}22` }}>
+                      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: toScale ? `${pct}%` : '38%', minWidth: toScale ? 6 : 160, background: `linear-gradient(90deg, ${STAGE_COLORS.idea}, #a970ff)`, borderRadius: '9px 5px 5px 9px', boxShadow: '0 0 0 1px #ffffff30 inset, 3px 0 12px -2px #7c3aed90' }}>
+                        {(!toScale || labelInside) && (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 14px', color: '#fff', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' as const, textShadow: '0 1px 2px #00000030', overflow: 'hidden' }}>SAM {snapshot.sam.value || '—'}</div>
+                        )}
+                      </div>
+                      {toScale && !labelInside && (
+                        <div style={{ position: 'absolute', left: `calc(${pct}% + 10px)`, top: 0, bottom: 0, display: 'flex', alignItems: 'center', fontSize: 11.5, fontWeight: 700, color: STAGE_COLORS.idea, whiteSpace: 'nowrap' as const }}>SAM {snapshot.sam.value || '—'}</div>
+                      )}
+                      <div style={{ position: 'absolute', right: 14, top: 0, bottom: 0, display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 800, color: '#92400e' }}>TAM {snapshot.tam.value || '—'}</div>
+                    </div>
+                    <div style={{ fontSize: 11, color: T3 }}>
+                      {toScale
+                        ? <>Drawn to scale — SAM is about <strong style={{ color: T2 }}>{pct! < 1 ? '<1' : pct!.toFixed(pct! < 10 ? 1 : 0)}%</strong> of TAM ({fmtMarketSize(samN!)} of {fmtMarketSize(tamN!)}). Ranges are read at their midpoint, and Sage's figures are rough estimates to verify.</>
+                        : <>Illustrative, not to scale — Sage's figures here aren't precise enough to size the bar against.</>}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
             <div style={{ padding: '12px 18px 16px', borderTop: `1px solid ${BORDER}`, background: `linear-gradient(135deg, ${STAGE_COLORS.idea}08, #eda10008)` }}>
               <div style={{ fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 9.5, fontWeight: 700, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Why this SAM</div>
@@ -2275,6 +2535,8 @@ function MarketSnapshotPanel({ ideaId, ideaName, oneLiner, oneLinerReady, value,
                       <span>† Market share is Sage's roughest field — a hedged, unsourced estimate, not a researched figure. Treat it as a starting guess to verify, same as everything else on this card.</span>
                     </div>
                     <CompetitorFeatureListSection snapshot={snapshot} revealing={revealing} />
+                    <MarketPositioningPlot snapshot={snapshot} />
+                    <MarketSwotPanel snapshot={snapshot} ideaName={ideaName} />
                   </div>
                 );
               })()}
