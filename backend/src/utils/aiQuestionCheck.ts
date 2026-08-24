@@ -1378,6 +1378,8 @@ function sanitizeExtractedProblems(raw: any): ExtractedProblem[] {
     .slice(0, 8);
 }
 
+const PROBLEM_INTERVIEW_FALLBACK_CLOSER = "Thanks — that's plenty to go on. Pick a severity for each problem below, or keep describing more yourself.";
+
 function parseProblemInterviewJson(text: string, forceDone: boolean): ProblemInterviewResult {
   let parsed: any;
   try {
@@ -1386,10 +1388,19 @@ function parseProblemInterviewJson(text: string, forceDone: boolean): ProblemInt
   } catch {
     throw new Error('Could not parse the AI response — please try again.');
   }
-  const reply = typeof parsed.reply === 'string' && parsed.reply.trim() ? parsed.reply.trim() : 'Thanks — that gives me enough to work with.';
+  const modelReply = typeof parsed.reply === 'string' ? parsed.reply.trim() : '';
+  const done = forceDone || parsed.done === true;
+  // When the interview is ending — whether the model decided that itself or
+  // the hard turn cap forced it — the frontend removes the input box, so a
+  // reply that's still phrased as a question would be unanswerable. The
+  // prompt asks the model for a closing line here, but doesn't always get
+  // one; fall back to a real closer rather than trust an unverified "?".
+  const reply = done
+    ? (modelReply && !modelReply.endsWith('?') ? modelReply : PROBLEM_INTERVIEW_FALLBACK_CLOSER)
+    : (modelReply || 'Thanks — that gives me enough to work with.');
   return {
     reply,
-    done: forceDone || parsed.done === true,
+    done,
     extracted: sanitizeExtractedProblems(parsed.extracted),
   };
 }

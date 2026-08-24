@@ -4496,7 +4496,7 @@ function SageProblemInterview({
 }) {
   const AC = '#2563eb';
   const segmentLabel = segment.role || 'your customer';
-  const opener = `Think back to the last time this got in the way for ${segmentLabel}${segment.detail ? ` — ${segment.detail}` : ''}. What were they doing right before it happened?`;
+  const opener = `Think about someone in your "${segmentLabel}" segment${segment.detail ? ` (${segment.detail})` : ''}. What's the last time this got in their way — what were they doing right before it happened?`;
 
   const [history, setHistory] = useState<ChatTurn[]>(() => [{ role: 'sage', text: opener }]);
   const [input, setInput]     = useState('');
