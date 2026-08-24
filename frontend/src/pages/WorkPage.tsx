@@ -11829,17 +11829,19 @@ export default function WorkPage() {
               const stepsTotal  = META[m].steps;
               const isSummaryActive = mod === 'validate' && step === 10;
               const isNavActive = isActive && !(m === 'validate' && step === 10);
-              // Hone/Validate unlock together the moment Idea is done and can be
-              // worked in any order — group them visually (dashed box + label)
-              // instead of stacking them like ordinary sequential steps, so the
-              // sidebar doesn't promise an order the app doesn't enforce. Shape
-              // is deliberately NOT in this group (2026-08-24): it's an optional
-              // continuation hard-gated behind a strong Validate signal, not a
-              // third thing you freely bounce between with Hone/Validate.
-              const isGroupTop    = m === 'hone';
-              const isGroupBottom = m === 'validate';
-              const inGroup       = isGroupTop || isGroupBottom;
-              const groupBorder   = '1.5px dashed #cbd5e1';
+              // Two visual groups (2026-08-24): Idea/Hone/Validate is the
+              // required core — iterate freely once Idea unlocks Hone+Validate.
+              // Shape/Ship is a second, separate box — the optional continuation,
+              // entered only on a strong Validate signal. Two boxes, not one,
+              // so the sidebar doesn't imply Shape is just a third thing you
+              // bounce between with Hone/Validate.
+              const inCoreGroup     = m === 'idea' || m === 'hone' || m === 'validate';
+              const inOptionalGroup = m === 'shape' || m === 'done';
+              const isGroupTop      = m === 'idea' || m === 'shape';
+              const isGroupBottom   = m === 'validate' || m === 'done';
+              const inGroup         = inCoreGroup || inOptionalGroup;
+              const groupBorder     = inOptionalGroup ? `1.5px dashed ${STAGE_COLORS.shape}90` : '1.5px dashed #cbd5e1';
+              const groupBg         = inOptionalGroup ? `${STAGE_COLORS.shape}08` : '#f8fafc';
 
               return (
                 <React.Fragment key={m}>
@@ -11847,14 +11849,17 @@ export default function WorkPage() {
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 5,
                       margin: '2px 0 4px 4px', fontSize: 9.5, fontWeight: 800,
-                      letterSpacing: 0.4, textTransform: 'uppercase' as const, color: '#94a3b8',
+                      letterSpacing: 0.4, textTransform: 'uppercase' as const,
+                      color: inOptionalGroup ? STAGE_COLORS.shape : '#94a3b8',
                     }}>
-                      <span style={{ fontSize: 11 }}>⇄</span> Iterate in any order
+                      {inOptionalGroup
+                        ? <><span style={{ fontSize: 11 }}>✦</span> Optional — build &amp; ship if you want</>
+                        : <><span style={{ fontSize: 11 }}>⇄</span> Core — iterate in any order</>}
                     </div>
                   )}
                   <div style={{
                     position: 'relative', marginBottom: 2,
-                    background: inGroup ? '#f8fafc' : 'transparent',
+                    background: inGroup ? groupBg : 'transparent',
                     borderLeft: inGroup ? groupBorder : 'none',
                     borderRight: inGroup ? groupBorder : 'none',
                     borderTop: isGroupTop ? groupBorder : 'none',
@@ -12056,30 +12061,36 @@ export default function WorkPage() {
                     })()}
                   </div>
 
-                  {/* ── Connector arrow between stages ── */}
+                  {/* ── Connector between stages ── */}
                   {idx < MODULES.length - 1 && (() => {
                     const nextM = MODULES[idx + 1];
-                    const nextIterative = nextM === 'hone' || nextM === 'validate';
-                    const bothIterative = iterative && nextIterative;
-                    // The Validate → Shape hop is neither a "same group, any order"
-                    // pairing nor an ordinary required gate — it's the mandatory/optional
-                    // fork, so it gets its own dashed marker instead of borrowing either
-                    // of the other two connectors.
+                    const nextInCoreGroup     = nextM === 'idea' || nextM === 'hone' || nextM === 'validate';
+                    const nextInOptionalGroup = nextM === 'shape' || nextM === 'done';
+                    // Any-order dot: only between two members of the CORE box
+                    // (Idea↔Hone, Hone↔Validate) — that's the one group that's
+                    // genuinely order-free.
+                    const dotConnector = inCoreGroup && nextInCoreGroup;
+                    // The Validate → Shape hop is the mandatory/optional fork itself —
+                    // it gets its own dashed marker, not the dot or the plain arrow.
                     const isOptionalFork = m === 'validate' && nextM === 'shape';
+                    // Shape → Ship still sits inside one visual box, but Ship is
+                    // genuinely gated behind Shape being done, so it keeps a real
+                    // arrow (tinted to match the optional box) rather than a dot.
+                    const sameGroupPair = (inCoreGroup && nextInCoreGroup) || (inOptionalGroup && nextInOptionalGroup);
                     return (
                       <div style={{
                         paddingLeft: 9, paddingTop: 2, paddingBottom: 2,
                         display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-start',
-                        background: bothIterative ? '#f8fafc' : 'transparent',
-                        borderLeft: bothIterative ? groupBorder : 'none',
-                        borderRight: bothIterative ? groupBorder : 'none',
+                        background: sameGroupPair ? groupBg : 'transparent',
+                        borderLeft: sameGroupPair ? groupBorder : 'none',
+                        borderRight: sameGroupPair ? groupBorder : 'none',
                       }}>
-                        {bothIterative ? (
+                        {dotConnector ? (
                           /* No arrow here on purpose — even a paired ↑↓ still reads as
                              "flow between steps." Both neighbours sit inside the
-                             "iterate in any order" group, so this connector just keeps
-                             the dashed box visually unbroken instead of implying a
-                             direction. */
+                             "iterate in any order" core box, so this connector just
+                             keeps the dashed box visually unbroken instead of
+                             implying a direction. */
                           <div style={{ width: 18, display: 'flex', justifyContent: 'center' }}>
                             <span style={{ fontSize: 11, color: '#cbd5e1', lineHeight: 1 }}>•</span>
                           </div>
@@ -12089,9 +12100,10 @@ export default function WorkPage() {
                             <span style={{ fontSize: 7, fontWeight: 700, color: STAGE_COLORS.shape, fontStyle: 'italic' as const, letterSpacing: 0.2 }}>opt</span>
                           </div>
                         ) : (
-                          /* ↓ for the two real sequential gates (Idea→Hone, Shape→Ship) */
+                          /* ↓ — Shape → Ship is still a real sequential gate, just
+                             inside the optional box, so it's tinted to match. */
                           <div style={{ width: 18, display: 'flex', justifyContent: 'center' }}>
-                            <span style={{ fontSize: 13, color: '#d0d5de', lineHeight: 1 }}>↓</span>
+                            <span style={{ fontSize: 13, color: sameGroupPair ? STAGE_COLORS.shape : '#d0d5de', lineHeight: 1 }}>↓</span>
                           </div>
                         )}
                       </div>
