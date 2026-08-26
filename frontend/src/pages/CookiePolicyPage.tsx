@@ -73,8 +73,8 @@ export default function CookiePolicyPage() {
 
       <h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 32, marginBottom: 8 }}>Third parties</h2>
       <p style={{ fontSize: 13, lineHeight: 1.6 }}>
-        Some features (like scheduling video calls) hand off to third-party services such as Zoom, which may set
-        their own cookies once you're on their site — those are covered by their own policies, not this one.
+        Some features (like scheduling video calls) hand off to Jitsi Meet's public server (meet.jit.si), which
+        may set its own cookies once you're on their site — those are covered by their own policy, not this one.
       </p>
 
       <h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 32, marginBottom: 8 }}>Questions</h2>

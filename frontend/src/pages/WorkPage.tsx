@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { ideasApi, communityApi, challengesApi, validationApi, surveysApi, availabilityApi, zoomApi } from '@/api/client';
+import { ideasApi, communityApi, challengesApi, validationApi, surveysApi, availabilityApi } from '@/api/client';
 import IdeaCanvasModal from '@/components/IdeaCanvasModal';
 import StageCompleteModal from '@/components/StageCompleteModal';
 import AvailabilityModal from '@/components/AvailabilityModal';
+import EmailPreviewModal from '@/components/EmailPreviewModal';
 import InterviewScriptCard from '@/components/InterviewScriptCard';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
@@ -6478,22 +6479,9 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
     const [requestingMeeting, setRequestingMeeting] = React.useState<string | null>(null);
     const [meetingDuration, setMeetingDuration] = React.useState<15 | 20 | 30>(20);
     const [meetingErr, setMeetingErr]         = React.useState('');
-    // Meeting invites lead to a booking page whose confirmed slots need a Zoom
-    // join link, hosted on the founder's own Zoom — so the platform checks the
-    // connection up front and points them at the connect flow instead of letting
-    // an invite go out that would book link-less meetings. (The backend enforces
-    // the same rule with a 428, this is just the friendly path.)
-    const [ozZoomConnected, setOzZoomConnected] = React.useState<boolean | null>(null);
-    const [ozZoomConnecting, setOzZoomConnecting] = React.useState(false);
-    React.useEffect(() => {
-      zoomApi.status().then(r => setOzZoomConnected(!!r.data.connected)).catch(() => setOzZoomConnected(false));
-    }, []);
-    const ozConnectZoom = async () => {
-      setOzZoomConnecting(true);
-      try { const res = await zoomApi.init(); window.location.href = res.data.url; }
-      catch { setOzZoomConnecting(false); }
-    };
-
+    // Contact whose meeting-request email is being previewed/edited before send —
+    // set by the "Request a meeting" button, cleared on cancel or successful send.
+    const [previewingContact, setPreviewingContact] = React.useState<Contact | null>(null);
     // Survey — still fetched for personalMsg() (1:1 outreach to already-added contacts), just no
     // longer has its own create/copy UI in Part 2 (see the 2026-07-22 Part 2 redesign note).
     const [survey, setSurvey]       = React.useState<{ token: string; title: string } | null>(null);
@@ -6601,26 +6589,25 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
       await validationApi.updateContact(id, { [field]: value }).catch(() => {});
     };
 
-    const requestMeeting = async (contact: Contact) => {
+    // Opens the editable email preview instead of sending straight away —
+    // the actual send happens from EmailPreviewModal's onSent callback below.
+    const requestMeeting = (contact: Contact) => {
       if (!contact.email) return;
-      setRequestingMeeting(contact.id);
       setMeetingErr('');
-      try {
-        const r = await validationApi.requestMeeting(contact.id, { duration_mins: meetingDuration, problem });
-        const iv = r.data.interview;
-        setMeetings(m => ({
-          ...m,
-          [contact.id]: {
-            validation_contact_id: contact.id, interview_id: iv.id, booking_status: iv.booking_status,
-            booking_token: iv.booking_token, scheduled_at: iv.scheduled_at, meeting_link: iv.meeting_link,
-            duration_mins: iv.duration_mins,
-          },
-        }));
-      } catch (e: any) {
-        setMeetingErr(e?.response?.data?.error || "Couldn't send the request — please try again.");
-      } finally {
-        setRequestingMeeting(null);
-      }
+      setRequestingMeeting(contact.id);
+      setPreviewingContact(contact);
+    };
+
+    const applyMeetingResult = (contactId: string, iv: any) => {
+      if (!iv) return;
+      setMeetings(m => ({
+        ...m,
+        [contactId]: {
+          validation_contact_id: contactId, interview_id: iv.id, booking_status: iv.booking_status,
+          booking_token: iv.booking_token, scheduled_at: iv.scheduled_at, meeting_link: iv.meeting_link,
+          duration_mins: iv.duration_mins,
+        },
+      }));
     };
 
     const removeContact = async (id: string) => {
@@ -7030,19 +7017,6 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                                 color: meetingDuration === m ? '#fff' : '#aaa',
                               }}>{m}m</button>
                           ))}
-                          {ozZoomConnected === false ? (
-                            <button
-                              onClick={ozConnectZoom}
-                              disabled={ozZoomConnecting}
-                              title="Meeting invites need your Zoom connected so booked meetings get a join link"
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 20, border: 'none',
-                                background: '#fef6e6', color: '#b45309',
-                                fontSize: 11, fontWeight: 700, cursor: ozZoomConnecting ? 'default' : 'pointer', fontFamily: 'inherit',
-                              }}>
-                              {ozZoomConnecting ? 'Connecting…' : '⚠️ Connect Zoom to send invites'}
-                            </button>
-                          ) : (
                           <button
                             onClick={() => requestMeeting(selectedContact)}
                             disabled={!selectedContact.email || requestingMeeting === selectedContact.id}
@@ -7054,7 +7028,6 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                             }}>
                             {requestingMeeting === selectedContact.id ? 'Sending…' : '📅 Request a meeting'}
                           </button>
-                          )}
                         </div>
                       );
                     })()}
@@ -7268,6 +7241,19 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
           audienceLabel={audienceLabel}
           onSave={cfg => saveChannelConfig(configuringChannel, cfg)}
           onClose={() => setConfiguringChannel(null)}
+        />
+      )}
+
+      {/* Preview & edit the meeting-request email before it actually sends */}
+      {previewingContact && (
+        <EmailPreviewModal
+          contactIds={[previewingContact.id]}
+          recipientLabel={previewingContact.name}
+          durationMins={meetingDuration}
+          problem={problem}
+          accentColor={VC}
+          onClose={() => { setPreviewingContact(null); setRequestingMeeting(null); }}
+          onSent={(result) => { applyMeetingResult(previewingContact.id, result.interview); setRequestingMeeting(null); }}
         />
       )}
       </>
@@ -11650,6 +11636,14 @@ export default function WorkPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [interviews, setInterviews] = useState<any[]>([]);
   const [interviewsLoading, setInterviewsLoading] = useState(false);
+  // Lifted out of the Schedule step's own IIFE so a "🗓️ Availability" control
+  // is reachable — and stays in sync — from every Validate step that touches
+  // scheduling (Add contacts, Schedule, Log, Analyse, Decision), not just the
+  // dedicated Schedule step. Only one Validate step's JSX is ever actually
+  // mounted at a time (see allSteps[mod][step] below), so having several step
+  // blocks each reference this same state and conditionally render
+  // AvailabilityModal is safe — never more than one really ends up in the DOM.
+  const [showAvail, setShowAvail] = useState(false);
   // ── Milestone confetti: celebrate the 1st, 5th, and 10th conversation you
   // actually log (status flips to 'completed' on save). Tracks the previous
   // completed count per idea via a ref so it only fires on the transition
@@ -13813,6 +13807,99 @@ export default function WorkPage() {
 
 
 
+  // ── Shared "Availability" quick-access + "Interview status" panel ─────────
+  // Used across several Validate steps (Add contacts, Schedule, Log, Analyse,
+  // Decision) so a founder can always see where scheduling stands and jump
+  // straight to editing availability, no matter which of those steps they're
+  // currently on -- not just the one dedicated Schedule step.
+  const renderAvailabilityButton = () => (
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, alignSelf: 'flex-start' }}>
+      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 22, fontStyle: 'italic', fontWeight: 700, color: STAGE_COLORS.validate, lineHeight: 1.2 }}>
+        Don't forget to clear your calendar!
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const }}>
+        <button onClick={() => setShowAvail(true)} title="Set or edit the weekly hours contacts can book you for"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0,
+            padding: '10px 18px', borderRadius: 12, border: 'none',
+            background: `linear-gradient(135deg, ${STAGE_COLORS.validate}, #4f46e5)`,
+            color: '#fff', fontSize: 13.5, fontWeight: 800, cursor: 'pointer',
+            fontFamily: 'inherit', boxShadow: `0 6px 16px ${STAGE_COLORS.validate}40`,
+          }}>
+          🗓️ Availability
+        </button>
+        <span style={{ fontSize: 12, fontWeight: 600, color: T2, lineHeight: 1.4 }}>
+          Free up your calendar so you're actually available to speak with people.
+        </span>
+      </div>
+    </div>
+  );
+
+  const renderInterviewStatusPanel = () => {
+    const rows = interviews
+      .filter((iv: any) => iv.interviewee_name)
+      .slice()
+      .sort((a: any, b: any) => {
+        // Upcoming booked calls first, then awaiting-response, then
+        // already-happened/logged ones -- newest-created within each group.
+        const rank = (iv: any) => {
+          const upcoming = iv.booking_status === 'booked' && iv.scheduled_at && new Date(iv.scheduled_at).getTime() > Date.now();
+          if (upcoming) return 0;
+          if (iv.booking_status === 'awaiting_response') return 1;
+          if (iv.booking_status === 'booked') return 2; // already happened
+          if (iv.status === 'completed') return 3;
+          return 4; // not scheduled yet
+        };
+        return rank(a) - rank(b) || new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      });
+    if (!rows.length) return null;
+    return (
+      <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 14, background: '#f9f9f5', padding: '12px 14px' }}>
+        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          🎙️ Interview status <span style={{ fontSize: 10, fontWeight: 700, color: T3 }}>({rows.length})</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, maxHeight: 230, overflowY: 'auto' as const }}>
+          {rows.map((iv: any) => {
+            const hasSchedule = iv.booking_status === 'booked' && !!iv.scheduled_at;
+            const start = hasSchedule ? new Date(iv.scheduled_at) : null;
+            const end = start ? new Date(start.getTime() + (iv.duration_mins || 20) * 60000) : null;
+            const isPast = end ? end.getTime() < Date.now() : false;
+            const awaiting = iv.booking_status === 'awaiting_response';
+            const logged = !hasSchedule && !awaiting && iv.status === 'completed';
+            const icon  = hasSchedule ? '✓' : awaiting ? '⏳' : logged ? '✓' : '◻';
+            const label = hasSchedule ? 'Booked' : awaiting ? 'Awaiting response' : logged ? 'Logged' : 'Not scheduled';
+            const labelColor = hasSchedule ? '#15803d' : awaiting ? '#b45309' : logged ? '#4f46e5' : T3;
+            return (
+              <div key={iv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, fontSize: 11.5, padding: '6px 9px', borderRadius: 8, background: '#fff', border: `1px solid ${BORDER}` }}>
+                <span style={{ fontWeight: 700, color: '#1d1d1f', flexShrink: 0 }}>{iv.interviewee_name || 'Someone'}</span>
+                <span style={{ color: labelColor, fontWeight: 600 }}>
+                  {icon} {label}{start ? ` — ${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at ${start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}` : ''}
+                </span>
+                {hasSchedule && (
+                  iv.meeting_link ? (
+                    isPast ? (
+                      <span title="This meeting has already happened — the link is no longer active"
+                        style={{ marginLeft: 'auto', color: '#aeaeb2', fontWeight: 600, cursor: 'not-allowed' }}>
+                        Join link (ended)
+                      </span>
+                    ) : (
+                      <a href={iv.meeting_link} target="_blank" rel="noopener noreferrer"
+                        style={{ marginLeft: 'auto', color: '#4f46e5', fontWeight: 700, textDecoration: 'none' }}>
+                        Join link →
+                      </a>
+                    )
+                  ) : (
+                    <span style={{ marginLeft: 'auto', color: '#aeaeb2' }}>No link</span>
+                  )
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   // ── Editable question list with framework picker ──────────────────────────
 
 
@@ -14594,6 +14681,9 @@ export default function WorkPage() {
             </div>
           </div>
 
+          {renderAvailabilityButton()}
+          {renderInterviewStatusPanel()}
+
           {/* ── People outreach sub-workflow ── */}
           <OutreachTracker
             ideaId={activeIdea.id}
@@ -14614,6 +14704,8 @@ export default function WorkPage() {
             }}
           />
 
+          {showAvail && <AvailabilityModal accentColor={STAGE_COLORS.validate} onClose={() => setShowAvail(false)} />}
+
           <NavRow onBack={back} onNext={() => next()} nextLabel="Schedule interviews →" disabled={!get('outreachContactsAdded')} disabledReason="Add at least one person you plan to reach out to." stageColor={STAGE_COLORS.validate} stepTitle="Add Contacts" ideaId={activeIdea.id} />
         </div>
       );
@@ -14621,7 +14713,9 @@ export default function WorkPage() {
 
     // ── v0sched: Schedule interviews — availability + bulk requests ─────────
     (() => {
-      const [showAvail, setShowAvail] = React.useState(false);
+      // showAvail/setShowAvail now come from WorkPage-level state (see top of
+      // component) so the "🗓️ Availability" control works the same way from
+      // every Validate step, not just this one.
       const [availSummary, setAvailSummary] = React.useState<{ daysOn: number } | null>(null);
       const [schedContacts, setSchedContacts] = React.useState<any[]>([]);
       const [schedLoading, setSchedLoading] = React.useState(true);
@@ -14631,11 +14725,12 @@ export default function WorkPage() {
       const [sendResults, setSendResults] = React.useState<Record<string, { ok: boolean; error?: string; bookingLink?: string; hasPhone?: boolean; emailSent?: boolean }>>({});
       const [schedMeetings, setSchedMeetings] = React.useState<Record<string, { booking_status: string; booking_token?: string; scheduled_at: string | null; meeting_link: string | null; duration_mins: number; invite_sent_at?: string | null }>>({});
       const [resendingId, setResendingId] = React.useState<string | null>(null);
+      // Preview/edit-before-send state for the Schedule step's own send paths
+      // (separate from OutreachTracker's — this step has its own resend/bulk flows).
+      const [previewingResend, setPreviewingResend] = React.useState<{ id: string; name: string } | null>(null);
+      const [previewingBulk, setPreviewingBulk] = React.useState(false);
       const [availRulesByDow, setAvailRulesByDow] = React.useState<Record<number, Array<{ start: string; end: string }>>>({});
       const [valStartDate, setValStartDate] = React.useState<Date | null>(null);
-      const [zoomConnected, setZoomConnected] = React.useState<boolean | null>(null);
-      const [zoomConnecting, setZoomConnecting] = React.useState(false);
-
       React.useEffect(() => {
         // This step's contacts are fetched once per mount, but these step
         // IIFEs never unmount when the user navigates away and back — so
@@ -14665,9 +14760,6 @@ export default function WorkPage() {
             setSchedMeetings(map);
           })
           .catch(() => {});
-        zoomApi.status()
-          .then(r => setZoomConnected(!!r.data.connected))
-          .catch(() => setZoomConnected(false));
         // Validation "start date" isn't stored explicitly — approximate it as the
         // earliest stage_entries row saved under the 'validate' stage (i.e. whenever
         // the founder first started filling out this module), falling back to the
@@ -14823,16 +14915,6 @@ export default function WorkPage() {
         return rows.sort((a, b) => a.sortKey - b.sortKey);
       })();
 
-      const connectZoom = async () => {
-        setZoomConnecting(true);
-        try {
-          const res = await zoomApi.init();
-          window.location.href = res.data.url;
-        } catch {
-          setZoomConnecting(false);
-        }
-      };
-
       // Request-pipeline helpers: everything below is built on the app's real
       // 5-stage contact status (Not sent/Sent/Replied/Call booked/Done) plus
       // invite_sent_at (now stamped on first send — see backend). There's no
@@ -14864,36 +14946,54 @@ export default function WorkPage() {
       const initialsOf = (name: string) => name.trim().split(/\s+/).slice(0, 2).map((w: string) => w[0]?.toUpperCase() || '').join('');
       const avatarColorFor = (name: string) => AVATAR_PALETTE[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % AVATAR_PALETTE.length];
 
-      const resendTo = async (contactId: string) => {
-        setResendingId(contactId);
-        try {
-          const r = await validationApi.requestMeeting(contactId, { duration_mins: schedDuration, problem });
-          setSendResults(prev => ({ ...prev, [contactId]: { ok: true, bookingLink: r.data.bookingLink, emailSent: r.data.emailSent, hasPhone: !!schedContacts.find(c => c.id === contactId)?.phone } }));
-        } catch (e: any) {
-          setSendResults(prev => ({ ...prev, [contactId]: { ok: false, error: e?.response?.data?.error || 'Failed to resend' } }));
-        }
-        setResendingId(null);
+      // Opens the editable email preview for a resend/follow-up instead of
+      // sending straight away — actual send happens in applyResendResult below,
+      // wired to EmailPreviewModal's onSent.
+      const resendTo = (contact: { id: string; name: string }) => {
+        setResendingId(contact.id);
+        setPreviewingResend(contact);
       };
 
-      const sendRequests = async () => {
+      const applyResendResult = (contactId: string, data: any) => {
+        setSendResults(prev => ({ ...prev, [contactId]: { ok: true, bookingLink: data.bookingLink, emailSent: data.emailSent, hasPhone: !!schedContacts.find(c => c.id === contactId)?.phone } }));
+        // Replace this contact's meeting record with the fresh one the backend
+        // just returned -- clears a stale "meeting ended" row in favour of the
+        // new pending request, whether this was a plain resend or a follow-up
+        // request after a past meeting.
+        if (data.interview) {
+          const iv = data.interview;
+          setSchedMeetings(prev => ({
+            ...prev,
+            [contactId]: {
+              booking_status: iv.booking_status,
+              booking_token: iv.booking_token,
+              scheduled_at: iv.scheduled_at,
+              meeting_link: iv.meeting_link,
+              duration_mins: iv.duration_mins,
+              invite_sent_at: iv.invite_sent_at,
+            },
+          }));
+        }
+      };
+
+      // Opens the editable email preview for the whole selected batch instead
+      // of sending straight away — actual send happens in applyBulkResult
+      // below, wired to EmailPreviewModal's onSent.
+      const sendRequests = () => {
         if (!selectedList.length) return;
         setSending(true);
-        try {
-          const r = await validationApi.bulkRequestMeeting({
-            contact_ids: selectedList.map(c => c.id),
-            duration_mins: schedDuration,
-            problem,
-          });
-          const map: typeof sendResults = {};
-          (r.data.results || []).forEach((res: any) => { map[res.contact_id] = res; });
-          setSendResults(prev => ({ ...prev, ...map }));
-          const okIds = (r.data.results || []).filter((x: any) => x.ok).map((x: any) => x.contact_id);
-          if (okIds.length) {
-            setSchedContacts(cs => cs.map(c => okIds.includes(c.id) ? { ...c, status: 'Sent' } : c));
-            okIds.forEach((id: string) => { validationApi.updateContact(id, { status: 'Sent' }).catch(() => {}); });
-          }
-        } catch { /* individual failures already reported per-contact via results */ }
-        setSending(false);
+        setPreviewingBulk(true);
+      };
+
+      const applyBulkResult = (data: any) => {
+        const map: typeof sendResults = {};
+        (data.results || []).forEach((res: any) => { map[res.contact_id] = res; });
+        setSendResults(prev => ({ ...prev, ...map }));
+        const okIds = (data.results || []).filter((x: any) => x.ok).map((x: any) => x.contact_id);
+        if (okIds.length) {
+          setSchedContacts(cs => cs.map(c => okIds.includes(c.id) ? { ...c, status: 'Sent' } : c));
+          okIds.forEach((id: string) => { validationApi.updateContact(id, { status: 'Sent' }).catch(() => {}); });
+        }
       };
 
       // Both schedule panels share a fixed height so they read as one even
@@ -14912,10 +15012,12 @@ export default function WorkPage() {
               <span style={{ fontSize: 32 }}>🗓️</span>
               <div>
                 <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 30, fontWeight: 700, color: '#0f172a', letterSpacing: -0.3, lineHeight: 1.15 }}>Schedule interviews</div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 19, fontWeight: 600, color: '#475569', marginTop: 3 }}>Open your calendar, then send requests so people can pick a time themselves.</div>
+                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 19, fontWeight: 600, color: '#475569', marginTop: 3 }}>Open your calendar, then offer a free video call — they pick a time themselves.</div>
               </div>
             </div>
           </div>
+
+          {renderAvailabilityButton()}
 
           {/* Availability nudge — the single most-missed action on this step:
               if it's not set, nothing below is actually bookable. Shown until
@@ -15062,14 +15164,9 @@ export default function WorkPage() {
                                       </div>
                                       {r.link ? (
                                         <a href={r.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#15803d', fontWeight: 700, textDecoration: 'none', flexShrink: 0 }}>🔗 Join</a>
-                                      ) : zoomConnected === false ? (
-                                        <button onClick={connectZoom} disabled={zoomConnecting}
-                                          style={{ fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fef6e6', border: 'none', borderRadius: 20, padding: '3px 9px', cursor: zoomConnecting ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' as const }}>
-                                          {zoomConnecting ? 'Connecting…' : '⚠️ Connect Zoom'}
-                                        </button>
-                                      ) : zoomConnected === true ? (
+                                      ) : (
                                         <span style={{ fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fef6e6', borderRadius: 20, padding: '3px 9px', flexShrink: 0, whiteSpace: 'nowrap' as const }}>⚠️ No link</span>
-                                      ) : null}
+                                      )}
                                       <span style={{ fontSize: 9.5, fontWeight: 700, color: '#15803d', background: '#e9f7ef', borderRadius: 20, padding: '3px 8px', flexShrink: 0, whiteSpace: 'nowrap' as const }}>✓ Confirmed</span>
                                     </div>
                                   ) : (
@@ -15146,12 +15243,12 @@ export default function WorkPage() {
                               <div style={{ fontSize: 11.5, fontWeight: 600 }}>{c.name}</div>
                               <div style={{ fontSize: 9.5, color: T3 }}>Sent {info.daysSince}d ago, no reply</div>
                             </div>
-                            <button onClick={() => resendTo(c.id)} disabled={resendingId === c.id}
+                            <button onClick={() => resendTo(c)} disabled={resendingId === c.id}
                               style={{ fontSize: 10, fontWeight: 700, color: '#fff', background: '#b45309', border: 'none', borderRadius: 20, padding: '4px 10px', cursor: resendingId === c.id ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
                               {resendingId === c.id ? '…' : '🔔 Chase'}
                             </button>
                             {c.phone && link && (
-                              <a href={`https://wa.me/?text=${encodeURIComponent(`Hi ${c.name.split(' ')[0]}! Just checking in — would you be up for a quick ${schedDuration}-min chat? Pick a time here: ${link}`)}`}
+                              <a href={`https://wa.me/?text=${encodeURIComponent(`Hi ${c.name.split(' ')[0]}! Just checking in — would you be up for a free ${schedDuration}-min video call? Pick a time here: ${link}`)}`}
                                 target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, flexShrink: 0 }}>📱</a>
                             )}
                           </div>
@@ -15164,7 +15261,7 @@ export default function WorkPage() {
                 {/* Bulk request section — fills whatever height the header/KPI/nudge
                     sections above it didn't use, so the card always totals PANEL_HEIGHT */}
                 <div style={{ position: 'relative' as const, padding: '14px 16px', flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' as const }}>
-                  <div style={{ fontSize: 11.5, color: T2, marginBottom: 12 }}>Pick who to send to. Each person gets a personal link to book straight into your schedule — by email automatically, or via WhatsApp with one click.</div>
+                  <div style={{ fontSize: 11.5, color: T2, marginBottom: 12 }}>Pick who to send to. Each person gets a personal link to book a free video call straight into your schedule — by email automatically, or via WhatsApp with one click.</div>
 
                   {schedLoading ? (
                     <div style={{ fontSize: 12, color: T3 }}>Loading your contacts…</div>
@@ -15178,56 +15275,81 @@ export default function WorkPage() {
                           const hasContact = !!(c.email || c.phone);
                           const sentInfo = contactSentInfo(c);
                           const st = CONTACT_STATUS_STYLE[c.status] || CONTACT_STATUS_STYLE['Not sent'];
+                          const meeting = schedMeetings[c.id];
+                          const isBooked = meeting?.booking_status === 'booked' && !!meeting.scheduled_at;
+                          const meetingStart = isBooked ? new Date(meeting!.scheduled_at as string) : null;
+                          const meetingEnd = meetingStart ? new Date(meetingStart.getTime() + (meeting!.duration_mins || schedDuration) * 60000) : null;
+                          const meetingPast = meetingEnd ? meetingEnd.getTime() < Date.now() : false;
                           return (
-                            <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', borderRadius: 8, background: selectedIds[c.id] ? `${STAGE_COLORS.validate}0a` : 'transparent' }}>
-                              <input type="checkbox" checked={!!selectedIds[c.id]} disabled={!hasContact || sending}
-                                onChange={e => setSelectedIds(s => ({ ...s, [c.id]: e.target.checked }))}
-                                style={{ width: 16, height: 16, accentColor: STAGE_COLORS.validate, flexShrink: 0 }} />
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1d1d1f' }}>{c.name}</div>
-                                <div style={{ fontSize: 10.5, color: T3 }}>{c.email || 'No email on file'}{c.phone ? ` · ${c.phone}` : ''}{sentInfo ? ` · sent ${sentInfo.daysSince}d ago` : ''}</div>
+                            <div key={c.id} style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, padding: '7px 10px', borderRadius: 8, background: selectedIds[c.id] ? `${STAGE_COLORS.validate}0a` : 'transparent' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <input type="checkbox" checked={!!selectedIds[c.id]} disabled={!hasContact || sending}
+                                  onChange={e => setSelectedIds(s => ({ ...s, [c.id]: e.target.checked }))}
+                                  style={{ width: 16, height: 16, accentColor: STAGE_COLORS.validate, flexShrink: 0 }} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1d1d1f' }}>{c.name}</div>
+                                  <div style={{ fontSize: 10.5, color: T3 }}>{c.email || 'No email on file'}{c.phone ? ` · ${c.phone}` : ''}{sentInfo ? ` · sent ${sentInfo.daysSince}d ago` : ''}</div>
+                                </div>
+                                <span style={{ fontSize: 9.5, fontWeight: 700, color: st.c, background: st.bg, borderRadius: 20, padding: '3px 8px', flexShrink: 0, whiteSpace: 'nowrap' as const }}>{c.status}</span>
+                                {result && (
+                                  result.ok
+                                    ? <span style={{ fontSize: 10.5, fontWeight: 700, color: '#059669', flexShrink: 0 }}>{result.emailSent ? '✓ Emailed' : '✓ Link ready'}</span>
+                                    : <span style={{ fontSize: 10.5, fontWeight: 700, color: '#dc2626', flexShrink: 0 }}>{result.error || 'Failed'}</span>
+                                )}
+                                {/* Resend stays available even after a successful send — this is meant to
+                                    be clickable again for a follow-up nudge days later, not a one-shot action. */}
+                                {c.status === 'Sent' && hasContact && (
+                                  <button onClick={() => resendTo(c)} disabled={resendingId === c.id}
+                                    style={{ fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fef6e6', border: 'none', borderRadius: 20, padding: '3px 9px', cursor: resendingId === c.id ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' as const }}>
+                                    {resendingId === c.id ? '…' : (result ? '↻ Resend again' : '↻ Resend')}
+                                  </button>
+                                )}
+                                {result?.ok && result.hasPhone && (
+                                  <a href={`https://wa.me/?text=${encodeURIComponent(`Hi ${c.name.split(' ')[0]}! Would you be up for a free ${schedDuration}-min video call? Pick a time here: ${result.bookingLink}`)}`}
+                                    target="_blank" rel="noopener noreferrer"
+                                    style={{ fontSize: 10.5, fontWeight: 700, color: '#25d366', textDecoration: 'none', flexShrink: 0 }}>
+                                    📱 WhatsApp
+                                  </a>
+                                )}
                               </div>
-                              <span style={{ fontSize: 9.5, fontWeight: 700, color: st.c, background: st.bg, borderRadius: 20, padding: '3px 8px', flexShrink: 0, whiteSpace: 'nowrap' as const }}>{c.status}</span>
-                              {result && (
-                                result.ok
-                                  ? <span style={{ fontSize: 10.5, fontWeight: 700, color: '#059669', flexShrink: 0 }}>{result.emailSent ? '✓ Emailed' : '✓ Link ready'}</span>
-                                  : <span style={{ fontSize: 10.5, fontWeight: 700, color: '#dc2626', flexShrink: 0 }}>{result.error || 'Failed'}</span>
-                              )}
-                              {/* Resend stays available even after a successful send — this is meant to
-                                  be clickable again for a follow-up nudge days later, not a one-shot action. */}
-                              {c.status === 'Sent' && hasContact && (
-                                <button onClick={() => resendTo(c.id)} disabled={resendingId === c.id}
-                                  style={{ fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fef6e6', border: 'none', borderRadius: 20, padding: '3px 9px', cursor: resendingId === c.id ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' as const }}>
-                                  {resendingId === c.id ? '…' : (result ? '↻ Resend again' : '↻ Resend')}
-                                </button>
-                              )}
-                              {result?.ok && result.hasPhone && (
-                                <a href={`https://wa.me/?text=${encodeURIComponent(`Hi ${c.name.split(' ')[0]}! Would you be up for a quick ${schedDuration}-min chat? Pick a time here: ${result.bookingLink}`)}`}
-                                  target="_blank" rel="noopener noreferrer"
-                                  style={{ fontSize: 10.5, fontWeight: 700, color: '#25d366', textDecoration: 'none', flexShrink: 0 }}>
-                                  📱 WhatsApp
-                                </a>
+                              {/* Meeting details -- date/time + join link once a slot is actually
+                                  booked. The link disables itself once the meeting's over (start +
+                                  duration has passed) rather than staying clickable indefinitely,
+                                  and a past meeting gets a one-click "request follow-up" instead
+                                  (the backend now allows a fresh request once the old one's over). */}
+                              {isBooked && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, marginLeft: 26, fontSize: 10.5 }}>
+                                  <span style={{ color: T3 }}>
+                                    📅 {meetingStart!.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}, {meetingStart!.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                                  </span>
+                                  {meeting?.meeting_link ? (
+                                    meetingPast ? (
+                                      <span title="This meeting has already happened — the link is no longer active"
+                                        style={{ color: '#aeaeb2', fontWeight: 600, cursor: 'not-allowed' }}>
+                                        🔗 Join link (ended)
+                                      </span>
+                                    ) : (
+                                      <a href={meeting.meeting_link} target="_blank" rel="noopener noreferrer"
+                                        style={{ color: '#15803d', fontWeight: 700, textDecoration: 'none' }}>
+                                        🔗 Join call
+                                      </a>
+                                    )
+                                  ) : (
+                                    <span style={{ color: '#aeaeb2' }}>No link</span>
+                                  )}
+                                  {meetingPast && (
+                                    <button onClick={() => resendTo(c)} disabled={resendingId === c.id}
+                                      style={{ fontSize: 10, fontWeight: 700, color: '#4f46e5', background: '#eef0ff', border: 'none', borderRadius: 20, padding: '2px 9px', cursor: resendingId === c.id ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' as const }}>
+                                      {resendingId === c.id ? '…' : '🔁 Request follow-up'}
+                                    </button>
+                                  )}
+                                </div>
                               )}
                             </div>
                           );
                         })}
                       </div>
 
-                      {/* Zoom must be connected BEFORE invites go out — a contact
-                          who books against a founder with no Zoom gets a confirmed
-                          slot with no join link. The backend enforces this too
-                          (428); this banner is the friendly version. */}
-                      {zoomConnected === false && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const, padding: '10px 12px', borderRadius: 9, background: '#fef6e6', border: '1.5px solid #f5d9a8' }}>
-                          <span style={{ fontSize: 12, color: '#92400e', fontWeight: 600, flex: 1, minWidth: 220 }}>
-                            ⚠️ Connect your Zoom before sending invites — otherwise, when someone books a slot, their confirmed meeting won't have a join link.
-                          </span>
-                          <button onClick={connectZoom} disabled={zoomConnecting}
-                            style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#b45309', color: '#fff', fontSize: 11.5, fontWeight: 700, cursor: zoomConnecting ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                            {zoomConnecting ? 'Connecting…' : 'Connect Zoom'}
-                          </button>
-                        </div>
-                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           {[15, 20, 30].map(m => (
@@ -15238,9 +15360,8 @@ export default function WorkPage() {
                                 color: schedDuration === m ? '#fff' : '#aaa' }}>{m}m</button>
                           ))}
                         </div>
-                        <button onClick={sendRequests} disabled={sending || !selectedList.length || zoomConnected === false}
-                          title={zoomConnected === false ? 'Connect Zoom above first — booked meetings need a join link' : undefined}
-                          style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: (!selectedList.length || zoomConnected === false) ? '#e5e5ea' : STAGE_COLORS.validate, color: (!selectedList.length || zoomConnected === false) ? '#aaa' : '#fff', fontSize: 12.5, fontWeight: 700, cursor: (!selectedList.length || zoomConnected === false) ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                        <button onClick={sendRequests} disabled={sending || !selectedList.length}
+                          style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: !selectedList.length ? '#e5e5ea' : STAGE_COLORS.validate, color: !selectedList.length ? '#aaa' : '#fff', fontSize: 12.5, fontWeight: 700, cursor: !selectedList.length ? 'default' : 'pointer', fontFamily: 'inherit' }}>
                           {sending ? 'Sending…' : `Send ${selectedList.length || ''} interview request${selectedList.length === 1 ? '' : 's'}`}
                         </button>
                         <div style={{ fontSize: 10.5, color: T3 }}>Email sends automatically. For phone-only contacts, click WhatsApp after sending.</div>
@@ -15253,6 +15374,32 @@ export default function WorkPage() {
           </div>
 
           {showAvail && <AvailabilityModal accentColor={STAGE_COLORS.validate} onClose={() => setShowAvail(false)} />}
+
+          {/* Preview & edit a single resend/follow-up email before it sends */}
+          {previewingResend && (
+            <EmailPreviewModal
+              contactIds={[previewingResend.id]}
+              recipientLabel={previewingResend.name}
+              durationMins={schedDuration}
+              problem={problem}
+              accentColor={STAGE_COLORS.validate}
+              onClose={() => { setPreviewingResend(null); setResendingId(null); }}
+              onSent={(result) => { applyResendResult(previewingResend.id, result); setResendingId(null); }}
+            />
+          )}
+
+          {/* Preview & edit the shared bulk-send email before it goes out to everyone selected */}
+          {previewingBulk && (
+            <EmailPreviewModal
+              contactIds={selectedList.map(c => c.id)}
+              recipientLabel={`${selectedList.length} selected contact${selectedList.length === 1 ? '' : 's'}`}
+              durationMins={schedDuration}
+              problem={problem}
+              accentColor={STAGE_COLORS.validate}
+              onClose={() => { setPreviewingBulk(false); setSending(false); }}
+              onSent={(result) => { applyBulkResult(result); setSending(false); }}
+            />
+          )}
 
           <NavRow onBack={back} onNext={() => next()} nextLabel="Start logging conversations →" stageColor={STAGE_COLORS.validate} stepTitle="Schedule" ideaId={activeIdea.id} />
         </div>
@@ -15628,6 +15775,7 @@ export default function WorkPage() {
           </div>
         </div>
       )}
+      {showAvail && <AvailabilityModal accentColor={STAGE_COLORS.validate} onClose={() => setShowAvail(false)} />}
     </div>,
 
     // ── v3: Analyse ──────────────────────────────────────────────────────
@@ -15649,6 +15797,9 @@ export default function WorkPage() {
           </div>
         </div>
       </div>
+
+      {renderAvailabilityButton()}
+      {renderInterviewStatusPanel()}
 
       {(() => {
         // ── Structured interview pools ────────────────────────────────────────
@@ -16348,6 +16499,7 @@ export default function WorkPage() {
         const verdicts = (get('painPointVerdicts') || '').split(MULTI_SEP);
         return painPoints.some((_: string, i: number) => !verdicts[i]);
       })()} disabledReason="Rate every pain point above — confirmed, partial, or not confirmed." stageColor={STAGE_COLORS.hone} stepTitle="Analyse" ideaId={activeIdea.id} />
+      {showAvail && <AvailabilityModal accentColor={STAGE_COLORS.validate} onClose={() => setShowAvail(false)} />}
     </div>,
 
     // ── v4: Decision & findings ──────────────────────────────────────────
@@ -16369,6 +16521,9 @@ export default function WorkPage() {
           </div>
         </div>
       </div>
+
+      {renderAvailabilityButton()}
+      {renderInterviewStatusPanel()}
 
       {/* ── Validation Score Engine ── */}
       {(() => {
@@ -16933,6 +17088,7 @@ export default function WorkPage() {
           </div>
         </div>
       )}
+      {showAvail && <AvailabilityModal accentColor={STAGE_COLORS.validate} onClose={() => setShowAvail(false)} />}
     </div>,
 
     <CompleteBadge key="v-done" mod="validate" onContinue={() => goMod('shape')} />,

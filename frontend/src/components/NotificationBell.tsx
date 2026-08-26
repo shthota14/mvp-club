@@ -5,7 +5,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface Notification {
   id: string;
-  type: 'new_post' | 'new_comment' | 'encourage' | 'network_offer' | 'new_reply';
+  type: 'new_post' | 'new_comment' | 'encourage' | 'network_offer' | 'new_reply' | 'meeting_booked';
   title: string;
   body: string | null;
   link: string | null;
@@ -19,6 +19,7 @@ const TYPE_ICON: Record<string, string> = {
   new_reply:     '↩️',
   encourage:     '👍',
   network_offer: '🤝',
+  meeting_booked: '📅',
 };
 
 function timeAgo(iso: string): string {
@@ -88,7 +89,14 @@ export default function NotificationBell() {
     }
     if (n.link) {
       setOpen(false);
-      navigate(n.link);
+      // Most notification links are in-app routes (a post, a thread) and go
+      // through the router -- but meeting_booked links straight to the
+      // external Jitsi join URL, which react-router's navigate() can't open.
+      if (/^https?:\/\//i.test(n.link)) {
+        window.open(n.link, '_blank', 'noopener,noreferrer');
+      } else {
+        navigate(n.link);
+      }
     }
   };
 
@@ -210,6 +218,11 @@ export default function NotificationBell() {
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {n.body}
+                    </div>
+                  )}
+                  {n.type === 'meeting_booked' && n.link && (
+                    <div style={{ fontSize: 12, color: '#007aff', fontWeight: 600, marginTop: 3 }}>
+                      🔗 Join call →
                     </div>
                   )}
                   <div style={{ fontSize: 11, color: '#aeaeb2', marginTop: 4 }}>

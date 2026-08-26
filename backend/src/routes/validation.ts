@@ -3,35 +3,10 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
-import { sendMeetingRequestEmail } from '../utils/mailer';
-import { zoomConfigured } from '../utils/meeting';
+import { sendMeetingRequestEmail, defaultMeetingRequestMessage } from '../utils/mailer';
 import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn } from '../utils/aiQuestionCheck';
 
 const router = Router();
-
-// Meeting invites lead the contact to a booking page whose confirmed slots
-// get a Zoom join link — hosted on the founder's own connected Zoom account,
-// or the platform's shared Zoom account as a fallback. If NEITHER exists,
-// every booking would land without a join link, so refuse to send the invite
-// up front and tell the founder to connect Zoom first. 428 (Precondition
-// Required) so the frontend can distinguish this from a plain failure.
-async function assertZoomReady(userId: string, res: Response): Promise<boolean> {
-  let ownZoom = false;
-  try {
-    const zres = await query<{ zoom_user_id: string | null }>(
-      'SELECT zoom_user_id FROM users WHERE id = $1', [userId]
-    );
-    ownZoom = !!zres.rows[0]?.zoom_user_id;
-  } catch {
-    // add-zoom-oauth.sql not run yet — treat as not connected rather than 500.
-  }
-  if (ownZoom || zoomConfigured()) return true;
-  res.status(428).json({
-    error: 'Connect your Zoom account before sending meeting invites — without it, booked meetings would have no join link. Use the "Connect Zoom" button on the Schedule step.',
-    code: 'zoom_not_connected',
-  });
-  return false;
-}
 
 // Loosely-typed row for `vc.*` + joined idea_name — keeps the columns we
 // explicitly reference typed as strings instead of `unknown`, while an index
@@ -203,12 +178,47 @@ router.get('/contacts/meetings', async (req: Request, res: Response) => {
   }
 });
 
+// GET /contacts/:id/preview-meeting-request — read-only: returns the default
+// subject + message text for this contact's meeting-request email, so the
+// frontend's "preview & edit before sending" modal can start from the exact
+// same copy sendMeetingRequestEmail would use, without duplicating it and
+// without creating an interview row or sending anything.
+router.get('/contacts/:id/preview-meeting-request', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const durationMinsRaw = req.query.duration_mins;
+  const durationMins = [15, 20, 30].includes(Number(durationMinsRaw)) ? Number(durationMinsRaw) : 20;
+
+  try {
+    const contactRes = await query<ContactRow>(
+      `SELECT vc.*, i.name AS idea_name
+       FROM validation_contacts vc
+       JOIN ideas i ON i.id = vc.idea_id
+       WHERE vc.id = $1 AND vc.user_id = $2`,
+      [id, req.userId]
+    );
+    if (!contactRes.rows.length) return res.status(404).json({ error: 'Contact not found' });
+    const c = contactRes.rows[0];
+    const userRes = await query<{ name: string }>(`SELECT name FROM users WHERE id = $1`, [req.userId]);
+    const organizerName = userRes.rows[0]?.name || 'A founder';
+
+    res.json({
+      subject: `MVP Club Interview Request: "${c.idea_name}"`,
+      message: defaultMeetingRequestMessage({ organizerName, ideaName: c.idea_name, durationMins }),
+      toName: c.name,
+      toEmail: c.email || null,
+    });
+  } catch (err: any) {
+    console.error('[validation] preview-meeting-request', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /contacts/:id/request-meeting — email this contact a link to pick an
 // open slot from the founder's availability. Reuses (and re-sends) any
 // still-pending request for the same contact rather than spawning duplicates.
 router.post('/contacts/:id/request-meeting', async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { duration_mins, problem } = req.body;
+  const { duration_mins, problem, custom_subject, custom_message } = req.body;
   const durationMins = [15, 20, 30].includes(Number(duration_mins)) ? Number(duration_mins) : 20;
 
   try {
@@ -222,8 +232,6 @@ router.post('/contacts/:id/request-meeting', async (req: Request, res: Response)
     if (!contactRes.rows.length) return res.status(404).json({ error: 'Contact not found' });
     const c = contactRes.rows[0];
     if (!c.email) return res.status(400).json({ error: 'Add an email for this contact first — nothing to send the request to.' });
-    if (!(await assertZoomReady(req.userId!, res))) return;
-
     const userRes = await query<{ name: string }>(`SELECT name FROM users WHERE id = $1`, [req.userId]);
     const organizerName = userRes.rows[0]?.name || 'A founder';
 
@@ -234,12 +242,21 @@ router.post('/contacts/:id/request-meeting', async (req: Request, res: Response)
       [id]
     );
 
-    let interview;
-    if (existingRes.rows.length) {
-      interview = existingRes.rows[0];
-      if (interview.booking_status === 'booked') {
+    let interview = existingRes.rows.length ? existingRes.rows[0] : null;
+
+    if (interview && interview.booking_status === 'booked') {
+      const alreadyHappened = interview.scheduled_at && new Date(interview.scheduled_at).getTime() < Date.now();
+      if (!alreadyHappened) {
         return res.status(409).json({ error: 'This contact already has a meeting booked.', interview });
       }
+      // The booked call is in the past — this is a follow-up request, not a
+      // duplicate. Fall through to create a fresh interview row below rather
+      // than reusing the old one, whose booking_token/scheduled_at belong to
+      // the call that's already happened.
+      interview = null;
+    }
+
+    if (interview) {
       // Resend of a still-pending request — preserve the *original* send date
       // (don't reset the "sent N days ago" clock) but backfill it if this
       // interview predates invite_sent_at being tracked at all.
@@ -271,6 +288,8 @@ router.post('/contacts/:id/request-meeting', async (req: Request, res: Response)
       problem: typeof problem === 'string' ? problem : undefined,
       bookingLink,
       durationMins,
+      customSubject: typeof custom_subject === 'string' ? custom_subject : undefined,
+      customMessage: typeof custom_message === 'string' ? custom_message : undefined,
     });
 
     res.json({ interview, bookingLink, emailSent });
@@ -289,15 +308,13 @@ router.post('/contacts/:id/request-meeting', async (req: Request, res: Response)
 // so a phone-only contact can be sent that link manually over WhatsApp; the
 // email is simply skipped (not sent) when the contact has no address on file.
 router.post('/contacts/bulk-request-meeting', async (req: Request, res: Response) => {
-  const { contact_ids, duration_mins, problem } = req.body;
+  const { contact_ids, duration_mins, problem, custom_subject, custom_message } = req.body;
   if (!Array.isArray(contact_ids) || !contact_ids.length) {
     return res.status(400).json({ error: 'contact_ids must be a non-empty array' });
   }
   const durationMins = [15, 20, 30].includes(Number(duration_mins)) ? Number(duration_mins) : 20;
 
   try {
-    if (!(await assertZoomReady(req.userId!, res))) return;
-
     const userRes = await query<{ name: string }>(`SELECT name FROM users WHERE id = $1`, [req.userId]);
     const organizerName = userRes.rows[0]?.name || 'A founder';
     const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
@@ -321,13 +338,19 @@ router.post('/contacts/bulk-request-meeting', async (req: Request, res: Response
           [id]
         );
 
-        let interview;
-        if (existingRes.rows.length) {
-          interview = existingRes.rows[0];
-          if (interview.booking_status === 'booked') {
+        let interview = existingRes.rows.length ? existingRes.rows[0] : null;
+
+        if (interview && interview.booking_status === 'booked') {
+          const alreadyHappened = interview.scheduled_at && new Date(interview.scheduled_at).getTime() < Date.now();
+          if (!alreadyHappened) {
             results.push({ contact_id: id, ok: false, error: 'Already booked' });
             continue;
           }
+          // Past meeting — treat as a follow-up request, not a duplicate.
+          interview = null;
+        }
+
+        if (interview) {
           // Resend of a still-pending request — preserve the *original* send
           // date, only backfilling it if this interview predates tracking.
           if (!interview.invite_sent_at) {
@@ -354,6 +377,8 @@ router.post('/contacts/bulk-request-meeting', async (req: Request, res: Response
             toEmail: c.email, toName: c.name, organizerName, ideaName: c.idea_name,
             problem: typeof problem === 'string' ? problem : undefined,
             bookingLink, durationMins,
+            customSubject: typeof custom_subject === 'string' ? custom_subject : undefined,
+            customMessage: typeof custom_message === 'string' ? custom_message : undefined,
           });
         }
         results.push({ contact_id: id, ok: true, bookingLink, emailSent, hasPhone: !!c.phone });

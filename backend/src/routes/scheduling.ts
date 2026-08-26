@@ -1,8 +1,9 @@
 import express, { Request, Response } from 'express';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
-import { createZoomMeeting, zoomConfigured, createZoomMeetingForUser } from '../utils/meeting';
+import { createJitsiMeeting, formatMeetingName } from '../utils/meeting';
 import { sendInterviewInviteEmail, sendOrganizerCalendarInvite } from '../utils/mailer';
+import { createNotification } from '../utils/notify';
 import { computeOpenSlots, AvailabilityRule, AvailabilitySettings, AvailabilityOverrideWindow } from '../utils/availability';
 
 const router = express.Router();
@@ -340,34 +341,23 @@ router.post('/book/:token', async (req: Request, res: Response) => {
     let meetingId = '';
     let meetingProvider = '';
     try {
-      // Prefer the organizer's own connected Zoom account, so they're the
-      // meeting host (see backend/src/routes/zoom.ts) -- fall back to the
-      // shared Server-to-Server account only if they haven't connected one.
-      const zmOwn = await createZoomMeetingForUser(iv.user_id, {
-        topic: `Discovery chat — ${iv.idea_name}`,
-        startTime: startTime.toISOString(),
-        durationMins,
-        timezone: settings.timezone,
-      });
-      if (zmOwn) {
-        meetingLink = zmOwn.joinUrl;
-        meetingId = zmOwn.meetingId;
-        meetingProvider = 'zoom';
-      } else if (zoomConfigured()) {
-        const zm = await createZoomMeeting({
-          topic: `Discovery chat — ${iv.idea_name}`,
-          startTime: startTime.toISOString(),
-          durationMins,
-          timezone: settings.timezone,
-        });
-        meetingLink = zm.joinUrl;
-        meetingId = zm.meetingId;
-        meetingProvider = 'zoom';
-      }
-    } catch (zmErr) {
-      // Never block a booking on a Zoom hiccup -- the contact still gets a
-      // confirmed time, just without an auto-generated meeting link.
-      console.error('[scheduling] Zoom meeting creation failed -- continuing without a meeting link', zmErr);
+      // Public Jitsi -- no OAuth, no "is this configured" check, just a room
+      // URL that exists the moment someone opens it. Kept in a try/catch for
+      // defensive symmetry with the rest of this handler, though generating
+      // the slug can't realistically fail.
+      const jm = createJitsiMeeting({ topic: formatMeetingName({
+        ideaName: iv.idea_name,
+        intervieweeName: iv.interviewee_name || 'Guest',
+        organizerName: iv.organizer_name || 'Founder',
+        startTime,
+      }) });
+      meetingLink = jm.joinUrl;
+      meetingId = jm.meetingId;
+      meetingProvider = 'jitsi';
+    } catch (jmErr) {
+      // Never block a booking on a meeting-link hiccup -- the contact still
+      // gets a confirmed time, just without an auto-generated meeting link.
+      console.error('[scheduling] Jitsi meeting creation failed -- continuing without a meeting link', jmErr);
     }
 
     await query(
@@ -415,6 +405,19 @@ router.post('/book/:token', async (req: Request, res: Response) => {
     } catch (mailErr) {
       console.error('[scheduling] Failed to send organizer confirmation -- booking still confirmed', mailErr);
     }
+
+    // In-app bell alert for the founder, on top of the email above -- this is
+    // what actually surfaces "a meeting got booked" while they're in the app,
+    // with a one-click way back to the join link (createNotification is
+    // fire-and-forget internally: it never throws, so it can't turn a
+    // successful booking into an error response).
+    await createNotification(
+      iv.user_id,
+      'meeting_booked',
+      `📅 ${iv.interviewee_name || 'Someone'} booked a meeting`,
+      `${startTime.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} at ${startTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} — about "${iv.idea_name}"`,
+      meetingLink || null
+    );
 
     res.json({ success: true, scheduledAt: startTime.toISOString(), meetingLink });
   } catch (err: any) {

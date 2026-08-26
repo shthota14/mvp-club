@@ -7,9 +7,14 @@ export type NotificationType =
   | 'encourage'
   | 'network_offer'
   | 'new_reply'
-  | 'new_feedback';
+  | 'new_feedback'
+  | 'meeting_booked';
 
-// Encourages are high-volume — skip emailing those
+// Encourages are high-volume — skip emailing those. meeting_booked is also
+// excluded here on purpose: the scheduling flow already sends a proper
+// calendar-invite email (with the .ics attached) the moment a meeting is
+// booked, so a second generic notification email would just be noise —
+// this is in-app only, a bell alert with a quick link back to the call.
 const EMAIL_ELIGIBLE: NotificationType[] = [
   'new_post', 'new_comment', 'new_reply', 'network_offer', 'new_feedback',
 ];

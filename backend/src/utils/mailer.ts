@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import ical, { ICalCalendarMethod } from 'ical-generator';
+import { formatMeetingName } from './meeting';
 
 // Lazy-initialised transporter — only created if SMTP env vars are set
 let transporter: nodemailer.Transporter | null = null;
@@ -35,6 +36,37 @@ function getTransporter() {
 // authenticates with a different login than the human-facing sender address.
 const FROM_NAME    = process.env.MAIL_FROM_NAME || 'MVP Club';
 const FROM_ADDRESS = process.env.MAIL_FROM || process.env.SMTP_USER || '';
+
+// Escapes text that gets interpolated into an HTML email body — matters most
+// for founder-edited copy (the meeting-request preview/edit flow) since that
+// text is no longer just our own template strings.
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// The default opening message for a meeting-request email — the two
+// paragraphs between the greeting and the "Book a time" link. Exported so the
+// frontend's editable preview can start from exactly this text (single
+// source of truth) rather than re-typing the copy in two places.
+export function defaultMeetingRequestMessage({
+  organizerName,
+  ideaName,
+  durationMins,
+}: {
+  organizerName: string;
+  ideaName: string;
+  durationMins: number;
+}): string {
+  return [
+    `I am ${organizerName}, and I am currently validating a few assumptions behind a new business idea in the ${ideaName} space.`,
+    `I would really appreciate ${durationMins} minutes of your time for a short video call. Your honest feedback would be incredibly valuable in helping me understand whether I am solving a real problem. There is nothing to prepare and absolutely no sales pitch—just a genuine conversation.`,
+  ].join('\n\n');
+}
 
 export async function sendPasswordResetEmail({
   toEmail,
@@ -203,8 +235,13 @@ function buildInterviewIcs({
   cal.method(ICalCalendarMethod.REQUEST);
 
   const firstName = intervieweeName.split(' ')[0];
-  const providerLabel = meetingProvider === 'zoom' ? 'Zoom' : meetingProvider === 'teams' ? 'Microsoft Teams' : 'Video Call';
-  const subject = `Customer Discovery Interview — ${ideaName}`;
+  const providerLabel = meetingProvider === 'jitsi' ? 'Jitsi Meet' : meetingProvider === 'teams' ? 'Microsoft Teams' : meetingProvider === 'zoom' ? 'Zoom' : 'Video Call';
+  // "Free video call" only when there's an actual meeting link to back the
+  // promise — the rare link-creation hiccup fallback (see scheduling.ts)
+  // still confirms the booking, just without a meeting link, so it falls
+  // back to the neutral wording rather than promising a call it can't deliver.
+  const isFreeSession = !!meetingLink && meetingProvider === 'jitsi';
+  const subject = formatMeetingName({ ideaName, intervieweeName, organizerName, startTime });
 
   const attendees = [{ name: organizerName, email: organizerEmail, rsvp: true }];
   if (intervieweeEmail) attendees.push({ name: intervieweeName, email: intervieweeEmail, rsvp: true });
@@ -216,7 +253,7 @@ function buildInterviewIcs({
     description: [
       `Hi ${firstName},`,
       '',
-      `${organizerName} has invited you to a customer discovery interview about "${ideaName}".`,
+      `${organizerName} has invited you to ${isFreeSession ? 'a free video call' : 'a customer discovery interview'} about "${ideaName}".`,
       '',
       meetingLink ? `Join via ${providerLabel}: ${meetingLink}` : 'The organiser will share the meeting link shortly.',
       '',
@@ -263,8 +300,11 @@ export async function sendInterviewInviteEmail({
   }
 
   const firstName = intervieweeName.split(' ')[0];
-  const providerLabel = meetingProvider === 'zoom' ? 'Zoom' : meetingProvider === 'teams' ? 'Microsoft Teams' : 'Video Call';
-  const subject = `Customer Discovery Interview — ${ideaName}`;
+  const providerLabel = meetingProvider === 'jitsi' ? 'Jitsi Meet' : meetingProvider === 'teams' ? 'Microsoft Teams' : meetingProvider === 'zoom' ? 'Zoom' : 'Video Call';
+  // Only promise "free video call" when there's an actual meeting link behind
+  // it — see the matching isFreeSession note in buildInterviewIcs above.
+  const isFreeSession = !!meetingLink && meetingProvider === 'jitsi';
+  const subject = formatMeetingName({ ideaName, intervieweeName, organizerName, startTime });
 
   const icsContent = buildInterviewIcs({
     organizerName, organizerEmail, intervieweeName, intervieweeEmail, ideaName,
@@ -273,7 +313,7 @@ export async function sendInterviewInviteEmail({
 
   const html = `
     <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#111">
-      <h2 style="font-size:20px;font-weight:800;margin-bottom:4px">You've been invited to a discovery interview</h2>
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:4px">${isFreeSession ? "You've been invited to a free video call" : "You've been invited to a discovery interview"}</h2>
       <p style="color:#6b7280;margin-top:0">via <strong>MVP Club</strong></p>
 
       <div style="background:#f8fafc;border-radius:12px;padding:20px 24px;margin:20px 0">
@@ -297,7 +337,7 @@ export async function sendInterviewInviteEmail({
       ` : ''}
 
       <p style="color:#374151;line-height:1.6">Hi ${firstName},<br/><br/>
-      ${organizerName} is building <strong>"${ideaName}"</strong> and would love to hear your perspective in a short discovery chat. There's nothing to prepare — just a conversation about how you currently deal with the problem they're exploring.<br/><br/>
+      ${organizerName} is building <strong>"${ideaName}"</strong> and would love to hear your perspective in ${isFreeSession ? 'a free video call' : 'a short discovery chat'} — no cost to you, and there's nothing to prepare, just a conversation about how you currently deal with the problem they're exploring.<br/><br/>
       A calendar invite is attached to this email. Accept it to add the meeting to your diary.</p>
 
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0"/>
@@ -306,7 +346,7 @@ export async function sendInterviewInviteEmail({
   `;
 
   const text = [
-    `You've been invited to a customer discovery interview`,
+    isFreeSession ? `You've been invited to a free video call` : `You've been invited to a customer discovery interview`,
     '',
     `Idea: ${ideaName}`,
     `Host: ${organizerName}`,
@@ -807,7 +847,7 @@ export async function sendOrganizerCalendarInvite({
     startTime, endTime, meetingLink, meetingProvider,
   });
 
-  const providerLabel = meetingProvider === 'zoom' ? 'Zoom' : meetingProvider === 'teams' ? 'Microsoft Teams' : 'Video Call';
+  const providerLabel = meetingProvider === 'jitsi' ? 'Jitsi Meet' : meetingProvider === 'teams' ? 'Microsoft Teams' : meetingProvider === 'zoom' ? 'Zoom' : 'Video Call';
 
   const html = `
     <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#111">
@@ -822,7 +862,7 @@ export async function sendOrganizerCalendarInvite({
   await t.sendMail({
     from: `"${FROM_NAME}" <${FROM_ADDRESS}>`,
     to: `"${organizerName}" <${organizerEmail}>`,
-    subject: `Interview confirmed: ${intervieweeName} — ${ideaName}`,
+    subject: `Interview confirmed: ${formatMeetingName({ ideaName, intervieweeName, organizerName, startTime })}`,
     html,
     text: `Interview scheduled with ${intervieweeName} on ${startTime.toLocaleDateString()}. Join: ${meetingLink}`,
     icalEvent: {
@@ -841,6 +881,8 @@ export async function sendMeetingRequestEmail({
   problem,
   bookingLink,
   durationMins,
+  customSubject,
+  customMessage,
 }: {
   toEmail: string;
   toName: string;
@@ -849,6 +891,11 @@ export async function sendMeetingRequestEmail({
   problem?: string;
   bookingLink: string;
   durationMins: number;
+  // Founder-edited overrides from the "preview & edit before sending" flow.
+  // Falls back to the default subject/message when omitted or blank so every
+  // existing caller (bulk send, resend) keeps working unchanged.
+  customSubject?: string;
+  customMessage?: string;
 }) {
   const t = getTransporter();
   if (!t) {
@@ -857,40 +904,60 @@ export async function sendMeetingRequestEmail({
   }
 
   const firstName = toName.split(' ')[0];
-  const problemLine = problem ? ` I'm exploring: ${problem}.` : '';
+  const subject = customSubject?.trim() ? customSubject.trim() : `MVP Club Interview Request: "${ideaName}"`;
+  const messageText = customMessage?.trim()
+    ? customMessage.trim()
+    : defaultMeetingRequestMessage({ organizerName, ideaName, durationMins });
+  // Blank-line-separated paragraphs — same convention the textarea preview uses.
+  const messageParagraphs = messageText.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+
+  const messageHtml = messageParagraphs
+    .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br/>')}</p>`)
+    .join('\n      ');
 
   const html = `
     <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#111">
-      <p>Hi ${firstName},</p>
-      <p>I'm ${organizerName}, working on <strong>"${ideaName}"</strong>.${problemLine} Would you be open to a quick ${durationMins}-minute chat? No prep needed — just a real conversation.</p>
+      <p>Hi ${escapeHtml(firstName)},</p>
+      <p>&nbsp;</p>
+      ${messageHtml}
+      <p>Book a time that suits you:</p>
       <div style="text-align:center;margin:28px 0">
         <a href="${bookingLink}" style="background:#059669;color:#fff;text-decoration:none;padding:14px 32px;border-radius:10px;font-weight:700;font-size:15px;display:inline-block">
-          Pick a time →
+          Pick a time for your free video call →
         </a>
         <p style="font-size:12px;color:#9ca3af;margin-top:10px">${bookingLink}</p>
       </div>
-      <p>Pick whatever slot works for you — I'll get a confirmation the moment you do.</p>
-      <p>Thanks,<br/><strong>${organizerName}</strong></p>
+      <p>Pick any available slot, and I will receive the confirmation straight away.</p>
+      <p>Thank you in advance—I truly appreciate your time.</p>
+      <p>&nbsp;</p>
+      <p>Best regards,<br/><strong>${escapeHtml(organizerName)}</strong></p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0"/>
-      <p style="font-size:11px;color:#9ca3af">Sent via MVP Club on behalf of ${organizerName}.</p>
+      <p style="font-size:11px;color:#9ca3af">Sent via MVP Club on behalf of ${escapeHtml(organizerName)}.</p>
     </div>
   `;
 
   const text = [
     `Hi ${firstName},`,
     '',
-    `I'm ${organizerName}, working on "${ideaName}".${problemLine} Would you be open to a quick ${durationMins}-minute chat?`,
     '',
-    `Pick a time that works for you: ${bookingLink}`,
+    ...messageParagraphs.flatMap((p, i) => (i === 0 ? [p] : ['', p])),
     '',
-    `Thanks,`,
+    `Book a time that suits you:`,
+    bookingLink,
+    '',
+    `Pick any available slot, and I will receive the confirmation straight away.`,
+    '',
+    `Thank you in advance—I truly appreciate your time.`,
+    '',
+    '',
+    `Best regards,`,
     organizerName,
   ].join('\n');
 
   await t.sendMail({
     from: `"${organizerName} via ${FROM_NAME}" <${FROM_ADDRESS}>`,
     to: `"${toName}" <${toEmail}>`,
-    subject: `Quick ${durationMins}-min chat about "${ideaName}"?`,
+    subject,
     text,
     html,
   });

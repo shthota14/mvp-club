@@ -1,5 +1,5 @@
 import { useApp } from '@/context/AppContext';
-import { authApi, linkedinApi, zoomApi } from '@/api/client';
+import { authApi, linkedinApi } from '@/api/client';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,9 +13,6 @@ export default function ProfilePanel({ open, onClose }: Props) {
   const [liStatus, setLiStatus]           = useState<{ connected: boolean; linkedin_url: string | null; linkedin_name: string | null } | null>(null);
   const [liLoading, setLiLoading]         = useState(false);
   const [liDisconnecting, setLiDisconnecting] = useState(false);
-  const [zoomStatus, setZoomStatus]           = useState<{ connected: boolean; zoom_email: string | null; zoom_connected_at: string | null } | null>(null);
-  const [zoomLoading, setZoomLoading]         = useState(false);
-  const [zoomDisconnecting, setZoomDisconnecting] = useState(false);
   const navigate = useNavigate();
 
   // Load LinkedIn status whenever panel opens
@@ -23,14 +20,6 @@ export default function ProfilePanel({ open, onClose }: Props) {
     if (!open) return;
     linkedinApi.status()
       .then(r => setLiStatus(r.data))
-      .catch(() => {});
-  }, [open]);
-
-  // Load Zoom status whenever panel opens
-  useEffect(() => {
-    if (!open) return;
-    zoomApi.status()
-      .then(r => setZoomStatus(r.data))
       .catch(() => {});
   }, [open]);
 
@@ -67,28 +56,6 @@ export default function ProfilePanel({ open, onClose }: Props) {
       await refreshUser();
     } catch { /* ignore */ } finally {
       setLiDisconnecting(false);
-    }
-  };
-
-  const connectZoom = async () => {
-    setZoomLoading(true);
-    try {
-      const res = await zoomApi.init();
-      window.location.href = res.data.url;
-    } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { error?: string } } })?.response?.data?.error;
-      alert(msg ?? 'Could not start Zoom login. Check that ZOOM_OAUTH_CLIENT_ID is set in .env.');
-      setZoomLoading(false);
-    }
-  };
-
-  const disconnectZoom = async () => {
-    setZoomDisconnecting(true);
-    try {
-      await zoomApi.disconnect();
-      setZoomStatus({ connected: false, zoom_email: null, zoom_connected_at: null });
-    } catch { /* ignore */ } finally {
-      setZoomDisconnecting(false);
     }
   };
 
@@ -221,51 +188,6 @@ export default function ProfilePanel({ open, onClose }: Props) {
             >
               <span style={{ fontSize: 16, fontWeight: 900 }}>in</span>
               {liLoading ? 'Redirecting…' : 'Connect LinkedIn'}
-            </button>
-          )}
-        </div>
-
-        {/* ── Zoom section ── */}
-        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.4px', color: '#6e6e73', marginBottom: 4 }}>
-            Zoom
-          </div>
-          <div style={{ fontSize: 11.5, color: '#8e8e93', lineHeight: 1.5, marginBottom: 10 }}>
-            Connect your own (free) Zoom account so interviews you book get a real meeting link with you as host.
-          </div>
-          {zoomStatus?.connected ? (
-            <div style={{ background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: 12, padding: '12px 14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 16 }}>🎥</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#1d4ed8' }}>Connected</span>
-              </div>
-              {zoomStatus.zoom_email && (
-                <div style={{ fontSize: 13, color: '#1e3a8a', marginBottom: 10, wordBreak: 'break-all' }}>
-                  as <strong>{zoomStatus.zoom_email}</strong>
-                </div>
-              )}
-              <button
-                onClick={disconnectZoom}
-                disabled={zoomDisconnecting}
-                style={{ fontSize: 12, fontWeight: 700, color: '#6e6e73', background: 'none', border: '1px solid #d2d2d7', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', opacity: zoomDisconnecting ? 0.6 : 1 }}
-              >
-                {zoomDisconnecting ? 'Disconnecting…' : 'Disconnect'}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={connectZoom}
-              disabled={zoomLoading}
-              style={{
-                width: '100%', padding: '11px 0', borderRadius: 12,
-                background: zoomLoading ? '#e5e7eb' : '#2563eb',
-                color: '#fff', border: 'none',
-                fontSize: 14, fontWeight: 700, cursor: zoomLoading ? 'not-allowed' : 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              }}
-            >
-              <span style={{ fontSize: 15 }}>🎥</span>
-              {zoomLoading ? 'Redirecting…' : 'Connect Zoom'}
             </button>
           )}
         </div>

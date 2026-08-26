@@ -68,30 +68,6 @@ function LinkedInCallbackHandler() {
   return null;
 }
 
-function ZoomCallbackHandler() {
-  const [params, setParams] = useSearchParams();
-  const { refreshUser } = useApp();
-
-  useEffect(() => {
-    const status = params.get('zoom');
-    const token  = params.get('token');
-    if (!status) return;
-
-    if (status === 'connected' && token) {
-      localStorage.setItem('mvpclub_token', token);
-      refreshUser();
-    }
-
-    // Strip zoom params from URL without reloading
-    params.delete('zoom');
-    params.delete('token');
-    params.delete('reason');
-    setParams(params, { replace: true });
-  }, []);
-
-  return null;
-}
-
 export default function App() {
   const { isAuthenticated, isLoading, user } = useApp();
 
@@ -100,7 +76,6 @@ export default function App() {
   return (
     <>
     <LinkedInCallbackHandler />
-    <ZoomCallbackHandler />
     <CookieConsent />
     <Routes>
       <Route path="/" element={isAuthenticated ? <Navigate to={user?.is_admin ? '/admin' : '/community'} replace /> : <HeroPage />} />

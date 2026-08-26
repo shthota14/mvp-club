@@ -132,17 +132,16 @@ export default function BookingPage() {
       <div style={{ minHeight: '100dvh', background: `linear-gradient(160deg,${AC}18 0%,${BG} 50%)`, fontFamily: FF, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ width: '100%', maxWidth: 440, textAlign: 'center' }}>
           <div style={{ width: 88, height: 88, borderRadius: '50%', background: `linear-gradient(135deg,${AC},${ACM})`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px', boxShadow: `0 16px 48px ${AC}50`, fontSize: 40 }}>✓</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: T1, marginBottom: 10 }}>You're booked!</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: T1, marginBottom: 10 }}>{booked.meetingLink ? 'Your free video call is booked!' : "You're booked!"}</div>
           <div style={{ fontSize: 15, color: T2, lineHeight: 1.7, marginBottom: 24 }}>
             {d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} at{' '}
             {d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} — a calendar invite is on its way to your inbox.
           </div>
-          {booked.meetingLink && (
-            <a href={booked.meetingLink} target="_blank" rel="noreferrer"
-              style={{ display: 'inline-block', padding: '13px 28px', borderRadius: 12, background: AC, color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxShadow: `0 8px 24px ${AC}40` }}>
-              Join meeting link →
-            </a>
-          )}
+          <button onClick={() => window.close()}
+            style={{ display: 'inline-block', padding: '13px 28px', borderRadius: 12, border: 'none', background: AC, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: `0 8px 24px ${AC}40` }}>
+            Close
+          </button>
+          <div style={{ fontSize: 12, color: T2, marginTop: 12 }}>The video call link is in the calendar invite on its way to your inbox — you can close this tab now.</div>
         </div>
       </div>
     );
@@ -155,7 +154,7 @@ export default function BookingPage() {
       <div style={{ minHeight: '100dvh', background: `linear-gradient(160deg,${AC}18 0%,${BG} 50%)`, fontFamily: FF, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ width: '100%', maxWidth: 440, textAlign: 'center' }}>
           <div style={{ width: 88, height: 88, borderRadius: '50%', background: `linear-gradient(135deg,${AC},${ACM})`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 28px', boxShadow: `0 16px 48px ${AC}50`, fontSize: 40 }}>✓</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: T1, marginBottom: 10 }}>This chat is already booked</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: T1, marginBottom: 10 }}>{info.meetingLink ? 'This free video call is already booked' : 'This chat is already booked'}</div>
           <div style={{ fontSize: 15, color: T2, lineHeight: 1.7, marginBottom: 24 }}>
             {info.organizerName} — {d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} at{' '}
             {d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
@@ -163,7 +162,7 @@ export default function BookingPage() {
           {info.meetingLink && (
             <a href={info.meetingLink} target="_blank" rel="noreferrer"
               style={{ display: 'inline-block', padding: '13px 28px', borderRadius: 12, background: AC, color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxShadow: `0 8px 24px ${AC}40` }}>
-              Join meeting link →
+              Join call →
             </a>
           )}
         </div>
@@ -193,10 +192,10 @@ export default function BookingPage() {
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: `linear-gradient(135deg,${AC},${ACM})`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', boxShadow: `0 8px 24px ${AC}40`, fontSize: 24 }}>📅</div>
           <div style={{ fontSize: 22, fontWeight: 800, color: T1, marginBottom: 6 }}>
-            {info.durationMins}-min chat with {info.organizerName}
+            Free {info.durationMins}-min video call with {info.organizerName}
           </div>
           <div style={{ fontSize: 14, color: T2, lineHeight: 1.6 }}>
-            About &ldquo;{info.ideaName}&rdquo; — pick a time that works for you. Times shown in your local time zone.
+            About &ldquo;{info.ideaName}&rdquo; — no cost to you, just pick a time that works. Times shown in your local time zone.
           </div>
         </div>
 

@@ -56,10 +56,12 @@ export const validationApi = {
   deleteContact: (id: string) => api.delete(`/validation/contacts/${id}`),
   getStats: (ideaId: string) => api.get(`/validation/stats/${ideaId}`),
   getMeetings: (ideaId: string) => api.get('/validation/contacts/meetings', { params: { idea_id: ideaId } }),
-  requestMeeting: (contactId: string, data: { duration_mins?: number; problem?: string }) =>
+  requestMeeting: (contactId: string, data: { duration_mins?: number; problem?: string; custom_subject?: string; custom_message?: string }) =>
     api.post(`/validation/contacts/${contactId}/request-meeting`, data),
-  bulkRequestMeeting: (data: { contact_ids: string[]; duration_mins?: number; problem?: string }) =>
+  bulkRequestMeeting: (data: { contact_ids: string[]; duration_mins?: number; problem?: string; custom_subject?: string; custom_message?: string }) =>
     api.post('/validation/contacts/bulk-request-meeting', data),
+  previewMeetingRequest: (contactId: string, params: { duration_mins?: number }) =>
+    api.get(`/validation/contacts/${contactId}/preview-meeting-request`, { params }),
   ideaReact: (data: { question: string; answer: string }) =>
     api.post('/validation/idea/react', data),
   assembleOneLiner: (data: { building: string; audience: string; struggle: string; outcome: string }) =>
@@ -352,14 +354,6 @@ export const linkedinApi = {
   init: () => api.get('/linkedin/init'),
   status: () => api.get('/linkedin/status'),
   disconnect: () => api.delete('/linkedin/disconnect'),
-};
-
-// Zoom OAuth (per-user -- each idea originator connects their own account so
-// their interview meetings are hosted by them, not a shared account)
-export const zoomApi = {
-  init: () => api.get('/zoom/init'),
-  status: () => api.get('/zoom/status'),
-  disconnect: () => api.delete('/zoom/disconnect'),
 };
 
 // Extended Network

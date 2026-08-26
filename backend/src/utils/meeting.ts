@@ -1,129 +1,44 @@
 import axios from 'axios';
-import { query } from '../db';
+import crypto from 'crypto';
 
-// ── Zoom per-user OAuth (each idea originator hosts their own meetings) ─────
-// Tokens live on the users row (see backend/src/db/migrations/add-zoom-oauth.sql
-// and backend/src/routes/zoom.ts, which handles the connect/disconnect flow).
-// This is intentionally separate from the Server-to-Server flow below, which
-// always creates meetings under one fixed account -- Zoom has no "on behalf of
-// a user" mode for Server-to-Server apps.
-async function getUserZoomAccessToken(userId: string): Promise<string | null> {
-  const res = await query<{
-    zoom_access_token: string | null;
-    zoom_refresh_token: string | null;
-    zoom_token_expires_at: string | null;
-  }>('SELECT zoom_access_token, zoom_refresh_token, zoom_token_expires_at FROM users WHERE id = $1', [userId]);
-  const u = res.rows[0];
-  if (!u?.zoom_access_token || !u.zoom_refresh_token) return null;
-
-  const expiresAt = u.zoom_token_expires_at ? new Date(u.zoom_token_expires_at).getTime() : 0;
-  if (Date.now() < expiresAt - 60_000) return u.zoom_access_token;
-
-  // Access tokens are short-lived (~1hr); refresh tokens rotate on every use,
-  // so the rotated pair must be re-saved each time this fires.
-  const { ZOOM_OAUTH_CLIENT_ID, ZOOM_OAUTH_CLIENT_SECRET } = process.env;
-  const creds = Buffer.from(`${ZOOM_OAUTH_CLIENT_ID}:${ZOOM_OAUTH_CLIENT_SECRET}`).toString('base64');
-  const refreshRes = await axios.post(
-    `https://zoom.us/oauth/token?grant_type=refresh_token&refresh_token=${encodeURIComponent(u.zoom_refresh_token)}`,
-    null,
-    { headers: { Authorization: `Basic ${creds}` } }
-  );
-  const { access_token, refresh_token, expires_in } = refreshRes.data;
-  await query(
-    `UPDATE users SET zoom_access_token = $1, zoom_refresh_token = $2,
-       zoom_token_expires_at = NOW() + ($3 || ' seconds')::interval, updated_at = NOW() WHERE id = $4`,
-    [access_token, refresh_token, String(expires_in ?? 3600), userId]
-  );
-  return access_token;
+// ── Shared meeting naming ────────────────────────────────────────────────────
+// One consistent "name" for a scheduled meeting, used everywhere a meeting's
+// identity is shown to a person: the Jitsi call's in-room/tab title, the
+// calendar invite's event title, and the invite emails' subject lines.
+export function formatMeetingName(params: {
+  ideaName: string;
+  intervieweeName: string;
+  organizerName: string;
+  startTime: Date;
+}): string {
+  const { ideaName, intervieweeName, organizerName, startTime } = params;
+  const dateStr = startTime.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const timeStr = startTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return `${ideaName} — ${intervieweeName} & ${organizerName} — ${dateStr} ${timeStr}`;
 }
 
-// Creates a Zoom meeting hosted by -- and under the Zoom account of --
-// `userId` (the idea originator), rather than the shared Server-to-Server
-// account below. Returns null if that user hasn't connected their own Zoom
-// account yet, so callers can fall back to the shared-account flow.
-export async function createZoomMeetingForUser(userId: string, params: {
-  topic: string;
-  startTime: string;   // ISO
-  durationMins: number;
-  timezone: string;
-}): Promise<{ joinUrl: string; meetingId: string; password: string } | null> {
-  const token = await getUserZoomAccessToken(userId);
-  if (!token) return null;
-  const res = await axios.post(
-    'https://api.zoom.us/v2/users/me/meetings',
-    {
-      topic: params.topic,
-      type: 2,   // scheduled
-      start_time: params.startTime,
-      duration: params.durationMins,
-      timezone: params.timezone,
-      settings: {
-        join_before_host: true,
-        waiting_room: false,
-        auto_recording: 'none',
-      },
-    },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+// ── Jitsi Meet (public meet.jit.si, no auth/API required) ───────────────────
+// A Jitsi room is nothing but a URL -- there's no meeting object to create via
+// an API call, no OAuth connect flow, no "is this configured" check like the
+// Zoom integration this replaced needed. The room simply comes to life the
+// moment anyone opens the link, which also means it's safe to generate this
+// link immediately at booking time and embed it in a calendar invite that
+// goes out well before the call happens -- unlike Zoom, there's no dependency
+// on the founder having connected an account first.
+export function createJitsiMeeting(params: { topic: string }): { joinUrl: string; meetingId: string } {
+  // Random hex slug -- long and unguessable, since meet.jit.si has no access
+  // control of its own: the room name IS the only thing standing between a
+  // stranger and the call. Deliberately NOT derived from the idea/founder/
+  // interviewee names, which would make it guessable -- the human-readable
+  // name instead goes into the URL's #config.subject, which sets what's
+  // DISPLAYED once you're in the room (and the browser tab title) without
+  // touching the actual room identity in the path.
+  const slug = crypto.randomBytes(16).toString('hex');
+  const subjectParam = encodeURIComponent(`"${params.topic}"`);
   return {
-    joinUrl:   res.data.join_url,
-    meetingId: String(res.data.id),
-    password:  res.data.password ?? '',
+    joinUrl: `https://meet.jit.si/${slug}#config.subject=${subjectParam}`,
+    meetingId: slug,
   };
-}
-
-// ── Zoom Server-to-Server OAuth (shared fallback account) ───────────────────
-let zoomToken: { value: string; expiresAt: number } | null = null;
-
-async function getZoomToken(): Promise<string> {
-  const now = Date.now();
-  if (zoomToken && now < zoomToken.expiresAt - 30_000) return zoomToken.value;
-
-  const { ZOOM_ACCOUNT_ID, ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET } = process.env;
-  const creds = Buffer.from(`${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}`).toString('base64');
-
-  const res = await axios.post(
-    `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${ZOOM_ACCOUNT_ID}`,
-    null,
-    { headers: { Authorization: `Basic ${creds}` } }
-  );
-  zoomToken = { value: res.data.access_token, expiresAt: now + res.data.expires_in * 1000 };
-  return zoomToken.value;
-}
-
-export async function createZoomMeeting(params: {
-  topic: string;
-  startTime: string;   // ISO
-  durationMins: number;
-  timezone: string;
-}): Promise<{ joinUrl: string; meetingId: string; password: string }> {
-  const token = await getZoomToken();
-  const res = await axios.post(
-    'https://api.zoom.us/v2/users/me/meetings',
-    {
-      topic: params.topic,
-      type: 2,   // scheduled
-      start_time: params.startTime,
-      duration: params.durationMins,
-      timezone: params.timezone,
-      settings: {
-        join_before_host: true,
-        waiting_room: false,
-        auto_recording: 'none',
-      },
-    },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-  return {
-    joinUrl:   res.data.join_url,
-    meetingId: String(res.data.id),
-    password:  res.data.password ?? '',
-  };
-}
-
-export function zoomConfigured() {
-  const { ZOOM_ACCOUNT_ID, ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET } = process.env;
-  return !!(ZOOM_ACCOUNT_ID && ZOOM_CLIENT_ID && ZOOM_CLIENT_SECRET);
 }
 
 // ── Microsoft Teams (Graph API, app-only) ────────────────────────────────────

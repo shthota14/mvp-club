@@ -4,8 +4,9 @@ import path from 'path';
 import crypto from 'crypto';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
-import { createZoomMeeting, zoomConfigured, createTeamsMeeting, teamsConfigured } from '../utils/meeting';
+import { createJitsiMeeting, createTeamsMeeting, teamsConfigured, formatMeetingName } from '../utils/meeting';
 import { sendInterviewInviteEmail, sendOrganizerCalendarInvite } from '../utils/mailer';
+import { createNotification } from '../utils/notify';
 import { DEFAULT_QUESTIONS, extForMime } from '../utils/interviewQuestions';
 import { classifyInterviewAlignment, reasonAboutAlignment, AlignmentQA, AlignmentChatTurn } from '../utils/aiQuestionCheck';
 
@@ -71,7 +72,7 @@ router.get('/', async (req: Request, res: Response) => {
 // GET /api/interviews/providers — which meeting platforms are configured
 router.get('/providers', (_req: Request, res: Response) => {
   res.json({
-    zoom:  zoomConfigured(),
+    jitsi: true, // public meet.jit.si -- always available, no config needed
     teams: teamsConfigured(),
     smtp:  !!(process.env.SMTP_USER && process.env.SMTP_PASS),
   });
@@ -176,20 +177,29 @@ router.post('/:id/book-meeting', async (req: Request, res: Response) => {
 
     let meetingLink = iv.meeting_link;
     let meetingId   = '';
+    let meetingProvider = iv.meeting_provider;
 
-    // Auto-create meeting if provider is configured
-    if (iv.meeting_provider === 'zoom' && zoomConfigured()) {
-      const zm = await createZoomMeeting({
-        topic: `Discovery Interview — ${iv.idea_name}`,
-        startTime: startTime.toISOString(),
-        durationMins: 45,
-        timezone: 'UTC',
-      });
-      meetingLink = zm.joinUrl;
-      meetingId   = zm.meetingId;
+    // Auto-create a meeting link if one doesn't already exist. 'zoom' here
+    // covers legacy interview rows created before this switched to Jitsi --
+    // treated the same as no provider at all, since Jitsi is now the default.
+    if ((!iv.meeting_provider || iv.meeting_provider === 'zoom') && !meetingLink) {
+      const jm = createJitsiMeeting({ topic: formatMeetingName({
+        ideaName: iv.idea_name,
+        intervieweeName: iv.interviewee_name || 'Guest',
+        organizerName: iv.organizer_name || 'Founder',
+        startTime,
+      }) });
+      meetingLink = jm.joinUrl;
+      meetingId   = jm.meetingId;
+      meetingProvider = 'jitsi';
     } else if (iv.meeting_provider === 'teams' && teamsConfigured()) {
       const tm = await createTeamsMeeting({
-        subject: `Discovery Interview — ${iv.idea_name}`,
+        subject: formatMeetingName({
+          ideaName: iv.idea_name,
+          intervieweeName: iv.interviewee_name || 'Guest',
+          organizerName: iv.organizer_name || 'Founder',
+          startTime,
+        }),
         startTime: startTime.toISOString(),
         endTime:   endTime.toISOString(),
         organizerEmail: iv.organizer_email,
@@ -198,10 +208,11 @@ router.post('/:id/book-meeting', async (req: Request, res: Response) => {
       meetingId   = tm.meetingId;
     }
 
-    // Save meeting link back to DB
+    // Save meeting link back to DB (meeting_provider too, so a legacy 'zoom'
+    // row that just got a fresh Jitsi link stops being mislabeled afterwards)
     await query(
-      `UPDATE interviews SET meeting_link = $1, meeting_id = $2, invite_sent_at = NOW() WHERE id = $3`,
-      [meetingLink, meetingId, id]
+      `UPDATE interviews SET meeting_link = $1, meeting_id = $2, meeting_provider = $3, invite_sent_at = NOW() WHERE id = $4`,
+      [meetingLink, meetingId, meetingProvider, id]
     );
 
     // Send .ics email to interviewee (if email provided). Both sends are independent
@@ -222,7 +233,7 @@ router.post('/:id/book-meeting', async (req: Request, res: Response) => {
           startTime,
           endTime,
           meetingLink,
-          meetingProvider:  iv.meeting_provider,
+          meetingProvider:  meetingProvider,
         });
       } catch (mailErr) {
         console.error('[interviews] book-meeting: failed to send interviewee invite -- booking still confirmed', mailErr);
@@ -240,12 +251,23 @@ router.post('/:id/book-meeting', async (req: Request, res: Response) => {
         startTime,
         endTime,
         meetingLink,
-        meetingProvider: iv.meeting_provider,
+        meetingProvider: meetingProvider,
         icsContent: icsContent || undefined,
       });
     } catch (mailErr) {
       console.error('[interviews] book-meeting: failed to send organizer confirmation -- booking still confirmed', mailErr);
     }
+
+    // In-app bell alert -- same as the self-serve booking flow in
+    // scheduling.ts, just triggered by the founder clicking "book meeting"
+    // manually here instead of a contact booking a slot themselves.
+    await createNotification(
+      req.userId!,
+      'meeting_booked',
+      `📅 Meeting link ready — ${iv.interviewee_name || 'your interview'}`,
+      `${startTime.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} at ${startTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} — about "${iv.idea_name}"`,
+      meetingLink || null
+    );
 
     const updated = await query(`SELECT * FROM interviews WHERE id = $1`, [id]);
     res.json({ interview: updated.rows[0], meetingLink, inviteSent: !!iv.interviewee_email });
