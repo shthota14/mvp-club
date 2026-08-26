@@ -186,7 +186,7 @@ router.get('/contacts/meetings', async (req: Request, res: Response) => {
 router.get('/contacts/:id/preview-meeting-request', async (req: Request, res: Response) => {
   const { id } = req.params;
   const durationMinsRaw = req.query.duration_mins;
-  const durationMins = [15, 20, 30].includes(Number(durationMinsRaw)) ? Number(durationMinsRaw) : 20;
+  const durationMins = (() => { const n = Number(durationMinsRaw); return Number.isFinite(n) && n >= 5 && n <= 180 ? Math.round(n) : 20; })();
 
   try {
     const contactRes = await query<ContactRow>(
@@ -219,7 +219,9 @@ router.get('/contacts/:id/preview-meeting-request', async (req: Request, res: Re
 router.post('/contacts/:id/request-meeting', async (req: Request, res: Response) => {
   const { id } = req.params;
   const { duration_mins, problem, custom_subject, custom_message } = req.body;
-  const durationMins = [15, 20, 30].includes(Number(duration_mins)) ? Number(duration_mins) : 20;
+  // Any reasonable custom length is accepted now, not just the 15/20/30 presets —
+  // the founder can type a custom duration in the meeting-request panel.
+  const durationMins = (() => { const n = Number(duration_mins); return Number.isFinite(n) && n >= 5 && n <= 180 ? Math.round(n) : 20; })();
 
   try {
     const contactRes = await query<ContactRow>(
@@ -312,7 +314,9 @@ router.post('/contacts/bulk-request-meeting', async (req: Request, res: Response
   if (!Array.isArray(contact_ids) || !contact_ids.length) {
     return res.status(400).json({ error: 'contact_ids must be a non-empty array' });
   }
-  const durationMins = [15, 20, 30].includes(Number(duration_mins)) ? Number(duration_mins) : 20;
+  // Any reasonable custom length is accepted now, not just the 15/20/30 presets —
+  // the founder can type a custom duration in the meeting-request panel.
+  const durationMins = (() => { const n = Number(duration_mins); return Number.isFinite(n) && n >= 5 && n <= 180 ? Math.round(n) : 20; })();
 
   try {
     const userRes = await query<{ name: string }>(`SELECT name FROM users WHERE id = $1`, [req.userId]);

@@ -177,7 +177,7 @@ const STEP_GOALS: Record<Mod, string[]> = {
 const STEP_TITLES: Record<Mod, string[]> = {
   idea:     ["What's your idea?", "What's motivating you to build this?"],
   hone:     ["Who do you think has this problem?", "What are the problems?", "What breaks if these problems are unresolved?", "What do you think people are doing to solve this?", "Are you set up to win?", "How strong is your idea?", "Where does your idea stand in the market?"],
-  validate: ["Set your success bar", "Decide what you'll prove", "Name your assumptions", "Choose who to talk to", "Build your script", "Add your contacts", "Schedule interviews", "Log your conversations", "Analyse what you found", "Make the call"],
+  validate: ["Set your success bar", "Decide what you'll prove", "Name your assumptions", "Choose who to talk to", "Build your script", "Add your contacts", "Interview Summary Dashboard", "Log your conversations", "Analyse what you found", "Make the call"],
   shape:    ["What did you learn from users?", "What will you build?", "Shape your features", "How will you reach users and charge?", "Build your backlog"],
   done:     ["Build My MVP", "Choose how you want to build", "Map your user flows & screens", "Generate your UI prompts", "Your master build prompt", "Build your features", "Describe your next change", "Run your QA checkpoints", "Launch your MVP", "What did you build?", "Who are your first 5 users?"],
 };
@@ -6477,7 +6477,10 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
     const [meetings, setMeetings]             = React.useState<Record<string, Meeting>>({});
     const [showAvailability, setShowAvailability] = React.useState(false);
     const [requestingMeeting, setRequestingMeeting] = React.useState<string | null>(null);
-    const [meetingDuration, setMeetingDuration] = React.useState<15 | 20 | 30>(20);
+    const [meetingDuration, setMeetingDuration] = React.useState<number>(20);
+    // "Custom" pill next to 15/20/30 reveals a plain number input instead of
+    // being locked to the three preset lengths.
+    const [showCustomDuration, setShowCustomDuration] = React.useState(false);
     const [meetingErr, setMeetingErr]         = React.useState('');
     // Contact whose meeting-request email is being previewed/edited before send —
     // set by the "Request a meeting" button, cleared on cancel or successful send.
@@ -6567,6 +6570,9 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
         });
         setContacts(c => [...c, r.data.contact]);
         setName(''); setNewEmail(''); setNewPhone(''); setAddErr(''); setShowAdd(false); setAddAgreed(false);
+        // Keep them active right away so the meeting-request options (15/20/30
+        // or custom) are visible without a separate click on the new chip.
+        setSelectedId(r.data.contact.id);
       } catch {}
       setAdding(false);
     };
@@ -6758,6 +6764,10 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                 {/* Filled cards — whiteboard bubble avatars */}
                 {contacts.map(c => {
                   const isSelected = selectedId === c.id;
+                  // Selected chip reads orange rather than the stage's own green,
+                  // so "this is the person I'm currently acting on" stays visually
+                  // distinct from every other green accent on this page.
+                  const SEL = '#f97316';
                   return (
                     <div
                       key={c.id}
@@ -6765,7 +6775,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                       style={{
                         borderRadius: 10, padding: '10px 8px',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                        cursor: 'pointer', background: isSelected ? `${VC}08` : 'transparent',
+                        cursor: 'pointer', background: isSelected ? `${SEL}10` : 'transparent',
                         minHeight: 90, justifyContent: 'center',
                         transition: 'all .15s', position: 'relative' as const,
                       }}
@@ -6773,8 +6783,8 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                       {/* Avatar — gradient bubble */}
                       <div style={{
                         width: 52, height: 52, borderRadius: 999, flexShrink: 0, position: 'relative' as const,
-                        background: `radial-gradient(circle at 35% 35%, ${VC}ee, ${VC}99)`,
-                        boxShadow: isSelected ? `0 0 0 3px ${VC}44, 0 6px 16px ${VC}44` : '0 3px 10px rgba(0,0,0,.12), inset 0 1px 2px rgba(255,255,255,.5)',
+                        background: isSelected ? `radial-gradient(circle at 35% 35%, ${SEL}ee, ${SEL}99)` : `radial-gradient(circle at 35% 35%, ${VC}ee, ${VC}99)`,
+                        boxShadow: isSelected ? `0 0 0 3px ${SEL}44, 0 6px 16px ${SEL}44` : '0 3px 10px rgba(0,0,0,.12), inset 0 1px 2px rgba(255,255,255,.5)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontFamily: '"Arial Black", sans-serif', fontSize: 15, fontWeight: 900, color: '#fff',
                       }}>
@@ -7006,17 +7016,34 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                           </div>
                         );
                       }
+                      const isPreset = [15, 20, 30].includes(meetingDuration);
                       return (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
                           {[15, 20, 30].map(m => (
-                            <button key={m} onClick={() => setMeetingDuration(m as 15 | 20 | 30)}
+                            <button key={m} onClick={() => { setMeetingDuration(m); setShowCustomDuration(false); }}
                               style={{
                                 padding: '3px 9px', borderRadius: 20, fontSize: 10.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                                border: `1.5px solid ${meetingDuration === m ? VC : '#e0e0e0'}`,
-                                background: meetingDuration === m ? VC : '#fafafa',
-                                color: meetingDuration === m ? '#fff' : '#aaa',
+                                border: `1.5px solid ${meetingDuration === m && !showCustomDuration ? VC : '#e0e0e0'}`,
+                                background: meetingDuration === m && !showCustomDuration ? VC : '#fafafa',
+                                color: meetingDuration === m && !showCustomDuration ? '#fff' : '#aaa',
                               }}>{m}m</button>
                           ))}
+                          <button
+                            onClick={() => setShowCustomDuration(s => !s)}
+                            style={{
+                              padding: '3px 9px', borderRadius: 20, fontSize: 10.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                              border: `1.5px solid ${showCustomDuration || !isPreset ? VC : '#e0e0e0'}`,
+                              background: showCustomDuration || !isPreset ? VC : '#fafafa',
+                              color: showCustomDuration || !isPreset ? '#fff' : '#aaa',
+                            }}>{!isPreset ? `${meetingDuration}m` : 'Custom'}</button>
+                          {showCustomDuration && (
+                            <input
+                              type="number" min={5} max={180} autoFocus
+                              value={meetingDuration}
+                              onChange={e => setMeetingDuration(Math.max(5, Math.min(180, Number(e.target.value) || 0)))}
+                              style={{ width: 52, padding: '3px 6px', borderRadius: 20, border: `1.5px solid ${VC}`, fontSize: 10.5, fontFamily: 'inherit', textAlign: 'center' as const }}
+                            />
+                          )}
                           <button
                             onClick={() => requestMeeting(selectedContact)}
                             disabled={!selectedContact.email || requestingMeeting === selectedContact.id}
@@ -7038,7 +7065,10 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
 
               {/* Add form */}
               {showAdd && (
-                <div style={{ border: `1.5px dashed ${VC}`, borderRadius: 10, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8, background: `${VC}04`, marginBottom: 4 }}>
+                <div style={{ border: '2px solid #2563eb', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8, background: '#eff6ff', marginBottom: 4, boxShadow: '0 4px 14px rgba(37,99,235,.15)' }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1d4ed8', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    ➕ Add a new contact
+                  </div>
                   {addAgreed && (
                     <div style={{ fontSize: 11.5, fontWeight: 700, color: '#059669', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 7, padding: '6px 10px' }}>
                       ✓ They've already agreed to be interviewed — this contact will start at "Replied" instead of "Not sent".
@@ -7049,20 +7079,20 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                     value={name}
                     onChange={e => setName(e.target.value)}
                     placeholder="Name or role (e.g. 'Sarah — Head of Ops at startup')"
-                    style={{ padding: '8px 12px', borderRadius: 7, border: `1.5px solid ${BORDER}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: USER_INPUT_COLOR }}
+                    style={{ padding: '8px 12px', borderRadius: 7, border: '1.5px solid #93c5fd', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: USER_INPUT_COLOR, background: '#fff' }}
                   />
                   <input
                     value={newEmail}
                     onChange={e => setNewEmail(e.target.value)}
                     placeholder="Email address (required)"
-                    style={{ padding: '8px 12px', borderRadius: 7, border: `1.5px solid ${BORDER}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: USER_INPUT_COLOR }}
+                    style={{ padding: '8px 12px', borderRadius: 7, border: '1.5px solid #93c5fd', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: USER_INPUT_COLOR, background: '#fff' }}
                   />
                   <input
                     value={newPhone}
                     onChange={e => setNewPhone(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addContact()}
                     placeholder="Mobile or WhatsApp number (required)"
-                    style={{ padding: '8px 12px', borderRadius: 7, border: `1.5px solid ${BORDER}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: USER_INPUT_COLOR }}
+                    style={{ padding: '8px 12px', borderRadius: 7, border: '1.5px solid #93c5fd', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: USER_INPUT_COLOR, background: '#fff' }}
                   />
                   {addErr && <div style={{ fontSize: 11.5, color: '#dc2626', fontWeight: 600 }}>{addErr}</div>}
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -11013,6 +11043,37 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
       : (hypothesisType ? HYP_QUESTIONS[hypothesisType] : HYP_QUESTIONS.pain);
     const totalQ = questions.length;
 
+    // ── On-demand "what did you observe?" chips for a question that has no
+    // chips of its own (a script saved before AI chip-suggestion existed, or
+    // a generic hypothesis-bank question) — asks Sage for chips tailored to
+    // THIS question's actual content instead of silently reusing the same
+    // fixed six-chip set on every such question. Generated lazily, one
+    // question at a time, as the founder reaches it; cached by question
+    // index for the rest of this card's lifetime.
+    type GenChipState = { loading: boolean; chips?: QuickResponseChip[]; error?: string };
+    const [genChips, setGenChips] = useState<Record<number, GenChipState>>({});
+    useEffect(() => {
+      if (step < 1 || step > totalQ) return;
+      const qi = step - 1;
+      const q = questions[qi];
+      if (!q || (q.chips && q.chips.length)) return; // already has its own relevant chips
+      if (genChips[qi]) return; // already generated / generating / failed for this question
+      let cancelled = false;
+      setGenChips(prev => ({ ...prev, [qi]: { loading: true } }));
+      validationApi.generateChips({ question: q.q, hint: q.hint, problemDomain: problemContext })
+        .then(r => {
+          if (cancelled) return;
+          const chips: QuickResponseChip[] = Array.isArray(r.data?.chips) ? r.data.chips : [];
+          setGenChips(prev => ({ ...prev, [qi]: { loading: false, chips } }));
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setGenChips(prev => ({ ...prev, [qi]: { loading: false, error: 'failed' } }));
+        });
+      return () => { cancelled = true; };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [step, totalQ]);
+
     // ── Pre-fill from an already-logged interview — lets the founder reopen a
     // completed conversation and edit it through the same question-by-question
     // flow, instead of only being able to override the top-level verdict.
@@ -11369,40 +11430,62 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                     </div>
                   </div>
 
-                  {/* Signal chips — specific to this question's hypothesis */}
+                  {/* Signal chips — specific to this question. Prefer chips the
+                      script already carries (hand-picked or AI-suggested back in
+                      "Build your script"); if this question has none -- an older
+                      script, or a generic hypothesis-bank question -- ask Sage for
+                      chips tailored to THIS question's content instead of falling
+                      back to one fixed six-chip set on every question regardless
+                      of what's actually being asked. */}
                   {(() => {
-                    const opts = questions[qi]?.chips ?? ALL_SIGNAL_OPTS.slice(0, 6);
+                    const ownChips = questions[qi]?.chips;
+                    const hasOwnChips = !!(ownChips && ownChips.length);
+                    const gen = genChips[qi];
+                    const opts = hasOwnChips ? ownChips! : (gen?.chips && gen.chips.length ? gen.chips : ALL_SIGNAL_OPTS.slice(0, 6));
+                    const isGenerating = !hasOwnChips && !!gen?.loading;
                     return (
                       <div style={{ margin: '10px 20px 0' }}>
-                        <div style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 12, fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase' as const, color: '#8a8a90', marginBottom: 6 }}>
-                          What did you observe?
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6, flexWrap: 'wrap' as const }}>
+                          <div style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 12, fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase' as const, color: '#8a8a90' }}>
+                            What did you observe?
+                          </div>
+                          {isGenerating && <span style={{ fontSize: 10, fontWeight: 700, color: '#b45309' }}>🤖 tailoring options to this question…</span>}
+                          {!hasOwnChips && !isGenerating && gen?.error && <span style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8' }}>couldn't tailor these — showing general options</span>}
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 5 }}>
-                          {opts.map(opt => {
-                            const on = ans.signals.includes(opt.k);
-                            return (
-                              <button
-                                key={opt.k}
-                                onClick={() => toggleSig(qi, opt.k)}
-                                style={{
-                                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-                                  padding: '6px 4px', borderRadius: 8, cursor: 'pointer', fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui",
-                                  border: `1.5px solid ${on ? opt.color : '#e5e5ea'}`,
-                                  background: on ? `${opt.color}14` : '#fafafa',
-                                  color: on ? opt.color : '#525257',
-                                  fontSize: 13, fontWeight: 700,
-                                  transition: 'all .12s', textAlign: 'center' as const,
-                                  boxShadow: on ? `0 0 0 2px ${opt.color}22` : 'none',
-                                  lineHeight: 1.25, minHeight: 50,
-                                }}
-                              >
-                                <span style={{ fontSize: 15 }}>{opt.icon}</span>
-                                <span>{opt.k}</span>
-                                {on && <span style={{ fontSize: 9, fontWeight: 800, background: opt.color, color: '#fff', borderRadius: 4, padding: '1px 4px' }}>✓</span>}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        {isGenerating ? (
+                          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 5 }}>
+                            {Array.from({ length: 6 }).map((_, gi) => (
+                              <div key={gi} style={{ borderRadius: 8, minHeight: 50, background: '#f1f1f3', border: `1.5px dashed ${BORDER}` }} />
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 5 }}>
+                            {opts.map(opt => {
+                              const on = ans.signals.includes(opt.k);
+                              return (
+                                <button
+                                  key={opt.k}
+                                  onClick={() => toggleSig(qi, opt.k)}
+                                  style={{
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+                                    padding: '6px 4px', borderRadius: 8, cursor: 'pointer', fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui",
+                                    border: `1.5px solid ${on ? opt.color : '#e5e5ea'}`,
+                                    background: on ? `${opt.color}14` : '#fafafa',
+                                    color: on ? opt.color : '#525257',
+                                    fontSize: 13, fontWeight: 700,
+                                    transition: 'all .12s', textAlign: 'center' as const,
+                                    boxShadow: on ? `0 0 0 2px ${opt.color}22` : 'none',
+                                    lineHeight: 1.25, minHeight: 50,
+                                  }}
+                                >
+                                  <span style={{ fontSize: 15 }}>{opt.icon}</span>
+                                  <span>{opt.k}</span>
+                                  {on && <span style={{ fontSize: 9, fontWeight: 800, background: opt.color, color: '#fff', borderRadius: 4, padding: '1px 4px' }}>✓</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -14706,7 +14789,7 @@ export default function WorkPage() {
 
           {showAvail && <AvailabilityModal accentColor={STAGE_COLORS.validate} onClose={() => setShowAvail(false)} />}
 
-          <NavRow onBack={back} onNext={() => next()} nextLabel="Schedule interviews →" disabled={!get('outreachContactsAdded')} disabledReason="Add at least one person you plan to reach out to." stageColor={STAGE_COLORS.validate} stepTitle="Add Contacts" ideaId={activeIdea.id} />
+          <NavRow onBack={back} onNext={() => next()} nextLabel="Interview Summary Dashboard →" disabled={!get('outreachContactsAdded')} disabledReason="Add at least one person you plan to reach out to." stageColor={STAGE_COLORS.validate} stepTitle="Add Contacts" ideaId={activeIdea.id} />
         </div>
       );
     })(),
@@ -15011,7 +15094,7 @@ export default function WorkPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 32 }}>🗓️</span>
               <div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 30, fontWeight: 700, color: '#0f172a', letterSpacing: -0.3, lineHeight: 1.15 }}>Schedule interviews</div>
+                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 30, fontWeight: 700, color: '#0f172a', letterSpacing: -0.3, lineHeight: 1.15 }}>Interview Summary Dashboard</div>
                 <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 19, fontWeight: 600, color: '#475569', marginTop: 3 }}>Open your calendar, then offer a free video call — they pick a time themselves.</div>
               </div>
             </div>
@@ -15131,6 +15214,10 @@ export default function WorkPage() {
                         <span style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 600 }}>{ganttFmt(valStartDate)} – {ganttEnd ? ganttFmt(ganttEnd) : 'ongoing'}</span>
                       )}
                     </div>
+                    {/* This panel owns "when" -- booked times + open slots. The
+                        pipeline panel to the right owns "who/status" -- it no
+                        longer repeats each booked person's date/time here. */}
+                    <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>When each person is booked in, plus your open slots</div>
                   </div>
                   <div style={{ position: 'relative' as const, padding: '8px 16px 14px', flex: '1 1 auto', minHeight: 0, overflowY: 'auto' as const }}>
                     {(() => {
@@ -15207,8 +15294,12 @@ export default function WorkPage() {
                 <svg style={{ position: 'absolute' as const, inset: 0, width: '100%', height: '100%', pointerEvents: 'none' as const, opacity: 0.05 }} preserveAspectRatio="none">
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(i => <line key={i} x1="0" y1={`${i * 7}%`} x2="100%" y2={`${i * 7}%`} stroke="#334155" strokeWidth="1" />)}
                 </svg>
-                <div style={{ position: 'relative' as const, display: 'flex', alignItems: 'center', gap: 8, padding: '11px 16px 3px' }}>
+                <div style={{ position: 'relative' as const, padding: '11px 16px 3px' }}>
                   <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 22, fontWeight: 700, color: '#0f172a' }}>📨 Outreach pipeline</span>
+                  {/* This panel owns "who/status" -- invites, replies, nudges.
+                      "When" (date/time + join link) lives in the Confirmed
+                      schedule panel on the left, not repeated here. */}
+                  <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>Who's been invited, and how they're responding</div>
                 </div>
 
                 {!schedLoading && schedContacts.length > 0 && (
@@ -15312,36 +15403,24 @@ export default function WorkPage() {
                                   </a>
                                 )}
                               </div>
-                              {/* Meeting details -- date/time + join link once a slot is actually
-                                  booked. The link disables itself once the meeting's over (start +
-                                  duration has passed) rather than staying clickable indefinitely,
-                                  and a past meeting gets a one-click "request follow-up" instead
-                                  (the backend now allows a fresh request once the old one's over). */}
+                              {/* Once a slot is booked, the exact date/time + join link already
+                                  live in the "Confirmed schedule" panel on the left -- repeating them
+                                  here just duplicated the same info. This row now only adds what that
+                                  panel can't: a pointer back to it, or (once the slot has passed) the
+                                  one-click "request follow-up" action, which the backend now allows
+                                  once the old meeting is over. */}
                               {isBooked && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, marginLeft: 26, fontSize: 10.5 }}>
-                                  <span style={{ color: T3 }}>
-                                    📅 {meetingStart!.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}, {meetingStart!.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
-                                  </span>
-                                  {meeting?.meeting_link ? (
-                                    meetingPast ? (
-                                      <span title="This meeting has already happened — the link is no longer active"
-                                        style={{ color: '#aeaeb2', fontWeight: 600, cursor: 'not-allowed' }}>
-                                        🔗 Join link (ended)
-                                      </span>
-                                    ) : (
-                                      <a href={meeting.meeting_link} target="_blank" rel="noopener noreferrer"
-                                        style={{ color: '#15803d', fontWeight: 700, textDecoration: 'none' }}>
-                                        🔗 Join call
-                                      </a>
-                                    )
+                                  {meetingPast ? (
+                                    <>
+                                      <span style={{ color: '#aeaeb2' }}>Meeting ended</span>
+                                      <button onClick={() => resendTo(c)} disabled={resendingId === c.id}
+                                        style={{ fontSize: 10, fontWeight: 700, color: '#4f46e5', background: '#eef0ff', border: 'none', borderRadius: 20, padding: '2px 9px', cursor: resendingId === c.id ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' as const }}>
+                                        {resendingId === c.id ? '…' : '🔁 Request follow-up'}
+                                      </button>
+                                    </>
                                   ) : (
-                                    <span style={{ color: '#aeaeb2' }}>No link</span>
-                                  )}
-                                  {meetingPast && (
-                                    <button onClick={() => resendTo(c)} disabled={resendingId === c.id}
-                                      style={{ fontSize: 10, fontWeight: 700, color: '#4f46e5', background: '#eef0ff', border: 'none', borderRadius: 20, padding: '2px 9px', cursor: resendingId === c.id ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' as const }}>
-                                      {resendingId === c.id ? '…' : '🔁 Request follow-up'}
-                                    </button>
+                                    <span style={{ color: T3 }}>✓ Booked — see the schedule panel for time &amp; link ←</span>
                                   )}
                                 </div>
                               )}
@@ -15401,7 +15480,7 @@ export default function WorkPage() {
             />
           )}
 
-          <NavRow onBack={back} onNext={() => next()} nextLabel="Start logging conversations →" stageColor={STAGE_COLORS.validate} stepTitle="Schedule" ideaId={activeIdea.id} />
+          <NavRow onBack={back} onNext={() => next()} nextLabel="Start logging conversations →" stageColor={STAGE_COLORS.validate} stepTitle="Interview Summary Dashboard" ideaId={activeIdea.id} />
         </div>
       );
     })(),
@@ -15559,13 +15638,20 @@ export default function WorkPage() {
                         const accentColor = isDone ? badge.color : '#d97706';
                         const accentBg    = isDone ? badge.bg    : '#fffbeb';
                         const isExp = expandedIvId === iv.id;
+                        // Selected chip goes red regardless of status colour --
+                        // a clear, single "this is the one you're looking at"
+                        // signal, rather than just a thicker border in the same hue.
+                        const SEL = '#dc2626';
+                        const chipBg     = isExp ? '#fef2f2' : accentBg;
+                        const chipBorder = isExp ? SEL : accentColor + '80';
+                        const chipColor  = isExp ? SEL : accentColor;
                         return (
                           <button key={iv.id} onClick={() => setExpandedIvId(isExp ? null : iv.id)}
                             style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 4, width: 58, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
-                            <div style={{ width: 44, height: 44, borderRadius: '50%', background: accentBg, border: `2.5px solid ${isExp ? accentColor : accentColor + '80'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: accentColor, boxShadow: isExp ? `0 0 0 3px ${accentColor}22` : 'none', transition: 'all .15s' }}>
+                            <div style={{ width: 44, height: 44, borderRadius: 12, background: chipBg, border: `2.5px solid ${chipBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: chipColor, boxShadow: isExp ? `0 0 0 3px ${SEL}22` : 'none', transition: 'all .15s' }}>
                               {isDone ? badge.icon : initialsOf(pName)}
                             </div>
-                            <div style={{ fontSize: 10, fontWeight: 600, color: isExp ? accentColor : T2, maxWidth: 58, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{pName.split(' ')[0]}</div>
+                            <div style={{ fontSize: 10, fontWeight: 600, color: isExp ? SEL : T2, maxWidth: 58, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{pName.split(' ')[0]}</div>
                           </button>
                         );
                       })}
@@ -15582,9 +15668,14 @@ export default function WorkPage() {
                   {/* ── Expanded panel: new conversation ── */}
                   {expandedIvId === '__new__' && (
                     <div style={{ background: '#fff', border: `2px solid ${ac}`, borderRadius: 14, overflow: 'hidden' }}>
-                      <div style={{ padding: '12px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: ac }}>🎤 New conversation</div>
-                        <button onClick={() => { setExpandedIvId(null); setPendingInterviewName(''); }} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#f5f5f7', color: '#6e6e73', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
+                      <div style={{ padding: '13px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: `linear-gradient(135deg, ${ac}12 0%, #fefaf0 100%)` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                          <span style={{ fontSize: 22 }}>🎙️</span>
+                          <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#0f172a', lineHeight: 1.1 }}>
+                            {pendingInterviewName.trim() ? `Recording the interview with ${pendingInterviewName.trim()}` : 'Recording a new interview'}
+                          </span>
+                        </div>
+                        <button onClick={() => { setExpandedIvId(null); setPendingInterviewName(''); }} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: '#6e6e73', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Close</button>
                       </div>
                       <div style={{ padding: 16 }}>
                         <PersonaInterviewCard
@@ -15629,12 +15720,20 @@ export default function WorkPage() {
                     if (!isDone || isEditing) {
                       return (
                         <div style={{ borderRadius: 14, border: `1.5px solid ${badge.color}50`, background: '#fafafa', overflow: 'hidden' }}>
-                          <div style={{ padding: '12px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: T1 }}>
-                              {pName}{pRole ? ` · ${pRole}` : ''}
-                              {isEditing && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 800, color: ac, background: `${ac}12`, borderRadius: 8, padding: '2px 8px' }}>✎ Editing</span>}
+                          <div style={{ padding: '13px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: `linear-gradient(135deg, ${ac}12 0%, #fefaf0 100%)` }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                              <span style={{ fontSize: 22, flexShrink: 0 }}>🎙️</span>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+                                  <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#0f172a', lineHeight: 1.1 }}>
+                                    Recording the interview with {pName}
+                                  </span>
+                                  {isEditing && <span style={{ fontSize: 10, fontWeight: 800, color: ac, background: `${ac}18`, borderRadius: 8, padding: '2px 8px', flexShrink: 0 }}>✎ Editing</span>}
+                                </div>
+                                {pRole && <div style={{ fontSize: 11, color: T2, marginTop: 1 }}>{pRole}</div>}
+                              </div>
                             </div>
-                            <button onClick={() => { setExpandedIvId(null); setEditingIvId(null); }} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: '#6e6e73', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Close ↑</button>
+                            <button onClick={() => { setExpandedIvId(null); setEditingIvId(null); }} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: '#6e6e73', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Close ↑</button>
                           </div>
                           <div style={{ padding: 16 }}>
                             <PersonaInterviewCard
@@ -15664,9 +15763,17 @@ export default function WorkPage() {
                     const allSigs = [...new Set(parsedQA.flatMap((q: any) => q.signals))] as string[];
                     return (
                       <div style={{ borderRadius: 14, border: `1.5px solid ${badge.br}`, background: '#f8fafc', overflow: 'hidden' }}>
-                        <div style={{ padding: '12px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff' }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: T1 }}>{pName}{pRole ? ` · ${pRole}` : ''}</div>
-                          <div style={{ display: 'flex', gap: 8 }}>
+                        <div style={{ padding: '13px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: `linear-gradient(135deg, ${ac}0c 0%, #fefaf0 100%)` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                            <span style={{ fontSize: 20, flexShrink: 0 }}>📝</span>
+                            <div style={{ minWidth: 0 }}>
+                              <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 22, fontWeight: 700, color: '#0f172a', lineHeight: 1.1 }}>
+                                Reviewing the interview with {pName}
+                              </span>
+                              {pRole && <div style={{ fontSize: 11, color: T2, marginTop: 1 }}>{pRole}</div>}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                             <button onClick={() => setEditingIvId(existing.id)} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${ac}40`, background: `${ac}0c`, color: ac, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>✎ Edit</button>
                             <button onClick={() => setExpandedIvId(null)} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: '#6e6e73', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Close ↑</button>
                           </div>

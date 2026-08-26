@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS interviews (
                     CHECK (status IN ('scheduled','in_progress','completed','cancelled')),
   notes             TEXT NOT NULL DEFAULT '',
   key_insights      TEXT NOT NULL DEFAULT '',
-  meeting_provider  TEXT NOT NULL DEFAULT '' CHECK (meeting_provider IN ('','zoom','teams','manual')),
+  meeting_provider  TEXT NOT NULL DEFAULT '' CHECK (meeting_provider IN ('','zoom','teams','manual','jitsi')),
   meeting_link      TEXT NOT NULL DEFAULT '',
   meeting_id        TEXT NOT NULL DEFAULT '',
   invite_sent_at    TIMESTAMPTZ,
