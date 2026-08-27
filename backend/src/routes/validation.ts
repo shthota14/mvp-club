@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
 import { sendMeetingRequestEmail, defaultMeetingRequestMessage } from '../utils/mailer';
-import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn, generateProblemChips, ProblemChipsContext } from '../utils/aiQuestionCheck';
+import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn, generateProblemChips, ProblemChipsContext, generateAlternativeChips, AlternativeChipsContext } from '../utils/aiQuestionCheck';
 
 const router = Router();
 
@@ -586,6 +586,30 @@ router.post('/idea/problem-chips', async (req: Request, res: Response) => {
     res.json({ groups });
   } catch (err: any) {
     console.error('[validation] idea/problem-chips', err?.response?.data || err);
+    res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
+  }
+});
+
+// POST /idea/alternative-chips — AI-tailored coping-mechanism suggestion
+// chips for Hone step 4 ("What do you think people are doing to solve
+// this?"), sorted into the same six fixed categories (Manual & DIY /
+// People & Help / General Tools / Workarounds / Research & Community /
+// Nothing) the UI already groups by, but grounded in the founder's own
+// problem statement, one-liner, and target segment.
+router.post('/idea/alternative-chips', async (req: Request, res: Response) => {
+  const { oneLiner, segmentRole, segmentDetail, problem, existingItems } = req.body;
+  const ctx: AlternativeChipsContext = {
+    oneLiner: typeof oneLiner === 'string' ? oneLiner : undefined,
+    segmentRole: typeof segmentRole === 'string' ? segmentRole : undefined,
+    segmentDetail: typeof segmentDetail === 'string' ? segmentDetail : undefined,
+    problem: typeof problem === 'string' ? problem : undefined,
+    existingItems: Array.isArray(existingItems) ? existingItems.filter((p: any) => typeof p === 'string' && p.trim()).map((p: string) => p.slice(0, 200)) : undefined,
+  };
+  try {
+    const groups = await generateAlternativeChips(ctx);
+    res.json({ groups });
+  } catch (err: any) {
+    console.error('[validation] idea/alternative-chips', err?.response?.data || err);
     res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
   }
 });

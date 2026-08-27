@@ -100,6 +100,8 @@ export const validationApi = {
     api.post('/validation/questions/generate-chips', data),
   generateProblemChips: (data: { oneLiner?: string; segmentRole?: string; segmentDetail?: string; existingProblems?: string[] }) =>
     api.post('/validation/idea/problem-chips', data),
+  generateAlternativeChips: (data: { oneLiner?: string; segmentRole?: string; segmentDetail?: string; problem?: string; existingItems?: string[] }) =>
+    api.post('/validation/idea/alternative-chips', data),
   generateScript: (data: {
     problem?: string;
     persona?: string;

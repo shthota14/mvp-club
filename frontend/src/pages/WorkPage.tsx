@@ -5515,10 +5515,24 @@ const ALT_SUGGESTIONS = [
   },
 ];
 
+// Emoji label for each of the six fixed categories the AI-generated groups
+// come back keyed by (see backend generateAlternativeChips) -- unlike the
+// problem-chips categories, these all share one accent colour (the Hone
+// stage colour), so there's no separate colour lookup needed here.
+const ALT_CATEGORY_LABELS: Record<string, string> = {
+  'Manual & DIY': '📋 Manual & DIY',
+  'People & Help': '🤝 People & Help',
+  'General Tools': '🧩 General Tools',
+  'Workarounds': '😤 Workarounds',
+  'Research & Community': '🔍 Research & Community',
+  'Nothing': '🚫 Nothing',
+};
+
 function AlternativeRankingStep({
-  value, onChange,
+  value, onChange, oneLiner, segment, problem,
 }: {
   value: string; onChange: (v: string) => void;
+  oneLiner?: string; segment?: { role: string; detail: string }; problem?: string;
 }) {
   const SEP = '|||';
   const toList = (v: string) => v.split(SEP).filter(Boolean);
@@ -5559,11 +5573,58 @@ function AlternativeRankingStep({
 
   const c = STAGE_COLORS.hone;
 
+  // ── AI-tailored suggestion chips ────────────────────────────────────────
+  // Same pattern as ProblemBuilder above: ground the six fixed categories in
+  // the founder's own problem/one-liner/segment instead of one static list,
+  // falling back to it while the call is in flight or if it fails.
+  const [genGroups, setGenGroups] = useState<{ category: string; items: string[] }[] | null>(null);
+  const [genState, setGenState] = useState<{ loading: boolean; error?: boolean }>({ loading: false });
+  const genKeyRef = useRef<string | null>(null);
+  const existingItemsRef = useRef<string[]>([]);
+  existingItemsRef.current = items;
+
+  useEffect(() => {
+    const oneLinerTrim = (oneLiner || '').trim();
+    const problemTrim = (problem || '').trim();
+    if (oneLinerTrim.length < 8 && problemTrim.length < 8) return; // not enough context yet
+    const segmentRole = (segment?.role || '').trim();
+    const segmentDetail = (segment?.detail || '').trim();
+    const key = `${oneLinerTrim}__${problemTrim}__${segmentRole}__${segmentDetail}`;
+    if (genKeyRef.current === key) return;
+    genKeyRef.current = key;
+    setGenState({ loading: true });
+    validationApi.generateAlternativeChips({
+      oneLiner: oneLinerTrim || undefined,
+      problem: problemTrim || undefined,
+      segmentRole: segmentRole || undefined,
+      segmentDetail: segmentDetail || undefined,
+      existingItems: existingItemsRef.current,
+    })
+      .then(r => {
+        const groups = Array.isArray(r.data?.groups) ? r.data.groups : [];
+        const mapped = groups
+          .filter((g: any) => g && ALT_CATEGORY_LABELS[g.category] && Array.isArray(g.items) && g.items.length)
+          .map((g: any) => ({ category: ALT_CATEGORY_LABELS[g.category], items: g.items }));
+        if (mapped.length) { setGenGroups(mapped); setGenState({ loading: false }); }
+        else { setGenState({ loading: false, error: true }); }
+      })
+      .catch(() => setGenState({ loading: false, error: true }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oneLiner, problem, segment?.role, segment?.detail]);
+
+  const displayGroups = genGroups ?? ALT_SUGGESTIONS;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
       {/* ── Chip grid by category — whiteboard style ── */}
-      {ALT_SUGGESTIONS.map(group => (
+      {genState.loading && (
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#b45309' }}>🤖 tailoring these to your idea…</div>
+      )}
+      {!genState.loading && genState.error && !genGroups && (
+        <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>showing general examples</div>
+      )}
+      {displayGroups.map(group => (
         <div key={group.category}>
           <div style={{ display: 'inline-block', marginBottom: 10 }}>
             <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 14, fontWeight: 900, letterSpacing: -0.2, color: c }}>
@@ -13759,6 +13820,9 @@ export default function WorkPage() {
       <AlternativeRankingStep
         value={get('solutionAlternatives')}
         onChange={v => set('solutionAlternatives', v)}
+        oneLiner={get('oneLiner')}
+        segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
+        problem={formatProblemsForContext(get('problemSentence'))}
       />
       <NavRow onBack={back} onNext={async () => { await save('hone', { solutionAlternatives: get('solutionAlternatives') }); next(); }} nextLabel="Next →" disabled={!get('solutionAlternatives').split('|||').filter(Boolean).length} disabledReason="List at least one way people cope with this today." stageColor={STAGE_COLORS.idea} stepTitle="What do you think people are doing to solve this?" ideaId={activeIdea.id} />
     </div>,

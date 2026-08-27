@@ -1087,6 +1087,166 @@ export async function generateProblemChips(ctx: ProblemChipsContext): Promise<Pr
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Alternative/workaround-suggestion chips (Hone step 4, "What do you think
+// people are doing to solve this?"). Same problem as the problem-chips bank
+// above: "Track it manually with pen and paper", "Ask a colleague or friend
+// each time" etc. were one fixed list of ~22 phrases across six categories,
+// shown to every founder regardless of their idea or the specific problem
+// they just described two steps earlier. This grounds the same six
+// categories (Manual & DIY / People & Help / General Tools / Workarounds /
+// Research & Community / Nothing) in the founder's actual problem statement.
+export interface AlternativeChipsContext {
+  oneLiner?: string;
+  segmentRole?: string;
+  segmentDetail?: string;
+  problem?: string; // the founder's own stated problem sentence, if captured yet
+  existingItems?: string[];
+}
+
+export type AlternativeChipGroup = { category: string; items: string[] };
+
+const ALT_CHIP_CATEGORIES = ['Manual & DIY', 'People & Help', 'General Tools', 'Workarounds', 'Research & Community', 'Nothing'];
+
+// The exact generic phrases this feature replaces.
+const BANNED_GENERIC_ALT_ITEMS = new Set([
+  'track it manually with pen and paper', 'build their own makeshift process', 'use a whiteboard or sticky notes', 'create their own templates or checklists',
+  'ask a colleague or friend each time', 'hire someone to handle it for them', 'outsource it to a freelancer or agency', 'rely on a consultant or expert',
+  'use email to manage it (back and forth)', 'cobble together multiple tools', 'use a general productivity app that kind of works', 'rely on group chats (whatsapp, slack, etc.)',
+  'work around it and accept the friction', 'ignore it and hope it goes away', 'do it less often than they should', 'wait for someone else to solve it',
+  'google / search for answers each time', 'ask in online forums or communities', 'watch youtube videos or read blogs', 'attend workshops or training courses',
+  'nothing — they just live with the problem', "they don't know a solution exists",
+]);
+
+const ALTERNATIVE_CHIPS_SYSTEM_PROMPT = `You help a startup founder brainstorm how their target customer is CURRENTLY coping with a specific problem, before any product like the founder's exists -- sorted into six fixed categories: Manual & DIY, People & Help, General Tools, Workarounds, Research & Community, and Nothing. You're given the founder's problem statement, one-liner, and target segment (and sometimes coping methods already named, which you must not repeat).
+
+For the first five categories, write 3 to 4 short (under 12 words), concrete, plausible coping mechanisms THIS specific customer might actually be using today, grounded in the founder's own business domain, workflow, and terminology -- not generic could-apply-to-anything phrases like "track it manually with pen and paper" or "ask a colleague or friend each time". For "Nothing", write 2 short phrases about simply not addressing it at all (this category is naturally narrow -- don't force domain jargon into it that doesn't fit).
+
+WORKED EXAMPLE
+Problem: "FP&A analysts spend a week rebuilding budget scenario models by hand every time an assumption changes"
+One-liner: "A tool that helps finance teams run what-if budget scenarios without spreadsheets"
+Segment: "FP&A analysts at 50-500 person companies"
+Manual & DIY: ["Maintain a master spreadsheet with dozens of linked tabs", "Hand-copy last quarter's model and edit in place", "Keep a personal 'scenario log' of past what-ifs"]
+People & Help: ["Ask a senior analyst to sanity-check the numbers", "Pull in IT to help with broken formulas", "Have the CFO's EA chase down approvals"]
+(...and similarly specific, domain-grounded phrases for General Tools, Workarounds, Research & Community, and 2 for Nothing)
+
+Respond with ONLY a JSON object, no other text, in this exact shape:
+{"groups": [
+  {"category": "Manual & DIY", "items": ["<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "People & Help", "items": ["<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "General Tools", "items": ["<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Workarounds", "items": ["<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Research & Community", "items": ["<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Nothing", "items": ["<phrase>", "<phrase>"]}
+]}`;
+
+function buildAlternativeChipsUserContent(ctx: AlternativeChipsContext): string {
+  const segment = [ctx.segmentRole, ctx.segmentDetail].filter(Boolean).join(' — ');
+  const lines: string[] = [];
+  lines.push(`Problem statement: ${ctx.problem?.trim() || '(not given — infer from the one-liner)'}`);
+  lines.push(`Idea one-liner: ${ctx.oneLiner?.trim() || '(not given)'}`);
+  lines.push(`Target customer segment: ${segment || '(not given)'}`);
+  if (ctx.existingItems?.length) {
+    lines.push('Coping methods already named — do NOT repeat these or close paraphrases of them:');
+    ctx.existingItems.slice(0, 8).forEach(p => lines.push(`- ${p}`));
+  }
+  return lines.join('\n');
+}
+
+function sanitizeAlternativeGroups(raw: any): AlternativeChipGroup[] {
+  if (!Array.isArray(raw)) return [];
+  const out: AlternativeChipGroup[] = [];
+  for (const cat of ALT_CHIP_CATEGORIES) {
+    const group = raw.find((g: any) => typeof g?.category === 'string' && g.category.trim().toLowerCase() === cat.toLowerCase());
+    const items: string[] = [];
+    const seen = new Set<string>();
+    if (group && Array.isArray(group.items)) {
+      for (const item of group.items) {
+        if (typeof item !== 'string' || !item.trim()) continue;
+        const trimmed = item.trim().slice(0, 90);
+        const key = trimmed.toLowerCase();
+        if (seen.has(key) || BANNED_GENERIC_ALT_ITEMS.has(key)) continue;
+        seen.add(key);
+        items.push(trimmed);
+        if (items.length >= 4) break;
+      }
+    }
+    if (items.length) out.push({ category: cat, items });
+  }
+  return out;
+}
+
+function parseAlternativeChipsJson(text: string): AlternativeChipGroup[] {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+  const groups = sanitizeAlternativeGroups(parsed?.groups);
+  if (!groups.length) {
+    throw new Error('The AI did not return any usable suggestions — please try again.');
+  }
+  return groups;
+}
+
+async function generateAlternativeChipsOllama(ctx: AlternativeChipsContext): Promise<AlternativeChipGroup[]> {
+  const userContent = buildAlternativeChipsUserContent(ctx);
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: ALTERNATIVE_CHIPS_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.6 },
+      },
+      { timeout: 120000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+  const text: string = res.data?.message?.content || '';
+  return parseAlternativeChipsJson(text);
+}
+
+async function generateAlternativeChipsClaude(ctx: AlternativeChipsContext): Promise<AlternativeChipGroup[]> {
+  const userContent = buildAlternativeChipsUserContent(ctx);
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 900,
+    temperature: 0.6,
+    system: ALTERNATIVE_CHIPS_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseAlternativeChipsJson(text);
+}
+
+export async function generateAlternativeChips(ctx: AlternativeChipsContext): Promise<AlternativeChipGroup[]> {
+  if (anthropicClient) {
+    try {
+      return await generateAlternativeChipsClaude(ctx);
+    } catch (err: any) {
+      console.error('[alternative-chips] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateAlternativeChipsOllama(ctx);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Automatic alignment classification for a logged interview (Validate step
 // 8, "Log every conversation"). PersonaInterviewCard already saves an
 // instant rule-based estimate at log time (counting pre-tagged positive vs
