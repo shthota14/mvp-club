@@ -4402,50 +4402,46 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
             Add your one-liner on the Idea step and Sage will suggest problems tailored to it.
           </div>
         )}
-        {displayGroups.map(group => (
-          <div key={group.category}>
-            <div style={{ display: 'inline-block', marginBottom: 10 }}>
-              <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 14, fontWeight: 900, letterSpacing: -0.2, color: group.color }}>
-                {group.category}
-              </span>
-              <svg viewBox="0 0 160 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 150 }}>
-                <path d="M0,3 C15,1 30,5 45,3 C60,1 75,5 90,3 C105,1 120,5 135,3 C145,1 155,4 160,3" fill="none" stroke={group.color} strokeWidth="2" strokeLinecap="round" />
-              </svg>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
+          {displayGroups.map(group => (
+            <div key={group.category} style={{ background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: '1.5px solid #cdac72', borderRadius: 10, padding: '10px 10px 14px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 1px 2px 4px rgba(0,0,0,.06)' }}>
+              <div style={{ display: 'inline-block', marginBottom: 8 }}>
+                <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900, letterSpacing: -0.2, color: group.color }}>
+                  {group.category}
+                </span>
+                <svg viewBox="0 0 160 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 130 }}>
+                  <path d="M0,3 C15,1 30,5 45,3 C60,1 75,5 90,3 C105,1 120,5 135,3 C145,1 155,4 160,3" fill="none" stroke={group.color} strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </div>
+              {/* Jenga tower — each suggestion is a stacked block; picking one slides
+                  it out of the tower and fills it with the category colour, the way
+                  you'd pull a Jenga block free. Click again to slide it back in. */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {group.items.map(item => {
+                  const on = selectedTexts.includes(item);
+                  return (
+                    <button
+                      key={item}
+                      onClick={() => toggleSuggestion(item)}
+                      style={{
+                        textAlign: 'left' as const, width: '100%', padding: '8px 12px', cursor: 'pointer',
+                        fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 14, lineHeight: 1.3, fontWeight: on ? 700 : 600,
+                        border: `2px solid ${group.color}`, borderRadius: 4,
+                        background: on ? group.color : '#fff6e0',
+                        color: on ? '#fff' : '#5c4324',
+                        transform: on ? 'translateX(22px)' : 'translateX(0)',
+                        boxShadow: on ? '2px 3px 6px rgba(0,0,0,.2)' : '0 1px 2px rgba(0,0,0,.08)',
+                        transition: 'transform .25s cubic-bezier(.3,.6,.4,1), background .25s, color .25s, box-shadow .25s',
+                      }}
+                    >
+                      {on ? '✓ ' : ''}{item}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10 }}>
-              {group.items.map((item, ii) => {
-                const on = selectedTexts.includes(item);
-                // Same hand-drawn wobble pattern as the "Selected problems" cards below —
-                // mismatched corner radii + a small alternating tilt, cycling per chip.
-                const WOBBLE = [
-                  { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.5 },
-                  { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.6 },
-                  { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.4 },
-                  { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.5 },
-                ][ii % 4];
-                return (
-                  <button
-                    key={item}
-                    onClick={() => toggleSuggestion(item)}
-                    style={{
-                      padding: '7px 15px', cursor: 'pointer',
-                      fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 17, fontWeight: on ? 700 : 600,
-                      border: `${on ? '2.5px' : '2px'} solid ${on ? group.color : '#d8d8d8'}`,
-                      borderRadius: WOBBLE.borderRadius,
-                      transform: `rotate(${WOBBLE.rotate}deg)`,
-                      background: on ? `${group.color}12` : '#fffdf8',
-                      color: on ? group.color : '#555',
-                      boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
-                      transition: 'all .15s',
-                    }}
-                  >
-                    {on ? '✓ ' : ''}{item}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* ── Divider ── */}
@@ -5682,48 +5678,43 @@ function AlternativeRankingStep({
           ask Sage again
         </button>
       )}
-      {displayGroups.map(group => (
-        <div key={group.category}>
-          <div style={{ display: 'inline-block', marginBottom: 10 }}>
-            <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 14, fontWeight: 900, letterSpacing: -0.2, color: c }}>
-              {group.category}
-            </span>
-            <svg viewBox="0 0 160 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 150 }}>
-              <path d="M0,3 C15,1 30,5 45,3 C60,1 75,5 90,3 C105,1 120,5 135,3 C145,1 155,4 160,3" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" />
-            </svg>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
+        {displayGroups.map(group => (
+          <div key={group.category} style={{ background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: '1.5px solid #cdac72', borderRadius: 10, padding: '10px 10px 14px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 1px 2px 4px rgba(0,0,0,.06)' }}>
+            <div style={{ display: 'inline-block', marginBottom: 8 }}>
+              <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900, letterSpacing: -0.2, color: c }}>
+                {group.category}
+              </span>
+              <svg viewBox="0 0 160 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 130 }}>
+                <path d="M0,3 C15,1 30,5 45,3 C60,1 75,5 90,3 C105,1 120,5 135,3 C145,1 155,4 160,3" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
+            {/* Jenga tower — each coping method is a stacked block; picking one slides
+                it out of the tower and fills it with the stage colour, the way you'd
+                pull a Jenga block free. Click again to slide it back in. */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {group.items.map(item => {
+                const on = items.includes(item);
+                return (
+                  <button key={item} onClick={() => toggle(item)}
+                    style={{
+                      textAlign: 'left' as const, width: '100%', padding: '8px 12px', cursor: 'pointer',
+                      fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 14, lineHeight: 1.3, fontWeight: on ? 700 : 600,
+                      border: `2px solid ${c}`, borderRadius: 4,
+                      background: on ? c : '#fff6e0',
+                      color: on ? '#fff' : '#5c4324',
+                      transform: on ? 'translateX(22px)' : 'translateX(0)',
+                      boxShadow: on ? '2px 3px 6px rgba(0,0,0,.2)' : '0 1px 2px rgba(0,0,0,.08)',
+                      transition: 'transform .25s cubic-bezier(.3,.6,.4,1), background .25s, color .25s, box-shadow .25s',
+                    }}>
+                    {on ? '✓ ' : ''}{item}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10 }}>
-            {group.items.map((item, ii) => {
-              const on = items.includes(item);
-              // Same hand-drawn wobble pattern used elsewhere in Idea/Hone (see UI-conventions note).
-              const WOBBLE = [
-                { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.5 },
-                { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.6 },
-                { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.4 },
-                { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.5 },
-              ][ii % 4];
-              return (
-                <button key={item} onClick={() => toggle(item)}
-                  style={{
-                    padding: '7px 15px', cursor: 'pointer',
-                    fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 17, lineHeight: 1.25,
-                    border: `${on ? '2.5px' : '2px'} solid ${on ? c : '#d8d8d8'}`,
-                    borderRadius: WOBBLE.borderRadius,
-                    transform: `rotate(${WOBBLE.rotate}deg)`,
-                    background: on ? `${c}12` : '#fffdf8',
-                    color: on ? c : '#555',
-                    fontWeight: on ? 700 : 600,
-                    boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
-                    transition: 'all .15s',
-                    textAlign: 'left' as const,
-                  }}>
-                  {on ? '✓ ' : ''}{item}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       {/* ── Custom entry ── */}
       {showCustom ? (
