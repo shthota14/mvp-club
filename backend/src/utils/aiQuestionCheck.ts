@@ -1075,15 +1075,57 @@ async function generateProblemChipsClaude(ctx: ProblemChipsContext): Promise<Pro
   return parseProblemChipsJson(text);
 }
 
-export async function generateProblemChips(ctx: ProblemChipsContext): Promise<ProblemChipGroup[]> {
-  if (anthropicClient) {
-    try {
-      return await generateProblemChipsClaude(ctx);
-    } catch (err: any) {
-      console.error('[problem-chips] Claude path failed, falling back to Ollama:', err?.message || err);
-    }
+// ─────────────────────────────────────────────────────────────────────────
+// Shared Ollama-first, Claude-on-slow-or-error strategy for the chip
+// generators below. The app's default posture is the free local Ollama
+// model; Claude is only reached for if Ollama is taking too long (so the
+// founder isn't stuck staring at a skeleton) or if Ollama errors outright.
+// If Claude *also* fails, we fall back to whatever Ollama eventually
+// returns (it's still running in the background the whole time) rather
+// than giving up.
+const CHIP_GEN_OLLAMA_TIMEOUT_MS = 20000;
+
+async function generateChipsOllamaFirst<T>(
+  logLabel: string,
+  ollamaFn: () => Promise<T>,
+  claudeFn: (() => Promise<T>) | null
+): Promise<T> {
+  const ollamaPromise = ollamaFn();
+  if (!claudeFn) {
+    return ollamaPromise;
   }
-  return generateProblemChipsOllama(ctx);
+
+  const timeoutMarker = { timedOut: true as const };
+  const timeout = new Promise<typeof timeoutMarker>(resolve => {
+    setTimeout(() => resolve(timeoutMarker), CHIP_GEN_OLLAMA_TIMEOUT_MS);
+  });
+
+  const settled = await Promise.race([
+    ollamaPromise.then(value => ({ ok: true as const, value })).catch(err => ({ ok: false as const, err })),
+    timeout,
+  ]);
+
+  if ('ok' in settled) {
+    if (settled.ok) return settled.value;
+    console.error(`[${logLabel}] Ollama failed, trying Claude:`, settled.err?.message || settled.err);
+  } else {
+    console.log(`[${logLabel}] Ollama is taking a while (>${CHIP_GEN_OLLAMA_TIMEOUT_MS / 1000}s) -- trying Claude while it keeps running in the background`);
+  }
+
+  try {
+    return await claudeFn();
+  } catch (claudeErr: any) {
+    console.error(`[${logLabel}] Claude fallback also failed, waiting on Ollama as a last resort:`, claudeErr?.message || claudeErr);
+    return ollamaPromise;
+  }
+}
+
+export async function generateProblemChips(ctx: ProblemChipsContext): Promise<ProblemChipGroup[]> {
+  return generateChipsOllamaFirst(
+    'problem-chips',
+    () => generateProblemChipsOllama(ctx),
+    anthropicClient ? () => generateProblemChipsClaude(ctx) : null
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1236,14 +1278,11 @@ async function generateAlternativeChipsClaude(ctx: AlternativeChipsContext): Pro
 }
 
 export async function generateAlternativeChips(ctx: AlternativeChipsContext): Promise<AlternativeChipGroup[]> {
-  if (anthropicClient) {
-    try {
-      return await generateAlternativeChipsClaude(ctx);
-    } catch (err: any) {
-      console.error('[alternative-chips] Claude path failed, falling back to Ollama:', err?.message || err);
-    }
-  }
-  return generateAlternativeChipsOllama(ctx);
+  return generateChipsOllamaFirst(
+    'alternative-chips',
+    () => generateAlternativeChipsOllama(ctx),
+    anthropicClient ? () => generateAlternativeChipsClaude(ctx) : null
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────

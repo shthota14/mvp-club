@@ -4104,35 +4104,12 @@ function PainPointCard({
   );
 }
 
-// ── Suggested problem chips ───────────────────────────────────────────────────
-const PROBLEM_SUGGESTIONS = [
-  {
-    category: '⏰ Time', color: '#7c3aed',
-    items: ['Takes too long to do manually', 'Too many steps to complete a task', 'Hard to track what\'s happening', 'Constant context-switching'],
-  },
-  {
-    category: '💸 Cost', color: '#059669',
-    items: ['Current solutions are too expensive', 'Hidden costs keep adding up', 'Wasting budget on the wrong tools', 'No affordable option exists'],
-  },
-  {
-    category: '😤 Frustration', color: '#d97706',
-    items: ['Existing tools are confusing', 'Too much back-and-forth between people', 'Easy to make mistakes', 'No single source of truth'],
-  },
-  {
-    category: '🔍 Access', color: '#2563eb',
-    items: ['Hard to find the right information', 'No clear solution on the market', 'Information is scattered everywhere', 'Hard to get started without expertise'],
-  },
-  {
-    category: '📉 Growth', color: '#dc2626',
-    items: ["Can't scale the current approach", 'Falling behind competitors', 'Losing customers to this problem', 'Stuck doing the same thing repeatedly'],
-  },
-];
-
-// Emoji label + colour for each of the five fixed dimensions the AI-generated
-// groups come back keyed by (see backend generateProblemChips) -- the AI only
-// supplies the actual `items`, this supplies the same display chrome the
-// static PROBLEM_SUGGESTIONS list above already uses, so the two are visually
-// interchangeable.
+// Emoji label + colour for each of the five fixed dimensions Sage's
+// AI-generated problem chips come back keyed by (see backend
+// generateProblemChips) -- the AI supplies only the `items`, this supplies
+// the display chrome. There is no static fallback bank any more -- every
+// founder sees chips grounded in their own idea, generated once and
+// persisted, never a generic default.
 const PROBLEM_CATEGORY_META: Record<string, { label: string; color: string }> = {
   Time: { label: '⏰ Time', color: '#7c3aed' },
   Cost: { label: '💸 Cost', color: '#059669' },
@@ -4143,7 +4120,23 @@ const PROBLEM_CATEGORY_META: Record<string, { label: string; color: string }> = 
 
 type ProblemBuilderHandle = { addProblems: (texts: string[]) => void };
 
-const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; onChange: (v: string) => void; oneLiner?: string; segment?: { role: string; detail: string } }>(function ProblemBuilder({ value, onChange, oneLiner, segment }, ref) {
+// Persisted shape for the once-per-idea AI-generated chip set, stored via
+// the genChipsValue/onGenChipsChange props (backed by the ideasApi field
+// 'problemChipsGen', same debounced-save mechanism as every other Hone
+// field) so a page reload replays Sage's original suggestions instead of
+// asking again.
+type StoredProblemChips = { key: string; groups: { category: string; items: string[] }[] };
+
+function parseStoredProblemChips(raw?: string): StoredProblemChips | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.key === 'string' && Array.isArray(parsed.groups)) return parsed;
+  } catch {}
+  return null;
+}
+
+const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; onChange: (v: string) => void; oneLiner?: string; segment?: { role: string; detail: string }; genChipsValue?: string; onGenChipsChange?: (v: string) => void }>(function ProblemBuilder({ value, onChange, oneLiner, segment, genChipsValue, onGenChipsChange }, ref) {
   const [problems, setProblems] = useState<SeverityProblem[]>(() => initSeverityProblems(value));
   const [customText, setCustomText] = useState('');
   const [showCustom, setShowCustom] = useState(false);
@@ -4195,43 +4188,64 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
 
   const selectedTexts = problems.map(p => p.text.trim()).filter(Boolean);
 
-  // ── AI-tailored suggestion chips ────────────────────────────────────────
-  // The static PROBLEM_SUGGESTIONS bank below is generic by necessity (it's
-  // the same 20 phrases for every founder's idea). Once there's a one-liner
-  // to ground it in, ask Sage for the same five dimensions filled in with
-  // phrases specific to THIS idea/segment, and use those instead -- falling
-  // back to the static bank while that call is in flight, or if it fails.
-  const [genGroups, setGenGroups] = useState<{ category: string; color: string; items: string[] }[] | null>(null);
+  // ── AI-tailored suggestion chips, generated once via Sage and persisted ──
+  // No static/generic fallback bank any more. Sage is asked exactly once per
+  // idea+segment context; the result is written back through
+  // onGenChipsChange so a reload (or navigating away and back) replays the
+  // same chips instead of asking again. The founder's own selections
+  // continue to persist separately via `value`/`onChange`, unaffected.
+  const stored = React.useMemo(() => parseStoredProblemChips(genChipsValue), [genChipsValue]);
+  const [genGroups, setGenGroups] = useState<{ category: string; items: string[] }[] | null>(stored?.groups ?? null);
   const [genState, setGenState] = useState<{ loading: boolean; error?: boolean }>({ loading: false });
-  const genKeyRef = useRef<string | null>(null);
+  const genKeyRef = useRef<string | null>(stored?.key ?? null);
   const existingProblemsRef = useRef<string[]>([]);
   existingProblemsRef.current = selectedTexts;
 
+  const runProblemChipGeneration = React.useCallback((key: string, oneLinerTrim: string, segmentRole: string, segmentDetail: string) => {
+    genKeyRef.current = key;
+    setGenState({ loading: true, error: false });
+    validationApi.generateProblemChips({ oneLiner: oneLinerTrim, segmentRole: segmentRole || undefined, segmentDetail: segmentDetail || undefined, existingProblems: existingProblemsRef.current })
+      .then(r => {
+        const groups = Array.isArray(r.data?.groups) ? r.data.groups : [];
+        const cleaned = groups
+          .filter((g: any) => g && PROBLEM_CATEGORY_META[g.category] && Array.isArray(g.items) && g.items.length)
+          .map((g: any) => ({ category: g.category as string, items: g.items as string[] }));
+        if (cleaned.length) {
+          setGenGroups(cleaned);
+          setGenState({ loading: false });
+          onGenChipsChange?.(JSON.stringify({ key, groups: cleaned }));
+        } else {
+          setGenState({ loading: false, error: true });
+        }
+      })
+      .catch(() => setGenState({ loading: false, error: true }));
+  }, [onGenChipsChange]);
+
   useEffect(() => {
+    if (genGroups) return; // already have a generated (or persisted) set for this builder instance -- never auto-regenerate
     const oneLinerTrim = (oneLiner || '').trim();
     if (oneLinerTrim.length < 8) return; // not enough context to ground suggestions in yet
     const segmentRole = (segment?.role || '').trim();
     const segmentDetail = (segment?.detail || '').trim();
     const key = `${oneLinerTrim}__${segmentRole}__${segmentDetail}`;
-    if (genKeyRef.current === key) return; // already generated (or generating/failed) for this exact context
-    genKeyRef.current = key;
-    setGenState({ loading: true });
-    validationApi.generateProblemChips({ oneLiner: oneLinerTrim, segmentRole: segmentRole || undefined, segmentDetail: segmentDetail || undefined, existingProblems: existingProblemsRef.current })
-      .then(r => {
-        const groups = Array.isArray(r.data?.groups) ? r.data.groups : [];
-        const mapped = groups
-          .filter((g: any) => g && PROBLEM_CATEGORY_META[g.category] && Array.isArray(g.items) && g.items.length)
-          .map((g: any) => ({ category: PROBLEM_CATEGORY_META[g.category].label, color: PROBLEM_CATEGORY_META[g.category].color, items: g.items }));
-        if (mapped.length) { setGenGroups(mapped); setGenState({ loading: false }); }
-        else { setGenState({ loading: false, error: true }); }
-      })
-      .catch(() => setGenState({ loading: false, error: true }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [oneLiner, segment?.role, segment?.detail]);
+    if (genKeyRef.current === key) return; // already attempted (succeeded or failed) for this exact context -- wait for manual retry, don't loop
+    runProblemChipGeneration(key, oneLinerTrim, segmentRole, segmentDetail);
+  }, [oneLiner, segment?.role, segment?.detail, genGroups, runProblemChipGeneration]);
 
-  // Interchangeable with the static list -- same {category, color, items}
-  // shape -- so the render below doesn't need to know which one it has.
-  const displayGroups = genGroups ?? PROBLEM_SUGGESTIONS;
+  const retryProblemChips = () => {
+    const oneLinerTrim = (oneLiner || '').trim();
+    const segmentRole = (segment?.role || '').trim();
+    const segmentDetail = (segment?.detail || '').trim();
+    runProblemChipGeneration(`${oneLinerTrim}__${segmentRole}__${segmentDetail}`, oneLinerTrim, segmentRole, segmentDetail);
+  };
+
+  const displayGroups = React.useMemo(() => {
+    if (!genGroups) return [];
+    const byCat = new Map(genGroups.map(g => [g.category, g.items]));
+    return Object.keys(PROBLEM_CATEGORY_META)
+      .filter(cat => byCat.has(cat))
+      .map(cat => ({ category: PROBLEM_CATEGORY_META[cat].label, color: PROBLEM_CATEGORY_META[cat].color, items: byCat.get(cat)! }));
+  }, [genGroups]);
 
   const toggleSuggestion = (text: string) => {
     const already = problems.findIndex(p => p.text.trim() === text);
@@ -4324,6 +4338,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
           50%      { background: #fff1f2;    box-shadow: 0 0 0 4px rgba(220,38,38,.18); }
         }
         @keyframes sevTap { 0%,100% { transform: translate(-50%,-50%) scale(1); } 50% { transform: translate(-50%,-50%) scale(.78) translateY(-5px); } }
+        @keyframes sageDotBounce { 0%, 80%, 100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-7px); opacity: 1; } }
       `}</style>
 
       {/* Animated pointer — travels from the Next button to the first problem
@@ -4350,15 +4365,43 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
         </div>
       )}
 
-      {/* ── Suggestion chips by category — whiteboard style ── */}
+      {/* ── Suggestion chips by category — whiteboard style, AI-tailored once ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' as const }}>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: '#1e293b' }}>
-            Select everything that applies to your customer:
+        {displayGroups.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' as const }}>
+            <div style={{ fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: '#1e293b' }}>
+              Select everything that applies to your customer:
+            </div>
+            <button onClick={retryProblemChips} style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+              ask Sage again
+            </button>
           </div>
-          {genState.loading && <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309' }}>🤖 tailoring these to your idea…</span>}
-          {!genState.loading && genState.error && !genGroups && <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>showing general examples</span>}
-        </div>
+        )}
+        {genState.loading && displayGroups.length === 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '20px 4px' }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 14 }}>
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#b45309', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '0s' }} />
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#b45309', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.15s' }} />
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#b45309', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.3s' }} />
+            </div>
+            <span style={{ fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 19, color: '#92400e', fontWeight: 700 }}>
+              Sage is reading your idea and coming up with relevant problems…
+            </span>
+          </div>
+        )}
+        {!genState.loading && genState.error && displayGroups.length === 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#94a3b8' }}>
+            <span>Sage couldn't come up with suggestions just now.</span>
+            <button onClick={retryProblemChips} style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+              Try again
+            </button>
+          </div>
+        )}
+        {!genState.loading && !genState.error && displayGroups.length === 0 && (
+          <div style={{ fontSize: 13, color: '#94a3b8' }}>
+            Add your one-liner on the Idea step and Sage will suggest problems tailored to it.
+          </div>
+        )}
         {displayGroups.map(group => (
           <div key={group.category}>
             <div style={{ display: 'inline-block', marginBottom: 10 }}>
@@ -4386,7 +4429,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                     onClick={() => toggleSuggestion(item)}
                     style={{
                       padding: '7px 15px', cursor: 'pointer',
-                      fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 17, fontWeight: on ? 700 : 600,
+                      fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 17, fontWeight: on ? 700 : 600,
                       border: `${on ? '2.5px' : '2px'} solid ${on ? group.color : '#d8d8d8'}`,
                       borderRadius: WOBBLE.borderRadius,
                       transform: `rotate(${WOBBLE.rotate}deg)`,
@@ -4455,7 +4498,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                       style={{ flex: 1, fontSize: 14, color: USER_INPUT_COLOR, lineHeight: 1.5, fontFamily: 'inherit', border: '1.5px solid #1a1a1a', borderRadius: 6, padding: '6px 10px', resize: 'none' as const, outline: 'none' }}
                     />
                   ) : (
-                    <div style={{ flex: 1, fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 23, fontWeight: 700, color: '#1e293b', lineHeight: 1.25, paddingTop: 1 }}>{p.text}</div>
+                    <div style={{ flex: 1, fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 23, fontWeight: 700, color: '#1e293b', lineHeight: 1.25, paddingTop: 1 }}>{p.text}</div>
                   )}
                   {!isEditing && (
                     <button onClick={() => startEdit(p)} title="Edit" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#b0b0b8', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>✏️</button>
@@ -4533,7 +4576,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
 
       {/* ── Summary — handwritten postcard style ── */}
       {filled.length > 0 && (
-        <div style={{ ...postcardStyle(-1), padding: '12px 16px', fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 17, fontWeight: 700, color: '#166534' }}>
+        <div style={{ ...postcardStyle(-1), padding: '12px 16px', fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 17, fontWeight: 700, color: '#166534' }}>
           <PostcardStamp />
           ✓ {filled.length} problem{filled.length > 1 ? 's' : ''} captured
           {problems.some(p => p.severity === 'critical') && <span style={{ marginLeft: 8, color: '#dc2626' }}> · {problems.filter(p => p.severity === 'critical').length} 🔥 critical</span>}
@@ -5460,65 +5503,12 @@ function ProblemContextCard({ who, problems, pain }: { who: string; problems: st
 }
 
 // ── Alternative Ranking Step (h3) ─────────────────────────────────────────
-const ALT_SUGGESTIONS = [
-  {
-    category: '📋 Manual & DIY',
-    items: [
-      'Track it manually with pen and paper',
-      'Build their own makeshift process',
-      'Use a whiteboard or sticky notes',
-      'Create their own templates or checklists',
-    ],
-  },
-  {
-    category: '🤝 People & Help',
-    items: [
-      'Ask a colleague or friend each time',
-      'Hire someone to handle it for them',
-      'Outsource it to a freelancer or agency',
-      'Rely on a consultant or expert',
-    ],
-  },
-  {
-    category: '🧩 General Tools',
-    items: [
-      'Use email to manage it (back and forth)',
-      'Cobble together multiple tools',
-      'Use a general productivity app that kind of works',
-      'Rely on group chats (WhatsApp, Slack, etc.)',
-    ],
-  },
-  {
-    category: '😤 Workarounds',
-    items: [
-      'Work around it and accept the friction',
-      'Ignore it and hope it goes away',
-      'Do it less often than they should',
-      'Wait for someone else to solve it',
-    ],
-  },
-  {
-    category: '🔍 Research & Community',
-    items: [
-      'Google / search for answers each time',
-      'Ask in online forums or communities',
-      'Watch YouTube videos or read blogs',
-      'Attend workshops or training courses',
-    ],
-  },
-  {
-    category: '🚫 Nothing',
-    items: [
-      'Nothing — they just live with the problem',
-      "They don't know a solution exists",
-    ],
-  },
-];
-
-// Emoji label for each of the six fixed categories the AI-generated groups
-// come back keyed by (see backend generateAlternativeChips) -- unlike the
-// problem-chips categories, these all share one accent colour (the Hone
-// stage colour), so there's no separate colour lookup needed here.
+// Emoji label for each of the six fixed categories Sage's AI-generated
+// groups come back keyed by (see backend generateAlternativeChips) -- these
+// all share one accent colour (the Hone stage colour), so there's no
+// separate colour lookup needed here. There is no static fallback bank any
+// more -- chips are always grounded in the founder's own idea/problem,
+// generated once and persisted.
 const ALT_CATEGORY_LABELS: Record<string, string> = {
   'Manual & DIY': '📋 Manual & DIY',
   'People & Help': '🤝 People & Help',
@@ -5528,11 +5518,27 @@ const ALT_CATEGORY_LABELS: Record<string, string> = {
   'Nothing': '🚫 Nothing',
 };
 
+// Persisted shape for the once-per-idea AI-generated alternative chip set,
+// stored via the genChipsValue/onGenChipsChange props (backed by the
+// ideasApi field 'solutionChipsGen') so a reload replays Sage's original
+// suggestions instead of asking again.
+type StoredAltChips = { key: string; groups: { category: string; items: string[] }[] };
+
+function parseStoredAltChips(raw?: string): StoredAltChips | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.key === 'string' && Array.isArray(parsed.groups)) return parsed;
+  } catch {}
+  return null;
+}
+
 function AlternativeRankingStep({
-  value, onChange, oneLiner, segment, problem,
+  value, onChange, oneLiner, segment, problem, genChipsValue, onGenChipsChange,
 }: {
   value: string; onChange: (v: string) => void;
   oneLiner?: string; segment?: { role: string; detail: string }; problem?: string;
+  genChipsValue?: string; onGenChipsChange?: (v: string) => void;
 }) {
   const SEP = '|||';
   const toList = (v: string) => v.split(SEP).filter(Boolean);
@@ -5573,26 +5579,21 @@ function AlternativeRankingStep({
 
   const c = STAGE_COLORS.hone;
 
-  // ── AI-tailored suggestion chips ────────────────────────────────────────
-  // Same pattern as ProblemBuilder above: ground the six fixed categories in
-  // the founder's own problem/one-liner/segment instead of one static list,
-  // falling back to it while the call is in flight or if it fails.
-  const [genGroups, setGenGroups] = useState<{ category: string; items: string[] }[] | null>(null);
+  // ── AI-tailored suggestion chips, generated once via Sage and persisted ──
+  // Same pattern as ProblemBuilder above: Sage is asked exactly once per
+  // idea+problem+segment context, and the result is written back through
+  // onGenChipsChange so a reload replays the same chips instead of asking
+  // again. No static/generic fallback bank any more.
+  const stored = React.useMemo(() => parseStoredAltChips(genChipsValue), [genChipsValue]);
+  const [genGroups, setGenGroups] = useState<{ category: string; items: string[] }[] | null>(stored?.groups ?? null);
   const [genState, setGenState] = useState<{ loading: boolean; error?: boolean }>({ loading: false });
-  const genKeyRef = useRef<string | null>(null);
+  const genKeyRef = useRef<string | null>(stored?.key ?? null);
   const existingItemsRef = useRef<string[]>([]);
   existingItemsRef.current = items;
 
-  useEffect(() => {
-    const oneLinerTrim = (oneLiner || '').trim();
-    const problemTrim = (problem || '').trim();
-    if (oneLinerTrim.length < 8 && problemTrim.length < 8) return; // not enough context yet
-    const segmentRole = (segment?.role || '').trim();
-    const segmentDetail = (segment?.detail || '').trim();
-    const key = `${oneLinerTrim}__${problemTrim}__${segmentRole}__${segmentDetail}`;
-    if (genKeyRef.current === key) return;
+  const runAltChipGeneration = React.useCallback((key: string, oneLinerTrim: string, problemTrim: string, segmentRole: string, segmentDetail: string) => {
     genKeyRef.current = key;
-    setGenState({ loading: true });
+    setGenState({ loading: true, error: false });
     validationApi.generateAlternativeChips({
       oneLiner: oneLinerTrim || undefined,
       problem: problemTrim || undefined,
@@ -5602,27 +5603,84 @@ function AlternativeRankingStep({
     })
       .then(r => {
         const groups = Array.isArray(r.data?.groups) ? r.data.groups : [];
-        const mapped = groups
+        const cleaned = groups
           .filter((g: any) => g && ALT_CATEGORY_LABELS[g.category] && Array.isArray(g.items) && g.items.length)
-          .map((g: any) => ({ category: ALT_CATEGORY_LABELS[g.category], items: g.items }));
-        if (mapped.length) { setGenGroups(mapped); setGenState({ loading: false }); }
-        else { setGenState({ loading: false, error: true }); }
+          .map((g: any) => ({ category: g.category as string, items: g.items as string[] }));
+        if (cleaned.length) {
+          setGenGroups(cleaned);
+          setGenState({ loading: false });
+          onGenChipsChange?.(JSON.stringify({ key, groups: cleaned }));
+        } else {
+          setGenState({ loading: false, error: true });
+        }
       })
       .catch(() => setGenState({ loading: false, error: true }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [oneLiner, problem, segment?.role, segment?.detail]);
+  }, [onGenChipsChange]);
 
-  const displayGroups = genGroups ?? ALT_SUGGESTIONS;
+  useEffect(() => {
+    if (genGroups) return; // already have a generated (or persisted) set -- never auto-regenerate
+    const oneLinerTrim = (oneLiner || '').trim();
+    const problemTrim = (problem || '').trim();
+    if (oneLinerTrim.length < 8 && problemTrim.length < 8) return; // not enough context yet
+    const segmentRole = (segment?.role || '').trim();
+    const segmentDetail = (segment?.detail || '').trim();
+    const key = `${oneLinerTrim}__${problemTrim}__${segmentRole}__${segmentDetail}`;
+    if (genKeyRef.current === key) return; // already attempted for this context -- wait for manual retry
+    runAltChipGeneration(key, oneLinerTrim, problemTrim, segmentRole, segmentDetail);
+  }, [oneLiner, problem, segment?.role, segment?.detail, genGroups, runAltChipGeneration]);
+
+  const retryAltChips = () => {
+    const oneLinerTrim = (oneLiner || '').trim();
+    const problemTrim = (problem || '').trim();
+    const segmentRole = (segment?.role || '').trim();
+    const segmentDetail = (segment?.detail || '').trim();
+    runAltChipGeneration(`${oneLinerTrim}__${problemTrim}__${segmentRole}__${segmentDetail}`, oneLinerTrim, problemTrim, segmentRole, segmentDetail);
+  };
+
+  const displayGroups = React.useMemo(() => {
+    if (!genGroups) return [];
+    return genGroups
+      .filter(g => ALT_CATEGORY_LABELS[g.category])
+      .map(g => ({ category: ALT_CATEGORY_LABELS[g.category], items: g.items }));
+  }, [genGroups]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-      {/* ── Chip grid by category — whiteboard style ── */}
-      {genState.loading && (
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#b45309' }}>🤖 tailoring these to your idea…</div>
+      <style>{`
+        @keyframes sageDotBounce { 0%, 80%, 100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-7px); opacity: 1; } }
+      `}</style>
+
+      {/* ── Chip grid by category — whiteboard style, AI-tailored once ── */}
+      {genState.loading && displayGroups.length === 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '20px 4px' }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 14 }}>
+            <span style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '0s' }} />
+            <span style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.15s' }} />
+            <span style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.3s' }} />
+          </div>
+          <span style={{ fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 19, color: '#475569', fontWeight: 700 }}>
+            Sage is reading your problem and coming up with how people cope today…
+          </span>
+        </div>
       )}
-      {!genState.loading && genState.error && !genGroups && (
-        <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>showing general examples</div>
+      {!genState.loading && genState.error && displayGroups.length === 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#94a3b8' }}>
+          <span>Sage couldn't come up with suggestions just now.</span>
+          <button onClick={retryAltChips} style={{ fontSize: 12, fontWeight: 700, color: c, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+            Try again
+          </button>
+        </div>
+      )}
+      {!genState.loading && !genState.error && displayGroups.length === 0 && (
+        <div style={{ fontSize: 13, color: '#94a3b8' }}>
+          Add your problem statement in the step before this one and Sage will suggest how people cope today.
+        </div>
+      )}
+      {!genState.loading && displayGroups.length > 0 && (
+        <button onClick={retryAltChips} style={{ alignSelf: 'flex-start' as const, fontSize: 11, fontWeight: 600, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+          ask Sage again
+        </button>
       )}
       {displayGroups.map(group => (
         <div key={group.category}>
@@ -5648,7 +5706,7 @@ function AlternativeRankingStep({
                 <button key={item} onClick={() => toggle(item)}
                   style={{
                     padding: '7px 15px', cursor: 'pointer',
-                    fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 17, lineHeight: 1.25,
+                    fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 17, lineHeight: 1.25,
                     border: `${on ? '2.5px' : '2px'} solid ${on ? c : '#d8d8d8'}`,
                     borderRadius: WOBBLE.borderRadius,
                     transform: `rotate(${WOBBLE.rotate}deg)`,
@@ -5705,7 +5763,7 @@ function AlternativeRankingStep({
               <path d="M0,3 C16,1 32,5 48,3 C64,1 80,5 96,3 C112,1 128,5 144,3 C154,1 164,4 170,3" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 15, color: '#7a7a7a', marginBottom: 10 }}>Drag to reorder · #1 = your primary hypothesis</div>
+          <div style={{ fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 15, color: '#7a7a7a', marginBottom: 10 }}>Drag to reorder · #1 = your primary hypothesis</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {items.map((item, i) => {
               const isDragging = dragIdx === i;
@@ -5752,12 +5810,12 @@ function AlternativeRankingStep({
                   <span style={{ color: '#ccc', fontSize: 14, flexShrink: 0, lineHeight: 1, letterSpacing: '-1px' }}>⠿</span>
 
                   {/* Rank badge */}
-                  <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 15, fontWeight: 700, color: i === 0 ? c : '#bbb', width: 24, flexShrink: 0, textAlign: 'center' as const }}>
+                  <span style={{ fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 15, fontWeight: 700, color: i === 0 ? c : '#bbb', width: 24, flexShrink: 0, textAlign: 'center' as const }}>
                     {i === 0 ? '🎯' : `#${i + 1}`}
                   </span>
 
                   {/* Label */}
-                  <span style={{ flex: 1, fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, color: i === 0 ? '#1e293b' : '#555', fontWeight: i === 0 ? 700 : 600, lineHeight: 1.25 }}>{item}</span>
+                  <span style={{ flex: 1, fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 18, color: i === 0 ? '#1e293b' : '#555', fontWeight: i === 0 ? 700 : 600, lineHeight: 1.25 }}>{item}</span>
 
                   {/* Remove */}
                   <button
@@ -5769,7 +5827,7 @@ function AlternativeRankingStep({
             })}
           </div>
           {items.length >= 2 && (
-            <div style={{ ...postcardStyle(1), marginTop: 12, fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: '#065f46', padding: '11px 15px' }}>
+            <div style={{ ...postcardStyle(1), marginTop: 12, fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: '#065f46', padding: '11px 15px' }}>
               <PostcardStamp top={8} right={10} />
               <strong>Your hypothesis:</strong> Most people are solving this by <em>{items[0].charAt(0).toLowerCase() + items[0].slice(1)}</em>. You'll test this in Validate.
             </div>
@@ -12070,6 +12128,7 @@ export default function WorkPage() {
     painIfNothing: 'hone', frequency: 'hone',
     workaround: 'hone', competitors: 'hone',
     pullSigns: 'hone', quantifiedValue: 'hone', solutionAlternatives: 'hone',
+    problemChipsGen: 'hone', solutionChipsGen: 'hone',
     s_specificity: 'hone', s_pain: 'hone', s_frequency: 'hone',
     s_economic: 'hone', s_workaround: 'hone', s_seeking: 'hone',
     s_buyer: 'hone', s_measurable: 'hone',
@@ -13756,6 +13815,8 @@ export default function WorkPage() {
         onChange={v => set('problemSentence', v)}
         oneLiner={get('oneLiner')}
         segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
+        genChipsValue={get('problemChipsGen')}
+        onGenChipsChange={v => set('problemChipsGen', v)}
       />
       {(() => {
         const raw        = get('problemSentence');
@@ -13823,6 +13884,8 @@ export default function WorkPage() {
         oneLiner={get('oneLiner')}
         segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
         problem={formatProblemsForContext(get('problemSentence'))}
+        genChipsValue={get('solutionChipsGen')}
+        onGenChipsChange={v => set('solutionChipsGen', v)}
       />
       <NavRow onBack={back} onNext={async () => { await save('hone', { solutionAlternatives: get('solutionAlternatives') }); next(); }} nextLabel="Next →" disabled={!get('solutionAlternatives').split('|||').filter(Boolean).length} disabledReason="List at least one way people cope with this today." stageColor={STAGE_COLORS.idea} stepTitle="What do you think people are doing to solve this?" ideaId={activeIdea.id} />
     </div>,
