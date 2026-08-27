@@ -4128,9 +4128,22 @@ const PROBLEM_SUGGESTIONS = [
   },
 ];
 
+// Emoji label + colour for each of the five fixed dimensions the AI-generated
+// groups come back keyed by (see backend generateProblemChips) -- the AI only
+// supplies the actual `items`, this supplies the same display chrome the
+// static PROBLEM_SUGGESTIONS list above already uses, so the two are visually
+// interchangeable.
+const PROBLEM_CATEGORY_META: Record<string, { label: string; color: string }> = {
+  Time: { label: '⏰ Time', color: '#7c3aed' },
+  Cost: { label: '💸 Cost', color: '#059669' },
+  Frustration: { label: '😤 Frustration', color: '#d97706' },
+  Access: { label: '🔍 Access', color: '#2563eb' },
+  Growth: { label: '📉 Growth', color: '#dc2626' },
+};
+
 type ProblemBuilderHandle = { addProblems: (texts: string[]) => void };
 
-const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; onChange: (v: string) => void }>(function ProblemBuilder({ value, onChange }, ref) {
+const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; onChange: (v: string) => void; oneLiner?: string; segment?: { role: string; detail: string } }>(function ProblemBuilder({ value, onChange, oneLiner, segment }, ref) {
   const [problems, setProblems] = useState<SeverityProblem[]>(() => initSeverityProblems(value));
   const [customText, setCustomText] = useState('');
   const [showCustom, setShowCustom] = useState(false);
@@ -4181,6 +4194,44 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
   };
 
   const selectedTexts = problems.map(p => p.text.trim()).filter(Boolean);
+
+  // ── AI-tailored suggestion chips ────────────────────────────────────────
+  // The static PROBLEM_SUGGESTIONS bank below is generic by necessity (it's
+  // the same 20 phrases for every founder's idea). Once there's a one-liner
+  // to ground it in, ask Sage for the same five dimensions filled in with
+  // phrases specific to THIS idea/segment, and use those instead -- falling
+  // back to the static bank while that call is in flight, or if it fails.
+  const [genGroups, setGenGroups] = useState<{ category: string; color: string; items: string[] }[] | null>(null);
+  const [genState, setGenState] = useState<{ loading: boolean; error?: boolean }>({ loading: false });
+  const genKeyRef = useRef<string | null>(null);
+  const existingProblemsRef = useRef<string[]>([]);
+  existingProblemsRef.current = selectedTexts;
+
+  useEffect(() => {
+    const oneLinerTrim = (oneLiner || '').trim();
+    if (oneLinerTrim.length < 8) return; // not enough context to ground suggestions in yet
+    const segmentRole = (segment?.role || '').trim();
+    const segmentDetail = (segment?.detail || '').trim();
+    const key = `${oneLinerTrim}__${segmentRole}__${segmentDetail}`;
+    if (genKeyRef.current === key) return; // already generated (or generating/failed) for this exact context
+    genKeyRef.current = key;
+    setGenState({ loading: true });
+    validationApi.generateProblemChips({ oneLiner: oneLinerTrim, segmentRole: segmentRole || undefined, segmentDetail: segmentDetail || undefined, existingProblems: existingProblemsRef.current })
+      .then(r => {
+        const groups = Array.isArray(r.data?.groups) ? r.data.groups : [];
+        const mapped = groups
+          .filter((g: any) => g && PROBLEM_CATEGORY_META[g.category] && Array.isArray(g.items) && g.items.length)
+          .map((g: any) => ({ category: PROBLEM_CATEGORY_META[g.category].label, color: PROBLEM_CATEGORY_META[g.category].color, items: g.items }));
+        if (mapped.length) { setGenGroups(mapped); setGenState({ loading: false }); }
+        else { setGenState({ loading: false, error: true }); }
+      })
+      .catch(() => setGenState({ loading: false, error: true }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oneLiner, segment?.role, segment?.detail]);
+
+  // Interchangeable with the static list -- same {category, color, items}
+  // shape -- so the render below doesn't need to know which one it has.
+  const displayGroups = genGroups ?? PROBLEM_SUGGESTIONS;
 
   const toggleSuggestion = (text: string) => {
     const already = problems.findIndex(p => p.text.trim() === text);
@@ -4301,10 +4352,14 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
 
       {/* ── Suggestion chips by category — whiteboard style ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: '#1e293b' }}>
-          Select everything that applies to your customer:
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' as const }}>
+          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: '#1e293b' }}>
+            Select everything that applies to your customer:
+          </div>
+          {genState.loading && <span style={{ fontSize: 11, fontWeight: 700, color: '#b45309' }}>🤖 tailoring these to your idea…</span>}
+          {!genState.loading && genState.error && !genGroups && <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>showing general examples</span>}
         </div>
-        {PROBLEM_SUGGESTIONS.map(group => (
+        {displayGroups.map(group => (
           <div key={group.category}>
             <div style={{ display: 'inline-block', marginBottom: 10 }}>
               <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 14, fontWeight: 900, letterSpacing: -0.2, color: group.color }}>
@@ -13634,7 +13689,13 @@ export default function WorkPage() {
         segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
         onAdd={texts => problemBuilderRef.current?.addProblems(texts)}
       />
-      <ProblemBuilder ref={problemBuilderRef} value={get('problemSentence')} onChange={v => set('problemSentence', v)} />
+      <ProblemBuilder
+        ref={problemBuilderRef}
+        value={get('problemSentence')}
+        onChange={v => set('problemSentence', v)}
+        oneLiner={get('oneLiner')}
+        segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
+      />
       {(() => {
         const raw        = get('problemSentence');
         const hasProblem = raw.split(MULTI_SEP).filter(Boolean).some(s => s.trim().length > 5 && !s.includes('___'));

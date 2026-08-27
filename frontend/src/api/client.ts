@@ -98,6 +98,8 @@ export const validationApi = {
     api.post('/validation/questions/check', data),
   generateChips: (data: { question: string; hint?: string; problemDomain?: string }) =>
     api.post('/validation/questions/generate-chips', data),
+  generateProblemChips: (data: { oneLiner?: string; segmentRole?: string; segmentDetail?: string; existingProblems?: string[] }) =>
+    api.post('/validation/idea/problem-chips', data),
   generateScript: (data: {
     problem?: string;
     persona?: string;

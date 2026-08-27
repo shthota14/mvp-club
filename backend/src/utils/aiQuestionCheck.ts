@@ -927,6 +927,166 @@ export async function generateQuestionChips(ctx: QuestionChipsContext): Promise<
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Problem-suggestion chips (Hone step 2, "What are the problems?"). The
+// "Select everything that applies to your customer" tap-to-select bank used
+// to be one fixed, generic list of ~20 phrases (e.g. "Takes too long to do
+// manually") shown to every founder regardless of their idea -- read as
+// boilerplate sitting right next to the founder's own, Sage-extracted
+// problem statements above it. This grounds the same five dimensions
+// (Time / Cost / Frustration / Access / Growth) in the founder's own
+// one-liner and target segment instead of a one-size-fits-all list.
+export interface ProblemChipsContext {
+  oneLiner?: string;
+  segmentRole?: string;   // e.g. "FP&A analysts" — matches ProblemInterviewContext's shape
+  segmentDetail?: string; // e.g. "at 50-500 person companies"
+  existingProblems?: string[];
+}
+
+export type ProblemChipGroup = { category: string; items: string[] };
+
+const PROBLEM_CHIP_CATEGORIES = ['Time', 'Cost', 'Frustration', 'Access', 'Growth'];
+
+// The exact generic phrases this feature replaces — banned outright so a
+// model that has seen them during training can't just hand them straight
+// back instead of actually grounding new ones in the founder's context.
+const BANNED_GENERIC_PROBLEM_ITEMS = new Set([
+  'takes too long to do manually', 'too many steps to complete a task', "hard to track what's happening", 'constant context-switching',
+  'current solutions are too expensive', 'hidden costs keep adding up', 'wasting budget on the wrong tools', 'no affordable option exists',
+  'existing tools are confusing', 'too much back-and-forth between people', 'easy to make mistakes', 'no single source of truth',
+  'hard to find the right information', 'no clear solution on the market', 'information is scattered everywhere', 'hard to get started without expertise',
+  "can't scale the current approach", 'falling behind competitors', 'losing customers to this problem', 'stuck doing the same thing repeatedly',
+]);
+
+const PROBLEM_CHIPS_SYSTEM_PROMPT = `You help a startup founder brainstorm the problems their specific target customer has, sorted into five fixed dimensions: Time, Cost, Frustration, Access, and Growth. You're given the founder's one-line idea description and who their target customer is (and sometimes problems they've already named, which you must not repeat).
+
+For EACH of the five dimensions, write exactly 4 short (under 12 words), concrete, tappable problem-symptom phrases describing something THIS specific customer plausibly experiences — grounded in the founder's own business domain, workflow, and terminology. Never write generic, could-apply-to-any-startup phrases like "takes too long to do manually" or "existing tools are confusing" — every phrase must read as obviously about THIS domain, not a placeholder that could sit under any idea.
+
+WORKED EXAMPLE
+One-liner: "A tool that helps finance teams run what-if budget scenarios without spreadsheets"
+Segment: "FP&A analysts at 50-500 person companies"
+Time: ["Rebuilding the same scenario model after every assumption change", "Waiting days for finance leadership to approve one forecast", "Manually re-linking formulas whenever headcount numbers change", "A board deck that's stale by presentation day"]
+Cost: ["Paying consultants for one-off scenario modelling", "Licensing a full BI suite just to run simple what-ifs", "Broken spreadsheet models cost analyst hours every quarter", "Manual-model errors lead to costly budget mis-calls"]
+(...and similarly specific, domain-grounded phrases for Frustration, Access, and Growth)
+
+Respond with ONLY a JSON object, no other text, in this exact shape:
+{"groups": [
+  {"category": "Time", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Cost", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Frustration", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Access", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Growth", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>"]}
+]}`;
+
+function buildProblemChipsUserContent(ctx: ProblemChipsContext): string {
+  const segment = [ctx.segmentRole, ctx.segmentDetail].filter(Boolean).join(' — ');
+  const lines: string[] = [];
+  lines.push(`Idea one-liner: ${ctx.oneLiner?.trim() || '(not given — use your best general judgement)'}`);
+  lines.push(`Target customer segment: ${segment || '(not given)'}`);
+  if (ctx.existingProblems?.length) {
+    lines.push('Problems already named — do NOT repeat these or close paraphrases of them:');
+    ctx.existingProblems.slice(0, 8).forEach(p => lines.push(`- ${p}`));
+  }
+  return lines.join('\n');
+}
+
+function sanitizeProblemGroups(raw: any): ProblemChipGroup[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ProblemChipGroup[] = [];
+  for (const cat of PROBLEM_CHIP_CATEGORIES) {
+    const group = raw.find((g: any) => typeof g?.category === 'string' && g.category.trim().toLowerCase() === cat.toLowerCase());
+    const items: string[] = [];
+    const seen = new Set<string>();
+    if (group && Array.isArray(group.items)) {
+      for (const item of group.items) {
+        if (typeof item !== 'string' || !item.trim()) continue;
+        const trimmed = item.trim().slice(0, 90);
+        const key = trimmed.toLowerCase();
+        if (seen.has(key) || BANNED_GENERIC_PROBLEM_ITEMS.has(key)) continue;
+        seen.add(key);
+        items.push(trimmed);
+        if (items.length >= 4) break;
+      }
+    }
+    if (items.length) out.push({ category: cat, items });
+  }
+  return out;
+}
+
+function parseProblemChipsJson(text: string): ProblemChipGroup[] {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+  const groups = sanitizeProblemGroups(parsed?.groups);
+  if (!groups.length) {
+    throw new Error('The AI did not return any usable problem suggestions — please try again.');
+  }
+  return groups;
+}
+
+async function generateProblemChipsOllama(ctx: ProblemChipsContext): Promise<ProblemChipGroup[]> {
+  const userContent = buildProblemChipsUserContent(ctx);
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: PROBLEM_CHIPS_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.6 },
+      },
+      { timeout: 120000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+  const text: string = res.data?.message?.content || '';
+  return parseProblemChipsJson(text);
+}
+
+// Claude path — same cheap/fast tier as generateQuestionChips above, since
+// this is also a single, bounded brainstorm call grounded entirely in text
+// the founder already gave (one-liner + segment), no web search needed.
+async function generateProblemChipsClaude(ctx: ProblemChipsContext): Promise<ProblemChipGroup[]> {
+  const userContent = buildProblemChipsUserContent(ctx);
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 900,
+    temperature: 0.6,
+    system: PROBLEM_CHIPS_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseProblemChipsJson(text);
+}
+
+export async function generateProblemChips(ctx: ProblemChipsContext): Promise<ProblemChipGroup[]> {
+  if (anthropicClient) {
+    try {
+      return await generateProblemChipsClaude(ctx);
+    } catch (err: any) {
+      console.error('[problem-chips] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateProblemChipsOllama(ctx);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Automatic alignment classification for a logged interview (Validate step
 // 8, "Log every conversation"). PersonaInterviewCard already saves an
 // instant rule-based estimate at log time (counting pre-tagged positive vs

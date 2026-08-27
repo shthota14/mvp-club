@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
 import { sendMeetingRequestEmail, defaultMeetingRequestMessage } from '../utils/mailer';
-import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn } from '../utils/aiQuestionCheck';
+import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn, generateProblemChips, ProblemChipsContext } from '../utils/aiQuestionCheck';
 
 const router = Router();
 
@@ -563,6 +563,29 @@ router.post('/idea/problem-interview', async (req: Request, res: Response) => {
     res.json(result);
   } catch (err: any) {
     console.error('[validation] idea/problem-interview', err?.response?.data || err);
+    res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
+  }
+});
+
+// POST /idea/problem-chips — AI-tailored "Select everything that applies to
+// your customer" suggestion chips for Hone step 2 ("What are the
+// problems?"), sorted into the same five fixed dimensions (Time / Cost /
+// Frustration / Access / Growth) the UI already groups by, but with items
+// grounded in the founder's own one-liner and target segment instead of one
+// fixed generic list shown to every founder.
+router.post('/idea/problem-chips', async (req: Request, res: Response) => {
+  const { oneLiner, segmentRole, segmentDetail, existingProblems } = req.body;
+  const ctx: ProblemChipsContext = {
+    oneLiner: typeof oneLiner === 'string' ? oneLiner : undefined,
+    segmentRole: typeof segmentRole === 'string' ? segmentRole : undefined,
+    segmentDetail: typeof segmentDetail === 'string' ? segmentDetail : undefined,
+    existingProblems: Array.isArray(existingProblems) ? existingProblems.filter((p: any) => typeof p === 'string' && p.trim()).map((p: string) => p.slice(0, 200)) : undefined,
+  };
+  try {
+    const groups = await generateProblemChips(ctx);
+    res.json({ groups });
+  } catch (err: any) {
+    console.error('[validation] idea/problem-chips', err?.response?.data || err);
     res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
   }
 });
