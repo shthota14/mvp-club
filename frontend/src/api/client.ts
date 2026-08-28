@@ -94,6 +94,17 @@ export const validationApi = {
     history: { role: 'sage' | 'founder'; text: string }[];
     founderMessage: string;
   }) => api.post('/validation/idea/problem-interview', data),
+  // Generic "Sage interviews you" -- reused across steps beyond just Hone
+  // step 2's problem interview above. Same stateless shape, plus a `topic`
+  // key selecting which step's grounded system prompt the backend uses.
+  stepInterview: (data: {
+    topic: 'persona' | 'coping';
+    oneLiner?: string;
+    segmentRole?: string;
+    segmentDetail?: string;
+    history: { role: 'sage' | 'founder'; text: string }[];
+    founderMessage: string;
+  }) => api.post('/validation/idea/step-interview', data),
   checkQuestion: (data: { question: string; hint?: string }) =>
     api.post('/validation/questions/check', data),
   generateChips: (data: { question: string; hint?: string; problemDomain?: string }) =>

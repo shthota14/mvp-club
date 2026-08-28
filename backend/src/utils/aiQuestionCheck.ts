@@ -1824,6 +1824,200 @@ export async function generateProblemInterviewTurn(ctx: ProblemInterviewContext)
   return generateProblemInterviewTurnOllama(ctx, forceDone);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Generic "Sage interviews you" -- the same conversational-extraction
+// mechanism as the problem interview above, generalized so any free-text
+// list-building step (not just Hone step 2) can offer a "talk it through"
+// option instead of only a static/AI-chip picker. Parameterized by a
+// `topic` key so each step gets its own grounded system prompt while
+// sharing the transcript-building, JSON-parsing, turn-cap, and Ollama-
+// first/Claude-fallback plumbing.
+//
+// NOTE: unlike the older `generateProblemInterviewTurn` above (which is
+// Claude-first with a catch-and-fallback to Ollama), this generic version
+// uses the app's newer Ollama-first/Claude-on-slow-or-error priority via
+// `generateChipsOllamaFirst`, matching the chip generators. The problem
+// interview is left as-is rather than risked in this pass.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type StepInterviewTopic = 'persona' | 'coping';
+
+export interface StepInterviewTurn {
+  role: 'sage' | 'founder';
+  text: string;
+}
+
+export type StepInterviewEvidence = 'observed' | 'heard' | 'assumed';
+
+export interface StepInterviewExtracted {
+  text: string;
+  evidence: StepInterviewEvidence;
+}
+
+export interface StepInterviewResult {
+  reply: string;
+  done: boolean;
+  extracted: StepInterviewExtracted[];
+}
+
+export interface StepInterviewContext {
+  topic: StepInterviewTopic;
+  oneLiner?: string;
+  segmentRole?: string;
+  segmentDetail?: string;
+  history: StepInterviewTurn[];
+  founderMessage: string;
+}
+
+interface StepInterviewTopicConfig {
+  systemPrompt: string;
+  fallbackCloser: string;
+  maxFounderTurns: number;
+}
+
+const STEP_INTERVIEW_TOPICS: Record<StepInterviewTopic, StepInterviewTopicConfig> = {
+  persona: {
+    maxFounderTurns: 4,
+    fallbackCloser: "Thanks -- that's enough to sketch a segment. Refine it below, or keep describing more yourself.",
+    systemPrompt: `You are Sage, running a short discovery interview with a founder to help them name the specific group of people who have this problem. The goal is a real segment -- a role or situation, not a vague label like "small business owners" or "busy people." You are interviewing the FOUNDER about who they've actually observed or heard has this problem -- you are never the customer, and you never invent who they are.
+
+Ask about ONE concrete person or type of person: someone the founder has actually seen or heard struggle with this. Push for what makes them distinct -- their role, their context, the situation they're in -- rather than accepting a generic label. Ask exactly one question per turn, under 30 words, in a direct and curious voice. Never suggest a segment the founder hasn't already described; you only ask, you never supply plausible answers.
+
+After the founder's newest reply, decide two things:
+
+1. EXTRACT: is anything said so far -- across the whole conversation, not just the newest message -- concrete enough to stand as a segment description? Write each as a short phrase (under 20 words) naming who they are and their situation, built ONLY from what the founder actually said. Tag its evidence: "observed" if the founder personally watched it, "heard" if a customer told them directly, "assumed" if the founder is guessing or inferring. If nothing is concrete enough yet, extracted must be an empty array. Return the FULL list of everything extractable so far, not only what's new.
+
+2. CONTINUE OR STOP: keep going only if there's a genuinely new angle worth asking about and the founder is still giving you concrete detail. Stop (done: true) once you have at least one solid extracted segment and either four founder turns have passed or the replies have gone thin or repetitive. When done, "reply" should be a brief, warm closing line (under 20 words) -- not another question.
+
+Respond with ONLY a JSON object, no other text, in this exact shape:
+{"reply": "<your next question, or a short closing line if done>", "done": <boolean>, "extracted": [{"text": "<segment description>", "evidence": "observed"|"heard"|"assumed"}, ...]}`,
+  },
+  coping: {
+    maxFounderTurns: 4,
+    fallbackCloser: "Thanks -- that's plenty to go on. Pick from what's below, or keep describing more yourself.",
+    systemPrompt: `You are Sage, running a short discovery interview with a founder about how people currently cope with this problem today -- what they already do, however imperfect, before a product like the founder's exists. You are interviewing the FOUNDER about what they've actually observed or heard -- you are never the customer, and you never invent a workaround they haven't described.
+
+Ground every question in the founder's named segment, never in "your customer" generically. Ask about ONE concrete workaround at a time: what has the founder actually seen or heard someone do to deal with this problem, and how well it actually works for them. Ask exactly one question per turn, under 30 words, in a direct and curious voice. Never suggest a workaround the founder hasn't already described.
+
+After the founder's newest reply, decide two things:
+
+1. EXTRACT: is anything said so far -- across the whole conversation, not just the newest message -- concrete enough to stand as a coping-behavior statement? Write each as a short statement (under 25 words) built ONLY from what the founder actually said. Tag its evidence: "observed" if the founder personally watched it happen, "heard" if a customer told them directly, "assumed" if the founder is guessing or inferring. If nothing is concrete enough yet, extracted must be an empty array. Return the FULL list of everything extractable so far, not only what's new.
+
+2. CONTINUE OR STOP: keep going only if there's a genuinely new angle worth asking about and the founder is still giving you concrete detail. Stop (done: true) once you have at least one solid extracted workaround and either four founder turns have passed or the replies have gone thin or repetitive. When done, "reply" should be a brief, warm closing line (under 20 words) -- not another question.
+
+Respond with ONLY a JSON object, no other text, in this exact shape:
+{"reply": "<your next question, or a short closing line if done>", "done": <boolean>, "extracted": [{"text": "<coping behavior>", "evidence": "observed"|"heard"|"assumed"}, ...]}`,
+  },
+};
+
+function buildStepInterviewTranscript(ctx: StepInterviewContext, cfg: StepInterviewTopicConfig): string {
+  const lines: string[] = [];
+  if (ctx.oneLiner) lines.push(`Founder's idea: ${ctx.oneLiner}`);
+  const segment = [ctx.segmentRole, ctx.segmentDetail].filter(Boolean).join(' -- ');
+  lines.push(`Segment: ${segment || '(not yet named)'}`);
+  if (ctx.history.length) {
+    lines.push('', 'Conversation so far:');
+    ctx.history.forEach(turn => lines.push(`${turn.role === 'founder' ? 'Founder' : 'Sage'}: ${turn.text}`));
+  }
+  lines.push('', `Founder's newest reply: ${ctx.founderMessage}`);
+  const founderTurns = ctx.history.filter(t => t.role === 'founder').length + 1;
+  if (founderTurns >= cfg.maxFounderTurns) {
+    lines.push('', `This is founder turn ${founderTurns} -- you must set "done": true.`);
+  }
+  return lines.join('\n');
+}
+
+function sanitizeStepInterviewExtracted(raw: any): StepInterviewExtracted[] {
+  if (!Array.isArray(raw)) return [];
+  const EVIDENCE: StepInterviewEvidence[] = ['observed', 'heard', 'assumed'];
+  return raw
+    .map((item: any) => {
+      const text = typeof item?.text === 'string' ? item.text.trim().slice(0, 140) : '';
+      const evidence: StepInterviewEvidence = EVIDENCE.includes(item?.evidence) ? item.evidence : 'heard';
+      return text ? { text, evidence } : null;
+    })
+    .filter((x: StepInterviewExtracted | null): x is StepInterviewExtracted => x !== null)
+    .slice(0, 8);
+}
+
+function parseStepInterviewJson(text: string, forceDone: boolean, cfg: StepInterviewTopicConfig): StepInterviewResult {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response -- please try again.');
+  }
+  const modelReply = typeof parsed.reply === 'string' ? parsed.reply.trim() : '';
+  const done = forceDone || parsed.done === true;
+  const reply = done
+    ? (modelReply && !modelReply.endsWith('?') ? modelReply : cfg.fallbackCloser)
+    : (modelReply || 'Thanks -- that gives me enough to work with.');
+  return {
+    reply,
+    done,
+    extracted: sanitizeStepInterviewExtracted(parsed.extracted),
+  };
+}
+
+async function generateStepInterviewTurnOllama(ctx: StepInterviewContext, forceDone: boolean, cfg: StepInterviewTopicConfig): Promise<StepInterviewResult> {
+  const userContent = buildStepInterviewTranscript(ctx, cfg);
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: cfg.systemPrompt },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.5 },
+      },
+      { timeout: 180000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model -- make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+  const text: string = res.data?.message?.content || '';
+  return parseStepInterviewJson(text, forceDone, cfg);
+}
+
+async function generateStepInterviewTurnClaude(ctx: StepInterviewContext, forceDone: boolean, cfg: StepInterviewTopicConfig): Promise<StepInterviewResult> {
+  const userContent = buildStepInterviewTranscript(ctx, cfg);
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 700,
+    temperature: 0.5,
+    system: cfg.systemPrompt,
+    messages: [{ role: 'user', content: userContent }],
+  });
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer -- please try again.');
+  }
+  return parseStepInterviewJson(text, forceDone, cfg);
+}
+
+export async function generateStepInterviewTurn(ctx: StepInterviewContext): Promise<StepInterviewResult> {
+  const cfg = STEP_INTERVIEW_TOPICS[ctx.topic];
+  if (!cfg) throw new Error(`Unknown interview topic: ${ctx.topic}`);
+  const founderTurns = ctx.history.filter(t => t.role === 'founder').length + 1;
+  const forceDone = founderTurns >= cfg.maxFounderTurns;
+  return generateChipsOllamaFirst(
+    `step-interview:${ctx.topic}`,
+    () => generateStepInterviewTurnOllama(ctx, forceDone, cfg),
+    anthropicClient ? () => generateStepInterviewTurnClaude(ctx, forceDone, cfg) : null
+  );
+}
+
+
 // ─────────────────────────────────────────────────────────────────────────
 // Shape Step 2 — "Draft my MVP hypothesis"
 // ─────────────────────────────────────────────────────────────────────────

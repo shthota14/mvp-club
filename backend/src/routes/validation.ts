@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
 import { sendMeetingRequestEmail, defaultMeetingRequestMessage } from '../utils/mailer';
-import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn, generateProblemChips, ProblemChipsContext, generateAlternativeChips, AlternativeChipsContext } from '../utils/aiQuestionCheck';
+import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn, generateProblemChips, ProblemChipsContext, generateAlternativeChips, AlternativeChipsContext, generateStepInterviewTurn, StepInterviewContext, StepInterviewTurn } from '../utils/aiQuestionCheck';
 
 const router = Router();
 
@@ -563,6 +563,46 @@ router.post('/idea/problem-interview', async (req: Request, res: Response) => {
     res.json(result);
   } catch (err: any) {
     console.error('[validation] idea/problem-interview', err?.response?.data || err);
+    res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
+  }
+});
+
+// POST /idea/step-interview — the generic "Sage interviews you" option,
+// reused across steps beyond just Hone step 2's problem interview above.
+// Same stateless shape: the frontend holds the whole conversation and
+// re-sends it (plus the newest founder message and a `topic` key
+// identifying which step's grounded system prompt to use) each turn; the
+// response is the next question (or a closing line) plus the full
+// cumulative list of items extracted so far, which the frontend merges
+// into its own list by de-duping on text.
+router.post('/idea/step-interview', async (req: Request, res: Response) => {
+  const { topic, oneLiner, segmentRole, segmentDetail, history, founderMessage } = req.body;
+  if (topic !== 'persona' && topic !== 'coping') {
+    res.status(400).json({ error: 'Unknown interview topic.' });
+    return;
+  }
+  const cleanHistory: StepInterviewTurn[] = Array.isArray(history)
+    ? history
+        .filter((t: any) => t && (t.role === 'sage' || t.role === 'founder') && typeof t.text === 'string')
+        .map((t: any) => ({ role: t.role, text: String(t.text).slice(0, 800) }))
+    : [];
+  const ctx: StepInterviewContext = {
+    topic,
+    oneLiner: typeof oneLiner === 'string' ? oneLiner : undefined,
+    segmentRole: typeof segmentRole === 'string' ? segmentRole : undefined,
+    segmentDetail: typeof segmentDetail === 'string' ? segmentDetail : undefined,
+    history: cleanHistory,
+    founderMessage: typeof founderMessage === 'string' ? founderMessage.trim().slice(0, 800) : '',
+  };
+  if (!ctx.founderMessage) {
+    res.status(400).json({ error: 'A message is required.' });
+    return;
+  }
+  try {
+    const result = await generateStepInterviewTurn(ctx);
+    res.json(result);
+  } catch (err: any) {
+    console.error('[validation] idea/step-interview', err?.response?.data || err);
     res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
   }
 });

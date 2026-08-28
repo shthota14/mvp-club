@@ -3175,7 +3175,7 @@ function seedFromOneLiner(oneLiner: string): { who: string; ctx: string } | null
   return { who, ctx };
 }
 
-type PersonaPickerHandle = { flush: () => string; isDraftValid: () => boolean };
+type PersonaPickerHandle = { flush: () => string; isDraftValid: () => boolean; addPersonas: (texts: string[]) => void };
 
 const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string; onChange: (v: string) => void; oneLiner?: string }>(function PersonaPickerStep({
   value, onChange, oneLiner = '',
@@ -3239,6 +3239,29 @@ const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string;
         return serialized;
       }
       return personas.map(serializePersona).join(MULTI_SEP);
+    },
+    // Fed by the "Sage interviews you" chat panel -- merges freshly extracted
+    // segment descriptions in as free-text (legacy) persona entries, the
+    // same storage path already used for segments written before the
+    // structured b2b/b2c picker existed (see PersonaEntry.legacy). Skips
+    // anything that already matches an existing entry by text so re-sending
+    // the AI's cumulative extraction each turn never duplicates.
+    addPersonas: (texts: string[]) => {
+      const existing = new Set(personas.map(p => (p.legacy ? p.role : serializePersona(p)).trim().toLowerCase()));
+      let next = personas.slice();
+      let added = false;
+      texts.forEach(t => {
+        const norm = t.trim().toLowerCase();
+        if (!norm || existing.has(norm)) return;
+        existing.add(norm);
+        next.push({ id: Math.random().toString(36).slice(2), type: 'b2b', role: t.trim(), size: '', who: '', ctx: '', reach: '', primary: next.length === 0, legacy: true });
+        added = true;
+      });
+      if (!added) return;
+      next = ensurePrimary(next);
+      setPersonas(next);
+      setShowForm(false);
+      emitList(next);
     },
   }));
 
@@ -4226,8 +4249,28 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
       .catch(() => setGenState({ loading: false, error: true }));
   }, [onGenChipsChange]);
 
+  // The `genGroups` state above only reads `genChipsValue` on this
+  // component's very first render (useState's lazy initializer never
+  // re-runs). If the idea's saved fields (oneLiner, problemChipsGen) arrive
+  // from the backend AFTER this component's first mount -- a common race,
+  // since WorkPage renders before its async field fetch resolves -- this
+  // component would see an empty `genChipsValue` on mount, permanently miss
+  // its own persisted chips, and then auto-generate a brand new (weaker,
+  // less grounded) set once `oneLiner` shows up moments later: exactly the
+  // "asked Sage again without being told to" bug. The effect below re-syncs
+  // `genGroups` from `stored` whenever a persisted set shows up late, and
+  // the generation effect defers to it via the `stored` guard so the two
+  // can never race.
+  useEffect(() => {
+    if (!genGroups && stored) {
+      genKeyRef.current = stored.key;
+      setGenGroups(stored.groups);
+    }
+  }, [stored]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (genGroups) return; // already have a generated (or persisted) set for this builder instance -- never auto-regenerate
+    if (stored) return; // a persisted set just arrived and is about to be synced in by the effect above -- don't race it
     const oneLinerTrim = (oneLiner || '').trim();
     if (oneLinerTrim.length < 8) return; // not enough context to ground suggestions in yet
     const segmentRole = (segment?.role || '').trim();
@@ -4235,7 +4278,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
     const key = `${oneLinerTrim}__${segmentRole}__${segmentDetail}`;
     if (genKeyRef.current === key) return; // already attempted (succeeded or failed) for this exact context -- wait for manual retry, don't loop
     runProblemChipGeneration(key, oneLinerTrim, segmentRole, segmentDetail);
-  }, [oneLiner, segment?.role, segment?.detail, genGroups, runProblemChipGeneration]);
+  }, [oneLiner, segment?.role, segment?.detail, genGroups, stored, runProblemChipGeneration]);
 
   const retryProblemChips = () => {
     const oneLinerTrim = (oneLiner || '').trim();
@@ -4607,6 +4650,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
 // (critical/major/minor) still happens through the one severity UI that
 // already exists and that Validate already depends on.
 type ChatTurn = { role: 'sage' | 'founder'; text: string };
+type StepInterviewTopic = 'persona' | 'coping';
 type ProblemEvidence = 'observed' | 'heard' | 'assumed';
 type ExtractedProblem = { text: string; evidence: ProblemEvidence };
 
@@ -4760,20 +4804,215 @@ function ProblemInterviewLauncher({
   if (open) {
     return <SageProblemInterview oneLiner={oneLiner} segment={segment} onAdd={onAdd} onClose={() => setOpen(false)} />;
   }
+  // Uses the same illustrated Sage wizard mark + purple "AI" framing as the
+  // other Ask-Sage panels elsewhere in the app (guide drafting, hypothesis
+  // drafting, channel ranking) -- founders were missing that this option
+  // talks to an AI at all when it was just a small blue "S" circle.
   return (
     <button
       onClick={() => setOpen(true)}
       style={{
-        display: 'flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start',
-        padding: '10px 16px', borderRadius: 10, border: '1.5px dashed #2563eb60',
-        background: '#2563eb08', color: '#2563eb', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: 12, alignSelf: 'flex-start',
+        padding: '10px 18px 10px 10px', borderRadius: 14, border: '2px solid #C4B5FD',
+        background: 'linear-gradient(135deg, #EDE9FE 0%, #F5F3FF 100%)', color: '#5B21B6', fontFamily: 'inherit', cursor: 'pointer',
+        boxShadow: '1px 2px 4px rgba(91,33,182,0.08)',
       }}
     >
-      <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#2563eb', color: '#fff', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>S</span>
-      Prefer to talk it through? Let Sage interview you →
+      <SageAvatar size={34} />
+      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 14, fontWeight: 800 }}>Prefer to talk it through?</span>
+          <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.06em', background: '#7C3AED', color: '#fff', borderRadius: 999, padding: '2px 7px' }}>AI</span>
+        </span>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6D28D9' }}>Chat it out with Sage, your AI guide →</span>
+      </span>
     </button>
   );
 }
+
+// ── Generic "Sage interviews you" -- reusable across steps beyond Hone
+// step 2's problem interview above. Same chat mechanics (SageProblemInterview
+// reused via shared ChatTurn/ProblemEvidence/EVIDENCE_CONFIG types), but
+// parameterized by `topic` (which grounded system prompt the backend uses),
+// a caller-supplied opener question, and the header/added/done copy so each
+// step's launcher can speak to what it's actually collecting.
+function SageStepInterview({
+  topic, oneLiner, segment, opener, headerLabel, addedLabel, doneMessage, onAdd, onClose,
+}: {
+  topic: StepInterviewTopic;
+  oneLiner: string;
+  segment: { role: string; detail: string };
+  opener: string;
+  headerLabel: string;
+  addedLabel: string;
+  doneMessage: string;
+  onAdd: (texts: string[]) => void;
+  onClose: () => void;
+}) {
+  const AC = '#2563eb';
+
+  const [history, setHistory] = useState<ChatTurn[]>(() => [{ role: 'sage', text: opener }]);
+  const [input, setInput]     = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+  const [done, setDone]       = useState(false);
+  const [extracted, setExtracted] = useState<ExtractedProblem[]>([]);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [history, loading]);
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || loading || done) return;
+    const priorHistory = history;
+    setHistory(h => [...h, { role: 'founder', text }]);
+    setInput('');
+    setLoading(true);
+    setError('');
+    try {
+      const res = await validationApi.stepInterview({
+        topic,
+        oneLiner,
+        segmentRole: segment.role || undefined,
+        segmentDetail: segment.detail || undefined,
+        history: priorHistory,
+        founderMessage: text,
+      });
+      const reply: string = typeof res.data?.reply === 'string' ? res.data.reply : "Thanks — that's useful.";
+      const isDone: boolean = !!res.data?.done;
+      const newExtracted: ExtractedProblem[] = Array.isArray(res.data?.extracted) ? res.data.extracted : [];
+      setHistory(h => [...h, { role: 'sage', text: reply }]);
+      setExtracted(newExtracted);
+      setDone(isDone);
+      if (newExtracted.length) onAdd(newExtracted.map(e => e.text));
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Could not reach Sage right now — please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ border: `1.5px solid ${AC}30`, borderRadius: 14, background: '#fff', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: `${AC}0a`, borderBottom: `1px solid ${AC}20` }}>
+        <span style={{ width: 20, height: 20, borderRadius: '50%', background: AC, color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>S</span>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: AC }}>{headerLabel}</span>
+        <button onClick={onClose} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: '#8e8e93', fontSize: 13 }}>Close</button>
+      </div>
+
+      <div style={{ maxHeight: 320, overflowY: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+        {history.map((turn, i) => (
+          <div key={i} style={{
+            alignSelf: turn.role === 'founder' ? 'flex-end' : 'flex-start',
+            maxWidth: '84%', padding: '9px 13px', borderRadius: 12,
+            borderBottomLeftRadius: turn.role === 'sage' ? 4 : 12,
+            borderBottomRightRadius: turn.role === 'founder' ? 4 : 12,
+            background: turn.role === 'founder' ? `${AC}0d` : '#f7f3ff',
+            border: `1px solid ${turn.role === 'founder' ? AC + '30' : '#7c3aed30'}`,
+            fontSize: 13.5, lineHeight: 1.5, color: '#1d1d1f',
+          }}>
+            {turn.text}
+          </div>
+        ))}
+        {loading && (
+          <div style={{ alignSelf: 'flex-start', display: 'flex', gap: 3, padding: '9px 13px' }}>
+            {[0, 1, 2].map(i => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#b0b0b8' }} />)}
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {extracted.length > 0 && (
+        <div style={{ padding: '0 16px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#b0b0b8' }}>
+            {addedLabel}
+          </div>
+          {extracted.map((e, i) => {
+            const cfg = EVIDENCE_CONFIG[e.evidence];
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#1d1d1f' }}>
+                <span style={{ flex: 1 }}>{e.text}</span>
+                <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: cfg.color, border: `1px solid ${cfg.color}50`, borderRadius: 999, padding: '2px 8px' }}>{cfg.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {error && <div style={{ padding: '0 16px 10px', fontSize: 12.5, color: '#dc2626' }}>{error}</div>}
+
+      <div style={{ borderTop: '1px solid #eef0f4', padding: 12, display: 'flex', gap: 8 }}>
+        {done ? (
+          <div style={{ flex: 1, fontSize: 13, color: '#166534', padding: '8px 4px' }}>
+            ✓ {doneMessage}
+          </div>
+        ) : (
+          <>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+              placeholder="Type your answer…"
+              disabled={loading}
+              style={{ flex: 1, border: '1.5px solid #e5e5ea', borderRadius: 8, padding: '9px 12px', fontSize: 13.5, fontFamily: 'inherit', outline: 'none' }}
+            />
+            <button onClick={send} disabled={loading || !input.trim()} style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: input.trim() && !loading ? AC : '#e5e5ea', color: input.trim() && !loading ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: input.trim() && !loading ? 'pointer' : 'default' }}>
+              Send
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SageInterviewLauncher({
+  topic, oneLiner, segment, opener, headerLabel, addedLabel, doneMessage, buttonTitle, buttonSubtitle, onAdd,
+}: {
+  topic: StepInterviewTopic;
+  oneLiner: string;
+  segment: { role: string; detail: string };
+  opener: string;
+  headerLabel: string;
+  addedLabel: string;
+  doneMessage: string;
+  buttonTitle: string;
+  buttonSubtitle: string;
+  onAdd: (texts: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  if (open) {
+    return (
+      <SageStepInterview
+        topic={topic} oneLiner={oneLiner} segment={segment} opener={opener}
+        headerLabel={headerLabel} addedLabel={addedLabel} doneMessage={doneMessage}
+        onAdd={onAdd} onClose={() => setOpen(false)}
+      />
+    );
+  }
+  return (
+    <button
+      onClick={() => setOpen(true)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12, alignSelf: 'flex-start',
+        padding: '10px 18px 10px 10px', borderRadius: 14, border: '2px solid #C4B5FD',
+        background: 'linear-gradient(135deg, #EDE9FE 0%, #F5F3FF 100%)', color: '#5B21B6', fontFamily: 'inherit', cursor: 'pointer',
+        boxShadow: '1px 2px 4px rgba(91,33,182,0.08)',
+      }}
+    >
+      <SageAvatar size={34} />
+      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 14, fontWeight: 800 }}>{buttonTitle}</span>
+          <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.06em', background: '#7C3AED', color: '#fff', borderRadius: 999, padding: '2px 7px' }}>AI</span>
+        </span>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6D28D9' }}>{buttonSubtitle}</span>
+      </span>
+    </button>
+  );
+}
+
+
 
 // ── Founder Readiness (Hone step 5) ──────────────────────────────────────
 
@@ -5542,13 +5781,15 @@ function parseStoredAltChips(raw?: string): StoredAltChips | null {
   return null;
 }
 
-function AlternativeRankingStep({
-  value, onChange, oneLiner, segment, problem, genChipsValue, onGenChipsChange,
-}: {
+type AlternativeRankingHandle = { addAlternatives: (texts: string[]) => void };
+
+const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
   value: string; onChange: (v: string) => void;
   oneLiner?: string; segment?: { role: string; detail: string }; problem?: string;
   genChipsValue?: string; onGenChipsChange?: (v: string) => void;
-}) {
+}>(function AlternativeRankingStep({
+  value, onChange, oneLiner, segment, problem, genChipsValue, onGenChipsChange,
+}, ref) {
   const SEP = '|||';
   const toList = (v: string) => v.split(SEP).filter(Boolean);
   const toVal  = (list: string[]) => list.join(SEP);
@@ -5567,6 +5808,27 @@ function AlternativeRankingStep({
   }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const commit = (next: string[]) => { setItems(next); onChange(toVal(next)); };
+
+  // Fed by the "Sage interviews you" chat panel -- merges freshly extracted
+  // coping-behavior statements into the list, skipping anything that
+  // already matches an existing item by text so re-sending the AI's
+  // cumulative extraction each turn never duplicates.
+  const addExtractedAlternatives = (texts: string[]) => {
+    const existing = new Set(items.map(i => i.trim().toLowerCase()));
+    let next = items.slice();
+    let added = false;
+    texts.forEach(t => {
+      const norm = t.trim().toLowerCase();
+      if (!norm || existing.has(norm)) return;
+      existing.add(norm);
+      next.push(t.trim());
+      added = true;
+    });
+    if (!added) return;
+    commit(next);
+  };
+
+  React.useImperativeHandle(ref, () => ({ addAlternatives: addExtractedAlternatives }));
 
   const toggle = (label: string) => {
     if (items.includes(label)) {
@@ -5626,8 +5888,22 @@ function AlternativeRankingStep({
       .catch(() => setGenState({ loading: false, error: true }));
   }, [onGenChipsChange]);
 
+  // See the matching comment in ProblemBuilder above -- same race, same fix:
+  // `genGroups`'s lazy initializer only reads `genChipsValue` on first
+  // render, so a persisted set that arrives after this component mounts
+  // (idea fields loading async) would otherwise be missed forever and
+  // trigger an unwanted fresh generation the moment `oneLiner`/`problem`
+  // show up. Re-sync here, and have the generation effect defer to it.
+  useEffect(() => {
+    if (!genGroups && stored) {
+      genKeyRef.current = stored.key;
+      setGenGroups(stored.groups);
+    }
+  }, [stored]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (genGroups) return; // already have a generated (or persisted) set -- never auto-regenerate
+    if (stored) return; // a persisted set just arrived and is about to be synced in by the effect above -- don't race it
     const oneLinerTrim = (oneLiner || '').trim();
     const problemTrim = (problem || '').trim();
     if (oneLinerTrim.length < 8 && problemTrim.length < 8) return; // not enough context yet
@@ -5636,7 +5912,7 @@ function AlternativeRankingStep({
     const key = `${oneLinerTrim}__${problemTrim}__${segmentRole}__${segmentDetail}`;
     if (genKeyRef.current === key) return; // already attempted for this context -- wait for manual retry
     runAltChipGeneration(key, oneLinerTrim, problemTrim, segmentRole, segmentDetail);
-  }, [oneLiner, problem, segment?.role, segment?.detail, genGroups, runAltChipGeneration]);
+  }, [oneLiner, problem, segment?.role, segment?.detail, genGroups, stored, runAltChipGeneration]);
 
   const retryAltChips = () => {
     const oneLinerTrim = (oneLiner || '').trim();
@@ -5850,7 +6126,7 @@ function AlternativeRankingStep({
       )}
     </div>
   );
-}
+});
 
 
 // ── LinkedIn Hub ───────────────────────────────────────────────────────────
@@ -12195,6 +12471,7 @@ export default function WorkPage() {
   const autoNavigatedRef = useRef(false);
   const personaPickerRef = useRef<PersonaPickerHandle>(null);
   const problemBuilderRef = useRef<ProblemBuilderHandle>(null);
+  const alternativeRankingRef = useRef<AlternativeRankingHandle>(null);
   const assumptionsRef = useRef<AssumptionsHandle>(null);
   // Remembers the last step visited in each stage, so switching stages via the
   // sidebar (goMod) resumes where the founder left off instead of always
@@ -13770,6 +14047,18 @@ export default function WorkPage() {
       <StepGoal text={STEP_GOALS.hone[0]} />
       <BMCLabel blocks={['Customer Segments']} />
       <H accent={STAGE_COLORS.hone}>Who do you think has this problem?</H>
+      <SageInterviewLauncher
+        topic="persona"
+        oneLiner={get('oneLiner')}
+        segment={{ role: '', detail: '' }}
+        opener="Think of the last specific person you watched struggle with this — not a category, a real person. What's their role, and what situation were they in?"
+        headerLabel="Sage is interviewing you about who has this problem"
+        addedLabel="Added to your segments below"
+        doneMessage="That's enough to sketch a segment — refine it below, or keep describing more yourself."
+        buttonTitle="Prefer to talk it through?"
+        buttonSubtitle="Chat it out with Sage, your AI guide →"
+        onAdd={texts => personaPickerRef.current?.addPersonas(texts)}
+      />
       <PersonaPickerStep ref={personaPickerRef} value={get('whoExactly')} onChange={v => set('whoExactly', v)} oneLiner={get('oneLiner')} />
       {false && <MultiEntryShell
         fieldValue={get('whoExactly')}
@@ -13892,7 +14181,24 @@ export default function WorkPage() {
         List the ways you <em>think</em> people cope with this today — then rank them from most to least common.
         The #1 approach becomes your primary hypothesis to test.
       </div>
+      <SageInterviewLauncher
+        topic="coping"
+        oneLiner={get('oneLiner')}
+        segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
+        opener={(() => {
+          const seg = personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null);
+          const label = seg.role || 'your customer';
+          return `Think about the last time you saw or heard someone in your "${label}" segment try to deal with this problem some other way. What did they actually do?`;
+        })()}
+        headerLabel="Sage is interviewing you about how people cope today"
+        addedLabel="Added to your list below"
+        doneMessage="That's plenty to go on — pick from what's below, or keep describing more yourself."
+        buttonTitle="Prefer to talk it through?"
+        buttonSubtitle="Chat it out with Sage, your AI guide →"
+        onAdd={texts => alternativeRankingRef.current?.addAlternatives(texts)}
+      />
       <AlternativeRankingStep
+        ref={alternativeRankingRef}
         value={get('solutionAlternatives')}
         onChange={v => set('solutionAlternatives', v)}
         oneLiner={get('oneLiner')}
