@@ -20,6 +20,7 @@ import DonateCancelPage from '@/pages/DonateCancelPage';
 import MemberProfilePage from '@/pages/MemberProfilePage';
 import PublicChallengePage from '@/pages/PublicChallengePage';
 import CookiePolicyPage from '@/pages/CookiePolicyPage';
+import SupportLinkPage from '@/pages/SupportLinkPage';
 import CookieConsent from '@/components/CookieConsent';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -99,6 +100,7 @@ export default function App() {
       <Route path="/donate/cancel" element={<DonateCancelPage />} />
       <Route path="/c/:id" element={<PublicChallengePage />} />
       <Route path="/cookies" element={<CookiePolicyPage />} />
+      <Route path="/support" element={<SupportLinkPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>

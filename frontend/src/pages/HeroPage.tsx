@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthModal from '@/components/Auth/AuthModal';
+import PayItForwardModal from '@/components/PayItForwardModal';
 
 // Caveat (marker handwriting font) — same id/pattern as StageCompleteModal.tsx so it's loaded once app-wide
 if (typeof document !== 'undefined' && !document.getElementById('caveat-font')) {
@@ -15,6 +16,7 @@ export default function HeroPage() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('register');
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
+  const [showPayItForward, setShowPayItForward] = useState(false);
   const open = (mode: 'login' | 'register') => { setAuthMode(mode); setAuthOpen(true); };
   const navigate = useNavigate();
 
@@ -88,6 +90,7 @@ export default function HeroPage() {
           .hp-nav-icon { width: 28px !important; height: 28px !important; }
           .hp-mvp-text { font-size: 21px !important; }
           .hp-club-text { font-size: 14px !important; letter-spacing: 2px !important; }
+          .hp-nav-support { padding: 6px 10px !important; font-size: 11px !important; }
           .hp-nav-signin { padding: 8px 10px !important; font-size: 13px !important; }
           .hp-nav-getstarted { padding: 8px 14px !important; font-size: 13px !important; }
           .hp-section-pad { padding-left: 20px !important; padding-right: 20px !important; padding-top: 56px !important; padding-bottom: 56px !important; }
@@ -142,7 +145,11 @@ export default function HeroPage() {
             </div>
           </div>
         </button>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <button onClick={() => setShowPayItForward(true)} className="hp-nav-support"
+            style={{ background: 'none', border: '1.5px solid rgba(255,255,255,.18)', color: 'rgba(255,255,255,.75)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '7px 14px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+            💛 Support MVP Club
+          </button>
           <button onClick={() => open('login')} className="hp-nav-signin"
             style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.45)', fontSize: 14, fontWeight: 500, cursor: 'pointer', padding: '8px 16px', borderRadius: 8 }}>
             Sign in
@@ -579,6 +586,8 @@ export default function HeroPage() {
         <AuthModal mode={authMode} onClose={() => setAuthOpen(false)}
           onSwitchMode={() => setAuthMode(m => m === 'login' ? 'register' : 'login')} />
       )}
+
+      {showPayItForward && <PayItForwardModal onClose={() => setShowPayItForward(false)} />}
     </div>
   );
 }
