@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
 import { sendMeetingRequestEmail, defaultMeetingRequestMessage } from '../utils/mailer';
-import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn, generateProblemChips, ProblemChipsContext, generateAlternativeChips, AlternativeChipsContext, generateStepInterviewTurn, StepInterviewContext, StepInterviewTurn } from '../utils/aiQuestionCheck';
+import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn, generateProblemChips, ProblemChipsContext, generateAlternativeChips, AlternativeChipsContext, generateStepInterviewTurn, StepInterviewContext, StepInterviewTurn, generateBusinessModelCanvas, BusinessModelCanvasContext } from '../utils/aiQuestionCheck';
 
 const router = Router();
 
@@ -1113,4 +1113,51 @@ router.post('/ship/vibe-coach', async (req: Request, res: Response) => {
   }
 });
 
+// POST /idea/business-model-canvas/generate — full 9-block Business Model
+// Canvas draft (Key Partners, Key Activities, Key Resources, Value
+// Proposition, Customer Relations, Channels, Customer Segments, Cost
+// Structure, Revenue Streams), grounded in the founder's own Idea/Hone/
+// Validate notes. Used by the "🧙 Ask Sage" tab of the Business Model
+// Canvas modal; the frontend gathers the Idea/Hone/Validate context
+// client-side and posts it here, same pattern as questions/generate-guide
+// above. One-shot generation — the frontend replaces all 9 block
+// textareas with the result and every block stays fully editable after.
+router.post('/idea/business-model-canvas/generate', async (req: Request, res: Response) => {
+  const {
+    ideaName, oneLiner, founderStatement, whoExactly, problemSentence, painIfNothing,
+    frequency, workaround, competitors, solutionAlternatives, whoPays,
+    icpJobs, icpFrustrations, icpAlternatives, assumptions, confirmedInsights, demandSignalCount,
+  } = req.body;
+  try {
+    const ctx: BusinessModelCanvasContext = {
+      ideaName: typeof ideaName === 'string' ? ideaName : undefined,
+      oneLiner: typeof oneLiner === 'string' ? oneLiner : undefined,
+      founderStatement: typeof founderStatement === 'string' ? founderStatement : undefined,
+      whoExactly: typeof whoExactly === 'string' ? whoExactly : undefined,
+      problemSentence: typeof problemSentence === 'string' ? problemSentence : undefined,
+      painIfNothing: typeof painIfNothing === 'string' ? painIfNothing : undefined,
+      frequency: typeof frequency === 'string' ? frequency : undefined,
+      workaround: typeof workaround === 'string' ? workaround : undefined,
+      competitors: typeof competitors === 'string' ? competitors : undefined,
+      solutionAlternatives: typeof solutionAlternatives === 'string' ? solutionAlternatives : undefined,
+      whoPays: typeof whoPays === 'string' ? whoPays : undefined,
+      icpJobs: typeof icpJobs === 'string' ? icpJobs : undefined,
+      icpFrustrations: typeof icpFrustrations === 'string' ? icpFrustrations : undefined,
+      icpAlternatives: typeof icpAlternatives === 'string' ? icpAlternatives : undefined,
+      assumptions: Array.isArray(assumptions)
+        ? assumptions.filter((a: any) => a && typeof a.text === 'string' && a.text.trim())
+          .map((a: any) => ({ text: a.text.trim(), status: typeof a.status === 'string' ? a.status : undefined }))
+        : undefined,
+      confirmedInsights: Array.isArray(confirmedInsights) ? confirmedInsights.filter((s: any) => typeof s === 'string' && s.trim()) : undefined,
+      demandSignalCount: typeof demandSignalCount === 'number' ? demandSignalCount : undefined,
+    };
+    const canvas = await generateBusinessModelCanvas(ctx);
+    res.json(canvas);
+  } catch (err: any) {
+    console.error('[validation] idea/business-model-canvas/generate', err?.response?.data || err);
+    res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
+  }
+});
+
 export default router;
+

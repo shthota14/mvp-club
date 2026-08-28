@@ -287,6 +287,30 @@ export const validationApi = {
     category: string;
     description: string;
   }) => api.post('/validation/ship/vibe-coach', data),
+  // Business Model Canvas "🧙 Ask Sage" tab (IdeaCanvasModal.tsx) — one-shot
+  // draft of all 9 BMC blocks, grounded in the founder's own Idea/Hone/
+  // Validate notes. Same pattern as generateGuide above: the frontend
+  // gathers the context client-side (it already has it via getEntries) and
+  // posts it here.
+  generateBusinessModelCanvas: (data: {
+    ideaName?: string;
+    oneLiner?: string;
+    founderStatement?: string;
+    whoExactly?: string;
+    problemSentence?: string;
+    painIfNothing?: string;
+    frequency?: string;
+    workaround?: string;
+    competitors?: string;
+    solutionAlternatives?: string;
+    whoPays?: string;
+    icpJobs?: string;
+    icpFrustrations?: string;
+    icpAlternatives?: string;
+    assumptions?: { text: string; status?: string }[];
+    confirmedInsights?: string[];
+    demandSignalCount?: number;
+  }) => api.post('/validation/idea/business-model-canvas/generate', data),
 };
 
 // Founder availability (weekly recurring hours for meeting scheduling)
@@ -469,6 +493,11 @@ export const recordingsApi = {
 // Pitch Deck
 export const pitchDeckApi = {
   download: (ideaId: string) => api.get(`/pitch-deck/${ideaId}`, { responseType: 'blob' }),
+  // Sage's narrative pitch draft (SagePitchDraftModal.tsx) — a spoken hook
+  // + talking points per slide for the same 15 sections `download` above
+  // builds as a real .pptx, grounded in the same idea + BMC data fetched
+  // server-side (no body needed, same as download).
+  generateDraft: (ideaId: string) => api.post(`/pitch-deck/${ideaId}/draft`),
 };
 
 // Notifications

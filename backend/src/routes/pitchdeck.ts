@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import PptxGenJS from 'pptxgenjs';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
+import { generatePitchDraft, PitchDraftContext } from '../utils/aiQuestionCheck';
 
 const router = express.Router();
 
@@ -724,4 +725,63 @@ router.get('/:ideaId', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// POST /:ideaId/draft — Sage's narrative pitch draft: a short spoken hook
+// + 2-4 talking-point bullets for each of the same 15 slide sections the
+// deterministic export above builds, grounded in the same idea + BMC data
+// the export template-extracts from (same DB query as GET /:ideaId, kept
+// separate here rather than shared so the two routes stay independently
+// safe to change). This is a narrative companion to the export, not a new
+// data-entry surface — the real editable business data still lives in the
+// BMC/Hone/Validate steps. Used by the "Ask Sage" tab of
+// SagePitchDraftModal.tsx (Shape stage "🎯 Pitch Draft" Quick Tool).
+router.post('/:ideaId/draft', requireAuth, async (req: Request, res: Response) => {
+  const { ideaId } = req.params;
+  try {
+    const ideaResult = await query(
+      `SELECT i.name AS title, i.description, i.business_domain, u.name AS owner_name
+       FROM ideas i
+       JOIN users u ON i.user_id = u.id
+       WHERE i.id = $1`,
+      [ideaId]
+    );
+    if (!ideaResult.rows.length) return res.status(404).json({ error: 'Idea not found' });
+
+    const row = ideaResult.rows[0] as { title: string; description: string; business_domain: string; owner_name: string };
+    const idea = {
+      title:           String(row.title           || ''),
+      description:     String(row.description     || ''),
+      business_domain: String(row.business_domain || ''),
+      owner_name:      String(row.owner_name      || ''),
+    };
+
+    const bmcResult = await query(
+      `SELECT field_key, content
+       FROM stage_entries
+       WHERE idea_id = $1
+         AND stage   = 'shape'
+         AND field_key LIKE 'bmc_%'
+         AND field_key NOT LIKE 'bmc_snapshot_%'`,
+      [ideaId]
+    );
+    const bmc: Record<string, string> = {};
+    (bmcResult.rows as { field_key: string; content: string }[]).forEach(r => {
+      bmc[r.field_key.replace('bmc_', '')] = r.content;
+    });
+
+    const ctx: PitchDraftContext = {
+      ideaName: idea.title,
+      description: idea.description,
+      businessDomain: idea.business_domain,
+      ownerName: idea.owner_name,
+      bmc,
+    };
+    const draft = await generatePitchDraft(ctx);
+    res.json(draft);
+  } catch (err: any) {
+    console.error('[pitchdeck] :ideaId/draft', err?.response?.data || err);
+    res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
+  }
+});
+
 export default router;
+

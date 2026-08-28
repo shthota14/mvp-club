@@ -4101,3 +4101,406 @@ export async function generateMarketSnapshot(ctx: MarketSnapshotContext): Promis
   }
   return generateMarketSnapshotOllama(ctx);
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Full Business Model Canvas draft — all 9 classic BMC blocks (Key
+// Partners, Key Activities, Key Resources, Value Proposition, Customer
+// Relations, Channels, Customer Segments, Cost Structure, Revenue Streams)
+// generated in ONE call from the founder's own Idea/Hone/Validate notes.
+// Used by the "🧙 Ask Sage" tab of the Business Model Canvas modal
+// (IdeaCanvasModal.tsx) — a one-shot draft, not a chat; every block stays
+// fully editable afterward in the same textareas the "✏️ Write my own" tab
+// uses. Same self-hosted Ollama model / opt-in Claude swap as the rest of
+// this file — no separate API key/config needed.
+
+export interface BusinessModelCanvasContext {
+  ideaName?: string;
+  oneLiner?: string;
+  founderStatement?: string;
+  whoExactly?: string;
+  problemSentence?: string;
+  painIfNothing?: string;
+  frequency?: string;
+  workaround?: string;
+  competitors?: string;
+  solutionAlternatives?: string;
+  whoPays?: string;
+  icpJobs?: string;
+  icpFrustrations?: string;
+  icpAlternatives?: string;
+  // Validated-evidence assumptions, e.g. [{ text: 'Freelancers will pay
+  // $20/mo for this', status: 'Confirmed' }] — status is whatever verdict
+  // the founder recorded in Validate, passed through as-is.
+  assumptions?: { text: string; status?: string }[];
+  // Short confirmed learnings pulled from Validate's insights log — real
+  // things interviews surfaced, not the founder's original hypotheses.
+  confirmedInsights?: string[];
+  demandSignalCount?: number;
+}
+
+export interface BusinessModelCanvasResult {
+  partners: string;
+  activities: string;
+  resources: string;
+  value: string;
+  cr: string;
+  channels: string;
+  segments: string;
+  costs: string;
+  revenue: string;
+}
+
+const BMC_BLOCK_KEYS: (keyof BusinessModelCanvasResult)[] = [
+  'partners', 'activities', 'resources', 'value', 'cr', 'channels', 'segments', 'costs', 'revenue',
+];
+
+const BUSINESS_MODEL_CANVAS_SYSTEM_PROMPT = `You are an expert startup strategist and Business Model Canvas coach, in the style of Alexander Osterwalder's "Business Model Generation".
+
+You are given a founder's own notes from the Idea, Hone, and Validate stages of their product-planning process — their problem statement, target customer, assumptions and what interviews confirmed or busted, and how they think about pricing/economics so far. Draft a first version of their full 9-block Business Model Canvas, grounded ONLY in what's actually implied by their notes plus reasonable, clearly-labeled startup-strategy judgment — never invent specific facts (company names, exact prices, specific tool names) that aren't implied by the founder's own context.
+
+Write EVERY block as 3 to 6 short bullet points, each a genuinely useful, specific idea for THIS founder's actual business — never generic filler that could apply to any startup. Ground each block in the founder's own domain, customer, and problem language wherever the notes give you something to work with; where the notes are thin for a given block, use sound business-model reasoning appropriate to the domain rather than leaving it empty, but keep those bullets clearly framed as a starting suggestion (e.g. "Likely..." or "Consider...") rather than stated as settled fact.
+
+The 9 blocks, in the order Osterwalder's canvas groups them (with the questions each one answers):
+- partners (Key Partners): Who do they rely on to make the business work — suppliers, vendors, alliances, outsourced work?
+- activities (Key Activities): What must the business do every day to deliver its value proposition?
+- resources (Key Resources): What critical physical, intellectual, human, or financial assets does it need?
+- value (Value Proposition): The core reason customers choose them — what pain is eliminated, what gain is created, phrased specifically to this founder's real problem and customer.
+- cr (Customer Relations): How do they attract, retain, and grow customers — self-serve, personal, automated, community, co-creation?
+- channels (Channels): How do customers become aware of, evaluate, buy, receive, and get supported for this — through this founder's realistic early channels?
+- segments (Customer Segments): Who exactly they're building for — as specific as the founder's own ICP notes allow, not "anyone who needs X".
+- costs (Cost Structure): The most significant fixed, variable, and one-time costs for a business like this.
+- revenue (Revenue Streams): How the business actually makes money — grounded in what the founder has said about pricing/payer, or a sound default model for this kind of product if they haven't decided yet.
+
+Format every block's bullets as a single string with each bullet on its own line, prefixed with "• " (a bullet character and one space) — e.g. "• First bullet\\n• Second bullet\\n• Third bullet". No other formatting, headers, or numbering.
+
+Respond with ONLY a JSON object, no other text, in this exact shape:
+{"partners": "<bulleted string>", "activities": "<bulleted string>", "resources": "<bulleted string>", "value": "<bulleted string>", "cr": "<bulleted string>", "channels": "<bulleted string>", "segments": "<bulleted string>", "costs": "<bulleted string>", "revenue": "<bulleted string>"}`;
+
+function buildBusinessModelCanvasUserContent(ctx: BusinessModelCanvasContext): string {
+  const lines: string[] = [];
+  if (ctx.ideaName?.trim()) lines.push(`Idea name: ${ctx.ideaName.trim()}`);
+  if (ctx.oneLiner?.trim()) lines.push(`One-liner: ${ctx.oneLiner.trim()}`);
+  if (ctx.founderStatement?.trim()) lines.push(`Founder's own framing of the idea: ${ctx.founderStatement.trim()}`);
+  if (ctx.whoExactly?.trim()) lines.push(`Who the founder thinks has this problem: ${ctx.whoExactly.trim()}`);
+  if (ctx.problemSentence?.trim()) lines.push(`Problem(s) the founder believes exist: ${ctx.problemSentence.trim()}`);
+  if (ctx.painIfNothing?.trim()) lines.push(`What happens if this problem stays unsolved: ${ctx.painIfNothing.trim()}`);
+  if (ctx.frequency?.trim()) lines.push(`How often this problem comes up: ${ctx.frequency.trim()}`);
+  if (ctx.workaround?.trim()) lines.push(`How people work around it today: ${ctx.workaround.trim()}`);
+  if (ctx.competitors?.trim()) lines.push(`Competitors/alternatives the founder is aware of: ${ctx.competitors.trim()}`);
+  if (ctx.solutionAlternatives?.trim()) lines.push(`Alternatives the founder thinks people use today: ${ctx.solutionAlternatives.trim()}`);
+  if (ctx.whoPays?.trim()) lines.push(`Who the founder thinks would pay: ${ctx.whoPays.trim()}`);
+  if (ctx.icpJobs?.trim()) lines.push(`Jobs the ideal customer is trying to get done: ${ctx.icpJobs.trim()}`);
+  if (ctx.icpFrustrations?.trim()) lines.push(`Frustrations the ideal customer has today: ${ctx.icpFrustrations.trim()}`);
+  if (ctx.icpAlternatives?.trim()) lines.push(`Alternatives the ideal customer uses today: ${ctx.icpAlternatives.trim()}`);
+  if (ctx.assumptions?.length) lines.push(`Assumptions tested in Validate (with verdict where known):\n${ctx.assumptions.map(a => `- ${a.text}${a.status ? ` [${a.status}]` : ''}`).join('\n')}`);
+  if (ctx.confirmedInsights?.length) lines.push(`What interviews actually confirmed:\n${ctx.confirmedInsights.map(i => `- ${i}`).join('\n')}`);
+  if (typeof ctx.demandSignalCount === 'number' && ctx.demandSignalCount > 0) lines.push(`Demand signals gathered so far: ${ctx.demandSignalCount}`);
+
+  return lines.length
+    ? lines.join('\n\n')
+    : "The founder hasn't filled in any Idea/Hone/Validate details yet — draft a solid generic first-pass Business Model Canvas they can react to and edit.";
+}
+
+function parseBusinessModelCanvasJson(text: string): BusinessModelCanvasResult {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+
+  const result = {} as BusinessModelCanvasResult;
+  let filledCount = 0;
+  for (const key of BMC_BLOCK_KEYS) {
+    const v = parsed?.[key];
+    const s = typeof v === 'string' ? v.trim() : '';
+    result[key] = s;
+    if (s) filledCount++;
+  }
+
+  if (filledCount < 5) {
+    throw new Error('The AI generated an incomplete canvas this time — please try Regenerate.');
+  }
+  return result;
+}
+
+// Ollama path — the original, always-available implementation.
+async function generateBusinessModelCanvasOllama(ctx: BusinessModelCanvasContext): Promise<BusinessModelCanvasResult> {
+  const userContent = buildBusinessModelCanvasUserContent(ctx);
+
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: BUSINESS_MODEL_CANVAS_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.5 },
+      },
+      { timeout: 240000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNABORTED') {
+      throw new Error('The AI is taking longer than usual on this one (it\'s a bigger request than most) — please try Regenerate again.');
+    }
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+
+  const text: string = res.data?.message?.content || '';
+  return parseBusinessModelCanvasJson(text);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the flagship model tier: like generateDiscoveryGuide, this
+// is a big single-shot structured draft (9 blocks) grounded entirely in
+// the founder's own notes, no web search needed.
+async function generateBusinessModelCanvasClaude(ctx: BusinessModelCanvasContext): Promise<BusinessModelCanvasResult> {
+  const userContent = buildBusinessModelCanvasUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 2048,
+    temperature: 0.5,
+    system: BUSINESS_MODEL_CANVAS_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseBusinessModelCanvasJson(text);
+}
+
+export async function generateBusinessModelCanvas(ctx: BusinessModelCanvasContext): Promise<BusinessModelCanvasResult> {
+  if (anthropicClient) {
+    try {
+      return await generateBusinessModelCanvasClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take the Ask Sage tab down entirely.
+      console.error('[business-model-canvas] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generateBusinessModelCanvasOllama(ctx);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Sage's narrative pitch draft — a short spoken hook + 2-4 talking-point
+// bullets for each of the same 15 slide sections the deterministic pptx
+// export (backend/src/routes/pitchdeck.ts) builds, grounded in the same
+// idea + Business Model Canvas facts that export template-extracts from.
+// This is a companion narrative, not new structured data: the real
+// editable business data still lives in the BMC/Hone/Validate steps and
+// the pptx export itself — this only helps the founder talk through it
+// out loud. Used by the "Ask Sage" tab of SagePitchDraftModal.tsx (Shape
+// stage "🎯 Pitch Draft" Quick Tool). Same self-hosted Ollama model /
+// opt-in Claude swap as the rest of this file.
+
+export interface PitchDraftContext {
+  ideaName?: string;
+  description?: string;
+  businessDomain?: string;
+  ownerName?: string;
+  // Same 9 BMC block keys as BusinessModelCanvasResult above (partners,
+  // activities, resources, value, cr, channels, segments, costs, revenue)
+  // — whichever ones the founder has actually filled in.
+  bmc?: Record<string, string>;
+}
+
+export interface PitchDraftSlide {
+  id: string;
+  title: string;
+  hook: string;
+  bullets: string[];
+}
+
+export interface PitchDraftResult {
+  slides: PitchDraftSlide[];
+}
+
+// Fixed order/id/title for every slide — kept in code (not left to the AI
+// to invent) so the narrative draft always lines up 1:1 with the real
+// pptx export's own 15-slide structure in pitchdeck.ts. The AI only fills
+// in hook + bullets per id.
+const PITCH_SECTIONS: { id: string; title: string }[] = [
+  { id: 'title',         title: 'Title' },
+  { id: 'vision',        title: 'Vision' },
+  { id: 'problem',       title: 'Problem' },
+  { id: 'solution',      title: 'Solution' },
+  { id: 'whyNow',        title: 'Why Now' },
+  { id: 'market',        title: 'Market Opportunity' },
+  { id: 'validation',    title: 'Customer Validation' },
+  { id: 'businessModel', title: 'Business Model' },
+  { id: 'goToMarket',    title: 'Go-To-Market' },
+  { id: 'competition',   title: 'Competition' },
+  { id: 'roadmap',       title: 'Roadmap' },
+  { id: 'team',          title: 'Team' },
+  { id: 'financials',    title: 'Financials' },
+  { id: 'fundingAsk',    title: 'Funding Ask' },
+  { id: 'closing',       title: 'Closing' },
+];
+
+const PITCH_DRAFT_SYSTEM_PROMPT = `You are an experienced startup pitch coach helping a founder rehearse how they'd talk through their pitch deck out loud — not writing slide copy, but the talking points behind each slide.
+
+You are given the founder's idea (name, one-line description, industry) and whatever Business Model Canvas blocks they've filled in (Key Partners, Key Activities, Key Resources, Value Proposition, Customer Relations, Channels, Customer Segments, Cost Structure, Revenue Streams). Ground everything you write ONLY in what's actually implied by this material — never invent specific numbers, named competitors, or facts that aren't implied by the founder's own notes; where a slide needs something the founder hasn't given you (e.g. a funding ask amount, headcount, financial projections), write forward-looking, clearly-generic talking points a founder could say before they've nailed down the exact figures, rather than inventing fake specifics.
+
+Write exactly one entry per section id below, in this exact order, each with:
+- hook: one short, punchy spoken line (under 25 words) — the kind of line a founder would actually SAY out loud on that slide, not a written slide title.
+- bullets: 2 to 4 short talking points (each under 15 words) — the supporting points a founder would riff on for that slide, grounded in the founder's own material wherever it gives you something, otherwise a reasonable generic point appropriate to that slide's role in a pitch.
+
+Sections, in order (id — what the slide is for):
+- title — the idea name and a one-line hook for why it matters
+- vision — the big-picture "why this, why now" belief driving the company
+- problem — the pain this solves, for whom, and why it matters
+- solution — how the product solves that problem
+- whyNow — why this moment (market/tech/behavior shift) makes this the right time
+- market — the size and shape of the opportunity, focused on the founder's actual starting niche
+- validation — what evidence of demand exists or should be gathered next (interviews, pilots, LOIs, waitlist)
+- businessModel — how the business actually makes money and what it costs to run
+- goToMarket — how customers will be reached and how the relationship with them works
+- competition — how this compares to alternatives/status quo and what's genuinely different
+- roadmap — the realistic near-term build/launch/grow trajectory
+- team — why this founder/team is the right one to build this
+- financials — the shape of the unit economics and growth trajectory to expect, kept appropriately hedged/forward-looking
+- fundingAsk — what kind of raise (if any) would accelerate this, and what it would fund
+- closing — the memorable one-line close that ties the pitch together
+
+Respond with ONLY a JSON object, no other text, in this exact shape:
+{"slides": [{"id": "title", "hook": "<short spoken line>", "bullets": ["<point>", "..."]}, ...one entry per section id above, in that exact order]}`;
+
+function buildPitchDraftUserContent(ctx: PitchDraftContext): string {
+  const lines: string[] = [];
+  if (ctx.ideaName?.trim()) lines.push(`Idea name: ${ctx.ideaName.trim()}`);
+  if (ctx.description?.trim()) lines.push(`One-line description: ${ctx.description.trim()}`);
+  if (ctx.businessDomain?.trim()) lines.push(`Industry/domain: ${ctx.businessDomain.trim()}`);
+  if (ctx.ownerName?.trim()) lines.push(`Founder: ${ctx.ownerName.trim()}`);
+  const bmc = ctx.bmc || {};
+  const bmcLabels: Record<string, string> = {
+    partners: 'Key Partners', activities: 'Key Activities', resources: 'Key Resources',
+    value: 'Value Proposition', cr: 'Customer Relations', channels: 'Channels',
+    segments: 'Customer Segments', costs: 'Cost Structure', revenue: 'Revenue Streams',
+  };
+  const bmcLines = Object.entries(bmcLabels)
+    .map(([key, label]) => (bmc[key]?.trim() ? `${label}:\n${bmc[key].trim()}` : null))
+    .filter((s): s is string => !!s);
+  if (bmcLines.length) lines.push(`Business Model Canvas:\n${bmcLines.join('\n\n')}`);
+
+  return lines.length
+    ? lines.join('\n\n')
+    : "The founder hasn't filled in their idea details or canvas yet — write a generic but well-structured pitch narrative they can react to and personalize.";
+}
+
+function parsePitchDraftJson(text: string): PitchDraftResult {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+
+  const rawSlides: any[] = Array.isArray(parsed?.slides) ? parsed.slides : [];
+  const byId = new Map<string, any>();
+  rawSlides.forEach(s => { if (s && typeof s.id === 'string') byId.set(s.id, s); });
+
+  const slides: PitchDraftSlide[] = [];
+  let filledCount = 0;
+  for (const section of PITCH_SECTIONS) {
+    const raw = byId.get(section.id);
+    const hook = typeof raw?.hook === 'string' ? raw.hook.trim() : '';
+    const bullets = Array.isArray(raw?.bullets)
+      ? raw.bullets.filter((b: any) => typeof b === 'string' && b.trim()).map((b: string) => b.trim()).slice(0, 4)
+      : [];
+    if (hook || bullets.length) filledCount++;
+    slides.push({ id: section.id, title: section.title, hook, bullets });
+  }
+
+  if (filledCount < 8) {
+    throw new Error('The AI generated an incomplete draft this time — please try Regenerate.');
+  }
+  return { slides };
+}
+
+// Ollama path — the original, always-available implementation.
+async function generatePitchDraftOllama(ctx: PitchDraftContext): Promise<PitchDraftResult> {
+  const userContent = buildPitchDraftUserContent(ctx);
+
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: PITCH_DRAFT_SYSTEM_PROMPT },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.5 },
+      },
+      { timeout: 240000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNABORTED') {
+      throw new Error('The AI is taking longer than usual on this one (it\'s a bigger request than most) — please try Regenerate again.');
+    }
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+
+  const text: string = res.data?.message?.content || '';
+  return parsePitchDraftJson(text);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, on the flagship model tier: like generateDiscoveryGuide and
+// generateBusinessModelCanvas above, this is a big single-shot structured
+// draft (15 sections) grounded entirely in the founder's own idea + BMC
+// data, no web search needed.
+async function generatePitchDraftClaude(ctx: PitchDraftContext): Promise<PitchDraftResult> {
+  const userContent = buildPitchDraftUserContent(ctx);
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 2048,
+    temperature: 0.5,
+    system: PITCH_DRAFT_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parsePitchDraftJson(text);
+}
+
+export async function generatePitchDraft(ctx: PitchDraftContext): Promise<PitchDraftResult> {
+  if (anthropicClient) {
+    try {
+      return await generatePitchDraftClaude(ctx);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take the Ask Sage tab down entirely.
+      console.error('[pitch-draft] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return generatePitchDraftOllama(ctx);
+}

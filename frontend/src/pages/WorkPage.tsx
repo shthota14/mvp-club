@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { ideasApi, communityApi, challengesApi, validationApi, surveysApi, availabilityApi } from '@/api/client';
 import IdeaCanvasModal from '@/components/IdeaCanvasModal';
+import SagePitchDraftModal from '@/components/SagePitchDraftModal';
+import SageAvatar from '@/components/SageAvatar';
 import StageCompleteModal from '@/components/StageCompleteModal';
 import AvailabilityModal from '@/components/AvailabilityModal';
 import EmailPreviewModal from '@/components/EmailPreviewModal';
@@ -8231,37 +8233,6 @@ function mergeGuides(existing: DiscoveryGuideData, incoming: DiscoveryGuideData)
     }
   });
   return { focus: existing.focus, sections };
-}
-
-// ── Sage avatar - the illustrated wizard mark used anywhere the
-// AI-assisted mode is referenced, so it reads as a character ("Sage")
-// rather than a generic robot icon. Backed by a real image (public/sage/
-// sage-avatar.png) instead of an inline SVG, framed in a circle that
-// matches the app's existing purple accent ring.
-function SageAvatar({ size = 84 }: { size?: number }) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        flexShrink: 0,
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        overflow: 'hidden',
-        background: '#EDE9FE',
-        border: '1.2px solid #C4B5FD',
-        boxSizing: 'border-box',
-      }}
-    >
-      <img
-        src="/sage/sage-avatar.png"
-        alt="Sage"
-        width={size}
-        height={size}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-      />
-    </span>
-  );
 }
 
 // ── Interview-stage taxonomy - the fixed, logical progression every
@@ -19854,6 +19825,15 @@ export default function WorkPage() {
           idea={activeIdea}
           isActive={true}
           onClose={() => setShowBMCDraft(false)}
+        />
+      )}
+
+      {/* Pitch Draft modal — Sage's narrative companion to the deterministic
+          "📊 Pitch Deck" .pptx export (IdeaDetailPage.tsx). */}
+      {showPitchDraft && (
+        <SagePitchDraftModal
+          idea={activeIdea}
+          onClose={() => setShowPitchDraft(false)}
         />
       )}
 

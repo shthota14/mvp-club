@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import type { Idea } from '@/types';
 import { STAGE_LABELS, STAGE_COLORS } from '@/types';
-import { ideasApi, communityApi } from '@/api/client';
+import { ideasApi, communityApi, validationApi } from '@/api/client';
+import SageAvatar from './SageAvatar';
 
 // ── Canvas block definitions ──────────────────────────────────────────────────
 const BLOCKS = [
@@ -202,6 +203,25 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
   const [savingVersion, setSavingVersion] = useState(false);
   const [restoringVersion, setRestoringVersion] = useState<string | null>(null);
 
+  // "✏️ Write my own" / "🧙 Ask Sage" tab toggle — same visual pattern as
+  // the rest of the app's Sage features (Validate step 7's discovery
+  // guide). Both tabs write into the exact same `values`/textareas/
+  // autosave below; the tab only decides how you arrive at filled-in
+  // content, so switching tabs never loses anything.
+  const [tab, setTab]                 = useState<'manual' | 'sage'>('manual');
+  const [sageLoading, setSageLoading] = useState(false);
+  const [sageError, setSageError]     = useState<string | null>(null);
+  // Whether the canvas currently on screen came from a Sage draft — loaded
+  // from a small persisted flag (bmc_meta_sage) alongside the blocks
+  // themselves so the "Sage drafted this" indicator survives a reload, not
+  // just this session.
+  const [sageOrigin, setSageOrigin]   = useState(false);
+  // Hone/Validate context Sage drafts from — gathered in the same load
+  // effect below that already fetches 'shape' and 'hone' entries (plus one
+  // more call for 'validate', which this modal didn't previously fetch).
+  const [honeCtx, setHoneCtx]         = useState<Record<string, string>>({});
+  const [validateCtx, setValidateCtx] = useState<Record<string, string>>({});
+
   const saveTimers = useRef<Partial<Record<BlockId, ReturnType<typeof setTimeout>>>>({});
   const versionInputRef = useRef<HTMLInputElement>(null);
   const stageColor = STAGE_COLORS[idea.stage] ?? '#6366f1';
@@ -241,22 +261,28 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
     Promise.all([
       ideasApi.getEntries(idea.id, 'shape').catch(() => ({ data: { entries: [] } })),
       ideasApi.getEntries(idea.id, 'hone').catch(() => ({ data: { entries: [] } })),
-    ]).then(([shapeRes, honeRes]) => {
+      ideasApi.getEntries(idea.id, 'validate').catch(() => ({ data: { entries: [] } })),
+    ]).then(([shapeRes, honeRes, validateRes]) => {
       const shapeEntries = shapeRes.data.entries as { field_key: string; content: string }[];
       const loaded: Values = {};
       shapeEntries.forEach(e => {
-        if (e.field_key.startsWith('bmc_') && !e.field_key.startsWith('bmc_snapshot_')) {
+        if (e.field_key.startsWith('bmc_') && !e.field_key.startsWith('bmc_snapshot_') && !e.field_key.startsWith('bmc_meta_')) {
           const id = e.field_key.replace('bmc_', '') as BlockId;
           loaded[id] = e.content;
         }
       });
       const hone: Record<string, string> = {};
       (honeRes.data.entries as { field_key: string; content: string }[]).forEach(e => { hone[e.field_key] = e.content; });
+      const validateEntries: Record<string, string> = {};
+      (validateRes.data.entries as { field_key: string; content: string }[]).forEach(e => { validateEntries[e.field_key] = e.content; });
       if (!loaded.value    && hone.what)    loaded.value    = hone.what;
       if (!loaded.segments && hone.who)     loaded.segments = hone.who;
       if (!loaded.cr       && hone.problem) loaded.cr       = `Problem we solve:\n${hone.problem}`;
       setValues(loaded);
       setVersions(parseVersions(shapeEntries));
+      setHoneCtx(hone);
+      setValidateCtx(validateEntries);
+      setSageOrigin(shapeEntries.some(e => e.field_key === 'bmc_meta_sage' && e.content === 'true'));
     }).finally(() => setLoading(false));
   }, [idea.id, viewOnly, parseVersions]);
 
@@ -304,6 +330,79 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
       setShowVersions(false);
     } catch { setSaveStatus('unsaved'); }
     finally { setRestoringVersion(null); }
+  };
+
+  // "🧙 Ask Sage" — one-shot draft of all 9 BMC blocks in a single call,
+  // grounded in whatever Idea/Hone/Validate context is already loaded
+  // above. Same "draft, not decide" pattern as InterviewGuidePanel in
+  // WorkPage.tsx: every block lands in the exact same textareas the
+  // "Write my own" tab uses and stays fully editable afterward.
+  const runGenerateSage = async () => {
+    const hasExistingContent = BLOCKS.some(b => values[b.id]?.trim());
+    if (hasExistingContent && !window.confirm('Sage will replace the content in all 9 canvas blocks with a fresh draft. Continue?')) {
+      return;
+    }
+    setSageLoading(true);
+    setSageError(null);
+    try {
+      let assumptions: { text: string; status?: string }[] | undefined;
+      try {
+        const parsed = JSON.parse(validateCtx.assumptions || '[]');
+        if (Array.isArray(parsed)) {
+          assumptions = parsed
+            .filter((a: any) => a && typeof a.text === 'string' && a.text.trim())
+            .map((a: any) => ({ text: a.text.trim(), status: typeof a.status === 'string' ? a.status : undefined }));
+        }
+      } catch { /* ignore */ }
+      let confirmedInsights: string[] | undefined;
+      try {
+        const parsed = JSON.parse(validateCtx.insights || '[]');
+        if (Array.isArray(parsed)) {
+          confirmedInsights = parsed
+            .filter((i: any) => i && i.bucket === 'confirmed' && typeof i.text === 'string' && i.text.trim())
+            .map((i: any) => i.text.trim());
+        }
+      } catch { /* ignore */ }
+      let demandSignalCount: number | undefined;
+      try {
+        const parsed = JSON.parse(validateCtx.demandSignals || '[]');
+        if (Array.isArray(parsed)) demandSignalCount = parsed.length;
+      } catch { /* ignore */ }
+
+      const r = await validationApi.generateBusinessModelCanvas({
+        ideaName: idea.name,
+        founderStatement: honeCtx.founderStatement,
+        whoExactly: honeCtx.whoExactly,
+        problemSentence: honeCtx.problemSentence,
+        painIfNothing: honeCtx.painIfNothing,
+        frequency: honeCtx.frequency,
+        workaround: honeCtx.workaround,
+        competitors: honeCtx.competitors,
+        solutionAlternatives: honeCtx.solutionAlternatives,
+        whoPays: honeCtx.whoPays,
+        icpJobs: [validateCtx.icpJobs, validateCtx.icpJobs_custom].filter(Boolean).join(', '),
+        icpFrustrations: [validateCtx.icpFrustrations, validateCtx.icpFrustrations_custom].filter(Boolean).join(', '),
+        icpAlternatives: [validateCtx.icpAlternatives, validateCtx.icpAlternatives_custom].filter(Boolean).join(', '),
+        assumptions,
+        confirmedInsights,
+        demandSignalCount,
+      });
+
+      const newValues: Values = {};
+      BLOCKS.forEach(b => { newValues[b.id] = typeof r.data?.[b.id] === 'string' ? r.data[b.id] : ''; });
+      setValues(newValues);
+      setSaveStatus('saving');
+      await Promise.all(
+        BLOCKS.map(b => ideasApi.upsertEntry(idea.id, { stage: 'shape', field_key: `bmc_${b.id}`, content: newValues[b.id] || '' }))
+      );
+      await ideasApi.upsertEntry(idea.id, { stage: 'shape', field_key: 'bmc_meta_sage', content: 'true' });
+      setSaveStatus('saved');
+      setSageOrigin(true);
+    } catch (e: any) {
+      setSageError(e?.response?.data?.error || e?.message || 'Could not generate a canvas right now — please try again.');
+    } finally {
+      setSageLoading(false);
+    }
   };
 
   const completedBlocks = BLOCKS.filter(b => values[b.id]?.trim()).length;
@@ -508,6 +607,65 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
             </div>
           </div>
 
+          {/* ── Tab toggle: "Write my own" (manual grid, unchanged) vs
+              "Ask Sage" (one-shot AI draft of all 9 blocks, into the same
+              grid). Hidden in viewOnly since there's nothing to generate
+              into. ── */}
+          {!viewOnly && (
+            <div style={{ borderBottom: '1px solid #d2d2d7', background: '#ffffff', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px' }}>
+                <button
+                  onClick={() => setTab('manual')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 999,
+                    border: tab === 'manual' ? '1.5px solid #1e1b4b' : '1.5px solid #e5e7eb',
+                    background: tab === 'manual' ? '#1e1b4b' : '#f5f5f7',
+                    color: tab === 'manual' ? '#fff' : '#374151',
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s',
+                  }}
+                >
+                  ✏️ Write my own
+                </button>
+                <button
+                  onClick={() => setTab('sage')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: 999,
+                    border: tab === 'sage' ? '1.5px solid #7c3aed' : '1.5px solid #e5e7eb',
+                    background: tab === 'sage' ? '#7c3aed' : '#f5f5f7',
+                    color: tab === 'sage' ? '#fff' : '#374151',
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s',
+                  }}
+                >
+                  🧙 Ask Sage
+                </button>
+                {tab === 'sage' && sageOrigin && (
+                  <span style={{ marginLeft: 4, fontSize: 12.5, fontWeight: 700, color: '#7c3aed' }}>
+                    🧙 Sage drafted this — edit freely
+                  </span>
+                )}
+                {tab === 'sage' && (completedBlocks > 0 || sageOrigin) && (
+                  <button
+                    onClick={runGenerateSage}
+                    disabled={sageLoading}
+                    style={{
+                      marginLeft: 'auto', background: 'none', border: 'none', padding: 0,
+                      fontSize: 12.5, fontWeight: 700, color: '#7c3aed',
+                      textDecoration: 'underline', textUnderlineOffset: '2px',
+                      cursor: sageLoading ? 'default' : 'pointer', fontFamily: 'inherit',
+                    }}
+                  >
+                    {sageLoading ? '🧙 Sage is thinking…' : '🔄 Ask Sage again'}
+                  </button>
+                )}
+              </div>
+              {tab === 'sage' && sageError && (
+                <div style={{ margin: '0 20px 10px', fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px' }}>
+                  ⚠️ {sageError}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── Body row: grid + optional versions panel ── */}
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
@@ -517,6 +675,31 @@ export default function IdeaCanvasModal({ idea, isActive, onClose, onMakeActive,
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 28, marginBottom: 10, opacity: .5 }}>📊</div>
                   <div style={{ fontWeight: 600 }}>Loading canvas…</div>
+                </div>
+              </div>
+            ) : tab === 'sage' && completedBlocks === 0 && !sageOrigin ? (
+              /* "Ask Sage" empty state — same visual pattern as
+                 InterviewGuidePanel's empty state in WorkPage.tsx
+                 (Validate step 7): SageAvatar + Caveat-voice intro + a
+                 single "🔄 Ask Sage" button, "🧙 Sage is thinking…" while
+                 waiting. Once a draft lands, this branch never shows again
+                 (completedBlocks > 0) — the grid below takes over. */
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', padding: 24, overflow: 'auto' }}>
+                <div style={{ maxWidth: 440, textAlign: 'center' as const, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                  <SageAvatar size={144} />
+                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#1d1d1f' }}>
+                    Ask Sage@MVP Club to draft your canvas
+                  </div>
+                  <div style={{ fontSize: 13, color: '#6e6e73', lineHeight: 1.55 }}>
+                    Sage reads what you've told us in Idea, Hone, and Validate, then drafts all 9 blocks of your Business Model Canvas in one go — every block stays fully editable right after, just like "Write my own".
+                  </div>
+                  <button
+                    onClick={runGenerateSage}
+                    disabled={sageLoading}
+                    style={{ marginTop: 4, padding: '11px 22px', borderRadius: 10, border: 'none', cursor: sageLoading ? 'default' : 'pointer', background: sageLoading ? '#7c3aed80' : '#7c3aed', color: '#fff', fontSize: 13.5, fontWeight: 700, fontFamily: 'inherit' }}
+                  >
+                    {sageLoading ? '🧙 Sage is thinking…' : '🔄 Ask Sage'}
+                  </button>
                 </div>
               </div>
             ) : (
