@@ -70,6 +70,85 @@ const WOBBLE_VARIANTS = [
   { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.5 },
 ];
 
+// ── Jenga-tower chip picker ──────────────────────────────────────────────
+// The stacked-block picker introduced for Hone step 2/4's AI-suggestion
+// chips: each option is a full-width wood-toned block; picking one slides
+// it out sideways and fills it with `color`, the way you'd pull a Jenga
+// block free. Extracted here as a shared primitive so the same visual
+// language can be reused anywhere else in the app that needs a chip picker
+// (Validate steps 1/2/4/8) without re-inlining the styling each time.
+// Hone's own step 2/4 pickers predate this extraction and keep their inline
+// version rather than being risked in a refactor -- this is for new call
+// sites only.
+//
+// Selection semantics (single- vs multi-select) are entirely up to the
+// caller's `onToggle`/`isSelected` -- this component just renders one stack
+// and reports clicks, so it works for both a "pick one" question (step 1)
+// and a "select everything that applies" list (steps 2/4/8).
+function JengaBlock({ label, color, selected, badge, icon, onClick }: {
+  label: React.ReactNode; color: string; selected: boolean; badge?: React.ReactNode; icon?: React.ReactNode; onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        textAlign: 'left' as const, width: '100%', padding: '8px 12px', cursor: 'pointer',
+        fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 14, lineHeight: 1.3, fontWeight: selected ? 700 : 600,
+        border: `2px solid ${color}`, borderRadius: 4,
+        background: selected ? color : '#fff6e0',
+        color: selected ? '#fff' : '#5c4324',
+        transform: selected ? 'translateX(22px)' : 'translateX(0)',
+        boxShadow: selected ? '2px 3px 6px rgba(0,0,0,.2)' : '0 1px 2px rgba(0,0,0,.08)',
+        transition: 'transform .25s cubic-bezier(.3,.6,.4,1), background .25s, color .25s, box-shadow .25s',
+        display: 'flex', alignItems: 'center', gap: 6,
+      }}
+    >
+      {icon}
+      {badge !== undefined ? badge : (selected ? '✓ ' : '')}{label}
+    </button>
+  );
+}
+
+// One wood-gradient tower box containing a vertical stack of JengaBlocks.
+// `rankOf`, if given, shows a numbered circle badge instead of a plain
+// checkmark for selected items whose rank it returns (used for Validate
+// step 2's "most important thing to prove", where tap order matters).
+// `color` is a single shared colour for every block; pass `colorOf`
+// instead when each item carries its own colour (e.g. Validate step 8's
+// per-signal colours) -- `color` is then just the fallback/border default.
+// `iconOf`, if given, renders a small leading icon per item.
+function JengaTower({ items, color, colorOf, iconOf, labelOf, isSelected, onToggle, rankOf }: {
+  items: string[];
+  color?: string;
+  colorOf?: (item: string) => string;
+  iconOf?: (item: string) => React.ReactNode;
+  // Lets `items` carry a short internal value (e.g. '3', 'verbal-1') while
+  // the block displays a longer composed label -- used by Validate step 1's
+  // single-select questions ("🤏 3 — Gut check").
+  labelOf?: (item: string) => React.ReactNode;
+  isSelected: (item: string) => boolean;
+  onToggle: (item: string) => void;
+  rankOf?: (item: string) => number | null;
+}) {
+  return (
+    <div style={{ background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: '1.5px solid #cdac72', borderRadius: 10, padding: '10px 10px 14px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 1px 2px 4px rgba(0,0,0,.06)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {items.map(item => {
+          const on = isSelected(item);
+          const itemColor = colorOf ? colorOf(item) : (color || '#8a5a2b');
+          const rank = rankOf ? rankOf(item) : null;
+          const badge = rank ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16, borderRadius: '50%', background: '#fff', color: itemColor, fontSize: 10, fontWeight: 900, flexShrink: 0 }}>{rank}</span>
+          ) : undefined;
+          const icon = iconOf ? <span style={{ fontSize: 14, flexShrink: 0 }}>{iconOf(item)}</span> : undefined;
+          return <JengaBlock key={item} label={labelOf ? labelOf(item) : item} color={itemColor} selected={on} badge={badge} icon={icon} onClick={() => onToggle(item)} />;
+        })}
+      </div>
+    </div>
+  );
+}
+
 const MULTI_SEP = '|||';
 const FIELD_SEP = '~~'; // internal field separator within one persona entry
 
@@ -11922,34 +12001,18 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                               <div key={gi} style={{ borderRadius: 8, minHeight: 50, background: '#f1f1f3', border: `1.5px dashed ${BORDER}` }} />
                             ))}
                           </div>
-                        ) : (
-                          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 5 }}>
-                            {opts.map(opt => {
-                              const on = ans.signals.includes(opt.k);
-                              return (
-                                <button
-                                  key={opt.k}
-                                  onClick={() => toggleSig(qi, opt.k)}
-                                  style={{
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-                                    padding: '6px 4px', borderRadius: 8, cursor: 'pointer', fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui",
-                                    border: `1.5px solid ${on ? opt.color : '#e5e5ea'}`,
-                                    background: on ? `${opt.color}14` : '#fafafa',
-                                    color: on ? opt.color : '#525257',
-                                    fontSize: 13, fontWeight: 700,
-                                    transition: 'all .12s', textAlign: 'center' as const,
-                                    boxShadow: on ? `0 0 0 2px ${opt.color}22` : 'none',
-                                    lineHeight: 1.25, minHeight: 50,
-                                  }}
-                                >
-                                  <span style={{ fontSize: 15 }}>{opt.icon}</span>
-                                  <span>{opt.k}</span>
-                                  {on && <span style={{ fontSize: 9, fontWeight: 800, background: opt.color, color: '#fff', borderRadius: 4, padding: '1px 4px' }}>✓</span>}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
+                        ) : (() => {
+                          const byKey = new Map(opts.map(o => [o.k, o]));
+                          return (
+                            <JengaTower
+                              items={opts.map(o => o.k)}
+                              colorOf={k => byKey.get(k)!.color}
+                              iconOf={k => byKey.get(k)!.icon}
+                              isSelected={k => ans.signals.includes(k)}
+                              onToggle={k => toggleSig(qi, k)}
+                            />
+                          );
+                        })()}
                       </div>
                     );
                   })()}
@@ -14594,14 +14657,6 @@ export default function WorkPage() {
                     set('valGoalSuccess', parts.join(' · '));
                   };
 
-                  // Flat chip — replaces the old growing-bubble picker button.
-                  const GoalChip = ({ active, accent, onClick, children }: { active: boolean; accent: string; onClick: () => void; children: React.ReactNode }) => (
-                    <button type="button" onClick={onClick}
-                      style={{ padding: '8px 15px', borderRadius: 20, fontSize: 13, fontWeight: active ? 800 : 500, cursor: 'pointer', fontFamily: 'inherit', border: `1.5px solid ${active ? accent : BORDER2}`, background: active ? `${accent}14` : '#fff', color: active ? accent : T2, transition: 'all .12s', whiteSpace: 'nowrap' as const }}>
-                      {children}
-                    </button>
-                  );
-
                   // Marker-written question headline + hand-drawn underline — unchanged treatment, now a shared helper.
                   const MarkerQuestion = ({ accent, emoji, children }: { accent: string; emoji: string; children: React.ReactNode }) => (
                     <div style={{ marginBottom: 12 }}>
@@ -14623,18 +14678,26 @@ export default function WorkPage() {
                       {/* Q1 */}
                       <div>
                         <MarkerQuestion accent="#2563eb" emoji="🗣️">How many real conversations count?</MarkerQuestion>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                          {[
+                        {(() => {
+                          const OPTS = [
                             { v: '3',   emoji: '🤏', vibe: 'Gut check' },
                             { v: '5',   emoji: '🖐️', vibe: 'Early signal' },
                             { v: '7',   emoji: '🎯', vibe: 'Lucky 7' },
                             { v: '10',  emoji: '💪', vibe: 'Solid proof' },
                             { v: '15+', emoji: '🚀', vibe: 'All in' },
-                          ].map(({ v, emoji, vibe }) => (
-                            <GoalChip key={v} active={convos === v} accent="#2563eb" onClick={() => { set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); }}>
-                              {emoji} {v} — {vibe}
-                            </GoalChip>
-                          ))}
+                          ];
+                          const byV = new Map(OPTS.map(o => [o.v, o]));
+                          return (
+                            <JengaTower
+                              items={OPTS.map(o => o.v)}
+                              color="#2563eb"
+                              labelOf={v => { const o = byV.get(v)!; return `${o.emoji} ${o.v} — ${o.vibe}`; }}
+                              isSelected={v => convos === v}
+                              onToggle={v => { set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); }}
+                            />
+                          );
+                        })()}
+                        <div style={{ marginTop: 8 }}>
                           <GoalCustomInput
                             accent="#2563eb"
                             placeholder="or type your own…"
@@ -14647,17 +14710,25 @@ export default function WorkPage() {
                       {/* Q2 */}
                       <div>
                         <MarkerQuestion accent="#f59e0b" emoji="🎯">What % must feel the pain for it to be real?</MarkerQuestion>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                          {[
+                        {(() => {
+                          const OPTS = [
                             { v: '50',  emoji: '🤷', vibe: 'Half' },
                             { v: '60',  emoji: '🙌', vibe: 'Most' },
                             { v: '80',  emoji: '🔥', vibe: 'Strong' },
                             { v: '100', emoji: '💯', vibe: 'All of em' },
-                          ].map(({ v, emoji, vibe }) => (
-                            <GoalChip key={v} active={rate === v} accent="#d97706" onClick={() => { set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); }}>
-                              {emoji} {rateOpts.find(o => o.v === v)?.label} — {vibe}
-                            </GoalChip>
-                          ))}
+                          ];
+                          const byV = new Map(OPTS.map(o => [o.v, o]));
+                          return (
+                            <JengaTower
+                              items={OPTS.map(o => o.v)}
+                              color="#d97706"
+                              labelOf={v => { const o = byV.get(v)!; return `${o.emoji} ${rateOpts.find(ro => ro.v === v)?.label} — ${o.vibe}`; }}
+                              isSelected={v => rate === v}
+                              onToggle={v => { set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); }}
+                            />
+                          );
+                        })()}
+                        <div style={{ marginTop: 8 }}>
                           <GoalCustomInput
                             accent="#d97706"
                             placeholder="or type your own %…"
@@ -14670,18 +14741,26 @@ export default function WorkPage() {
                       {/* Q3 */}
                       <div>
                         <MarkerQuestion accent="#10b981" emoji="🔑">What's your proof this problem truly exists?</MarkerQuestion>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                          {[
+                        {(() => {
+                          const OPTS = [
                             { v: 'none',     emoji: '🤝' },
                             { v: 'verbal-1', emoji: '🗣️' },
                             { v: 'verbal-2', emoji: '💬' },
                             { v: 'preorder', emoji: '💳' },
                             { v: 'loi',      emoji: '📝' },
-                          ].map(({ v, emoji }) => (
-                            <GoalChip key={v} active={signal === v} accent="#059669" onClick={() => { set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); }}>
-                              {emoji} {signalOpts.find(o => o.v === v)?.label}
-                            </GoalChip>
-                          ))}
+                          ];
+                          return (
+                            <JengaTower
+                              items={OPTS.map(o => o.v)}
+                              color="#059669"
+                              iconOf={v => OPTS.find(o => o.v === v)?.emoji}
+                              labelOf={v => signalOpts.find(o => o.v === v)?.label}
+                              isSelected={v => signal === v}
+                              onToggle={v => { set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); }}
+                            />
+                          );
+                        })()}
+                        <div style={{ marginTop: 8 }}>
                           <GoalCustomInput
                             accent="#059669"
                             placeholder="or describe your own proof…"
@@ -14694,17 +14773,25 @@ export default function WorkPage() {
                       {/* Q4 */}
                       <div>
                         <MarkerQuestion accent="#8b5cf6" emoji="🔍">Can you picture your customer right now?</MarkerQuestion>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                          {[
+                        {(() => {
+                          const OPTS = [
                             { val: '1', emoji: '🌊', vibe: 'Anyone in pain' },
                             { val: '2', emoji: '👥', vibe: 'A role or function' },
                             { val: '3', emoji: '🏢', vibe: 'A company type' },
                             { val: '4', emoji: '🎯', vibe: 'Named people' },
-                          ].map(({ val, emoji, vibe }) => (
-                            <GoalChip key={val} active={icpOn === val} accent="#7c3aed" onClick={() => { set('valGoalICP', val); writeSuccess(convos, rate, signal, val, time); }}>
-                              {emoji} {vibe}
-                            </GoalChip>
-                          ))}
+                          ];
+                          const byV = new Map(OPTS.map(o => [o.val, o]));
+                          return (
+                            <JengaTower
+                              items={OPTS.map(o => o.val)}
+                              color="#7c3aed"
+                              labelOf={v => { const o = byV.get(v)!; return `${o.emoji} ${o.vibe}`; }}
+                              isSelected={v => icpOn === v}
+                              onToggle={v => { set('valGoalICP', v); writeSuccess(convos, rate, signal, v, time); }}
+                            />
+                          );
+                        })()}
+                        <div style={{ marginTop: 8 }}>
                           <GoalCustomInput
                             accent="#7c3aed"
                             placeholder="or describe your customer…"
@@ -14717,17 +14804,25 @@ export default function WorkPage() {
                       {/* Q5 */}
                       <div>
                         <MarkerQuestion accent="#ef4444" emoji="⏱️">When will you stop validating and decide?</MarkerQuestion>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                          {[
+                        {(() => {
+                          const OPTS = [
                             { v: '1w',   emoji: '⚡' },
                             { v: '2w',   emoji: '🏃' },
                             { v: '1m',   emoji: '📅' },
                             { v: 'open', emoji: '♾️' },
-                          ].map(({ v, emoji }) => (
-                            <GoalChip key={v} active={time === v} accent="#dc2626" onClick={() => { set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); }}>
-                              {emoji} {timeOpts.find(o => o.v === v)?.label}
-                            </GoalChip>
-                          ))}
+                          ];
+                          return (
+                            <JengaTower
+                              items={OPTS.map(o => o.v)}
+                              color="#dc2626"
+                              iconOf={v => OPTS.find(o => o.v === v)?.emoji}
+                              labelOf={v => timeOpts.find(o => o.v === v)?.label}
+                              isSelected={v => time === v}
+                              onToggle={v => { set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); }}
+                            />
+                          );
+                        })()}
+                        <div style={{ marginTop: 8 }}>
                           <GoalCustomInput
                             accent="#dc2626"
                             placeholder="or type your own timeframe…"
@@ -14811,7 +14906,6 @@ export default function WorkPage() {
                       : [...ranked, chip];
                     set('valGoalProve', next.map((c: string, i: number) => `#${i + 1}: ${c}`).join('\n'));
                   };
-                  const rot = [-2, 1.5, -1, 1, -1.5];
                   return (
                     <div>
                       <div style={{ marginBottom: 12 }}>
@@ -14826,27 +14920,13 @@ export default function WorkPage() {
                         <span style={{ fontSize: 16, marginLeft: 6 }}>🎯</span>
                         <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 3 }}>Tap in order of priority — first tap = #1.</div>
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
-                        {PROVE_CHIPS.map((chip, ci) => {
-                          const rank = ranked.indexOf(chip);
-                          const isOn = rank !== -1;
-                          return (
-                            <div key={chip} onClick={() => toggleChip(chip)}
-                              style={{
-                                padding: '9px 12px', cursor: 'pointer',
-                                background: isOn ? '#bbf7d0' : '#fef9c3',
-                                borderRadius: 4, boxShadow: '0 3px 8px rgba(0,0,0,0.14)',
-                                transform: `rotate(${rot[ci]}deg)`,
-                                fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
-                                fontSize: 16, fontWeight: 700, lineHeight: 1.25,
-                                color: isOn ? '#15803d' : '#78350f',
-                                maxWidth: 150,
-                              }}>
-                              {isOn ? `★${rank + 1} ` : ''}{chip}
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <JengaTower
+                        items={PROVE_CHIPS}
+                        color="#6366f1"
+                        isSelected={chip => ranked.includes(chip)}
+                        onToggle={toggleChip}
+                        rankOf={chip => { const r = ranked.indexOf(chip); return r === -1 ? null : r + 1; }}
+                      />
                       {ranked.length > 0 && (
                         <div style={{ marginTop: 10, fontSize: 11, color: T3 }}>
                           Priority: {ranked.map((c, i) => `#${i + 1} ${c}`).join(' · ')}
@@ -14872,7 +14952,6 @@ export default function WorkPage() {
                       : [...accepted, rule];
                     set('valGoalStop', next.join('\n'));
                   };
-                  const rot = [1.5, -1, 1, -1.5];
                   return (
                     <div>
                       <div style={{ marginBottom: 12 }}>
@@ -14887,26 +14966,12 @@ export default function WorkPage() {
                         <span style={{ fontSize: 16, marginLeft: 6 }}>🛑</span>
                         <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 3 }}>Tap to accept the rules that apply to you.</div>
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
-                        {STOP_RULES.map((rule, ri) => {
-                          const isOn = accepted.includes(rule);
-                          return (
-                            <div key={rule} onClick={() => toggleRule(rule)}
-                              style={{
-                                padding: '9px 12px', cursor: 'pointer',
-                                background: isOn ? '#bbf7d0' : '#fef9c3',
-                                borderRadius: 4, boxShadow: '0 3px 8px rgba(0,0,0,0.14)',
-                                transform: `rotate(${rot[ri]}deg)`,
-                                fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
-                                fontSize: 15, fontWeight: 700, lineHeight: 1.25,
-                                color: isOn ? '#15803d' : '#78350f',
-                                maxWidth: 165,
-                              }}>
-                              {isOn ? '⚠ ' : ''}{rule}
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <JengaTower
+                        items={STOP_RULES}
+                        color="#ef4444"
+                        isSelected={rule => accepted.includes(rule)}
+                        onToggle={toggleRule}
+                      />
                     </div>
                   );
                 })()}
@@ -15046,7 +15111,7 @@ export default function WorkPage() {
                 'Researchers or observers who study the problem but do not live it',
               ],
             },
-          ] as { key: 'icpJobs' | 'icpFrustrations' | 'icpAlternatives'; label: string; sub: string; chips: string[]; layout?: 'grid' }[]).map(({ key, label, sub, chips, layout }) => {
+          ] as { key: 'icpJobs' | 'icpFrustrations' | 'icpAlternatives'; label: string; sub: string; chips: string[]; layout?: 'grid' }[]).map(({ key, label, sub, chips }) => {
             const raw = get(key) || '';
             const selected: string[] = raw ? raw.split('|||').filter(Boolean) : [];
             const toggle = (chip: string) => {
@@ -15078,40 +15143,13 @@ export default function WorkPage() {
                     <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 15, fontStyle: 'italic', color: '#7a7a7a', marginTop: 4 }}>{sub}</div>
                   </div>
                 </div>
-                <div style={
-                  layout === 'grid'
-                    ? { display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: selected.length ? 8 : 0 }
-                    : { display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: selected.length ? 8 : 0 }
-                }>
-                  {chips.map((chip, ci) => {
-                    const on = selected.includes(chip);
-                    const w = WOBBLE_VARIANTS[ci % 4];
-                    return (
-                      <button key={chip} type="button" onClick={() => toggle(chip)}
-                        style={{
-                          padding: '8px 14px',
-                          fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
-                          fontSize: 17,
-                          fontWeight: on ? 700 : 600,
-                          cursor: 'pointer',
-                          border: `${on ? 2.5 : 2}px solid ${on ? qc.accent : '#d8d8d8'}`,
-                          background: on ? qc.selectedBg : '#fffdf8',
-                          color: on ? qc.selectedText : '#555',
-                          textAlign: 'left' as const,
-                          transition: 'all .15s',
-                          borderRadius: w.borderRadius,
-                          transform: `rotate(${w.rotate}deg)`,
-                          boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
-                          ...(layout === 'grid' ? {
-                            width: '100%', boxSizing: 'border-box' as const,
-                            minHeight: 58, lineHeight: 1.3,
-                            display: 'flex', alignItems: 'center',
-                          } : {}),
-                        }}>
-                        {chip}
-                      </button>
-                    );
-                  })}
+                <div style={{ marginBottom: selected.length ? 8 : 0 }}>
+                  <JengaTower
+                    items={chips}
+                    color={qc.accent}
+                    isSelected={chip => selected.includes(chip)}
+                    onToggle={toggle}
+                  />
                 </div>
                 {selected.length > 0 && (
                   <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#7a7a7a', marginBottom: 6 }}>
