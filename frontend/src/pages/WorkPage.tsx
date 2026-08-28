@@ -1198,14 +1198,19 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
   );
 }
 
-function CompleteBadge({ mod, onContinue }: { mod: Mod; onContinue: () => void }) {
+function CompleteBadge({ mod, onContinue, onBack }: { mod: Mod; onContinue: () => void; onBack?: () => void }) {
   const c = STAGE_COLORS[mod];
   return (
     <div style={{ textAlign: 'center', padding: '52px 0' }}>
       <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
       <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.5, marginBottom: 8, fontFamily: 'Georgia, serif', color: T1 }}>{META[mod].label} complete!</div>
       <div style={{ fontSize: 15, color: '#3a3a3c', marginBottom: 32, lineHeight: 1.6 }}>Move to the next stage when you're ready.</div>
-      <button onClick={onContinue} style={{ background: c, color: '#fff', border: 'none', borderRadius: 999, padding: '14px 36px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>Continue →</button>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+        {onBack && (
+          <button onClick={onBack} style={{ background: '#fff', color: '#555', border: '1.5px solid #e0e0e0', borderRadius: 999, padding: '14px 28px', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>← Back</button>
+        )}
+        <button onClick={onContinue} style={{ background: c, color: '#fff', border: 'none', borderRadius: 999, padding: '14px 36px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>Continue →</button>
+      </div>
     </div>
   );
 }
@@ -4246,6 +4251,11 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
       .filter(cat => byCat.has(cat))
       .map(cat => ({ category: PROBLEM_CATEGORY_META[cat].label, color: PROBLEM_CATEGORY_META[cat].color, items: byCat.get(cat)! }));
   }, [genGroups]);
+  // True only while the picker itself is showing its "Sage is thinking" loading
+  // state (no chips on screen yet) -- NOT true during a background "ask Sage
+  // again" regeneration where the old chips are still shown, so the selected/
+  // summary sections below don't flicker away for no visible reason.
+  const pickerLoading = genState.loading && displayGroups.length === 0;
 
   const toggleSuggestion = (text: string) => {
     const already = problems.findIndex(p => p.text.trim() === text);
@@ -4448,7 +4458,10 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
       <div style={{ height: 1, background: '#e8e8e8' }} />
 
       {/* ── Selected problems list with severity — whiteboard sticky-note style ── */}
-      {filled.length > 0 && (
+      {/* Held back while Sage is still generating fresh chips above, so a
+          confident-looking "captured" list doesn't sit next to a loading
+          indicator that's still saying it's reading the idea. */}
+      {filled.length > 0 && !pickerLoading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#aaa', letterSpacing: '.1em', textTransform: 'uppercase' as const }}>
             Selected · how severe?
@@ -4571,7 +4584,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
       )}
 
       {/* ── Summary — handwritten postcard style ── */}
-      {filled.length > 0 && (
+      {filled.length > 0 && !pickerLoading && (
         <div style={{ ...postcardStyle(-1), padding: '12px 16px', fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 17, fontWeight: 700, color: '#166534' }}>
           <PostcardStamp />
           ✓ {filled.length} problem{filled.length > 1 ? 's' : ''} captured
@@ -5639,6 +5652,11 @@ function AlternativeRankingStep({
       .filter(g => ALT_CATEGORY_LABELS[g.category])
       .map(g => ({ category: ALT_CATEGORY_LABELS[g.category], items: g.items }));
   }, [genGroups]);
+  // True only while the picker itself is showing its "Sage is thinking" loading
+  // state (no chips on screen yet) -- NOT true during a background "ask Sage
+  // again" regeneration where the old chips are still shown, so the ranked
+  // list/hypothesis card below doesn't flicker away for no visible reason.
+  const pickerLoading = genState.loading && displayGroups.length === 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -5744,7 +5762,12 @@ function AlternativeRankingStep({
       )}
 
       {/* ── Selected + ranked list — whiteboard style ── */}
-      {items.length > 0 && (
+      {/* Held back while Sage is still generating fresh suggestions above: even
+          though this list is the founder's own prior picks (not AI output), showing
+          a confident "Your hypothesis: ..." card while the loading indicator above
+          still says "reading your problem..." reads as a contradiction. It reappears
+          the instant loading finishes. */}
+      {items.length > 0 && !pickerLoading && (
         <div style={{ background: '#fafafa', border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '14px 16px' }}>
           <div style={{ display: 'inline-block', marginBottom: 3 }}>
             <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 14, fontWeight: 900, letterSpacing: -0.2, color: c }}>
@@ -13720,7 +13743,7 @@ export default function WorkPage() {
       <SparkBuilder value={get('spark')} onChange={v => set('spark', v)} />
       <NavRow onBack={back} onNext={async () => { await save('idea', { spark: get('spark') }); unlock('hone'); mark('idea'); next(); }} nextLabel="Complete Idea →" disabled={!get('spark').trim()} disabledReason="Share what's motivating you before moving on." stageColor={STAGE_COLORS.idea} stepTitle="What's motivating you to build this?" ideaId={activeIdea.id} />
     </div>,
-    <CompleteBadge key="i-done" mod="idea" onContinue={() => goMod('hone')} />,
+    <CompleteBadge key="i-done" mod="idea" onContinue={() => goMod('hone')} onBack={back} />,
   ];
 
   const honeSteps: JSX.Element[] = [stageIntro('hone'),
@@ -13992,7 +14015,7 @@ export default function WorkPage() {
       })()}
       <NavRow onBack={back} onNext={async () => { unlock('validate'); unlock('shape'); mark('hone'); next(); }} nextLabel="Continue →" disabled={!parseMarketSnapshot(get('marketSnapshot'))} disabledReason="Waiting on Sage's Market Snapshot (domain, TAM/SAM, competitors) — it unlocks automatically once that finishes generating." stageColor={STAGE_COLORS.hone} stepTitle="Where does your idea stand in the market?" ideaId={activeIdea.id} />
     </div>,
-    <CompleteBadge key="h-done" mod="hone" onContinue={() => goMod('validate')} />,
+    <CompleteBadge key="h-done" mod="hone" onContinue={() => goMod('validate')} onBack={back} />,
   ];
 
 
@@ -17377,7 +17400,7 @@ export default function WorkPage() {
       {showAvail && <AvailabilityModal accentColor={STAGE_COLORS.validate} onClose={() => setShowAvail(false)} />}
     </div>,
 
-    <CompleteBadge key="v-done" mod="validate" onContinue={() => goMod('shape')} />,
+    <CompleteBadge key="v-done" mod="validate" onContinue={() => goMod('shape')} onBack={back} />,
   ];
 
   const shapeSteps: JSX.Element[] = [stageIntro('shape'),
@@ -18357,7 +18380,7 @@ export default function WorkPage() {
       <NavRow onBack={back} onNext={async () => { await save('shape', { buildBacklog: get('buildBacklog') }); unlock('done'); mark('shape'); next(); }} nextLabel="Save shape →" disabled={(() => { try { return JSON.parse(get('buildBacklog') || '[]').length === 0; } catch { return true; } })()} disabledReason="Add at least one backlog item before saving." ideaId={activeIdea.id} />
     </div>,
 
-    <CompleteBadge key="s-done" mod="shape" onContinue={() => goMod('done')} />,
+    <CompleteBadge key="s-done" mod="shape" onContinue={() => goMod('done')} onBack={back} />,
   ];
 
   const doneSteps: JSX.Element[] = [stageIntro('done'),
