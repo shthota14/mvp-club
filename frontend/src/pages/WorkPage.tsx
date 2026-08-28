@@ -3690,69 +3690,84 @@ const AssumptionsStep = React.forwardRef<AssumptionsHandle, {
 
         <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-          {/* Assumption cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {asms2.map((a, idx) => {
-              const v = verdicts[idx];
-              const bucket: 'none' | 'confirmed' | 'busted' | 'mixed' = v?.verdict || 'none';
-              const badge = ASM_VERDICT_STYLE[bucket];
-              const isBusted = bucket === 'busted';
-              const topQuotes = v ? [...v.positive, ...v.negative].slice(0, 3) : [];
-              return (
-              <div key={a.id} style={{
-                border: `1.5px solid ${BORDER}`,
-                borderLeft: `4px solid ${bucket === 'none' ? '#cbd5e1' : badge.color}`,
-                borderRadius: 12, overflow: 'hidden', background: '#fff',
-                opacity: isBusted ? 0.7 : 1,
-                transition: 'opacity .15s, border-color .15s',
-              }}>
-                <div style={{ padding: '12px 16px 8px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <div style={{ flex: 1 }}>
+          {/* Assumption cards — sticky-notes wall: each note's pastel
+              background is tied to its verdict bucket (reusing
+              ASM_VERDICT_STYLE's own bg color, so the color itself is
+              never the only signal — the badge/icon still carries the
+              same meaning), with a slight hand-placed rotation instead of
+              a plain stacked list. Larger, higher-contrast text than a
+              typical sticky note for legibility at a glance. */}
+          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 14 }}>
+            {(() => {
+              const rotations = [-2, 1.5, -1, 2];
+              return asms2.map((a, idx) => {
+                const v = verdicts[idx];
+                const bucket: 'none' | 'confirmed' | 'busted' | 'mixed' = v?.verdict || 'none';
+                const badge = ASM_VERDICT_STYLE[bucket];
+                const isBusted = bucket === 'busted';
+                const topQuotes = v ? [...v.positive, ...v.negative].slice(0, 3) : [];
+                return (
+                <div key={a.id} style={{
+                  flex: '1 1 240px', minWidth: 220, maxWidth: 320,
+                  background: badge.bg, borderRadius: 4, padding: '14px 16px 12px',
+                  boxShadow: '0 3px 8px rgba(0,0,0,.12)',
+                  transform: `rotate(${rotations[idx % rotations.length]}deg)`,
+                  opacity: isBusted ? 0.75 : 1,
+                  transition: 'opacity .15s, transform .15s',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                     <div style={{
+                      flex: 1,
                       fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
-                      fontSize: 18, fontWeight: 700, color: isBusted ? '#94a3b8' : '#1e293b',
-                      lineHeight: 1.3,
+                      fontSize: 20, fontWeight: 700, color: isBusted ? '#78716c' : '#1c1917',
+                      lineHeight: 1.35,
                       textDecoration: isBusted ? 'line-through' : 'none',
                     }}>{a.text}</div>
+                    {/* Remove-assumption control. Deliberately NOT the '✕' glyph —
+                        that's the Busted verdict icon (see ASM_VERDICT_STYLE
+                        above), and a delete button sitting right above a "No
+                        evidence yet" badge would visually read as if the
+                        assumption were already busted before any interview
+                        evidence existed. 🗑️ keeps "remove this card" clearly
+                        distinct from "here's the evidence verdict." Darkened
+                        from the original #ccc so it stays visible against the
+                        tinted note background. */}
+                    <button type="button" title="Remove this assumption" aria-label="Remove this assumption" onClick={() => saveAsms2(asms2.filter(x => x.id !== a.id))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#78716c', padding: '2px 4px', flexShrink: 0, lineHeight: 1, opacity: 0.7 }}>🗑️</button>
                   </div>
-                  {/* Remove-assumption control. Deliberately NOT the '✕' glyph —
-                      that's the Busted verdict icon (see ASM_VERDICT_STYLE
-                      above), and a delete button sitting right above a "No
-                      evidence yet" badge would visually read as if the
-                      assumption were already busted before any interview
-                      evidence existed. 🗑️ keeps "remove this card" clearly
-                      distinct from "here's the evidence verdict." */}
-                  <button type="button" title="Remove this assumption" aria-label="Remove this assumption" onClick={() => saveAsms2(asms2.filter(x => x.id !== a.id))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#ccc', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>🗑️</button>
+                  <div style={{ marginTop: 8 }}>
+                    {/* No badge at all while bucket === 'none' — a "No evidence
+                        yet" pill reads as a status the founder has to notice
+                        and dismiss for every assumption, on every card, before
+                        a single interview happens. Silence says the same thing
+                        with less noise; the italic placeholder below already
+                        covers it once there really are zero quotes. Badge sits
+                        on a solid white pill (rather than repeating badge.bg,
+                        which is now the note's own background) so it still
+                        reads clearly against the tinted note. */}
+                    {bucket !== 'none' && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 20, fontSize: 11.5, fontWeight: 700, background: '#fff', color: badge.color }}>
+                        {badge.icon} {badge.label}
+                      </span>
+                    )}
+                    {topQuotes.length > 0 ? (
+                      <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {topQuotes.map((q, qi) => (
+                          <div key={qi} style={{ fontSize: 11.5, fontStyle: 'italic', color: '#44403c', paddingLeft: 10, borderLeft: '2px solid rgba(0,0,0,.15)', lineHeight: 1.45 }}>
+                            "{q.quote}" — {q.intervieweeName}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: 6, fontSize: 10.5, color: '#78716c', fontStyle: 'italic' }}>
+                        Updates automatically once your interviews are analyzed.
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div style={{ padding: '0 16px 12px' }}>
-                  {/* No badge at all while bucket === 'none' — a "No evidence
-                      yet" pill reads as a status the founder has to notice
-                      and dismiss for every assumption, on every card, before
-                      a single interview happens. Silence says the same thing
-                      with less noise; the italic placeholder below already
-                      covers it once there really are zero quotes. */}
-                  {bucket !== 'none' && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 20, fontSize: 11.5, fontWeight: 700, background: badge.bg, color: badge.color }}>
-                      {badge.icon} {badge.label}
-                    </span>
-                  )}
-                  {topQuotes.length > 0 ? (
-                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {topQuotes.map((q, qi) => (
-                        <div key={qi} style={{ fontSize: 11, fontStyle: 'italic', color: T3, paddingLeft: 10, borderLeft: `2px solid ${BORDER}`, lineHeight: 1.4 }}>
-                          "{q.quote}" — {q.intervieweeName}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ marginTop: 6, fontSize: 10.5, color: '#cbd5e1', fontStyle: 'italic' }}>
-                      Updates automatically once your interviews are analyzed.
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                );
+              });
+            })()}
+          </div>
 
             {/* Add custom — inline form */}
             {!asmOpen ? (
@@ -3780,7 +3795,6 @@ const AssumptionsStep = React.forwardRef<AssumptionsHandle, {
                 </div>
               </div>
             )}
-          </div>
 
           {/* Summary */}
           {asms2.length > 0 && (() => {
@@ -7654,18 +7668,16 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
           );
         })()}
 
-        {/* ── Part 2: Two lanes by match-quality — likely-fits-ICP vs. broad reach ── */}
+        {/* ── Part 2: Two lanes by match-quality — likely-fits-ICP vs. broad reach ──
+            Sticky-note treatment: "Ask a friend to vouch" (ICP-quality intros) and
+            "Or shout it from the rooftops" (broad reach) sit side by side as two
+            hand-placed notes instead of a plain stacked list. Same real actions,
+            hrefs and handlers as before — only the container styling changed. ── */}
         <div>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
-            <div style={{ display: 'inline-block' }}>
-              <span style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.4, lineHeight: 1.2 }}>
-                Not enough names yet? Try these
-              </span>
-              <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3, maxWidth: 330 }}>
-                <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke={VC} strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-              <span style={{ fontSize: 17, marginLeft: 8, verticalAlign: 'middle' }}>🌐</span>
-            </div>
+            <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#0f172a' }}>
+              📋 Not enough names yet?
+            </span>
             <button
               onClick={() => { setShowAdd(true); setSelectedId(null); setAddAgreed(true); }}
               title="Add someone who's already agreed to be interviewed"
@@ -7696,29 +7708,35 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
             />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 16, alignItems: 'flex-start' }}>
 
-            {/* ── Lane 1: Likely fits your ICP — someone you know vouches for them ── */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 7 }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase' as const, letterSpacing: 0.4 }}>Likely fits your ICP</span>
-                <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>— someone you know vouches for them</span>
+            {/* ── Sticky note 1: Likely fits your ICP — someone you know vouches for them ── */}
+            <div style={{
+              background: '#fef9c3', borderRadius: 4, padding: '14px 16px 16px', flex: '0 0 auto', minWidth: 200,
+              boxShadow: '0 4px 10px rgba(0,0,0,.14)', transform: 'rotate(-1.4deg)',
+            }}>
+              <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: '#78350f', marginBottom: 2 }}>
+                Ask a friend to vouch
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
-
-                {/* Seek community help */}
-                <button onClick={() => !postedChallenge && setShowChallengeModal(true)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 20, background: postedChallenge ? '#ecfdf5' : '#fff', color: postedChallenge ? '#059669' : '#0f172a', border: `1.5px solid ${postedChallenge ? '#059669' : `${VC}55`}`, fontSize: 12, fontWeight: 700, cursor: postedChallenge ? 'default' : 'pointer', fontFamily: 'inherit' }}>
-                  {postedChallenge ? '✓ Posted to community' : '✦ Seek community help'}
-                </button>
+              <div style={{ fontSize: 10.5, color: '#92400e', fontWeight: 600, marginBottom: 10 }}>
+                Likely fits your ICP
               </div>
+              <button onClick={() => !postedChallenge && setShowChallengeModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 20, background: postedChallenge ? '#ecfdf5' : '#fffbeb', color: postedChallenge ? '#059669' : '#78350f', border: `1.5px solid ${postedChallenge ? '#059669' : '#d97706'}`, fontSize: 12, fontWeight: 700, cursor: postedChallenge ? 'default' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
+                {postedChallenge ? '✓ Posted to community' : '✦ Seek community help'}
+              </button>
             </div>
 
-            {/* ── Lane 2: Broad reach — anyone can respond, screen after ── */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 7 }}>
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#0f172a', textTransform: 'uppercase' as const, letterSpacing: 0.4 }}>Broad reach</span>
-                <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>— anyone can respond — screen after</span>
+            {/* ── Sticky note 2: Broad reach — anyone can respond, screen after ── */}
+            <div style={{
+              background: '#dbeafe', borderRadius: 4, padding: '14px 16px 16px', flex: '1 1 280px', minWidth: 260,
+              boxShadow: '0 4px 10px rgba(0,0,0,.14)', transform: 'rotate(0.8deg)',
+            }}>
+              <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: '#1e3a8a', marginBottom: 2 }}>
+                Or shout it from the rooftops
+              </div>
+              <div style={{ fontSize: 10.5, color: '#1d4ed8', fontWeight: 600, marginBottom: 10 }}>
+                Broad reach — anyone can respond — screen after
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
 
@@ -15311,7 +15329,6 @@ export default function WorkPage() {
           </div>
 
           {renderAvailabilityButton()}
-          {renderInterviewStatusPanel()}
 
           {/* ── People outreach sub-workflow ── */}
           <OutreachTracker
