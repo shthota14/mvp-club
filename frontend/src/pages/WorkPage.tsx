@@ -16060,6 +16060,41 @@ export default function WorkPage() {
         );
       })()}
 
+      {/* ── Goal-vs-logged progress + a clear next action once you've run out
+          of people to log. Without this, a founder who planned to talk to
+          (say) 20 people but has only logged the 3 they actually had
+          contacts for hits an empty screen with no obvious next step — this
+          makes the shortfall visible the moment they land back here after
+          saving an interview, and gives them one click straight to "Add
+          your contacts" instead of hunting for it. Hidden once the goal is
+          met, since the nudge stops being useful at that point. ── */}
+      {(() => {
+        const goal = Math.max(parseInt(get('valGoalConvos') || '0') || 0, 3);
+        const done = interviews.length;
+        const remaining = Math.max(goal - done, 0);
+        if (remaining === 0) return null;
+        const pct = Math.min(100, Math.round((done / goal) * 100));
+        return (
+          <div style={{ background: '#eff6ff', border: '2px solid #93c5fd', borderRadius: 12, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' as const }}>
+            <div style={{ flex: 1, minWidth: 180 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 12, fontWeight: 800, color: '#1e3a8a', marginBottom: 6 }}>
+                <span>{done} of {goal} conversations logged</span>
+                <span>{remaining} more to go</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 999, background: '#dbeafe', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: '#2563eb', borderRadius: 999, transition: 'width .3s ease' }} />
+              </div>
+            </div>
+            <button
+              onClick={() => setStep(VALIDATE_FIND_PEOPLE_STEP)}
+              style={{ flexShrink: 0, padding: '10px 16px', borderRadius: 9, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}
+            >
+              + Find more people to talk to →
+            </button>
+          </div>
+        );
+      })()}
+
       {/* ── Mixed-verdict loop: sent back here for another round ── */}
       {get('validationSignal') === 'Partially — needs refining' && (() => {
         const target = parseInt(get('valGoalConvos') || '0') || 0;
