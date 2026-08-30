@@ -60,6 +60,7 @@ export default function AuthModal({ mode, onClose }: Props) {
   const [ideaDesc, setIdeaDesc] = useState('');
   const [selectedStage, setSelectedStage] = useState<Stage>('idea');
   const [userRole, setUserRole] = useState('');
+  const [hoveredRole, setHoveredRole] = useState('');
   const [communityOpt, setCommunityOpt] = useState<boolean | null>(null);
   const [helpTypes, setHelpTypes] = useState<string[]>([]);
 
@@ -241,20 +242,29 @@ export default function AuthModal({ mode, onClose }: Props) {
               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: .5, color: '#6e6e73', marginBottom: 8 }}>
                 I am a… <span style={{ fontWeight: 400, color: '#b0b0b8' }}>(pick one)</span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {ROLE_OPTIONS.map(r => {
                   const sel = userRole === r.key;
+                  const hov = hoveredRole === r.key;
                   return (
-                    <div key={r.key} onClick={() => setUserRole(sel ? '' : r.key)} style={{
-                      padding: '10px 11px', borderRadius: 12, cursor: 'pointer',
-                      border: `1.5px solid ${sel ? '#6366f1' : '#e5e7eb'}`,
-                      background: sel ? '#eef2ff' : '#fafafa',
-                      transition: 'all .12s', display: 'flex', alignItems: 'center', gap: 8,
-                    }}>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{r.emoji}</span>
-                      <div>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: sel ? '#4f46e5' : '#1d1d1f', lineHeight: 1.2 }}>{r.label}</div>
-                        <div style={{ fontSize: 10, color: '#b0b0b8', marginTop: 2, lineHeight: 1.3 }}>{r.desc}</div>
+                    <div key={r.key}
+                      onClick={() => setUserRole(sel ? '' : r.key)}
+                      onMouseEnter={() => setHoveredRole(r.key)}
+                      onMouseLeave={() => setHoveredRole(h => h === r.key ? '' : h)}
+                      style={{
+                        padding: 12, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        background: sel ? '#eef2ff' : '#fff',
+                        border: `2.5px solid ${sel ? '#6366f1' : hov ? '#374151' : '#1f2937'}`,
+                        borderRadius: sel
+                          ? '15px 225px 15px 255px/225px 15px 255px 15px'
+                          : '255px 15px 225px 15px/15px 225px 15px 255px',
+                        transition: 'all .15s ease',
+                      }}>
+                      <span style={{ fontSize: 28, flexShrink: 0, lineHeight: 1 }}>{r.emoji}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 20, fontWeight: 700, lineHeight: 1.15, color: '#1d1d1f' }}>{r.label}</div>
+                        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>{r.desc}</div>
                       </div>
                     </div>
                   );
