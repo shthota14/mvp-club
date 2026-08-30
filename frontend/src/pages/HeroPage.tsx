@@ -197,6 +197,17 @@ export default function HeroPage() {
               Sign in
             </button>
           </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 22 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              fontSize: 13, fontWeight: 700, padding: '8px 18px', borderRadius: 999,
+              background: 'rgba(52,211,153,.12)', border: '1.5px solid rgba(52,211,153,.35)',
+              color: '#34d399',
+            }}>
+              ✓ Free forever — no credit card, ever
+            </span>
+          </div>
         </div>
 
         {/* Wave visual */}
