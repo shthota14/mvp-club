@@ -34,6 +34,12 @@ const ROLE_OPTIONS = [
   { key: 'mentor',         emoji: '🤝', label: 'Mentor / Advisor',     desc: "I've been there, happy to help" },
 ];
 
+// Roles whose own description implies they're actively building
+// something of their own (vs. backing, advising, or helping others'
+// ideas) — used to decide whether the post-signup "idea" step defaults
+// to asking for an idea name or skips straight past it.
+const FOUNDER_ROLES = new Set(['first-founder', 'serial', 'student']);
+
 const HELP_OPTIONS = [
   { key: 'feedback', label: '💬 Idea feedback' },
   { key: 'accountability', label: '🔁 Accountability' },
@@ -61,6 +67,7 @@ export default function AuthModal({ mode, onClose }: Props) {
   const [selectedStage, setSelectedStage] = useState<Stage>('idea');
   const [userRole, setUserRole] = useState('');
   const [hoveredRole, setHoveredRole] = useState('');
+  const [ideaOverride, setIdeaOverride] = useState<boolean | null>(null); // null = follow role default
   const [communityOpt, setCommunityOpt] = useState<boolean | null>(null);
   const [helpTypes, setHelpTypes] = useState<string[]>([]);
 
@@ -291,24 +298,52 @@ export default function AuthModal({ mode, onClose }: Props) {
         )}
 
         {/* IDEA */}
-        {step === 'idea' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ textAlign: 'center', marginBottom: 8 }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🌱</div>
-              <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -.6, color: '#fff' }}>One more thing.</h2>
-              <p style={{ fontSize: 14, color: 'rgba(255,255,255,.5)', marginTop: 6 }}>Tell us about your idea so we can give you the right first step.</p>
+        {step === 'idea' && (() => {
+          const roleDefault = !userRole || FOUNDER_ROLES.has(userRole);
+          const showIdeaFields = ideaOverride !== null ? ideaOverride : roleDefault;
+          const roleLabel = ROLE_OPTIONS.find(r => r.key === userRole)?.label;
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {showIdeaFields ? (
+                <>
+                  <div style={{ textAlign: 'center', marginBottom: 8 }}>
+                    <div style={{ fontSize: 48, marginBottom: 12 }}>🌱</div>
+                    <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -.6, color: '#fff' }}>One more thing.</h2>
+                    <p style={{ fontSize: 14, color: 'rgba(255,255,255,.5)', marginTop: 6 }}>Tell us about your idea so we can give you the right first step.</p>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: 'rgba(255,255,255,.3)', marginBottom: 7 }}>🏷️ Give your idea a name</div>
+                    <input style={inp(true)} placeholder="e.g. Project Phoenix, FounderOS" value={ideaName} onChange={e => setIdeaName(e.target.value)} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: 'rgba(255,255,255,.3)', marginBottom: 7 }}>💡 What is it? (one line)</div>
+                    <input style={inp(true)} placeholder="e.g. Helping founders ship faster with less overwhelm" value={ideaDesc} onChange={e => setIdeaDesc(e.target.value)} />
+                  </div>
+                  <button style={{ ...primaryBtn(true), background: 'linear-gradient(135deg,#6366f1,#0066cc)', color: 'white' }} onClick={() => setStep('stage')}>Next →</button>
+                  {roleDefault === false && (
+                    <button onClick={() => setIdeaOverride(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.4)', fontSize: 12, cursor: 'pointer', padding: 0, textAlign: 'center' }}>
+                      Actually, I'm not building my own idea →
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div style={{ textAlign: 'center', marginBottom: 8 }}>
+                    <div style={{ fontSize: 48, marginBottom: 12 }}>🤝</div>
+                    <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -.6, color: '#fff' }}>Got it{roleLabel ? ` — ${roleLabel.toLowerCase()}` : ''}.</h2>
+                    <p style={{ fontSize: 14, color: 'rgba(255,255,255,.5)', marginTop: 6, lineHeight: 1.5 }}>
+                      You don't need an idea of your own to be here. We'll take you straight into the community, where you can see what founders are building and offer exactly what you're best at.
+                    </p>
+                  </div>
+                  <button style={{ ...primaryBtn(true), background: 'linear-gradient(135deg,#6366f1,#0066cc)', color: 'white' }} onClick={() => setStep('community')}>Next →</button>
+                  <button onClick={() => setIdeaOverride(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.4)', fontSize: 12, cursor: 'pointer', padding: 0, textAlign: 'center' }}>
+                    Actually, I do have an idea of my own →
+                  </button>
+                </>
+              )}
             </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: 'rgba(255,255,255,.3)', marginBottom: 7 }}>🏷️ Give your idea a name</div>
-              <input style={inp(true)} placeholder="e.g. Project Phoenix, FounderOS" value={ideaName} onChange={e => setIdeaName(e.target.value)} />
-            </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: 'rgba(255,255,255,.3)', marginBottom: 7 }}>💡 What is it? (one line)</div>
-              <input style={inp(true)} placeholder="e.g. Helping founders ship faster with less overwhelm" value={ideaDesc} onChange={e => setIdeaDesc(e.target.value)} />
-            </div>
-            <button style={{ ...primaryBtn(true), background: 'linear-gradient(135deg,#6366f1,#0066cc)', color: 'white' }} onClick={() => setStep('stage')}>Next →</button>
-          </div>
-        )}
+          );
+        })()}
 
         {/* STAGE */}
         {step === 'stage' && (
