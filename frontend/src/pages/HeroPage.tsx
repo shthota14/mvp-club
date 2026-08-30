@@ -186,7 +186,7 @@ export default function HeroPage() {
                 borderRadius: 999, padding: '14px 32px', fontSize: 15, fontWeight: 700,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8,
               }}>
-              <span style={{ fontSize: 16 }}>→</span> Start for free
+              <span style={{ fontSize: 16 }}>→</span> Get started
             </button>
             <button onClick={() => open('login')}
               style={{
@@ -557,7 +557,7 @@ export default function HeroPage() {
           </p>
           <button onClick={() => open('register')}
             style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '13px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-            Start for free →
+            Get started →
           </button>
         </div>
       </section>
@@ -572,7 +572,7 @@ export default function HeroPage() {
         </p>
         <button onClick={() => open('register')}
           style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '16px 40px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
-          Get started for free →
+          Get started →
         </button>
       </section>
 
