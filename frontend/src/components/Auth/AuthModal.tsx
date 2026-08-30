@@ -10,7 +10,7 @@ interface Props {
   onSwitchMode: () => void;
 }
 
-type Step = 'login' | 'register' | 'forgot' | 'reset-sent' | 'idea' | 'stage' | 'community';
+type Step = 'login' | 'register' | 'role' | 'forgot' | 'reset-sent' | 'idea' | 'stage' | 'community';
 
 const STAGES: { value: Stage; label: string; desc: string; emoji: string }[] = [
   { value: 'idea', label: 'Just an idea', desc: "I have something in mind but haven't started yet", emoji: '💡' },
@@ -96,7 +96,7 @@ export default function AuthModal({ mode, onClose }: Props) {
   const handleRegister = () => {
     if (!email || !password || !name) { setError('Please fill in all fields.'); return; }
     setError('');
-    setStep('idea');
+    setStep('role');
   };
 
   const handleFinish = async () => {
@@ -228,53 +228,64 @@ export default function AuthModal({ mode, onClose }: Props) {
           </div>
         )}
 
-        {/* REGISTER */}
+        {/* REGISTER — step 1 of 2: account fields */}
         {step === 'register' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: .06, color: '#6366f1', background: '#eef2ff', padding: '4px 10px', borderRadius: 999, marginBottom: 4, alignSelf: 'flex-start' }}>Step 1 of 2</span>
             <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.6, marginBottom: 4 }}>Create your account</h2>
             {error && <div style={{ color: '#ff3b30', fontSize: 13 }}>{error}</div>}
             <input style={inp(false)} type="text" placeholder="Your name" value={name} onChange={e => setName(e.target.value)} />
             <input style={inp(false)} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
             <input style={inp(false)} type="password" placeholder="Password (min. 6 chars)" value={password} onChange={e => setPassword(e.target.value)} />
 
-            {/* Role picker */}
-            <div style={{ marginTop: 4 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: .5, color: '#6e6e73', marginBottom: 8 }}>
-                I am a… <span style={{ fontWeight: 400, color: '#b0b0b8' }}>(pick one)</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {ROLE_OPTIONS.map(r => {
-                  const sel = userRole === r.key;
-                  const hov = hoveredRole === r.key;
-                  return (
-                    <div key={r.key}
-                      onClick={() => setUserRole(sel ? '' : r.key)}
-                      onMouseEnter={() => setHoveredRole(r.key)}
-                      onMouseLeave={() => setHoveredRole(h => h === r.key ? '' : h)}
-                      style={{
-                        padding: 12, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        background: sel ? '#eef2ff' : '#fff',
-                        border: `2.5px solid ${sel ? '#6366f1' : hov ? '#374151' : '#1f2937'}`,
-                        borderRadius: sel
-                          ? '15px 225px 15px 255px/225px 15px 255px 15px'
-                          : '255px 15px 225px 15px/15px 225px 15px 255px',
-                        transition: 'all .15s ease',
-                      }}>
-                      <span style={{ fontSize: 28, flexShrink: 0, lineHeight: 1 }}>{r.emoji}</span>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 20, fontWeight: 700, lineHeight: 1.15, color: '#1d1d1f' }}>{r.label}</div>
-                        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>{r.desc}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
             <button style={primaryBtn(false)} onClick={handleRegister}>Continue →</button>
             <p style={{ textAlign: 'center', fontSize: 13, color: '#6e6e73', marginTop: 4 }}>
               Already a member? <button onClick={() => setStep('login')} style={{ background: 'none', border: 'none', color: '#6366f1', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>Sign in</button>
+            </p>
+          </div>
+        )}
+
+        {/* ROLE — step 2 of 2: "I am a…" picker, split out of the account step */}
+        {step === 'role' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: .06, color: '#6366f1', background: '#eef2ff', padding: '4px 10px', borderRadius: 999, marginBottom: 4, alignSelf: 'flex-start' }}>Step 2 of 2</span>
+            <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.6, marginBottom: 4 }}>What best describes you?</h2>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: .5, color: '#6e6e73', marginBottom: -4 }}>
+              I am a… <span style={{ fontWeight: 400, color: '#b0b0b8' }}>(pick one)</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {ROLE_OPTIONS.map(r => {
+                const sel = userRole === r.key;
+                const hov = hoveredRole === r.key;
+                return (
+                  <div key={r.key}
+                    onClick={() => setUserRole(sel ? '' : r.key)}
+                    onMouseEnter={() => setHoveredRole(r.key)}
+                    onMouseLeave={() => setHoveredRole(h => h === r.key ? '' : h)}
+                    style={{
+                      padding: 12, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      background: sel ? '#eef2ff' : '#fff',
+                      border: `2.5px solid ${sel ? '#6366f1' : hov ? '#374151' : '#1f2937'}`,
+                      borderRadius: sel
+                        ? '15px 225px 15px 255px/225px 15px 255px 15px'
+                        : '255px 15px 225px 15px/15px 225px 15px 255px',
+                      transition: 'all .15s ease',
+                    }}>
+                    <span style={{ fontSize: 28, flexShrink: 0, lineHeight: 1 }}>{r.emoji}</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: "'Caveat', cursive", fontSize: 20, fontWeight: 700, lineHeight: 1.15, color: '#1d1d1f' }}>{r.label}</div>
+                      <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>{r.desc}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button style={primaryBtn(false)} onClick={() => setStep('idea')}>Continue →</button>
+            <p style={{ textAlign: 'center', fontSize: 13, color: '#6e6e73', marginTop: 4 }}>
+              <button onClick={() => setStep('register')} style={{ background: 'none', border: 'none', color: '#6366f1', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>← Back</button>
             </p>
           </div>
         )}
