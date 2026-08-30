@@ -567,9 +567,16 @@ export default function HeroPage() {
         <h2 style={{ fontSize: 'clamp(36px,6vw,72px)', fontWeight: 700, letterSpacing: -2.5, lineHeight: 1.05, fontFamily: 'var(--font-display)', marginBottom: 24 }}>
           Ready to build<br />something real?
         </h2>
-        <p style={{ fontSize: 16, color: 'rgba(255,255,255,.35)', marginBottom: 40 }}>
-          Free forever. No credit card, ever.
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 40 }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            fontSize: 14, fontWeight: 700, padding: '10px 20px', borderRadius: 999,
+            background: 'rgba(52,211,153,.12)', border: '1.5px solid rgba(52,211,153,.35)',
+            color: '#34d399',
+          }}>
+            ✓ Free forever — no credit card, ever
+          </span>
+        </div>
         <button onClick={() => open('register')}
           style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '16px 40px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
           Get started →
