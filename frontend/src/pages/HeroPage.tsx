@@ -568,7 +568,7 @@ export default function HeroPage() {
           Ready to build<br />something real?
         </h2>
         <p style={{ fontSize: 16, color: 'rgba(255,255,255,.35)', marginBottom: 40 }}>
-          Join free. No credit card required.
+          Free forever. No credit card, ever.
         </p>
         <button onClick={() => open('register')}
           style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '16px 40px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
