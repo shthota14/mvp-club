@@ -576,6 +576,7 @@ export default function AdminPage() {
   const [progressSort, setProgressSort] = useState<{ key: 'name' | 'current_stage' | 'idea_count' | 'last_active' | 'streak_days'; dir: 'asc' | 'desc' }>({ key: 'last_active', dir: 'desc' });
   const [feedback, setFeedback]   = useState<AdminFeedback[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const [ideaFilter, setIdeaFilter] = useState<IdeaFilter>('all');
   const [postFilter, setPostFilter] = useState<PostFilter>('flagged');
   const [feedbackFilter, setFeedbackFilter] = useState<FeedbackFilter>('new');
@@ -643,10 +644,19 @@ export default function AdminPage() {
 
   const loadAnalytics = useCallback(async () => {
     setLoading(true);
+    setAnalyticsError(null);
     try {
       const r = await adminApi.getAnalytics('/');
       setAnalytics(r.data);
-    } catch {} finally { setLoading(false); }
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.error;
+      setAnalyticsError(
+        status
+          ? `Request failed (${status}). ${typeof serverMsg === 'string' ? serverMsg : 'Check the server logs — this usually means the analytics_events / analytics_daily_agg tables haven\'t been created yet (run the latest migration).'}`
+          : 'Could not reach the server. Check your connection or try again.'
+      );
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { loadStats(); }, [loadStats]);
@@ -1079,7 +1089,15 @@ export default function AdminPage() {
         {/* ══════ ANALYTICS ══════ */}
         {tab === 'analytics' && (
           <div style={{ maxWidth: 760 }}>
-            {!analytics ? (
+            {analyticsError ? (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, padding: '16px 20px' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#dc2626', marginBottom: 4 }}>Couldn't load analytics</div>
+                <div style={{ fontSize: 12.5, color: '#991b1b', lineHeight: 1.5, marginBottom: 12 }}>{analyticsError}</div>
+                <button onClick={() => loadAnalytics()} style={{ padding: '7px 16px', borderRadius: 10, border: 'none', background: '#dc2626', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                  Try again
+                </button>
+              </div>
+            ) : !analytics ? (
               <div style={{ fontSize: 13, color: '#86868b', padding: '32px 0' }}>Loading…</div>
             ) : (
               <>
