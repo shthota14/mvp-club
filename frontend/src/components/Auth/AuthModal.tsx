@@ -10,7 +10,7 @@ interface Props {
   onSwitchMode: () => void;
 }
 
-type Step = 'login' | 'register' | 'role' | 'forgot' | 'reset-sent' | 'idea' | 'stage' | 'community';
+type Step = 'login' | 'register' | 'about' | 'forgot' | 'reset-sent';
 
 const STAGES: { value: Stage; label: string; desc: string; emoji: string }[] = [
   { value: 'idea', label: 'Just an idea', desc: "I have something in mind but haven't started yet", emoji: '💡' },
@@ -34,23 +34,6 @@ const ROLE_OPTIONS = [
   { key: 'mentor',         emoji: '🤝', label: 'Mentor / Advisor',     desc: "I've been there, happy to help" },
 ];
 
-// Roles whose own description implies they're actively building
-// something of their own (vs. backing, advising, or helping others'
-// ideas) — used to decide whether the post-signup "idea" step defaults
-// to asking for an idea name or skips straight past it.
-const FOUNDER_ROLES = new Set(['first-founder', 'serial', 'student']);
-
-const HELP_OPTIONS = [
-  { key: 'feedback', label: '💬 Idea feedback' },
-  { key: 'accountability', label: '🔁 Accountability' },
-  { key: 'technical', label: '🛠️ Technical help' },
-  { key: 'cofounder', label: '🤝 Co-founder' },
-  { key: 'validation', label: '🧪 Validation support' },
-  { key: 'encouragement', label: '💛 Encouragement' },
-  { key: 'beta', label: '🧑‍💻 Beta testers' },
-  { key: 'brainstorm', label: '💡 Brainstorming' },
-];
-
 export default function AuthModal({ mode, onClose }: Props) {
   const { login } = useApp();
   const navigate = useNavigate();
@@ -67,12 +50,9 @@ export default function AuthModal({ mode, onClose }: Props) {
   const [selectedStage, setSelectedStage] = useState<Stage>('idea');
   const [userRole, setUserRole] = useState('');
   const [hoveredRole, setHoveredRole] = useState('');
-  const [ideaOverride, setIdeaOverride] = useState<boolean | null>(null); // null = follow role default
   const [showWelcomeNote, setShowWelcomeNote] = useState(true); // dismissible handwritten note on step 1
-  const [communityOpt, setCommunityOpt] = useState<boolean | null>(null);
-  const [helpTypes, setHelpTypes] = useState<string[]>([]);
 
-  const isDark = ['idea', 'stage', 'community'].includes(step);
+  const isDark = step === 'about';
 
   const handleForgot = async () => {
     if (!email) { setError('Please enter your email address.'); return; }
@@ -104,7 +84,7 @@ export default function AuthModal({ mode, onClose }: Props) {
   const handleRegister = () => {
     if (!email || !password || !name) { setError('Please fill in all fields.'); return; }
     setError('');
-    setStep('role');
+    setStep('about');
   };
 
   const handleFinish = async () => {
@@ -114,8 +94,13 @@ export default function AuthModal({ mode, onClose }: Props) {
         email, password, name,
         ideaName, ideaDescription: ideaDesc,
         currentStage: selectedStage,
-        communityOpt: communityOpt ?? false,
-        helpTypes,
+        // Community opt-in used to be its own blocking signup step (a
+        // required yes/no before account creation). It defaults to true now
+        // — this is a community product and the ask was never enforced for
+        // real value anyway — so it can't hold up signup. Revisit as a real
+        // settings toggle if that's ever needed.
+        communityOpt: true,
+        helpTypes: [],
         userRole,
       });
       login(res.data.token, res.data.user as User);
@@ -126,9 +111,6 @@ export default function AuthModal({ mode, onClose }: Props) {
       setError(msg || 'Something went wrong. Please try again.');
     } finally { setLoading(false); }
   };
-
-  const toggleHelp = (key: string) =>
-    setHelpTypes(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
 
   const overlay: React.CSSProperties = {
     position: 'fixed', inset: 0, zIndex: 500,
@@ -274,202 +256,90 @@ export default function AuthModal({ mode, onClose }: Props) {
           </div>
         )}
 
-        {/* ROLE — step 2 of 2: "I am a…" picker, split out of the account step */}
-        {step === 'role' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: .06, color: '#6366f1', background: '#eef2ff', padding: '4px 10px', borderRadius: 999, marginBottom: 4, alignSelf: 'flex-start' }}>Step 2 of 2</span>
-            <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.6, marginBottom: 4 }}>What best describes you?</h2>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: .5, color: '#6e6e73', marginBottom: -4 }}>
-              I am a… <span style={{ fontWeight: 400, color: '#b0b0b8' }}>(pick one)</span>
+        {/* ABOUT — step 2 of 2: role + idea + stage combined onto one
+            screen. Previously three separate full-screen steps (role, idea,
+            stage) plus a fourth blocking step (community) that gated account
+            creation on an explicit yes/no. None of role, idea or stage were
+            ever validated — you could already click through all three without
+            picking anything — so folding them into one optional screen loses
+            no enforcement, just three screen transitions. Community opt-in
+            now defaults to true in handleFinish instead of asking here. */}
+        {step === 'about' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: .06, color: '#a5b4fc', background: 'rgba(99,102,241,.18)', padding: '4px 10px', borderRadius: 999, alignSelf: 'flex-start' }}>Step 2 of 2</span>
+            <div>
+              <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -.6, color: '#fff', marginBottom: 4 }}>Tell us a bit about you.</h2>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)' }}>Everything below is optional — skip anything that doesn't apply.</p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {ROLE_OPTIONS.map(r => {
-                const sel = userRole === r.key;
-                const hov = hoveredRole === r.key;
-                return (
-                  <div key={r.key}
-                    onClick={() => setUserRole(sel ? '' : r.key)}
-                    onMouseEnter={() => setHoveredRole(r.key)}
-                    onMouseLeave={() => setHoveredRole(h => h === r.key ? '' : h)}
-                    style={{
-                      padding: 12, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      background: sel ? '#eef2ff' : '#fff',
-                      border: `2.5px solid ${sel ? '#6366f1' : hov ? '#374151' : '#1f2937'}`,
-                      borderRadius: sel
-                        ? '15px 225px 15px 255px/225px 15px 255px 15px'
-                        : '255px 15px 225px 15px/15px 225px 15px 255px',
-                      transition: 'all .15s ease',
-                    }}>
-                    <span style={{ fontSize: 28, flexShrink: 0, lineHeight: 1 }}>{r.emoji}</span>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontFamily: "'Caveat', cursive", fontSize: 20, fontWeight: 700, lineHeight: 1.15, color: '#1d1d1f' }}>{r.label}</div>
-                      <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>{r.desc}</div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <button style={primaryBtn(false)} onClick={() => setStep('idea')}>Continue →</button>
-            <p style={{ textAlign: 'center', fontSize: 13, color: '#6e6e73', marginTop: 4 }}>
-              <button onClick={() => setStep('register')} style={{ background: 'none', border: 'none', color: '#6366f1', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>← Back</button>
-            </p>
-          </div>
-        )}
-
-        {/* IDEA */}
-        {step === 'idea' && (() => {
-          const roleDefault = !userRole || FOUNDER_ROLES.has(userRole);
-          const showIdeaFields = ideaOverride !== null ? ideaOverride : roleDefault;
-          const roleLabel = ROLE_OPTIONS.find(r => r.key === userRole)?.label;
-          return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {showIdeaFields ? (
-                <>
-                  <div style={{ textAlign: 'center', marginBottom: 4 }}>
-                    <div style={{ fontSize: 44, marginBottom: 10 }}>🌱</div>
-                    <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.6, color: '#fff' }}>One more thing.</h2>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: 'rgba(255,255,255,.35)', marginBottom: 6 }}>🏷️ Name your idea</div>
-                    <input
-                      placeholder="e.g. Project Phoenix, FounderOS"
-                      value={ideaName} onChange={e => setIdeaName(e.target.value)}
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: .5, color: 'rgba(255,255,255,.35)', marginBottom: 8 }}>I am a…</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
+                {ROLE_OPTIONS.map(r => {
+                  const sel = userRole === r.key;
+                  const hov = hoveredRole === r.key;
+                  return (
+                    <div key={r.key}
+                      onClick={() => setUserRole(sel ? '' : r.key)}
+                      onMouseEnter={() => setHoveredRole(r.key)}
+                      onMouseLeave={() => setHoveredRole(h => h === r.key ? '' : h)}
                       style={{
-                        width: '100%', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.22)', background: 'transparent',
-                        fontSize: 15, color: '#fff', padding: '8px 2px', outline: 'none', boxSizing: 'border-box' as const,
-                      }}
-                    />
-                  </div>
-                  <div style={{ marginTop: 4 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: 'rgba(255,255,255,.35)', marginBottom: 6 }}>💡 What is it?</div>
-                    <input
-                      placeholder="e.g. Helping founders ship faster with less overwhelm"
-                      value={ideaDesc} onChange={e => setIdeaDesc(e.target.value)}
-                      style={{
-                        width: '100%', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.22)', background: 'transparent',
-                        fontSize: 15, color: '#fff', padding: '8px 2px', outline: 'none', boxSizing: 'border-box' as const,
-                      }}
-                    />
-                  </div>
-
-                  {/* Two-CTA split — naming now and skipping for now are presented
-                      as two equal-weight choices instead of one primary button
-                      with the "I don't have an idea" escape buried as fine print.
-                      Both proceed to the next step either way (nothing here was
-                      ever required); this is purely about not making a founder
-                      feel stuck if they don't have a name yet. */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
-                    <button style={{ ...primaryBtn(true), background: 'linear-gradient(135deg,#6366f1,#0066cc)', color: 'white' }} onClick={() => setStep('stage')}>Name it now →</button>
-                    <button onClick={() => setStep('stage')} style={{
-                      width: '100%', padding: '13px 14px', borderRadius: 14, cursor: 'pointer',
-                      border: '1.5px solid rgba(255,255,255,.25)', background: 'transparent',
-                      color: '#fff', fontSize: 13.5, fontWeight: 600,
-                    }}>Skip for now →</button>
-                  </div>
-                  {roleDefault === false && (
-                    <button onClick={() => setIdeaOverride(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.4)', fontSize: 12, cursor: 'pointer', padding: 0, textAlign: 'center' }}>
-                      Actually, I'm not building my own idea at all →
-                    </button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div style={{ textAlign: 'center', marginBottom: 8 }}>
-                    <div style={{ fontSize: 48, marginBottom: 12 }}>🤝</div>
-                    <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -.6, color: '#fff' }}>Got it{roleLabel ? ` — ${roleLabel.toLowerCase()}` : ''}.</h2>
-                    <p style={{ fontSize: 14, color: 'rgba(255,255,255,.5)', marginTop: 6, lineHeight: 1.5 }}>
-                      You don't need an idea of your own to be here. We'll take you straight into the community, where you can see what founders are building and offer exactly what you're best at.
-                    </p>
-                  </div>
-                  <button style={{ ...primaryBtn(true), background: 'linear-gradient(135deg,#6366f1,#0066cc)', color: 'white' }} onClick={() => setStep('community')}>Next →</button>
-                  <button onClick={() => setIdeaOverride(true)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.4)', fontSize: 12, cursor: 'pointer', padding: 0, textAlign: 'center' }}>
-                    Actually, I do have an idea of my own →
-                  </button>
-                </>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* STAGE */}
-        {step === 'stage' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ marginBottom: 4 }}>
-              <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -.6, color: '#fff' }}>Where are you right now?</h2>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,.4)', marginTop: 6 }}>We'll put you at the right starting point.</p>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {STAGES.map(s => (
-                <div key={s.value} onClick={() => setSelectedStage(s.value)} style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '13px 14px', borderRadius: 14,
-                  border: `1.5px solid ${selectedStage === s.value ? 'rgba(88,86,214,.6)' : 'rgba(255,255,255,.1)'}`,
-                  background: selectedStage === s.value ? 'rgba(88,86,214,.2)' : 'rgba(255,255,255,.04)',
-                  cursor: 'pointer', transition: 'all .15s',
-                }}>
-                  <span style={{ fontSize: 20 }}>{s.emoji}</span>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: '#fff' }}>{s.label}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,.35)', marginTop: 2 }}>{s.desc}</div>
-                  </div>
-                  <div style={{ marginLeft: 'auto', width: 20, height: 20, borderRadius: '50%', border: `1.5px solid ${selectedStage === s.value ? '#6366f1' : 'rgba(255,255,255,.2)'}`, background: selectedStage === s.value ? '#6366f1' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#fff' }}>
-                    {selectedStage === s.value && '✓'}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button style={{ ...primaryBtn(true), background: 'linear-gradient(135deg,#6366f1,#0066cc)', color: 'white' }} onClick={() => setStep('community')}>Almost there →</button>
-          </div>
-        )}
-
-        {/* COMMUNITY */}
-        {step === 'community' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ textAlign: 'center', marginBottom: 8 }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🤝</div>
-              <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.6, color: '#fff' }}>You don't have to do this alone.</h2>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,.5)', marginTop: 8, lineHeight: 1.5 }}>Founders in this community are at every stage. Want them in your corner?</p>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {[{ val: true, emoji: '👋', label: "Yes, I'm in" }, { val: false, emoji: '🎧', label: 'Maybe later' }].map(opt => (
-                <button key={String(opt.val)} onClick={() => setCommunityOpt(opt.val)} style={{
-                  flex: 1, padding: '16px 10px', borderRadius: 14, cursor: 'pointer',
-                  border: `2px solid ${communityOpt === opt.val ? (opt.val ? 'rgba(52,199,89,.6)' : 'rgba(255,255,255,.3)') : 'rgba(255,255,255,.1)'}`,
-                  background: communityOpt === opt.val ? (opt.val ? 'rgba(52,199,89,.18)' : 'rgba(255,255,255,.1)') : 'rgba(255,255,255,.04)',
-                  color: communityOpt === opt.val ? '#fff' : 'rgba(255,255,255,.45)',
-                  fontSize: 13, fontWeight: 700, transition: 'all .15s',
-                }}>
-                  <div style={{ fontSize: 26, marginBottom: 6 }}>{opt.emoji}</div>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            {communityOpt && (
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .4, color: 'rgba(255,255,255,.3)', marginBottom: 10 }}>What kind of help? <span style={{ fontWeight: 400 }}>(pick all that apply)</span></div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {HELP_OPTIONS.map(h => (
-                    <div key={h.key} onClick={() => toggleHelp(h.key)} style={{
-                      padding: '11px 12px', borderRadius: 12, cursor: 'pointer', fontSize: 12, fontWeight: 600, textAlign: 'center',
-                      border: `1.5px solid ${helpTypes.includes(h.key) ? 'rgba(52,199,89,.5)' : 'rgba(255,255,255,.1)'}`,
-                      background: helpTypes.includes(h.key) ? 'rgba(52,199,89,.18)' : 'rgba(255,255,255,.04)',
-                      color: helpTypes.includes(h.key) ? '#34c759' : 'rgba(255,255,255,.55)',
-                      transition: 'all .15s',
-                    }}>
-                      {h.label}
+                        padding: '8px 12px', cursor: 'pointer', borderRadius: 999,
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        background: sel ? 'rgba(99,102,241,.22)' : 'rgba(255,255,255,.05)',
+                        border: `1.5px solid ${sel ? '#6366f1' : hov ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.12)'}`,
+                        transition: 'all .15s ease',
+                      }}>
+                      <span style={{ fontSize: 15, lineHeight: 1 }}>{r.emoji}</span>
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: sel ? '#fff' : 'rgba(255,255,255,.65)' }}>{r.label}</span>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
+
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: .5, color: 'rgba(255,255,255,.35)', marginBottom: 8 }}>Got an idea already?</div>
+              <input
+                placeholder="Name it — e.g. Project Phoenix"
+                value={ideaName} onChange={e => setIdeaName(e.target.value)}
+                style={{ width: '100%', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.16)', background: 'transparent', fontSize: 14, color: '#fff', padding: '7px 2px', outline: 'none', boxSizing: 'border-box' as const, marginBottom: 10 }}
+              />
+              <input
+                placeholder="In one line, what is it?"
+                value={ideaDesc} onChange={e => setIdeaDesc(e.target.value)}
+                style={{ width: '100%', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.16)', background: 'transparent', fontSize: 14, color: '#fff', padding: '7px 2px', outline: 'none', boxSizing: 'border-box' as const }}
+              />
+            </div>
+
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: .5, color: 'rgba(255,255,255,.35)', marginBottom: 8 }}>Where are you right now?</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
+                {STAGES.map(s => {
+                  const sel = selectedStage === s.value;
+                  return (
+                    <div key={s.value} onClick={() => setSelectedStage(s.value)} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '8px 12px', borderRadius: 999,
+                      border: `1.5px solid ${sel ? 'rgba(88,86,214,.6)' : 'rgba(255,255,255,.12)'}`,
+                      background: sel ? 'rgba(88,86,214,.2)' : 'rgba(255,255,255,.05)',
+                      cursor: 'pointer', transition: 'all .15s',
+                    }}>
+                      <span style={{ fontSize: 14 }}>{s.emoji}</span>
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: sel ? '#fff' : 'rgba(255,255,255,.65)' }}>{s.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {error && <div style={{ color: '#ff3b30', fontSize: 13 }}>{error}</div>}
-            <button style={{ ...primaryBtn(true), background: 'linear-gradient(135deg,#34c759,#0066cc)', color: 'white', marginTop: 4 }} onClick={handleFinish} disabled={loading || communityOpt === null}>
+            <button style={{ ...primaryBtn(true), background: 'linear-gradient(135deg,#34c759,#0066cc)', color: 'white', marginTop: 2 }} onClick={handleFinish} disabled={loading}>
               {loading ? 'Creating account…' : "Let's build something real →"}
             </button>
+            <p style={{ textAlign: 'center', fontSize: 13, marginTop: -6 }}>
+              <button onClick={() => setStep('register')} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.4)', fontWeight: 700, cursor: 'pointer', fontSize: 13 }}>← Back</button>
+            </p>
           </div>
         )}
       </div>
