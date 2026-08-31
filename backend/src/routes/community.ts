@@ -529,14 +529,15 @@ router.get('/pain-points', async (req: Request, res: Response) => {
     const result = await query(
       `SELECT
          p.*,
-         u.name            AS author_name,
-         u.avatar_initials AS author_initials,
+         COALESCE(u.name, 'Anonymous founder')  AS author_name,
+         COALESCE(u.avatar_initials, '👤')  AS author_initials,
+         (p.user_id IS NULL)                     AS is_guest,
          COUNT(DISTINCT r_enc.id) FILTER (WHERE r_enc.type = 'encourage') AS encourage_count,
          COUNT(DISTINCT r_pur.id) FILTER (WHERE r_pur.type = 'pursue')    AS pursue_count,
          COUNT(DISTINCT c.id)                                              AS comment_count,
          (SELECT type FROM reactions WHERE post_id = p.id AND user_id = $1 LIMIT 1) AS user_reacted
        FROM community_posts p
-       JOIN users u ON p.user_id = u.id
+       LEFT JOIN users u ON p.user_id = u.id
        LEFT JOIN reactions r_enc ON r_enc.post_id = p.id AND r_enc.type = 'encourage'
        LEFT JOIN reactions r_pur ON r_pur.post_id = p.id AND r_pur.type = 'pursue'
        LEFT JOIN comments  c     ON c.post_id = p.id

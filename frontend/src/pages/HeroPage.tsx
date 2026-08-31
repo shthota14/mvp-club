@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthModal from '@/components/Auth/AuthModal';
 import PayItForwardModal from '@/components/PayItForwardModal';
+import LogPainPointModal from '@/components/LogPainPointModal';
 
 // Caveat (marker handwriting font) — same id/pattern as StageCompleteModal.tsx so it's loaded once app-wide
 if (typeof document !== 'undefined' && !document.getElementById('caveat-font')) {
@@ -17,8 +18,21 @@ export default function HeroPage() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('register');
   const [faqOpen, setFaqOpen] = useState<number | null>(null);
   const [showPayItForward, setShowPayItForward] = useState(false);
+  const [showLogPainPoint, setShowLogPainPoint] = useState(false);
   const open = (mode: 'login' | 'register') => { setAuthMode(mode); setAuthOpen(true); };
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Deep-linked here from a public, no-login page (e.g. the pain-points feed's
+  // "Create a free account" CTA) — open the register modal immediately instead
+  // of leaving the visitor to find the button themselves.
+  useEffect(() => {
+    if ((location.state as { openRegister?: boolean } | null)?.openRegister) {
+      setAuthMode('register');
+      setAuthOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const stages = [
     { n: '01', label: 'Idea', desc: 'Capture a problem worth solving.', detail: 'Every great startup begins with a problem someone desperately needs solved. Not an app. Not a feature. A real, felt pain.', color: '#a78bfa' },
@@ -91,6 +105,7 @@ export default function HeroPage() {
           .hp-mvp-text { font-size: 21px !important; }
           .hp-club-text { font-size: 14px !important; letter-spacing: 2px !important; }
           .hp-nav-support { padding: 6px 10px !important; font-size: 11px !important; }
+          .hp-nav-painpoint { padding: 6px 10px !important; font-size: 11px !important; }
           .hp-nav-signin { padding: 8px 10px !important; font-size: 13px !important; }
           .hp-nav-getstarted { padding: 8px 14px !important; font-size: 13px !important; }
           .hp-section-pad { padding-left: 20px !important; padding-right: 20px !important; padding-top: 56px !important; padding-bottom: 56px !important; }
@@ -149,6 +164,10 @@ export default function HeroPage() {
           <button onClick={() => setShowPayItForward(true)} className="hp-nav-support"
             style={{ background: 'none', border: '1.5px solid rgba(255,255,255,.18)', color: 'rgba(255,255,255,.75)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '7px 14px', borderRadius: 999, whiteSpace: 'nowrap' }}>
             💛 Support MVP Club
+          </button>
+          <button onClick={() => setShowLogPainPoint(true)} className="hp-nav-painpoint"
+            style={{ background: 'none', border: '1.5px solid rgba(255,255,255,.18)', color: 'rgba(255,255,255,.75)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '7px 14px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+            😔 Log a pain point
           </button>
           <button onClick={() => open('login')} className="hp-nav-signin"
             style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.45)', fontSize: 14, fontWeight: 500, cursor: 'pointer', padding: '8px 16px', borderRadius: 8 }}>
@@ -606,6 +625,9 @@ export default function HeroPage() {
       )}
 
       {showPayItForward && <PayItForwardModal onClose={() => setShowPayItForward(false)} />}
+      {showLogPainPoint && (
+        <LogPainPointModal mode="public" onClose={() => setShowLogPainPoint(false)} onLogged={() => {}} />
+      )}
     </div>
   );
 }

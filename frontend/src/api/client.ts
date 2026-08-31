@@ -438,6 +438,15 @@ export const donationsApi = {
   createCheckout: (amount: number) => api.post('/donations/checkout', { amount }),
 };
 
+// Public, unauthenticated pain-point logging + feed — no account required,
+// no auth token attached (there may not be one). Separate from communityApi's
+// pain-points (which are member-authenticated) since these hit their own
+// unauthenticated backend router.
+export const publicApi = {
+  createPainPoint: (data: Record<string, unknown>) => api.post('/public/pain-points', data),
+  listPainPoints: (limit?: number, offset?: number) => api.get('/public/pain-points', { params: { limit, offset } }),
+};
+
 // Proof of Demand Challenges
 export const challengesApi = {
   create:          (data: Record<string, unknown>) => api.post('/challenges', data),

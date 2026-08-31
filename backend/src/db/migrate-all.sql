@@ -315,4 +315,12 @@ WHERE email LIKE '%@seed100.dev' AND is_seed_beta = FALSE;
 UPDATE community_posts SET content = regexp_replace(content, '\s*\[SEED100\]\s*$', '')
 WHERE content ~ '\[SEED100\]';
 
+-- ── community_posts: anonymous/public pain-point submissions ──────────────────
+-- Lets a pain point be logged by a visitor with no account at all
+-- (community_posts.user_id is already nullable). guest_email is optional —
+-- collected only if the visitor chooses to leave one, so we can notify them
+-- or offer to link the post to an account they later register with the same
+-- email. Never returned by any public API response.
+ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS guest_email TEXT;
+
 SELECT 'Migration complete ✓' AS status;
