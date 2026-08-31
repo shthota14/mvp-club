@@ -351,7 +351,7 @@ function useStepAnimation() {
     if (document.getElementById(id)) return;
     const s = document.createElement('style');
     s.id = id;
-    s.textContent = `@keyframes wup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes tickPop{0%{opacity:0;transform:scale(.3) rotate(-20deg)}60%{opacity:1;transform:scale(1.25) rotate(6deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}@keyframes stepIntroIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes stepIntroOut{from{opacity:1}to{opacity:0}}@keyframes stepFwdIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}@keyframes stepBackIn{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}@media (prefers-reduced-motion: reduce){.step-intro,.step-nav{animation:none !important}}@keyframes milestoneToastIn{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}@keyframes msConfettiFall{0%{transform:translateY(-24px) rotate(0deg);opacity:1}80%{opacity:1}100%{transform:translateY(110vh) rotate(600deg);opacity:0}}`;
+    s.textContent = `@keyframes wup{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}@keyframes tickPop{0%{opacity:0;transform:scale(.3) rotate(-20deg)}60%{opacity:1;transform:scale(1.25) rotate(6deg)}100%{opacity:1;transform:scale(1) rotate(0deg)}}@keyframes stepIntroIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}@keyframes stepIntroOut{from{opacity:1}to{opacity:0}}@keyframes stepFwdIn{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}@keyframes stepBackIn{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}@media (prefers-reduced-motion: reduce){.step-intro,.step-nav{animation:none !important}}@keyframes milestoneToastIn{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}@keyframes msConfettiFall{0%{transform:translateY(-24px) rotate(0deg);opacity:1}80%{opacity:1}100%{transform:translateY(110vh) rotate(600deg);opacity:0}}@keyframes spotlightSweep{0%{transform:translateX(-70%);opacity:0}15%{opacity:1}70%{transform:translateX(0);opacity:1}100%{opacity:0}}@keyframes typeDing{0%{transform:scale(1)}40%{transform:scale(1.035)}100%{transform:scale(1)}}@keyframes highlighterSweep{0%{width:0;opacity:.85}70%{opacity:.85}100%{width:100%;opacity:.55}}@keyframes ideaCardFlip{0%{transform:rotateY(0deg)}50%{transform:rotateY(90deg)}100%{transform:rotateY(0deg)}}@keyframes ideaCardSlideIn{0%{opacity:0;transform:translateY(26px) rotate(-1.5deg)}70%{opacity:1}100%{opacity:1;transform:translateY(0) rotate(0)}}`;
     document.head.appendChild(s);
   }, []);
 }
@@ -1352,6 +1352,39 @@ function assembleOneLinerFromParts(b: string, f: string, w: string, o: string): 
 
 type OneLinerTurn = { role: 'agent' | 'user'; text: string; kind?: 'ask' | 'react' };
 
+// Types out an agent "ask" bubble's text one character at a time, then does
+// a brief "ding" pop on the bubble once it finishes — only ever applied to
+// the CURRENT question (the last turn in the conversation), never to
+// history, so resuming a long conversation doesn't replay a wall of text.
+// Plain JS reveal rather than a CSS width animation because the bubble text
+// wraps across lines at varying lengths — width-based steps() only works
+// for single-line, fixed-width reveals.
+function TypewriterAsk({ text }: { text: string }) {
+  const [shown, setShown] = useState(0);
+  const [justFinished, setJustFinished] = useState(false);
+  useEffect(() => {
+    setShown(0);
+    setJustFinished(false);
+  }, [text]);
+  useEffect(() => {
+    if (shown >= text.length) {
+      if (shown > 0) { setJustFinished(true); const t = setTimeout(() => setJustFinished(false), 350); return () => clearTimeout(t); }
+      return;
+    }
+    // A touch faster for longer questions so nobody's stuck waiting.
+    const speed = text.length > 60 ? 12 : 20;
+    const t = setTimeout(() => setShown(s => s + 1), speed);
+    return () => clearTimeout(t);
+  }, [shown, text]);
+  const done = shown >= text.length;
+  return (
+    <span style={{ display: 'inline-block', animation: justFinished ? 'typeDing .3s ease' : 'none' }}>
+      {text.slice(0, shown)}
+      {!done && <span style={{ opacity: .5 }}>▍</span>}
+    </span>
+  );
+}
+
 function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: {
   initialName: string;
   initialOneLiner: string;
@@ -1531,7 +1564,9 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
                 fontWeight: 400, fontSize: 15, lineHeight: 1.3,
                 color: T1,
               }}>
-                {t.text}
+                {/* Only the CURRENT question (last turn) types itself out —
+                    every earlier ask in the history renders instantly. */}
+                {i === turns.length - 1 ? <TypewriterAsk text={t.text} /> : t.text}
               </div>
             ) : (
               <div style={{
@@ -1757,6 +1792,22 @@ function OneLinerPreviewCard({ value, onChange, publicOn, onTogglePublic }: { va
   // now sits on a green background per request, kept independent of the pen color.
   const penColor = '#0ea5e9';
 
+  // Highlighter sweep: fires once, the moment all four blanks go from
+  // "some still empty" to "fully filled in" — not on every render while
+  // already complete (e.g. while the founder keeps typing elsewhere).
+  const allFilled = !!(filled(pb) && filled(pf) && filled(pw) && filled(po));
+  const wasAllFilledRef = useRef(false);
+  const [justCompleted, setJustCompleted] = useState(false);
+  useEffect(() => {
+    if (allFilled && !wasAllFilledRef.current) {
+      setJustCompleted(true);
+      const t = setTimeout(() => setJustCompleted(false), 1300);
+      wasAllFilledRef.current = true;
+      return () => clearTimeout(t);
+    }
+    wasAllFilledRef.current = allFilled;
+  }, [allFilled]);
+
   return (
     <div style={{
       ...postcardStyle(-1),
@@ -1818,7 +1869,16 @@ function OneLinerPreviewCard({ value, onChange, publicOn, onTogglePublic }: { va
           </div>
         </div>
       ) : m ? (
-        <div style={{ fontSize: 22, lineHeight: 1.7, color: '#0a0a0a' }}>
+        <div style={{ position: 'relative' as const, fontSize: 22, lineHeight: 1.7, color: '#0a0a0a' }}>
+          {/* Highlighter sweep — fires once, the moment the last blank gets
+              filled in, celebrating the fully-assembled one-liner. */}
+          {justCompleted && (
+            <div style={{
+              position: 'absolute', left: 0, right: 0, bottom: 2, height: '0.85em',
+              background: '#fde047', opacity: 0.55, borderRadius: 2, zIndex: -1,
+              animation: 'highlighterSweep 1.1s ease-out forwards',
+            }} />
+          )}
           <span>I'm building </span>
           <span style={{
             color: filled(pb) ? penColor : '#ccc', fontWeight: 700, fontSize: 24,
@@ -2852,12 +2912,20 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
   const hasPreviewContent = type !== null && (story.trim() || whyMe.trim() || manual.trim());
   const sparkColor = STAGE_COLORS.idea;
 
-  const PreviewPanel = () => {
-    if (!hasPreviewContent) return null;
-    const textContent = type === 'manual' ? manual.trim() : story.trim();
-    const sparkType   = type !== 'manual' ? SPARK_TYPES.find(s => s.key === type) : null;
+  // Was a function component defined inline in SparkBuilder's own render
+  // body (`const PreviewPanel = () => {...}`, invoked as `<PreviewPanel />`
+  // below) — React treats an inline-defined component as a NEW component
+  // type on every parent render, so it was fully unmounting and remounting
+  // on every keystroke, replaying its entrance animation each time instead
+  // of once when the preview first appears. Inlined as plain JSX instead so
+  // it mounts once and the slide-in below actually plays once.
+  const previewTextContent = type === 'manual' ? manual.trim() : story.trim();
+  const previewSparkType   = type !== 'manual' ? SPARK_TYPES.find(s => s.key === type) : null;
+  const PreviewPanelContent = hasPreviewContent ? (() => {
+    const textContent = previewTextContent;
+    const sparkType   = previewSparkType;
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 10, animation: 'wup .25s ease' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 10, animation: 'ideaCardSlideIn .45s ease-out both' }}>
         <div style={{
           background: '#fefefe',
           border: '2px solid #e0e0e0',
@@ -2910,7 +2978,7 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
         )}
       </div>
     );
-  };
+  })() : null;
 
   // Outer layout: when a type is chosen, split left/right
   const showSplit = type !== null;
@@ -2946,7 +3014,11 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
                   const w = WOBBLE[si % 4];
                   return (
                     <button
-                      key={s.key}
+                      // Remounting on the isSelected transition (rather than a
+                      // stable key) is what replays the flip below — it fires
+                      // once when a card is picked, not on every re-render
+                      // while it stays selected.
+                      key={isSelected ? `${s.key}-sel` : s.key}
                       onClick={() => { setType(s.key); if (type === 'manual') { setStory(''); setWhyMe(''); } }}
                       style={{
                         display: 'flex', alignItems: 'flex-start', gap: 12,
@@ -2957,6 +3029,7 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
                         background: isSelected ? `${s.color}0c` : '#fffdf8',
                         boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
                         transition: 'all .15s', fontFamily: 'inherit', width: '100%',
+                        animation: isSelected ? 'ideaCardFlip .5s ease' : 'none',
                       }}
                     >
                       <div style={{
@@ -3102,7 +3175,7 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
       </div>
 
       {/* ── Post-it preview below inputs ── */}
-      {showSplit && <PreviewPanel />}
+      {showSplit && PreviewPanelContent}
     </div>
   );
 }
@@ -14004,8 +14077,19 @@ export default function WorkPage() {
             );
           })()}
 
-          {/* CTA row — back into the previous stage (if any) + thick marker start button */}
-          <div style={{ display: 'flex', gap: 10 }}>
+          {/* CTA row — back into the previous stage (if any) + thick marker start button.
+              Idea-only: a spotlight sweeps across and settles on the Start
+              button once, on mount — the very first thing a new founder
+              sees, so it gets its own small "come on in" flourish that the
+              other four stage intros (already well-covered without it) don't. */}
+          <div style={{ display: 'flex', gap: 10, position: 'relative', overflow: mod === 'idea' ? 'hidden' : 'visible', borderRadius: 8 }}>
+            {mod === 'idea' && (
+              <div style={{
+                position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
+                background: `radial-gradient(ellipse 140px 60px at center, rgba(255,255,255,.22), transparent 70%)`,
+                animation: 'spotlightSweep 1.3s ease-out .3s 1 both',
+              }} />
+            )}
             {prevMod && (
               <button
                 onClick={goToPrevStage}

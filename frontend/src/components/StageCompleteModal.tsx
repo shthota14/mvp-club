@@ -111,6 +111,44 @@ function Confetti() {
 // Draws a circle then a checkmark using stroke-dashoffset animation.
 // Circle circumference ≈ 2π × 54 ≈ 339; check path length ≈ 130.
 
+// ── Idea → Hone bridge icon ────────────────────────────────────────────────
+// Replaces the plain arrow-in-a-circle for one specific transition (Idea's
+// own completion, handing off into Hone) with a little bridge drawing itself
+// between two islands — Idea's colour on the left, Hone's on the right.
+// Every other stage keeps the plain arrow; this one transition is singled
+// out because it's a founder's very first stage-complete moment.
+function IdeaHoneBridgeIcon({ fromColor, toColor }: { fromColor: string; toColor: string }) {
+  useEffect(() => {
+    const id = 'wb-bridge-kf';
+    if (!document.getElementById(id)) {
+      const style = document.createElement('style');
+      style.id = id;
+      style.textContent = `
+        @keyframes bridge-draw {
+          0%   { stroke-dashoffset: 90; opacity: 0; }
+          15%  { opacity: 1; }
+          70%  { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+      <circle cx="7" cy="26" r="6" fill={fromColor} />
+      <circle cx="33" cy="26" r="6" fill={toColor} />
+      <path
+        d="M11 22 Q20 6 29 22"
+        stroke="#a39a5c" strokeWidth="2.5" strokeLinecap="round" fill="none"
+        strokeDasharray="90"
+        style={{ animation: 'bridge-draw 0.9s ease-out 0.3s forwards', strokeDashoffset: 90 }}
+      />
+    </svg>
+  );
+}
+
 function AnimatedTick({ color }: { color: string }) {
   useEffect(() => {
     const id = 'wb-tick-kf';
@@ -284,17 +322,21 @@ export default function StageCompleteModal({ stage, onContinue, onReviewSteps }:
             display: 'flex', alignItems: 'center', gap: 14,
             marginBottom: 16,
           }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: '50%',
-              border: `2.5px solid ${color}`,
-              background: `${color}15`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M5 12h14M12 5l7 7-7 7" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
+            {stage === 'idea' ? (
+              <IdeaHoneBridgeIcon fromColor={color} toColor={STAGE_COLORS_MAP.hone} />
+            ) : (
+              <div style={{
+                width: 40, height: 40, borderRadius: '50%',
+                border: `2.5px solid ${color}`,
+                background: `${color}15`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12h14M12 5l7 7-7 7" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            )}
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase' as const, color: WB_DIM, marginBottom: 3 }}>Up next</div>
               <div style={{ fontSize: 22, fontWeight: 700, color: WB_TEXT, marginBottom: 2 }}>{next.label}</div>
