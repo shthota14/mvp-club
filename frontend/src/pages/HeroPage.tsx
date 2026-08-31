@@ -298,7 +298,7 @@ export default function HeroPage() {
             Who we are
           </p>
           <h2 style={{ fontSize: 'clamp(28px,4vw,48px)', fontWeight: 700, letterSpacing: -1.5, lineHeight: 1.1, fontFamily: 'var(--font-display)', color: '#fff', marginBottom: 10 }}>
-            Built by a founder,<br />for founders.
+            Built by successful founders,<br />for founders.
           </h2>
           <p style={{ fontSize: 16, color: 'rgba(255,255,255,.4)', fontStyle: 'italic', fontFamily: 'var(--font-display)', marginBottom: 36 }}>
             Not a platform. Not a course. A path.
