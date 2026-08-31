@@ -323,4 +323,33 @@ WHERE content ~ '\[SEED100\]';
 -- email. Never returned by any public API response.
 ALTER TABLE community_posts ADD COLUMN IF NOT EXISTS guest_email TEXT;
 
+-- ── Analytics: hero-page visits + CTA clicks ──────────────────────────────────
+-- Visitor identity is a one-way salted hash of IP (HMAC-SHA256 with the
+-- server-only ANALYTICS_IP_SALT secret — never the raw IP itself), so
+-- distinct-visitor counts stay accurate without storing anything that points
+-- back to a real address. Raw rows are purged after 90 days by the nightly
+-- analyticsRollup job; analytics_daily_agg is written first (before the
+-- purge) and kept forever so long-run totals and trends survive it.
+CREATE TABLE IF NOT EXISTS analytics_events (
+  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event_type   TEXT NOT NULL CHECK (event_type IN ('page_view','link_click')),
+  path         TEXT NOT NULL,
+  link_label   TEXT,
+  visitor_hash TEXT NOT NULL,
+  created_at   TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON analytics_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_type_path ON analytics_events(event_type, path);
+
+CREATE TABLE IF NOT EXISTS analytics_daily_agg (
+  id               UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  day              DATE NOT NULL,
+  path             TEXT NOT NULL,
+  event_type       TEXT NOT NULL CHECK (event_type IN ('page_view','link_click')),
+  link_label       TEXT NOT NULL DEFAULT '',
+  unique_visitors  INT NOT NULL DEFAULT 0,
+  total_events     INT NOT NULL DEFAULT 0,
+  UNIQUE (day, path, event_type, link_label)
+);
+
 SELECT 'Migration complete ✓' AS status;

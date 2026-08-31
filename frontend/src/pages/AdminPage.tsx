@@ -75,7 +75,7 @@ interface Stats {
   feedback: { new: string; total: string };
 }
 
-type MainTab = 'ideas' | 'posts' | 'users' | 'progress' | 'feedback' | 'tools';
+type MainTab = 'ideas' | 'posts' | 'users' | 'progress' | 'feedback' | 'analytics' | 'tools';
 type IdeaFilter = 'all' | 'pending' | 'approved' | 'rejected';
 type PostFilter = 'all' | 'flagged' | 'held' | 'rejected' | 'approved';
 type FeedbackFilter = 'new' | 'reviewing' | 'planned' | 'done' | 'dismissed' | 'all';
@@ -166,6 +166,64 @@ function StatCard({ label, value, color }: { label: string; value: string | numb
     <div style={{ flex: 1, minWidth: 140, background: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #d2d2d7' }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: '#86868b', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 }}>{label}</div>
       <div style={{ fontSize: 30, fontWeight: 900, color, letterSpacing: -1 }}>{value}</div>
+    </div>
+  );
+}
+
+// Single-series (unique visitors/day, last 30 days) bar chart — hand-rolled
+// inline SVG rather than a charting library, since this is the only chart in
+// the admin dashboard. One hue, thin bars, rounded tops, a recessive baseline,
+// and a per-bar hover tooltip; no legend needed for a single series.
+function AnalyticsDailyChart({ data }: { data: { day: string; uniqueVisitors: number; pageViews: number }[] }) {
+  const [hover, setHover] = useState<number | null>(null);
+  if (data.length === 0) {
+    return <div style={{ fontSize: 13, color: '#86868b', padding: '32px 0', textAlign: 'center' as const }}>No visits recorded yet.</div>;
+  }
+  const max = Math.max(1, ...data.map(d => d.uniqueVisitors));
+  const W = 720, H = 160, padL = 4, padR = 4, barGap = 3;
+  const barW = (W - padL - padR) / data.length - barGap;
+
+  return (
+    <div style={{ position: 'relative' as const }}>
+      <svg viewBox={`0 0 ${W} ${H + 24}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
+        {/* Recessive baseline */}
+        <line x1={padL} y1={H} x2={W - padR} y2={H} stroke="#e5e5ea" strokeWidth={1} />
+        {data.map((d, i) => {
+          const h = Math.max(2, (d.uniqueVisitors / max) * (H - 8));
+          const x = padL + i * (barW + barGap);
+          const y = H - h;
+          const isHover = hover === i;
+          return (
+            <g key={d.day}>
+              <rect
+                x={x} y={y} width={Math.max(1, barW)} height={h} rx={2}
+                fill={isHover ? '#4f46e5' : '#6366f1'}
+                onMouseEnter={() => setHover(i)}
+                onMouseLeave={() => setHover(h => (h === i ? null : h))}
+                style={{ cursor: 'pointer' }}
+              />
+              {/* Wider invisible hit target so thin bars are easy to hover */}
+              <rect x={x - barGap / 2} y={0} width={barW + barGap} height={H} fill="transparent"
+                onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(h => (h === i ? null : h))} />
+            </g>
+          );
+        })}
+      </svg>
+      {hover !== null && data[hover] && (
+        <div style={{
+          position: 'absolute' as const, bottom: H - (data[hover].uniqueVisitors / max) * (H - 8) + 30,
+          left: `${((hover + 0.5) / data.length) * 100}%`, transform: 'translateX(-50%)',
+          background: '#1d1d1f', color: '#fff', borderRadius: 8, padding: '6px 10px',
+          fontSize: 11, whiteSpace: 'nowrap' as const, pointerEvents: 'none' as const, zIndex: 5,
+        }}>
+          <div style={{ fontWeight: 700 }}>{new Date(data[hover].day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
+          <div style={{ color: 'rgba(255,255,255,.7)' }}>{data[hover].uniqueVisitors} visitor{data[hover].uniqueVisitors !== 1 ? 's' : ''} · {data[hover].pageViews} view{data[hover].pageViews !== 1 ? 's' : ''}</div>
+        </div>
+      )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#86868b', marginTop: 6 }}>
+        <span>{new Date(data[0].day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+        <span>{new Date(data[data.length - 1].day).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+      </div>
     </div>
   );
 }
@@ -492,6 +550,17 @@ function FeedbackRow({ item, onUpdate }: {
   );
 }
 
+interface AnalyticsWindow { window: string; uniqueVisitors: number; pageViews: number }
+interface AnalyticsDaily { day: string; uniqueVisitors: number; pageViews: number }
+interface AnalyticsLink { label: string; clicks: number; uniqueClickers: number }
+interface AnalyticsData {
+  path: string;
+  windows: AnalyticsWindow[];
+  allTime: { totalPageViews: number; totalClicks: number; visitorDays: number };
+  daily: AnalyticsDaily[];
+  links: AnalyticsLink[];
+}
+
 // ── Main admin page ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const { logout, impersonate } = useApp();
@@ -506,6 +575,7 @@ export default function AdminPage() {
   const [progress, setProgress]   = useState<AdminProgressUser[]>([]);
   const [progressSort, setProgressSort] = useState<{ key: 'name' | 'current_stage' | 'idea_count' | 'last_active' | 'streak_days'; dir: 'asc' | 'desc' }>({ key: 'last_active', dir: 'desc' });
   const [feedback, setFeedback]   = useState<AdminFeedback[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [ideaFilter, setIdeaFilter] = useState<IdeaFilter>('all');
   const [postFilter, setPostFilter] = useState<PostFilter>('flagged');
   const [feedbackFilter, setFeedbackFilter] = useState<FeedbackFilter>('new');
@@ -571,6 +641,14 @@ export default function AdminPage() {
     } catch {} finally { setLoading(false); }
   }, []);
 
+  const loadAnalytics = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await adminApi.getAnalytics('/');
+      setAnalytics(r.data);
+    } catch {} finally { setLoading(false); }
+  }, []);
+
   useEffect(() => { loadStats(); }, [loadStats]);
 
   useEffect(() => {
@@ -580,7 +658,8 @@ export default function AdminPage() {
     else if (tab === 'users')     loadUsers();
     else if (tab === 'progress')  loadProgress();
     else if (tab === 'feedback')  loadFeedback(feedbackFilter);
-  }, [tab, ideaFilter, postFilter, feedbackFilter, loadIdeas, loadPosts, loadUsers, loadProgress, loadFeedback]);
+    else if (tab === 'analytics') loadAnalytics();
+  }, [tab, ideaFilter, postFilter, feedbackFilter, loadIdeas, loadPosts, loadUsers, loadProgress, loadFeedback, loadAnalytics]);
 
   // Admin "view as user": mint an impersonation token, swap it into the
   // session, and drop into that member's own Journey view.
@@ -754,9 +833,9 @@ export default function AdminPage() {
         {/* ── Main tabs + search ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: 4, background: '#f1f5f9', borderRadius: 14, padding: 4, flexWrap: 'wrap' as const }}>
-            {(['ideas', 'posts', 'users', 'progress', 'feedback', 'tools'] as const).map(t => (
+            {(['ideas', 'posts', 'users', 'progress', 'feedback', 'analytics', 'tools'] as const).map(t => (
               <button key={t} onClick={() => setTab(t)} style={mainTab(tab === t)}>
-                {t === 'ideas' ? '💡 Ideas' : t === 'posts' ? '💬 Comments' : t === 'users' ? '👥 Members' : t === 'progress' ? '📊 Progress' : t === 'feedback' ? '📮 Feedback' : '⚙️ Tools'}
+                {t === 'ideas' ? '💡 Ideas' : t === 'posts' ? '💬 Comments' : t === 'users' ? '👥 Members' : t === 'progress' ? '📊 Progress' : t === 'feedback' ? '📮 Feedback' : t === 'analytics' ? '📈 Analytics' : '⚙️ Tools'}
                 {t === 'feedback' && stats && Number(stats.feedback?.new ?? 0) > 0 && (
                   <span style={{ marginLeft: 6, background: '#8b5cf6', color: '#fff', borderRadius: 20, padding: '1px 6px', fontSize: 10, fontWeight: 800 }}>
                     {stats.feedback.new}
@@ -765,7 +844,7 @@ export default function AdminPage() {
               </button>
             ))}
           </div>
-          {tab !== 'tools' && (
+          {tab !== 'tools' && tab !== 'analytics' && (
             <input
               placeholder={`Search ${tab}…`}
               value={search}
@@ -773,7 +852,7 @@ export default function AdminPage() {
               style={{ padding: '8px 14px', borderRadius: 10, border: '1px solid #d2d2d7', fontSize: 13, outline: 'none', background: '#fff', minWidth: 200 }}
             />
           )}
-          {tab !== 'tools' && (
+          {tab !== 'tools' && tab !== 'analytics' && (
             <span style={{ fontSize: 12, color: '#86868b', marginLeft: 'auto' }}>
               {tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : tab === 'users' ? filteredUsers.length : tab === 'progress' ? filteredProgress.length : filteredFeedback.length} result{(tab === 'ideas' ? filteredIdeas.length : tab === 'posts' ? filteredPosts.length : tab === 'users' ? filteredUsers.length : tab === 'progress' ? filteredProgress.length : filteredFeedback.length) !== 1 ? 's' : ''}
             </span>
@@ -995,6 +1074,86 @@ export default function AdminPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* ══════ ANALYTICS ══════ */}
+        {tab === 'analytics' && (
+          <div style={{ maxWidth: 760 }}>
+            {!analytics ? (
+              <div style={{ fontSize: 13, color: '#86868b', padding: '32px 0' }}>Loading…</div>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, color: '#86868b', marginBottom: 16 }}>
+                  Hero page (<code>mvpclub.io/</code>) — visitors are identified only by a salted hash of IP, never the address itself,
+                  and only visitors who accepted the "Analytics" cookie category are counted.
+                </div>
+
+                {/* Standard windows — exact counts, all within the 90-day raw-retention window */}
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const, marginBottom: 20 }}>
+                  {analytics.windows.map(w => (
+                    <div key={w.window} style={{ flex: 1, minWidth: 130, background: '#fff', borderRadius: 16, padding: '16px 18px', border: '1px solid #d2d2d7' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#86868b', textTransform: 'uppercase' as const, letterSpacing: 0.8, marginBottom: 6 }}>
+                        {w.window === 'today' ? 'Today' : `Last ${w.window}`}
+                      </div>
+                      <div style={{ fontSize: 26, fontWeight: 900, color: '#6366f1', letterSpacing: -1 }}>{w.uniqueVisitors}</div>
+                      <div style={{ fontSize: 11, color: '#86868b', marginTop: 2 }}>unique visitor{w.uniqueVisitors !== 1 ? 's' : ''}</div>
+                      <div style={{ fontSize: 12, color: '#3a3a3c', marginTop: 6 }}>{w.pageViews} page view{w.pageViews !== 1 ? 's' : ''}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Daily trend chart */}
+                <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #d2d2d7', padding: '20px 24px', marginBottom: 20 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#1d1d1f', marginBottom: 2 }}>Unique visitors per day</div>
+                  <div style={{ fontSize: 12, color: '#86868b', marginBottom: 16 }}>Last 30 days · hover a bar for the exact count</div>
+                  <AnalyticsDailyChart data={analytics.daily} />
+                </div>
+
+                {/* Link clicks */}
+                <div style={{ background: '#fff', borderRadius: 20, border: '1px solid #d2d2d7', overflow: 'hidden', marginBottom: 20 }}>
+                  <div style={{ padding: '18px 24px 4px' }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#1d1d1f' }}>Which links get clicked</div>
+                    <div style={{ fontSize: 12, color: '#86868b', marginTop: 2, marginBottom: 12 }}>Last 30 days, ranked by clicks</div>
+                  </div>
+                  {analytics.links.length === 0 ? (
+                    <div style={{ fontSize: 13, color: '#86868b', padding: '8px 24px 20px' }}>No clicks recorded yet.</div>
+                  ) : (
+                    <div>
+                      {analytics.links.map((l, i) => {
+                        const max = Math.max(...analytics.links.map(x => x.clicks));
+                        return (
+                          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 24px', borderTop: i === 0 ? 'none' : '1px solid #f1f5f9' }}>
+                            <div style={{ width: 160, fontSize: 12.5, fontWeight: 600, color: '#3a3a3c', flexShrink: 0 }}>{l.label}</div>
+                            <div style={{ flex: 1, background: '#f1f5f9', borderRadius: 6, height: 8, overflow: 'hidden' }}>
+                              <div style={{ width: `${(l.clicks / max) * 100}%`, height: '100%', background: '#6366f1', borderRadius: 6 }} />
+                            </div>
+                            <div style={{ width: 100, textAlign: 'right' as const, flexShrink: 0 }}>
+                              <span style={{ fontSize: 13, fontWeight: 800, color: '#1d1d1f' }}>{l.clicks}</span>
+                              <span style={{ fontSize: 11, color: '#86868b' }}> ({l.uniqueClickers} people)</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* All-time totals */}
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' as const }}>
+                  <StatCard label="Total page views (all time)" value={analytics.allTime.totalPageViews} color="#0066cc" />
+                  <StatCard label="Total link clicks (all time)" value={analytics.allTime.totalClicks} color="#0066cc" />
+                  <div style={{ flex: 1, minWidth: 140, background: '#fff', borderRadius: 16, padding: '18px 22px', border: '1px solid #d2d2d7' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#86868b', textTransform: 'uppercase' as const, letterSpacing: 0.8, marginBottom: 6 }}>Visitor-days (all time)</div>
+                    <div style={{ fontSize: 30, fontWeight: 900, color: '#86868b', letterSpacing: -1 }}>{analytics.allTime.visitorDays}</div>
+                    <div style={{ fontSize: 11, color: '#86868b', marginTop: 4, lineHeight: 1.4 }}>
+                      Not the same as unique people — raw visit records are purged after 90 days, so someone who visits on two different,
+                      already-purged days is counted twice here. Use the windows above for an exact unique-visitor count.
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         )}
 
         {/* ══════ TOOLS ══════ */}

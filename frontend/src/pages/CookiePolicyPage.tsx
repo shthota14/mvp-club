@@ -64,11 +64,31 @@ export default function CookiePolicyPage() {
 
       <h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 32, marginBottom: 8 }}>Analytics</h2>
       <p style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 4 }}>
-        Optional — only active if you accept it. Being straightforward: as of today mvpclub.io doesn't run any
-        analytics or tracking scripts yet, so accepting this category currently has no effect. We're asking anyway
-        so that if we do turn on basic usage measurement later (e.g. which features get used, where people get
-        stuck), it will already respect whatever you chose here rather than starting to track you by default.
-        This page will be updated with real details — provider, what's collected, retention — before that happens.
+        Optional — only active if you accept it. We run basic, first-party usage measurement on our own server (no
+        third-party analytics provider, no ad trackers) — currently limited to the public homepage: which page you
+        viewed, and which button or link you clicked. Nothing here uses a cookie or reads anything already on your
+        device; it's a server-side record of that one visit, sent only after you've accepted this category.
+      </p>
+      <div>
+        <div style={{ ...rowStyle, borderTop: 'none', fontWeight: 600, color: '#6e6e73', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div>What's collected</div><div>Retention</div><div>Why</div>
+        </div>
+        <div style={rowStyle}>
+          <div>Page path, and the button/link you clicked (if any)</div>
+          <div>Individual records: 90 days.<br />Daily totals: kept</div>
+          <div>Seeing which pages and buttons are actually used, and how many people visit.</div>
+        </div>
+        <div style={rowStyle}>
+          <div>Your IP address, one-way hashed</div>
+          <div>Same as above</div>
+          <div>Counting how many <em>different</em> visitors we get, without storing your actual IP address — the
+            hash can't be reversed back to it.</div>
+        </div>
+      </div>
+      <p style={{ fontSize: 12, color: '#6e6e73', lineHeight: 1.6, marginTop: 10 }}>
+        After 90 days, the individual visit record is deleted; only that day's totals (e.g. "42 unique visitors, 61
+        page views") are kept, indefinitely, for long-run trends. We don't use this to identify you personally, sell
+        it, or share it with anyone.
       </p>
 
       <h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 32, marginBottom: 8 }}>Third parties</h2>

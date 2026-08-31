@@ -335,4 +335,96 @@ router.patch('/feedback/:id', async (req: Request, res: Response) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Internal server error' }); }
 });
 
+// ── Hero-page (or any tracked path's) usage analytics ────────────────────────
+// "windows" gives exact unique-visitor + page-view counts for standard
+// periods that fit inside the 90-day raw-retention window (today/7d/30d/90d).
+// "allTime" gives exact totals for page views and clicks (sums are always
+// exact, forever) plus "visitorDays" — the sum of each day's unique-visitor
+// count, which is NOT the same as a true all-time unique-visitor count once
+// raw rows older than 90 days have been purged (a person who visits on two
+// different, both-already-purged days is counted twice). We deliberately
+// don't claim an exact all-time unique count; the dashboard labels
+// visitorDays for what it is instead of quietly overstating precision.
+router.get('/analytics', async (req: Request, res: Response) => {
+  const path = typeof req.query.path === 'string' && req.query.path ? req.query.path : '/';
+  try {
+    const windows = await query<{ window: string; unique_visitors: string; page_views: string }>(
+      `SELECT 'today' AS window,
+         COUNT(DISTINCT visitor_hash) FILTER (WHERE event_type = 'page_view') AS unique_visitors,
+         COUNT(*) FILTER (WHERE event_type = 'page_view') AS page_views
+       FROM analytics_events WHERE path = $1 AND created_at >= date_trunc('day', now())
+       UNION ALL
+       SELECT '7d',
+         COUNT(DISTINCT visitor_hash) FILTER (WHERE event_type = 'page_view'),
+         COUNT(*) FILTER (WHERE event_type = 'page_view')
+       FROM analytics_events WHERE path = $1 AND created_at >= now() - interval '7 days'
+       UNION ALL
+       SELECT '30d',
+         COUNT(DISTINCT visitor_hash) FILTER (WHERE event_type = 'page_view'),
+         COUNT(*) FILTER (WHERE event_type = 'page_view')
+       FROM analytics_events WHERE path = $1 AND created_at >= now() - interval '30 days'
+       UNION ALL
+       SELECT '90d',
+         COUNT(DISTINCT visitor_hash) FILTER (WHERE event_type = 'page_view'),
+         COUNT(*) FILTER (WHERE event_type = 'page_view')
+       FROM analytics_events WHERE path = $1 AND created_at >= now() - interval '90 days'`,
+      [path]
+    );
+
+    const allTimeAgg = await query<{ total_page_views: string; total_clicks: string; visitor_days: string }>(
+      `SELECT
+         COALESCE(SUM(total_events) FILTER (WHERE event_type = 'page_view'), 0)  AS total_page_views,
+         COALESCE(SUM(total_events) FILTER (WHERE event_type = 'link_click'), 0) AS total_clicks,
+         COALESCE(SUM(unique_visitors) FILTER (WHERE event_type = 'page_view'), 0) AS visitor_days
+       FROM analytics_daily_agg WHERE path = $1`,
+      [path]
+    );
+    // Days not yet folded into analytics_daily_agg by the nightly rollup
+    // (today, plus any day since the last run) — added on top so "all-time"
+    // totals aren't stale by up to a day.
+    const notYetRolled = await query<{ page_views: string; clicks: string }>(
+      `SELECT
+         COUNT(*) FILTER (WHERE event_type = 'page_view')  AS page_views,
+         COUNT(*) FILTER (WHERE event_type = 'link_click') AS clicks
+       FROM analytics_events
+       WHERE path = $1
+         AND created_at >= COALESCE((SELECT MAX(day) + 1 FROM analytics_daily_agg WHERE path = $1), date_trunc('day', now()))`,
+      [path]
+    );
+
+    const daily = await query<{ day: string; unique_visitors: string; page_views: string }>(
+      `SELECT date_trunc('day', created_at)::date AS day,
+         COUNT(DISTINCT visitor_hash) FILTER (WHERE event_type = 'page_view') AS unique_visitors,
+         COUNT(*) FILTER (WHERE event_type = 'page_view') AS page_views
+       FROM analytics_events
+       WHERE path = $1 AND created_at >= now() - interval '30 days'
+       GROUP BY 1 ORDER BY 1 ASC`,
+      [path]
+    );
+
+    const links = await query<{ link_label: string; clicks: string; unique_clickers: string }>(
+      `SELECT link_label, COUNT(*) AS clicks, COUNT(DISTINCT visitor_hash) AS unique_clickers
+       FROM analytics_events
+       WHERE path = $1 AND event_type = 'link_click' AND created_at >= now() - interval '30 days'
+       GROUP BY link_label ORDER BY clicks DESC`,
+      [path]
+    );
+
+    res.json({
+      path,
+      windows: windows.rows.map(r => ({ window: r.window, uniqueVisitors: Number(r.unique_visitors), pageViews: Number(r.page_views) })),
+      allTime: {
+        totalPageViews: Number(allTimeAgg.rows[0]?.total_page_views ?? 0) + Number(notYetRolled.rows[0]?.page_views ?? 0),
+        totalClicks: Number(allTimeAgg.rows[0]?.total_clicks ?? 0) + Number(notYetRolled.rows[0]?.clicks ?? 0),
+        visitorDays: Number(allTimeAgg.rows[0]?.visitor_days ?? 0),
+      },
+      daily: daily.rows.map(r => ({ day: r.day, uniqueVisitors: Number(r.unique_visitors), pageViews: Number(r.page_views) })),
+      links: links.rows.map(r => ({ label: r.link_label, clicks: Number(r.clicks), uniqueClickers: Number(r.unique_clickers) })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

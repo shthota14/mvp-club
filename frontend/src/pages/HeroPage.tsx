@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import AuthModal from '@/components/Auth/AuthModal';
 import PayItForwardModal from '@/components/PayItForwardModal';
 import LogPainPointModal from '@/components/LogPainPointModal';
+import { trackPageView, trackClick } from '@/utils/analytics';
 
 // Caveat (marker handwriting font) — same id/pattern as StageCompleteModal.tsx so it's loaded once app-wide
 if (typeof document !== 'undefined' && !document.getElementById('caveat-font')) {
@@ -33,6 +34,8 @@ export default function HeroPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
+
+  useEffect(() => { trackPageView('/'); }, []);
 
   const stages = [
     { n: '01', label: 'Idea', desc: 'Capture a problem worth solving.', detail: 'Every great startup begins with a problem someone desperately needs solved. Not an app. Not a feature. A real, felt pain.', color: '#a78bfa' },
@@ -161,19 +164,19 @@ export default function HeroPage() {
           </div>
         </button>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <button onClick={() => setShowPayItForward(true)} className="hp-nav-support"
+          <button onClick={() => { trackClick('/', 'nav_support'); setShowPayItForward(true); }} className="hp-nav-support"
             style={{ background: 'none', border: '1.5px solid rgba(255,255,255,.18)', color: 'rgba(255,255,255,.75)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '7px 14px', borderRadius: 999, whiteSpace: 'nowrap' }}>
             💛 Support MVP Club
           </button>
-          <button onClick={() => setShowLogPainPoint(true)} className="hp-nav-painpoint"
+          <button onClick={() => { trackClick('/', 'nav_painpoint'); setShowLogPainPoint(true); }} className="hp-nav-painpoint"
             style={{ background: 'none', border: '1.5px solid rgba(255,255,255,.18)', color: 'rgba(255,255,255,.75)', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '7px 14px', borderRadius: 999, whiteSpace: 'nowrap' }}>
             😔 Log a pain point
           </button>
-          <button onClick={() => open('login')} className="hp-nav-signin"
+          <button onClick={() => { trackClick('/', 'nav_signin'); open('login'); }} className="hp-nav-signin"
             style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.45)', fontSize: 14, fontWeight: 500, cursor: 'pointer', padding: '8px 16px', borderRadius: 8 }}>
             Sign in
           </button>
-          <button onClick={() => open('register')} className="hp-nav-getstarted"
+          <button onClick={() => { trackClick('/', 'nav_getstarted'); open('register'); }} className="hp-nav-getstarted"
             style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '9px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
             Get started
           </button>
@@ -199,7 +202,7 @@ export default function HeroPage() {
             From first idea to first customer — one clear next step at every stage.
           </p>
           <div className="hero-cta" style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <button onClick={() => open('register')}
+            <button onClick={() => { trackClick('/', 'hero_top_getstarted'); open('register'); }}
               style={{
                 background: '#fff', color: '#080808', border: 'none',
                 borderRadius: 999, padding: '14px 32px', fontSize: 15, fontWeight: 700,
@@ -207,7 +210,7 @@ export default function HeroPage() {
               }}>
               <span style={{ fontSize: 16 }}>→</span> Get started
             </button>
-            <button onClick={() => open('login')}
+            <button onClick={() => { trackClick('/', 'hero_top_signin'); open('login'); }}
               style={{
                 background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.65)',
                 border: '1px solid rgba(255,255,255,.1)', borderRadius: 999,
@@ -425,7 +428,7 @@ export default function HeroPage() {
               <p style={{ fontSize: 18, color: 'rgba(255,255,255,.5)', lineHeight: 1.8, marginBottom: 28, fontStyle: 'italic', fontFamily: 'var(--font-display)', letterSpacing: -0.3 }}>
                 Click one to explore, respond, or connect. Every idea here belongs to a real founder working through the same five stages as you.
               </p>
-              <button onClick={() => open('register')}
+              <button onClick={() => { trackClick('/', 'ideas_see_all'); open('register'); }}
                 style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '13px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
                 See all startup ideas →
               </button>
@@ -473,7 +476,7 @@ export default function HeroPage() {
               },
             ].map((card) => (
               <div key={card.name}
-                onClick={() => open('register')}
+                onClick={() => { trackClick('/', 'idea_card_click'); open('register'); }}
                 style={{
                   background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)',
                   borderRadius: 14, padding: '20px', cursor: 'pointer',
@@ -505,15 +508,15 @@ export default function HeroPage() {
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: 6, borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 14 }}>
-                  <button onClick={e => { e.stopPropagation(); open('register'); }}
+                  <button onClick={e => { e.stopPropagation(); trackClick('/', 'idea_card_encourage'); open('register'); }}
                     style={{ flex: 1, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 8, padding: '7px 0', fontSize: 12, color: 'rgba(255,255,255,.45)', cursor: 'pointer', fontWeight: 600 }}>
                     👍 {card.encouraged}
                   </button>
-                  <button onClick={e => { e.stopPropagation(); open('register'); }}
+                  <button onClick={e => { e.stopPropagation(); trackClick('/', 'idea_card_reply'); open('register'); }}
                     style={{ flex: 1, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 8, padding: '7px 0', fontSize: 12, color: 'rgba(255,255,255,.45)', cursor: 'pointer', fontWeight: 600 }}>
                     💬 {card.replies}
                   </button>
-                  <button onClick={e => { e.stopPropagation(); open('register'); }}
+                  <button onClick={e => { e.stopPropagation(); trackClick('/', 'idea_card_connect'); open('register'); }}
                     style={{ flex: 1, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 8, padding: '7px 0', fontSize: 12, color: 'rgba(255,255,255,.45)', cursor: 'pointer', fontWeight: 600 }}>
                     🤝 Connect
                   </button>
@@ -527,7 +530,7 @@ export default function HeroPage() {
             <span style={{ fontSize: 14, color: 'rgba(255,255,255,.3)' }}>Showing 6 of </span>
             <span style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,.55)' }}>247 active ideas</span>
             <span style={{ fontSize: 14, color: 'rgba(255,255,255,.3)' }}> — </span>
-            <button onClick={() => open('register')} style={{ background: 'none', border: 'none', fontSize: 14, fontWeight: 700, color: '#a78bfa', cursor: 'pointer', padding: 0 }}>
+            <button onClick={() => { trackClick('/', 'ideas_join_all'); open('register'); }} style={{ background: 'none', border: 'none', fontSize: 14, fontWeight: 700, color: '#a78bfa', cursor: 'pointer', padding: 0 }}>
               Join to see them all →
             </button>
           </div>
@@ -585,7 +588,7 @@ export default function HeroPage() {
           <p style={{ fontSize: 17, color: 'rgba(255,255,255,.45)', lineHeight: 1.8, fontFamily: 'var(--font-display)', fontStyle: 'italic', letterSpacing: -0.2, marginBottom: 36 }}>
             MVP Club is small on purpose — one founder, no support queue. The fastest way to reach me is to create a free account and use the feedback button inside the app; I read every message myself.
           </p>
-          <button onClick={() => open('register')}
+          <button onClick={() => { trackClick('/', 'contact_getstarted'); open('register'); }}
             style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '13px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
             Get started →
           </button>
@@ -607,7 +610,7 @@ export default function HeroPage() {
             ✓ Free forever — no credit card, ever
           </span>
         </div>
-        <button onClick={() => open('register')}
+        <button onClick={() => { trackClick('/', 'final_cta_getstarted'); open('register'); }}
           style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '16px 40px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>
           Get started →
         </button>

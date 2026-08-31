@@ -423,6 +423,7 @@ export const adminApi = {
   triggerWeeklyDigest: () => api.post('/admin/jobs/weekly-digest'),
   listFeedback: (status?: string) => api.get('/admin/feedback', { params: status ? { status } : {} }),
   updateFeedback: (id: string, data: { status?: string; admin_notes?: string }) => api.patch(`/admin/feedback/${id}`, data),
+  getAnalytics: (path?: string) => api.get('/admin/analytics', { params: path ? { path } : {} }),
 };
 
 // Feedback (feature requests / bugs / improvements / general feedback) —
@@ -445,6 +446,13 @@ export const donationsApi = {
 export const publicApi = {
   createPainPoint: (data: Record<string, unknown>) => api.post('/public/pain-points', data),
   listPainPoints: (limit?: number, offset?: number) => api.get('/public/pain-points', { params: { limit, offset } }),
+};
+
+// First-party usage analytics ingestion — public, unauthenticated (the
+// backend route isn't behind auth). Fire-and-forget from utils/analytics.ts,
+// itself gated on cookie consent before it ever calls this.
+export const analyticsApi = {
+  track: (data: Record<string, unknown>) => api.post('/analytics/events', data),
 };
 
 // Proof of Demand Challenges

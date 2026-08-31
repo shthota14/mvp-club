@@ -20,9 +20,11 @@ import challengesRouter from './routes/challenges';
 import schedulingRouter from './routes/scheduling';
 import feedbackRouter from './routes/feedback';
 import publicPainPointsRouter from './routes/publicPainPoints';
+import analyticsEventsRouter from './routes/analyticsEvents';
 import { runWeeklyDigest } from './jobs/weeklyDigest';
 import { runReEngagement } from './jobs/reEngagement';
 import { runStartupNewsDigest } from './jobs/startupNewsDigest';
+import { runAnalyticsRollup } from './jobs/analyticsRollup';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -46,6 +48,7 @@ app.use('/api/ideas', ideasRouter);
 app.use('/api/validation', validationRouter);
 app.use('/api/community', communityRouter);
 app.use('/api/public/pain-points', publicPainPointsRouter);
+app.use('/api/analytics', analyticsEventsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/network', networkRouter);
 app.use('/api/linkedin', linkedinRouter);
@@ -114,5 +117,13 @@ cron.schedule('0 7 * * *', () => {
   runStartupNewsDigest().catch(err => console.error('[cron] startupNewsDigest crashed:', err));
 });
 console.log('[cron] Startup news digest scheduled — daily at 07:00 UTC');
+
+// Analytics rollup + purge — daily at 3:15 AM UTC, off-peak. Aggregates
+// yesterday-and-earlier's raw hero-page analytics into analytics_daily_agg,
+// then deletes raw event rows older than 90 days. See jobs/analyticsRollup.ts.
+cron.schedule('15 3 * * *', () => {
+  runAnalyticsRollup().catch(err => console.error('[cron] analyticsRollup crashed:', err));
+});
+console.log('[cron] Analytics rollup scheduled — daily at 03:15 UTC');
 
 export default app;
