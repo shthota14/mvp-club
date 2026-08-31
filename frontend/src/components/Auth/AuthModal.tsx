@@ -68,6 +68,7 @@ export default function AuthModal({ mode, onClose }: Props) {
   const [userRole, setUserRole] = useState('');
   const [hoveredRole, setHoveredRole] = useState('');
   const [ideaOverride, setIdeaOverride] = useState<boolean | null>(null); // null = follow role default
+  const [showWelcomeNote, setShowWelcomeNote] = useState(true); // dismissible handwritten note on step 1
   const [communityOpt, setCommunityOpt] = useState<boolean | null>(null);
   const [helpTypes, setHelpTypes] = useState<string[]>([]);
 
@@ -238,6 +239,27 @@ export default function AuthModal({ mode, onClose }: Props) {
         {/* REGISTER — step 1 of 2: account fields */}
         {step === 'register' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {showWelcomeNote ? (
+              <div style={{
+                background: '#fffbe6', border: '1px solid #fde68a', borderRadius: 10,
+                padding: '10px 30px 10px 12px', fontFamily: "'Caveat', cursive", fontSize: 17,
+                color: '#78350f', transform: 'rotate(-1.2deg)', marginBottom: 4, position: 'relative' as const,
+              }}>
+                Hey, welcome! This takes about 30 seconds ✍️
+                <button
+                  type="button"
+                  onClick={() => setShowWelcomeNote(false)}
+                  aria-label="Dismiss"
+                  style={{ position: 'absolute' as const, top: 4, right: 8, background: 'none', border: 'none', fontFamily: 'inherit', fontSize: 13, color: '#92702a', cursor: 'pointer' }}
+                >✕</button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowWelcomeNote(true)}
+                style={{ alignSelf: 'flex-start', fontSize: 11.5, fontWeight: 700, color: '#6366f1', background: '#eef2ff', border: 'none', borderRadius: 999, padding: '6px 12px', cursor: 'pointer', fontFamily: 'inherit', marginBottom: -4 }}
+              >Show welcome note</button>
+            )}
             <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, letterSpacing: .06, color: '#6366f1', background: '#eef2ff', padding: '4px 10px', borderRadius: 999, marginBottom: 4, alignSelf: 'flex-start' }}>Step 1 of 2</span>
             <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.6, marginBottom: 4 }}>Create your account</h2>
             {error && <div style={{ color: '#ff3b30', fontSize: 13 }}>{error}</div>}
