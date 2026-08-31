@@ -1783,8 +1783,6 @@ function OneLinerPreviewCard({ value, onChange, publicOn, onTogglePublic }: { va
   const saveEdit = () => { onChange(draft.trim()); setEditing(false); };
   const cancelEdit = () => { setEditing(false); };
 
-  if (!value.trim() && !editing) return null;
-
   const m = value.match(/I'?m building (.+?) for (.+?) who (.+?) so they can (.+?)\.?$/i);
   const pb = m?.[1] ?? ''; const pf = m?.[2] ?? ''; const pw = m?.[3] ?? ''; const po = m?.[4] ?? '';
   const filled = (v: string) => v && !v.includes('___');
@@ -1795,6 +1793,13 @@ function OneLinerPreviewCard({ value, onChange, publicOn, onTogglePublic }: { va
   // Highlighter sweep: fires once, the moment all four blanks go from
   // "some still empty" to "fully filled in" — not on every render while
   // already complete (e.g. while the founder keeps typing elsewhere).
+  // NOTE: these hooks must stay ABOVE the `if (!value.trim())` early return
+  // below — React requires every hook to run on every render of a given
+  // component instance, in the same order. Placing them after a conditional
+  // return meant they were skipped entirely while value was still empty and
+  // then suddenly called once it wasn't, which is a Rules-of-Hooks
+  // violation: React throws ("change in the order of Hooks") and unmounts
+  // the whole tree, which is what showed up as the page going blank.
   const allFilled = !!(filled(pb) && filled(pf) && filled(pw) && filled(po));
   const wasAllFilledRef = useRef(false);
   const [justCompleted, setJustCompleted] = useState(false);
@@ -1807,6 +1812,8 @@ function OneLinerPreviewCard({ value, onChange, publicOn, onTogglePublic }: { va
     }
     wasAllFilledRef.current = allFilled;
   }, [allFilled]);
+
+  if (!value.trim() && !editing) return null;
 
   return (
     <div style={{
