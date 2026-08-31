@@ -58,6 +58,36 @@ export const IMPACT_OPTS = [
   { v: 'low',    label: '💡 Low — nice to fix' },
 ] as const;
 
+const CARD_RADIUS = 22;
+const FIELD_RADIUS = 12;
+
+// Small MVP Club brand mark (same sun-and-rays motif as the hero nav logo,
+// recolored for this card's light "editorial paper" theme) — reused in both
+// the form header and the success header so the modal reads as MVP Club
+// branded wherever it's opened from, including standalone on /pain-points
+// where it's often the very first thing a visitor sees.
+function BrandMark() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+      <svg width="26" height="26" viewBox="0 0 36 36" fill="none">
+        {Array.from({ length: 8 }, (_, i) => {
+          const a = (i * 45 * Math.PI) / 180;
+          return (
+            <line key={i}
+              x1={18 + 10 * Math.cos(a)} y1={18 + 10 * Math.sin(a)}
+              x2={18 + 15 * Math.cos(a)} y2={18 + 15 * Math.sin(a)}
+              stroke={LIT.accent} strokeWidth="2.2" strokeLinecap="round" />
+          );
+        })}
+        <circle cx="18" cy="18" r="6.5" fill={LIT.accent} />
+      </svg>
+      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2.5, color: LIT.accent, textTransform: 'uppercase' as const, fontFamily: LIT.bodyFont }}>
+        MVP Club
+      </span>
+    </div>
+  );
+}
+
 // ── Log Pain Point Modal ──────────────────────────────────────────────────────
 
 interface Props {
@@ -131,13 +161,30 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
       <div style={{
         position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
         width: '94%', maxWidth: 560, maxHeight: '92vh', overflowY: 'auto',
-        background: LIT.card, borderRadius: LIT.radius,
-        boxShadow: '0 32px 80px rgba(70,50,15,.18)', zIndex: 301,
+        background: LIT.card, borderRadius: CARD_RADIUS,
+        boxShadow: '0 40px 100px rgba(70,50,15,.24)', zIndex: 301,
       }}>
-        {/* Top accent */}
-        <div style={{ height: 5, background: LIT.accent, borderRadius: `${LIT.radius}px ${LIT.radius}px 0 0` }} />
+        {/* Branded header band */}
+        <div style={{
+          position: 'relative' as const, textAlign: 'center' as const,
+          padding: '26px 28px 20px', background: LIT.accentSoft,
+          borderBottom: `1px solid ${LIT.accentSoftBorder}`,
+          borderRadius: `${CARD_RADIUS}px ${CARD_RADIUS}px 0 0`,
+        }}>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              position: 'absolute' as const, top: 14, right: 14,
+              width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(255,255,255,.6)', border: 'none', borderRadius: '50%',
+              fontSize: 14, color: LIT.secondary, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >✕</button>
+          <BrandMark />
+        </div>
 
-        <div style={{ padding: '24px 28px 28px' }}>
+        <div style={{ padding: '26px 28px 28px' }}>
           {posted ? (
             <div style={{ textAlign: 'center', padding: '20px 0 0' }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>{held ? '🕓' : '🎯'}</div>
@@ -159,7 +206,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
                     <button
                       onClick={() => navigate('/', { state: { openRegister: true } })}
                       style={{
-                        padding: '11px 20px', borderRadius: LIT.radius, border: 'none',
+                        padding: '11px 20px', borderRadius: FIELD_RADIUS, border: 'none',
                         background: LIT.accent, color: '#fff', fontSize: 13.5, fontWeight: 700,
                         cursor: 'pointer', fontFamily: 'inherit',
                       }}
@@ -167,7 +214,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
                       Create a free account →
                     </button>
                     <button onClick={onClose} style={{
-                      padding: '11px 20px', borderRadius: LIT.radius,
+                      padding: '11px 20px', borderRadius: FIELD_RADIUS,
                       border: `1.5px solid ${LIT.border}`, background: LIT.card,
                       color: LIT.secondary, fontSize: 13.5, fontWeight: 600,
                       cursor: 'pointer', fontFamily: 'inherit',
@@ -180,10 +227,10 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
             </div>
           ) : (
             <>
-              <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.5, marginBottom: 4, color: LIT.text, fontFamily: LIT.headFont }}>
-                Log a pain point
+              <div style={{ fontSize: 23, fontWeight: 800, letterSpacing: -0.5, marginBottom: 6, color: LIT.text, fontFamily: LIT.headFont, textAlign: 'center' as const }}>
+                🎯 Log a pain point
               </div>
-              <div style={{ fontSize: 14, color: LIT.secondary, marginBottom: 24, fontFamily: LIT.bodyFont }}>
+              <div style={{ fontSize: 14, color: LIT.secondary, marginBottom: 26, fontFamily: LIT.bodyFont, textAlign: 'center' as const, lineHeight: 1.55 }}>
                 {mode === 'public'
                   ? "Describe a real problem you've seen. No account needed — other founders can pick it up and build a solution."
                   : "Describe a real problem you've seen. Other founders can pick it up and build a solution."}
@@ -199,7 +246,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
                 onChange={e => setDescription(e.target.value)}
                 placeholder="e.g. Freelancers spend 3+ hours a week chasing overdue invoices with no visibility into when they'll get paid."
                 rows={3}
-                style={{ width: '100%', padding: '11px 13px', borderRadius: LIT.radius, border: `1.5px solid ${LIT.border}`, fontSize: 14, lineHeight: 1.65, resize: 'vertical' as const, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: 18, color: LIT.text }}
+                style={{ width: '100%', padding: '11px 13px', borderRadius: FIELD_RADIUS, border: `1.5px solid ${LIT.border}`, fontSize: 14, lineHeight: 1.65, resize: 'vertical' as const, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: 18, color: LIT.text }}
                 onFocus={e => (e.target.style.borderColor = LIT.accent)}
                 onBlur={e => (e.target.style.borderColor = LIT.border)}
               />
@@ -212,7 +259,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
                 value={audience}
                 onChange={e => setAudience(e.target.value)}
                 placeholder="e.g. Freelancers, small agencies, consultants"
-                style={{ width: '100%', padding: '11px 13px', borderRadius: LIT.radius, border: `1.5px solid ${LIT.border}`, fontSize: 14, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: 18, color: LIT.text }}
+                style={{ width: '100%', padding: '11px 13px', borderRadius: FIELD_RADIUS, border: `1.5px solid ${LIT.border}`, fontSize: 14, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: 18, color: LIT.text }}
                 onFocus={e => (e.target.style.borderColor = LIT.accent)}
                 onBlur={e => (e.target.style.borderColor = LIT.border)}
               />
@@ -243,7 +290,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
                   const sel = impact === o.v;
                   return (
                     <button key={o.v} onClick={() => setImpact(o.v)} style={{
-                      flex: 1, padding: '10px 6px', borderRadius: LIT.radius, fontSize: 11, fontWeight: 700,
+                      flex: 1, padding: '10px 6px', borderRadius: FIELD_RADIUS, fontSize: 11, fontWeight: 700,
                       cursor: 'pointer', fontFamily: 'inherit', transition: 'all .12s', textAlign: 'center' as const,
                       border: `2px solid ${sel ? ic.color : LIT.border}`,
                       background: sel ? ic.bg : LIT.cardTint,
@@ -261,7 +308,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
                 value={domain}
                 onChange={e => setDomain(e.target.value)}
                 placeholder="e.g. Fintech, Healthcare, Education…"
-                style={{ width: '100%', padding: '11px 13px', borderRadius: LIT.radius, border: `1.5px solid ${LIT.border}`, fontSize: 14, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: mode === 'public' ? 18 : 24, color: LIT.text }}
+                style={{ width: '100%', padding: '11px 13px', borderRadius: FIELD_RADIUS, border: `1.5px solid ${LIT.border}`, fontSize: 14, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: mode === 'public' ? 18 : 24, color: LIT.text }}
                 onFocus={e => (e.target.style.borderColor = LIT.accent)}
                 onBlur={e => (e.target.style.borderColor = LIT.border)}
               />
@@ -277,7 +324,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    style={{ width: '100%', padding: '11px 13px', borderRadius: LIT.radius, border: `1.5px solid ${LIT.border}`, fontSize: 14, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: 24, color: LIT.text }}
+                    style={{ width: '100%', padding: '11px 13px', borderRadius: FIELD_RADIUS, border: `1.5px solid ${LIT.border}`, fontSize: 14, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: 24, color: LIT.text }}
                     onFocus={e => (e.target.style.borderColor = LIT.accent)}
                     onBlur={e => (e.target.style.borderColor = LIT.border)}
                   />
@@ -291,7 +338,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
                   onClick={handle}
                   disabled={!valid || posting}
                   style={{
-                    flex: 2, padding: '14px', borderRadius: LIT.radius, border: 'none',
+                    flex: 2, padding: '14px', borderRadius: FIELD_RADIUS, border: 'none',
                     background: valid ? LIT.accent : LIT.border,
                     color: valid ? '#fff' : LIT.muted,
                     fontSize: 14, fontWeight: 700,
@@ -301,7 +348,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
                   {posting ? 'Logging…' : '🎯 Log this pain point →'}
                 </button>
                 <button onClick={onClose} style={{
-                  flex: 1, padding: '14px', borderRadius: LIT.radius,
+                  flex: 1, padding: '14px', borderRadius: FIELD_RADIUS,
                   border: `1.5px solid ${LIT.border}`, background: LIT.card,
                   color: LIT.secondary, fontSize: 14, fontWeight: 600,
                   cursor: 'pointer', fontFamily: 'inherit',
