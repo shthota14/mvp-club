@@ -309,43 +309,48 @@ export default function AuthModal({ mode, onClose }: Props) {
                   <div style={{ textAlign: 'center', marginBottom: 4 }}>
                     <div style={{ fontSize: 44, marginBottom: 10 }}>🌱</div>
                     <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.6, color: '#fff' }}>One more thing.</h2>
-                    <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,.45)', marginTop: 6 }}>Tell us about your idea so we can give you the right first step.</p>
                   </div>
 
-                  {/* Note card — same paper/sticky-note motif as the hero page's
-                      founder quote and the Caveat-font role picker, adapted for
-                      this dark step so the idea itself feels like the one warm,
-                      handwritten thing on an otherwise functional screen. */}
-                  <div style={{
-                    background: '#fffdf2', border: '1.5px solid #e5e0c8', borderRadius: 10,
-                    padding: '20px 22px 18px', transform: 'rotate(-1deg)',
-                    boxShadow: '4px 8px 20px rgba(0,0,0,.45)', margin: '6px 4px 10px',
-                  }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: '#9c9270', marginBottom: 4 }}>🏷️ Give your idea a name</div>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: 'rgba(255,255,255,.35)', marginBottom: 6 }}>🏷️ Name your idea</div>
                     <input
                       placeholder="e.g. Project Phoenix, FounderOS"
                       value={ideaName} onChange={e => setIdeaName(e.target.value)}
                       style={{
-                        width: '100%', border: 'none', borderBottom: '2px solid #e5e0c8', background: 'transparent',
-                        fontFamily: "'Caveat', cursive", fontSize: 26, fontWeight: 600, color: '#3f3a1f',
-                        padding: '4px 2px 8px', outline: 'none', boxSizing: 'border-box' as const,
+                        width: '100%', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.22)', background: 'transparent',
+                        fontSize: 15, color: '#fff', padding: '8px 2px', outline: 'none', boxSizing: 'border-box' as const,
                       }}
                     />
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: '#9c9270', margin: '16px 0 4px' }}>💡 What is it? (one line)</div>
+                  </div>
+                  <div style={{ marginTop: 4 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .5, color: 'rgba(255,255,255,.35)', marginBottom: 6 }}>💡 What is it?</div>
                     <input
                       placeholder="e.g. Helping founders ship faster with less overwhelm"
                       value={ideaDesc} onChange={e => setIdeaDesc(e.target.value)}
                       style={{
-                        width: '100%', border: 'none', borderBottom: '1.5px solid #e5e0c8', background: 'transparent',
-                        fontSize: 14.5, color: '#57503a', padding: '4px 2px 8px', outline: 'none', boxSizing: 'border-box' as const,
+                        width: '100%', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,.22)', background: 'transparent',
+                        fontSize: 15, color: '#fff', padding: '8px 2px', outline: 'none', boxSizing: 'border-box' as const,
                       }}
                     />
                   </div>
 
-                  <button style={{ ...primaryBtn(true), background: 'linear-gradient(135deg,#6366f1,#0066cc)', color: 'white' }} onClick={() => setStep('stage')}>Next →</button>
+                  {/* Two-CTA split — naming now and skipping for now are presented
+                      as two equal-weight choices instead of one primary button
+                      with the "I don't have an idea" escape buried as fine print.
+                      Both proceed to the next step either way (nothing here was
+                      ever required); this is purely about not making a founder
+                      feel stuck if they don't have a name yet. */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+                    <button style={{ ...primaryBtn(true), background: 'linear-gradient(135deg,#6366f1,#0066cc)', color: 'white' }} onClick={() => setStep('stage')}>Name it now →</button>
+                    <button onClick={() => setStep('stage')} style={{
+                      width: '100%', padding: '13px 14px', borderRadius: 14, cursor: 'pointer',
+                      border: '1.5px solid rgba(255,255,255,.25)', background: 'transparent',
+                      color: '#fff', fontSize: 13.5, fontWeight: 600,
+                    }}>Skip for now →</button>
+                  </div>
                   {roleDefault === false && (
                     <button onClick={() => setIdeaOverride(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.4)', fontSize: 12, cursor: 'pointer', padding: 0, textAlign: 'center' }}>
-                      Actually, I'm not building my own idea →
+                      Actually, I'm not building my own idea at all →
                     </button>
                   )}
                 </>
