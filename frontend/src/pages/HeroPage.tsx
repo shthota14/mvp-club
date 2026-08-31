@@ -617,9 +617,30 @@ export default function HeroPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="hp-footer" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '28px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.15)' }}>© {new Date().getFullYear()} MVP Club</span>
-        <span style={{ fontSize: 12, color: 'rgba(255,255,255,.2)', fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>From idea to launched — one step at a time.</span>
+      <footer className="hp-footer" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '28px 40px', display: 'flex', flexDirection: 'column' as const, gap: 12, alignItems: 'center', textAlign: 'center' as const }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const, justifyContent: 'center' }}>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,.15)' }}>© {new Date().getFullYear()} MVP Club</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,.15)' }}>·</span>
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,.2)', fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>From idea to launched — one step at a time.</span>
+        </div>
+        <nav style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const, justifyContent: 'center' }}>
+          {([
+            ['Log a pain point', 'footer_painpoints', () => navigate('/pain-points')],
+            ['Support MVP Club', 'footer_support', () => setShowPayItForward(true)],
+            ['Cookie Policy', 'footer_cookies', () => navigate('/cookies')],
+            ['Sign in', 'footer_signin', () => open('login')],
+          ] as [string, string, () => void][]).map(([label, evt, action], i) => (
+            <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {i > 0 && <span style={{ fontSize: 12, color: 'rgba(255,255,255,.15)' }}>·</span>}
+              <button
+                onClick={() => { trackClick('/', evt); action(); }}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,.35)', fontSize: 12, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+              >
+                {label}
+              </button>
+            </span>
+          ))}
+        </nav>
       </footer>
 
       {authOpen && (
