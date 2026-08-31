@@ -6329,7 +6329,14 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
           <div style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900, letterSpacing: -0.1, color: '#666', marginBottom: 4 }}>Total score</div>
           <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 20, color: grade.tc, fontWeight: 700 }}>{grade.label}</div>
         </div>
-        <div style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 38, fontWeight: 900, color: grade.bc, letterSpacing: -1 }}>{total}<span style={{ fontSize: 16, fontWeight: 600, color: '#888', fontFamily: 'inherit' }}>/40</span></div>
+        {/* `key={total}` forces a remount on every score change, which is what
+            replays the `tickPop` animation (defined in the shared keyframes
+            block above but otherwise unused) — the one satisfying "point
+            scored" beat in what's meant to be a careful self-assessment step,
+            not a game. Deliberately not spread across every score button
+            below: one focal pop reads as feedback, forty small ones would
+            just feel busy. */}
+        <div key={total} style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 38, fontWeight: 900, color: grade.bc, letterSpacing: -1, animation: 'tickPop .4s ease' }}>{total}<span style={{ fontSize: 16, fontWeight: 600, color: '#888', fontFamily: 'inherit' }}>/40</span></div>
       </div>
     </div>
   );
@@ -12248,7 +12255,7 @@ export default function WorkPage() {
   // completed count per idea via a ref so it only fires on the transition
   // that crosses a milestone within this session — not on page load/refresh
   // when you're already past it, and not again after switching ideas. ──
-  const [milestoneCelebration, setMilestoneCelebration] = useState<number | null>(null);
+  const [milestoneCelebration, setMilestoneCelebration] = useState<number | 'hone-score' | null>(null);
   const prevCompletedRef = useRef<{ ideaId: string | null; count: number | null }>({ ideaId: null, count: null });
   useEffect(() => {
     const completedCount = interviews.filter((iv: any) => iv.status === 'completed').length;
@@ -12599,6 +12606,22 @@ export default function WorkPage() {
   const mark   = (m: Mod) => { setCompleted(c => ({ ...c, [m]: true })); setCelebrateStage(m); };
 
   const honeScore = SCORE_DIMS.reduce((s, d) => s + (parseInt(get(d.key)) || 0), 0);
+  // Same transition-tracking pattern as the interview-count milestone above,
+  // for Hone's "How strong is your idea?" scorecard: celebrate the first
+  // time a founder's total crosses the 20 threshold that unlocks the "ready
+  // to move forward" framing on that step (see honeScore >= 20 below) — not
+  // on load/refresh when already past it, and not again after switching
+  // ideas. Placed here, after honeScore is computed, since the effect below
+  // closes over it directly.
+  const prevHoneScoreRef = useRef<{ ideaId: string | null; score: number | null }>({ ideaId: null, score: null });
+  useEffect(() => {
+    const ideaId = activeIdea?.id ?? null;
+    const prev = prevHoneScoreRef.current;
+    if (prev.ideaId === ideaId && prev.score !== null && prev.score < 20 && honeScore >= 20) {
+      setMilestoneCelebration('hone-score');
+    }
+    prevHoneScoreRef.current = { ideaId, score: honeScore };
+  }, [honeScore, activeIdea?.id]);
 
   const save = async (stage: Mod, updates: Record<string, string>) => {
     if (!activeIdea) return;
@@ -19905,7 +19928,9 @@ export default function WorkPage() {
                 ? "First conversation logged — you're doing the hard part most founders skip."
                 : milestoneCelebration === 5
                 ? '5 conversations in — real signal is starting to show.'
-                : "10 conversations logged — that's a real validation effort."}
+                : milestoneCelebration === 10
+                ? "10 conversations logged — that's a real validation effort."
+                : "Score's past 20 — your idea just got sharper."}
             </span>
           </div>
         </>
