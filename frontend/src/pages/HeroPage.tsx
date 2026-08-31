@@ -625,6 +625,7 @@ export default function HeroPage() {
         </div>
         <nav style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const, justifyContent: 'center' }}>
           {([
+            ['Our Story', 'footer_story', () => navigate('/story')],
             ['Log a pain point', 'footer_painpoints', () => navigate('/pain-points')],
             ['Support MVP Club', 'footer_support', () => setShowPayItForward(true)],
             ['Cookie Policy', 'footer_cookies', () => navigate('/cookies')],

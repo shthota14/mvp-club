@@ -22,6 +22,7 @@ import PublicChallengePage from '@/pages/PublicChallengePage';
 import CookiePolicyPage from '@/pages/CookiePolicyPage';
 import SupportLinkPage from '@/pages/SupportLinkPage';
 import PublicPainPointsPage from '@/pages/PublicPainPointsPage';
+import StoryPage from '@/pages/StoryPage';
 import CookieConsent from '@/components/CookieConsent';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -103,6 +104,7 @@ export default function App() {
       <Route path="/cookies" element={<CookiePolicyPage />} />
       <Route path="/support" element={<SupportLinkPage />} />
       <Route path="/pain-points" element={<PublicPainPointsPage />} />
+      <Route path="/story" element={<StoryPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
