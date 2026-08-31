@@ -66,9 +66,17 @@ const FIELD_RADIUS = 12;
 // the form header and the success header so the modal reads as MVP Club
 // branded wherever it's opened from, including standalone on /pain-points
 // where it's often the very first thing a visitor sees.
-function BrandMark() {
+// Clickable — doubles as a "go to mvpclub.io" link, since this modal is
+// often the very first (and sometimes only) thing a visitor sees, e.g.
+// landing straight into it from a shared /pain-points link.
+function BrandMark({ onClick }: { onClick: () => void }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Go to MVP Club home"
+      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}
+    >
       <svg width="26" height="26" viewBox="0 0 36 36" fill="none">
         {Array.from({ length: 8 }, (_, i) => {
           const a = (i * 45 * Math.PI) / 180;
@@ -84,7 +92,7 @@ function BrandMark() {
       <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2.5, color: LIT.accent, textTransform: 'uppercase' as const, fontFamily: LIT.bodyFont }}>
         MVP Club
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -181,7 +189,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
               fontSize: 14, color: LIT.secondary, cursor: 'pointer', fontFamily: 'inherit',
             }}
           >✕</button>
-          <BrandMark />
+          <BrandMark onClick={() => { onClose(); navigate('/'); }} />
         </div>
 
         <div style={{ padding: '26px 28px 28px' }}>
