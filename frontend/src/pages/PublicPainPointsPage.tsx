@@ -29,7 +29,7 @@ export default function PublicPainPointsPage() {
   const { isAuthenticated } = useApp();
   const [painPoints, setPainPoints] = useState<PainPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showLog, setShowLog] = useState(false);
+  const [showLog, setShowLog] = useState(true); // opens immediately — this page is the direct-share link for collecting a pain point with zero clicks
 
   useEffect(() => {
     let cancelled = false;
