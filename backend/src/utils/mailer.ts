@@ -37,6 +37,11 @@ function getTransporter() {
 const FROM_NAME    = process.env.MAIL_FROM_NAME || 'MVP Club';
 const FROM_ADDRESS = process.env.MAIL_FROM || process.env.SMTP_USER || '';
 
+// Where a human hitting "Reply" on any app-sent email should land — kept
+// separate from FROM_ADDRESS so app mail can keep sending through the free
+// Gmail SMTP relay while replies go straight to a real inbox instead.
+const REPLY_TO = process.env.MAIL_REPLY_TO || '';
+
 // Escapes text that gets interpolated into an HTML email body — matters most
 // for founder-edited copy (the meeting-request preview/edit flow) since that
 // text is no longer just our own template strings.
@@ -119,6 +124,7 @@ export async function sendPasswordResetEmail({
 
   await t.sendMail({
     from: `"${FROM_NAME}" <${FROM_ADDRESS}>`,
+    replyTo: REPLY_TO || undefined,
     to: toEmail,
     subject: 'Reset your MVP Club password',
     text,
@@ -194,6 +200,7 @@ export async function sendNetworkOfferEmail({
 
   await t.sendMail({
     from: `"${fromName} via ${FROM_NAME}" <${FROM_ADDRESS}>`,
+    replyTo: REPLY_TO || undefined,
     to: toEmail,
     subject: `Quick intro — ${ideaName}`,
     text,
@@ -358,6 +365,7 @@ export async function sendInterviewInviteEmail({
 
   await t.sendMail({
     from: `"${organizerName} via ${FROM_NAME}" <${FROM_ADDRESS}>`,
+    replyTo: REPLY_TO || undefined,
     to: `"${intervieweeName}" <${intervieweeEmail}>`,
     subject,
     text,
@@ -466,6 +474,7 @@ export async function sendNotificationEmail({
 
   await t.sendMail({
     from:    `"${FROM_NAME}" <${FROM_ADDRESS}>`,
+    replyTo: REPLY_TO || undefined,
     to:      toEmail,
     subject: title,
     text,
@@ -591,6 +600,7 @@ export async function sendWeeklyDigestEmail({
 
   await t.sendMail({
     from:    `"${FROM_NAME}" <${FROM_ADDRESS}>`,
+    replyTo: REPLY_TO || undefined,
     to:      toEmail,
     subject: wasActive
       ? `⚡ Keep it up, ${firstName} — here's your next step`
@@ -804,6 +814,7 @@ export async function sendReEngagementEmail({
 
   await t.sendMail({
     from:    `"${FROM_NAME}" <${FROM_ADDRESS}>`,
+    replyTo: REPLY_TO || undefined,
     to:      toEmail,
     subject,
     text,
@@ -861,6 +872,7 @@ export async function sendOrganizerCalendarInvite({
 
   await t.sendMail({
     from: `"${FROM_NAME}" <${FROM_ADDRESS}>`,
+    replyTo: REPLY_TO || undefined,
     to: `"${organizerName}" <${organizerEmail}>`,
     subject: `Interview confirmed: ${formatMeetingName({ ideaName, intervieweeName, organizerName, startTime })}`,
     html,
@@ -956,6 +968,7 @@ export async function sendMeetingRequestEmail({
 
   await t.sendMail({
     from: `"${organizerName} via ${FROM_NAME}" <${FROM_ADDRESS}>`,
+    replyTo: REPLY_TO || undefined,
     to: `"${toName}" <${toEmail}>`,
     subject,
     text,
