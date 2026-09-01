@@ -5351,7 +5351,10 @@ function FounderReadinessStep({
       </div>
 
       {/* ── 2. Skills you bring ── */}
-      <div>
+      {/* Direction A: each section stays hidden until the one before it has
+          an answer — `display` toggle (not unmount) so nothing resets while
+          hidden, same pattern used for the Idea steps and Hone step 1/3. */}
+      <div style={{ display: timeValue ? 'block' : 'none' }}>
         <Section
           icon="🧠"
           title="What skills do you bring to the table?"
@@ -5387,7 +5390,7 @@ function FounderReadinessStep({
       </div>
 
       {/* ── 3. Co-founder ── */}
-      <div>
+      <div style={{ display: selectedSkills.length > 0 ? 'block' : 'none' }}>
         <Section
           icon="🤝"
           title="What kind of co-founder might you need?"
@@ -5429,7 +5432,7 @@ function FounderReadinessStep({
       </div>
 
       {/* ── 4. Why you ── */}
-      <div>
+      <div style={{ display: selectedCofounders.length > 0 ? 'block' : 'none' }}>
         <Section
           icon="🎯"
           title="Why are YOU the right person to solve this?"
@@ -5796,6 +5799,16 @@ function PainGaugeStep({
         </div>
       </div>
 
+      {/* Direction A: consequence chips + live pitch stay hidden until the
+          user has actually picked an intensity/frequency (freqValue set via
+          onFreqChange) — one question revealed at a time, matching the Idea
+          stage restructure. Uses `display` (not an unmount) so chip/pitch
+          state never resets while hidden. Gates on the `freqValue` prop,
+          not the local `score` state — `score` defaults to 5 even before
+          any real pick, so gating on it would reveal the next section
+          immediately; `freqValue` only becomes truthy once the user has
+          actually clicked something. */}
+      <div style={{ display: freqValue ? 'flex' : 'none', flexDirection: 'column' as const, gap: 18 }}>
       {/* ── Consequence chips — whiteboard style ──────────────────────── */}
       <div style={{
         border: `2px solid ${selected.length > 0 ? gauge.ringColor : BORDER}`,
@@ -5889,6 +5902,7 @@ function PainGaugeStep({
             </span>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
@@ -6421,10 +6435,19 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
   return (
     <div style={col}>
       <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 600, color: '#334155' }}>Score each dimension 0–5 based on what you know today.</div>
-      {SCORE_DIMS.map(d => {
+      {SCORE_DIMS.map((d, di) => {
         const cur = parseInt(values[d.key] ?? '0') || 0;
+        // Direction A: dimensions reveal one at a time, mirroring the
+        // mockup's "1 of 8 at a time, running total kept quietly" — each
+        // row waits until the row before it has an answer. Checks the raw
+        // string value rather than `cur` (a parsed number, which reads as
+        // 0 both when a row is unanswered AND when someone deliberately
+        // scores a dimension 0) so a real "0" score still counts as
+        // answered and unlocks the next row. `display` toggle keeps every
+        // row mounted so later rows' own scores aren't lost while hidden.
+        const prevAnswered = di === 0 || (values[SCORE_DIMS[di - 1].key] !== undefined && values[SCORE_DIMS[di - 1].key] !== '');
         return (
-          <div key={d.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
+          <div key={d.key} style={{ display: prevAnswered ? 'flex' : 'none', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
             <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 600, color: '#1e293b', flex: 1 }}>{d.label}</div>
             <div style={{ display: 'flex', gap: 4 }}>
               {[0, 1, 2, 3, 4, 5].map(n => (
@@ -14277,7 +14300,12 @@ export default function WorkPage() {
         accentColor={STAGE_COLORS.hone}
         isEntryValid={v => v.trim().length > 5 && !v.includes('___')}
       />}
-      <div>
+      {/* Direction A: this question stays hidden until at least one real
+          persona has been named — one question on screen at a time,
+          mirroring the Idea-stage chat, instead of both fields showing at
+          once. Uses `display` (not an unmount) so PersonaPickerStep's own
+          internal state never resets while it's hidden. */}
+      <div style={{ display: get('whoExactly').split(MULTI_SEP).some(p => p.trim().length > 3) ? 'block' : 'none' }}>
         <FieldLabel n={2} ask="Who pays for this?" accent={STAGE_COLORS.hone}>Who actually pays?</FieldLabel>
         <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
           {[
