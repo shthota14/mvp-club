@@ -1543,7 +1543,11 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' as const, paddingRight: 2 }}>
         {turns.map((t, i) => (
           <div key={i} style={{ display: 'flex', gap: 7, alignItems: 'flex-end', flexDirection: t.role === 'user' ? 'row-reverse' as const : 'row' as const }}>
-            {t.role === 'agent' ? <AgentAvatar size={24} /> : <UserAvatar size={24} />}
+            {/* Only agent turns get an avatar now — an answered turn
+                compresses into a plain right-aligned pill below, so it
+                doesn't carry the same visual weight as the question it
+                answered. */}
+            {t.role === 'agent' && <AgentAvatar size={24} />}
             {t.role === 'agent' && t.kind === 'react' ? (
               <div style={{
                 maxWidth: '75%', padding: '5px 11px',
@@ -1569,13 +1573,19 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
                 {i === turns.length - 1 ? <TypewriterAsk text={t.text} /> : t.text}
               </div>
             ) : (
+              // Compact "echo" pill for an answered turn: deliberately
+              // smaller and plainer than the agent's whiteboard-note
+              // bubbles above (dark ink fill, small bold sans instead of
+              // the cursive Kalam script), so a full 5-question exchange
+              // reads as a short receipt strip rather than a wall of
+              // equally-weighted chat bubbles.
               <div style={{
-                maxWidth: '75%', padding: '6px 12px',
+                maxWidth: '75%', padding: '5px 12px',
                 borderRadius: '12px 12px 3px 12px',
-                background: '#e7efff', border: '1px solid #b9cdfb',
-                fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui",
-                fontWeight: 700, fontSize: 14, lineHeight: 1.3,
-                color: USER_INPUT_COLOR,
+                background: T1, border: 'none',
+                fontFamily: "'Inter', system-ui, sans-serif",
+                fontWeight: 700, fontSize: 12, lineHeight: 1.35,
+                color: '#fff7e6',
                 textAlign: 'left' as const,
               }}>
                 {t.text}
@@ -3006,102 +3016,130 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
               <path d="M0,3 C16,1 32,5 48,3 C64,1 80,5 96,3 C112,1 128,5 144,3 C154,1 164,4 170,3" fill="none" stroke={STAGE_COLORS.idea} strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {/* Same hand-drawn wobble pattern used for problem cards / suggestion chips — cycles per option index. */}
-            {(() => {
-              const WOBBLE = [
-                { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.4 },
-                { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.4 },
-                { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.3 },
-                { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.4 },
-              ];
-              return <>
-                {SPARK_TYPES.map((s, si) => {
-                  const isSelected = type === s.key;
-                  const w = WOBBLE[si % 4];
-                  return (
-                    <button
-                      // Remounting on the isSelected transition (rather than a
-                      // stable key) is what replays the flip below — it fires
-                      // once when a card is picked, not on every re-render
-                      // while it stays selected.
-                      key={isSelected ? `${s.key}-sel` : s.key}
-                      onClick={() => { setType(s.key); if (type === 'manual') { setStory(''); setWhyMe(''); } }}
-                      style={{
-                        display: 'flex', alignItems: 'flex-start', gap: 12,
-                        padding: '12px 15px', cursor: 'pointer', textAlign: 'left' as const,
-                        border: `${isSelected ? '2.5px' : '2px'} solid ${isSelected ? s.color : '#d8d8d8'}`,
-                        borderRadius: w.borderRadius,
-                        transform: `rotate(${w.rotate}deg)`,
-                        background: isSelected ? `${s.color}0c` : '#fffdf8',
-                        boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
-                        transition: 'all .15s', fontFamily: 'inherit', width: '100%',
-                        animation: isSelected ? 'ideaCardFlip .5s ease' : 'none',
-                      }}
-                    >
-                      <div style={{
-                        width: 20, height: 20, flexShrink: 0, marginTop: 2,
-                        borderRadius: '50% 48% 52% 46% / 46% 52% 48% 54%',
-                        border: `2.5px solid ${isSelected ? s.color : '#ccc'}`,
-                        background: isSelected ? s.color : 'transparent',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all .15s',
-                      }}>
-                        {isSelected && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
-                      </div>
-                      <div>
-                        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: isSelected ? s.color : '#1e293b' }}>
-                          {s.icon} {s.title}
+          {/* Unanswered: every card visible, tap one to pick your why.
+              Answered: the cards collapse to a single echoed pill so this
+              question doesn't keep taking up the same room the ones
+              before it already gave back — "change" reopens the cards.
+              Both states stay mounted, toggled with `display` rather than
+              a JS branch: branching this whole subtree on `type === null`
+              made TS narrow `type` to the literal `null` for the entire
+              branch (TS links a derived boolean back to the variable it
+              came from), which broke unrelated `.key`/`.color` lookups on
+              SPARK_TYPES entries further down in that same branch
+              ("Property does not exist on type 'never'"). `type` is only
+              read inside style values below, never as a branch condition. */}
+          <div style={{ display: type === null ? 'flex' : 'none', flexDirection: 'column', gap: 10 }}>
+              {/* Same hand-drawn wobble pattern used for problem cards / suggestion chips — cycles per option index. */}
+              {(() => {
+                const WOBBLE = [
+                  { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.4 },
+                  { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.4 },
+                  { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.3 },
+                  { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.4 },
+                ];
+                return <>
+                  {SPARK_TYPES.map((s, si) => {
+                    const isSelected = type === s.key;
+                    const w = WOBBLE[si % 4];
+                    return (
+                      <button
+                        // Remounting on the isSelected transition (rather than a
+                        // stable key) is what replays the flip below — it fires
+                        // once when a card is picked, not on every re-render
+                        // while it stays selected.
+                        key={isSelected ? `${s.key}-sel` : s.key}
+                        onClick={() => { setType(s.key); if (type === 'manual') { setStory(''); setWhyMe(''); } }}
+                        style={{
+                          display: 'flex', alignItems: 'flex-start', gap: 12,
+                          padding: '12px 15px', cursor: 'pointer', textAlign: 'left' as const,
+                          border: `${isSelected ? '2.5px' : '2px'} solid ${isSelected ? s.color : '#d8d8d8'}`,
+                          borderRadius: w.borderRadius,
+                          transform: `rotate(${w.rotate}deg)`,
+                          background: isSelected ? `${s.color}0c` : '#fffdf8',
+                          boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
+                          transition: 'all .15s', fontFamily: 'inherit', width: '100%',
+                          animation: isSelected ? 'ideaCardFlip .5s ease' : 'none',
+                        }}
+                      >
+                        <div style={{
+                          width: 20, height: 20, flexShrink: 0, marginTop: 2,
+                          borderRadius: '50% 48% 52% 46% / 46% 52% 48% 54%',
+                          border: `2.5px solid ${isSelected ? s.color : '#ccc'}`,
+                          background: isSelected ? s.color : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all .15s',
+                        }}>
+                          {isSelected && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
                         </div>
-                        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#7a7a7a', marginTop: 1 }}>
-                          {s.desc}
+                        <div>
+                          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: isSelected ? s.color : '#1e293b' }}>
+                            {s.icon} {s.title}
+                          </div>
+                          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#7a7a7a', marginTop: 1 }}>
+                            {s.desc}
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })}
 
-                {/* Manual entry option */}
-                {(() => {
-                  const w = WOBBLE[SPARK_TYPES.length % 4];
-                  return (
-                    <button
-                      onClick={() => setType('manual')}
-                      style={{
-                        display: 'flex', alignItems: 'flex-start', gap: 12,
-                        padding: '12px 15px', cursor: 'pointer', textAlign: 'left' as const,
-                        border: `${type === 'manual' ? '2.5px' : '2px'} dashed ${type === 'manual' ? '#6e6e73' : '#d8d8d8'}`,
-                        borderRadius: w.borderRadius,
-                        transform: `rotate(${w.rotate}deg)`,
-                        background: type === 'manual' ? '#6e6e730c' : '#fffdf8',
-                        boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
-                        transition: 'all .15s', fontFamily: 'inherit', width: '100%',
-                      }}
-                    >
-                      <div style={{
-                        width: 20, height: 20, flexShrink: 0, marginTop: 2,
-                        borderRadius: '50% 48% 52% 46% / 46% 52% 48% 54%',
-                        border: `2.5px solid ${type === 'manual' ? '#6e6e73' : '#ccc'}`,
-                        background: type === 'manual' ? '#6e6e73' : 'transparent',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all .15s',
-                      }}>
-                        {type === 'manual' && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
-                      </div>
-                      <div>
-                        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: type === 'manual' ? '#6e6e73' : '#1e293b' }}>
-                          ✏️ Write my own
+                  {/* Manual entry option */}
+                  {(() => {
+                    const w = WOBBLE[SPARK_TYPES.length % 4];
+                    return (
+                      <button
+                        onClick={() => setType('manual')}
+                        style={{
+                          display: 'flex', alignItems: 'flex-start', gap: 12,
+                          padding: '12px 15px', cursor: 'pointer', textAlign: 'left' as const,
+                          border: `${type === 'manual' ? '2.5px' : '2px'} dashed ${type === 'manual' ? '#6e6e73' : '#d8d8d8'}`,
+                          borderRadius: w.borderRadius,
+                          transform: `rotate(${w.rotate}deg)`,
+                          background: type === 'manual' ? '#6e6e730c' : '#fffdf8',
+                          boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
+                          transition: 'all .15s', fontFamily: 'inherit', width: '100%',
+                        }}
+                      >
+                        <div style={{
+                          width: 20, height: 20, flexShrink: 0, marginTop: 2,
+                          borderRadius: '50% 48% 52% 46% / 46% 52% 48% 54%',
+                          border: `2.5px solid ${type === 'manual' ? '#6e6e73' : '#ccc'}`,
+                          background: type === 'manual' ? '#6e6e73' : 'transparent',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all .15s',
+                        }}>
+                          {type === 'manual' && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
                         </div>
-                        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#7a7a7a', marginTop: 1 }}>
-                          in your own words
+                        <div>
+                          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: type === 'manual' ? '#6e6e73' : '#1e293b' }}>
+                            ✏️ Write my own
+                          </div>
+                          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#7a7a7a', marginTop: 1 }}>
+                            in your own words
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  );
-                })()}
-              </>;
-            })()}
-          </div>
+                      </button>
+                    );
+                  })()}
+                </>;
+              })()}
+            </div>
+          <div style={{ display: type === null ? 'none' : 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '5px 12px', borderRadius: '12px 12px 3px 12px',
+                background: T1, color: '#fff7e6',
+                fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: 12,
+              }}>
+                {type === 'manual' ? '✏️' : selected?.icon} {type === 'manual' ? 'Write my own' : selected?.title}
+              </div>
+              <button
+                onClick={() => setType(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
+              >
+                ↺ change
+              </button>
+            </div>
         </div>
 
         {/* Manual textarea */}
