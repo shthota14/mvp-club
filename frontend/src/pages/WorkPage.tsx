@@ -5857,9 +5857,10 @@ function PainGaugeStep({
       <div style={{ display: (freqValue && !gaugeOpen) ? 'flex' : 'none', alignItems: 'center', gap: 10 }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '5px 12px', borderRadius: '12px 12px 3px 12px',
-          background: T1, color: '#fff7e6',
-          fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: 12,
+          padding: '4px 12px', borderRadius: 4,
+          background: gauge.color, color: '#fff',
+          fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 12,
+          letterSpacing: '.05em', textTransform: 'uppercase' as const,
         }}>
           {gauge.label} · {score}/10 · {freq}
         </div>
@@ -5888,37 +5889,29 @@ function PainGaugeStep({
         background: selected.length > 0 ? `${gauge.color}04` : '#fafafa',
         transition: 'all .2s',
       }}>
-        <div style={{ display: 'inline-block', marginBottom: 8 }}>
-          <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 15, fontWeight: 900, letterSpacing: -0.2, color: STAGE_COLORS.hone }}>
+        <div style={{ marginBottom: 8 }}>
+          <div style={{
+            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
+            letterSpacing: '.05em', textTransform: 'uppercase' as const, color: STAGE_COLORS.hone,
+          }}>
             What breaks if these problems are unresolved?
-          </span>
-          <svg viewBox="0 0 220 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 210 }}>
-            <path d="M0,3 C22,1 44,5 66,3 C88,1 110,5 132,3 C154,1 176,5 198,3 C208,1 216,4 220,3" fill="none" stroke={STAGE_COLORS.hone} strokeWidth="2" strokeLinecap="round" />
-          </svg>
+          </div>
+          <div style={{ borderTop: `2px solid ${STAGE_COLORS.hone}`, marginTop: 3, maxWidth: 130 }} />
         </div>
-        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 17, color: '#475569', marginBottom: 14, lineHeight: 1.4 }}>
+        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#475569', marginBottom: 14, lineHeight: 1.4 }}>
           Select all that apply — precision makes the pitch. What do they actually lose?
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10 }}>
-          {CHIPS.map((chip, ci) => {
+          {CHIPS.map((chip) => {
             const on = selected.includes(chip);
-            // Same hand-drawn wobble pattern used for problem cards / suggestion chips.
-            const WOBBLE = [
-              { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.5 },
-              { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.6 },
-              { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.4 },
-              { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.5 },
-            ][ci % 4];
             return (
               <button key={chip} onClick={() => toggleChip(chip)} style={{
-                padding: '7px 15px', cursor: 'pointer', fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
-                fontSize: 17, fontWeight: on ? 700 : 600, transition: 'all .12s',
-                border: `${on ? '2.5px' : '2px'} solid ${on ? gauge.color : '#d8d8d8'}`,
-                borderRadius: WOBBLE.borderRadius,
-                transform: `rotate(${WOBBLE.rotate}deg)`,
+                padding: '7px 14px', cursor: 'pointer', fontFamily: "'Bebas Neue', 'Inter', sans-serif",
+                fontSize: 14, letterSpacing: '.02em', fontWeight: on ? 700 : 500, transition: 'all .12s',
+                border: `${on ? '2px' : '1.5px'} solid ${on ? gauge.color : '#d8d8d8'}`,
+                borderRadius: 4,
                 background: on ? `${gauge.color}12` : '#fffdf8',
                 color: on ? gauge.color : '#555',
-                boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
               }}>
                 {on && <span style={{ marginRight: 4 }}>✓</span>}{chip}
               </button>
@@ -5926,7 +5919,7 @@ function PainGaugeStep({
           })}
         </div>
         {selected.length > 0 && (
-          <div style={{ marginTop: 12, fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, fontWeight: 700, color: gauge.color }}>
+          <div style={{ marginTop: 12, fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.04em', textTransform: 'uppercase' as const, fontWeight: 700, color: gauge.color }}>
             {selected.length} cost{selected.length !== 1 ? 's' : ''} identified
           </div>
         )}
@@ -5937,7 +5930,8 @@ function PainGaugeStep({
         ...postcardStyle(-0.8),
         borderTop: `4px solid ${gauge.color}`,
         padding: '20px 24px 22px',
-        fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
+        fontFamily: "'Playfair Display', Georgia, serif",
+        fontStyle: 'italic',
       }}>
         <PostcardStamp />
         {/* Label chip */}
