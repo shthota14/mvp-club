@@ -3538,7 +3538,7 @@ const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string;
                     </button>
                   )}
                 </div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700, color: T1, lineHeight: 1.35 }}>{parsePersonaText(serializePersona(p))}</div>
+                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: T1, lineHeight: 1.4 }}>{parsePersonaText(serializePersona(p))}</div>
               </div>
               <button onClick={() => removePersona(p.id)} aria-label="Remove this segment" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 17, color: T3, padding: '2px 6px', lineHeight: 1, flexShrink: 0, alignSelf: 'flex-start' }}>✕</button>
             </div>
@@ -14205,9 +14205,10 @@ export default function WorkPage() {
         <div style={{ display: get('whoPays') ? 'flex' : 'none', alignItems: 'center', gap: 10, marginBottom: 10 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '5px 12px', borderRadius: '12px 12px 3px 12px',
-            background: T1, color: '#fff7e6',
-            fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: 12,
+            padding: '4px 12px', borderRadius: 4,
+            background: STAGE_COLORS.hone, color: '#fff',
+            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 12,
+            letterSpacing: '.05em', textTransform: 'uppercase' as const,
           }}>
             {get('whoPays') === 'Same person' ? '👤 Same person' : `🏢 ${get('whoPays') === 'Someone else' ? 'Someone else' : get('whoPays')}`}
           </div>
