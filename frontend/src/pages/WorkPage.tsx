@@ -5997,7 +5997,7 @@ function ProblemContextCard({ who, problems, pain }: { who: string; problems: st
           textAlign: 'left' as const,
         }}
       >
-        <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 12, fontWeight: 900, letterSpacing: -0.1, color: '#a16207' }}>
+        <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.04em', textTransform: 'uppercase' as const, color: '#a16207' }}>
           💭 Remember — what you're solving
         </span>
         <span style={{ fontSize: 11, color: '#a16207', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -6012,13 +6012,13 @@ function ProblemContextCard({ who, problems, pain }: { who: string; problems: st
           {who && (
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>👥</span>
-              <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#713f12', lineHeight: 1.35 }}><strong style={{ fontWeight: 700 }}>For:</strong> {who}</span>
+              <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#713f12', lineHeight: 1.35 }}><strong style={{ fontWeight: 700 }}>For:</strong> {who}</span>
             </div>
           )}
           {problems && (
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <span style={{ fontSize: 13, flexShrink: 0, marginTop: 2 }}>📝</span>
-              <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, color: '#1c1c1e', fontWeight: 700, lineHeight: 1.35 }}>
+              <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#1c1c1e', fontWeight: 600, lineHeight: 1.35 }}>
                 "{problems}"
               </span>
             </div>
@@ -6027,16 +6027,13 @@ function ProblemContextCard({ who, problems, pain }: { who: string; problems: st
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
               <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>💥</span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                {pain.map((p, pi) => {
-                  const rot = [-2, 1.5, -1, 2][pi % 4];
-                  return (
-                    <span key={p} style={{
-                      fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 14, fontWeight: 700,
-                      padding: '2px 9px', borderRadius: 999, background: '#fef3c7', color: '#92400e',
-                      border: '1px solid #fde68a', transform: `rotate(${rot}deg)`, display: 'inline-block',
-                    }}>{p}</span>
-                  );
-                })}
+                {pain.map((p) => (
+                  <span key={p} style={{
+                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.03em', textTransform: 'uppercase' as const,
+                    padding: '3px 10px', borderRadius: 4, background: '#fef3c7', color: '#92400e',
+                    border: '1px solid #fde68a', display: 'inline-block',
+                  }}>{p}</span>
+                ))}
               </div>
             </div>
           )}
@@ -6245,7 +6242,7 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
             <span style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.15s' }} />
             <span style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.3s' }} />
           </div>
-          <span style={{ fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 19, color: '#475569', fontWeight: 700 }}>
+          <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#475569', fontWeight: 600 }}>
             Sage is reading your problem and coming up with how people cope today…
           </span>
         </div>
@@ -6271,13 +6268,14 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
         {displayGroups.map(group => (
           <div key={group.category} style={{ background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: '1.5px solid #cdac72', borderRadius: 10, padding: '10px 10px 14px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 1px 2px 4px rgba(0,0,0,.06)' }}>
-            <div style={{ display: 'inline-block', marginBottom: 8 }}>
-              <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900, letterSpacing: -0.2, color: c }}>
+            <div style={{ marginBottom: 8 }}>
+              <div style={{
+                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
+                letterSpacing: '.08em', textTransform: 'uppercase' as const, color: c,
+              }}>
                 {group.category}
-              </span>
-              <svg viewBox="0 0 160 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 130 }}>
-                <path d="M0,3 C15,1 30,5 45,3 C60,1 75,5 90,3 C105,1 120,5 135,3 C145,1 155,4 160,3" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" />
-              </svg>
+              </div>
+              <div style={{ borderTop: `2px solid ${c}`, marginTop: 3, maxWidth: 90 }} />
             </div>
             {/* Jenga tower — each coping method is a stacked block; picking one slides
                 it out of the tower and fills it with the stage colour, the way you'd
@@ -6289,7 +6287,7 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
                   <button key={item} onClick={() => toggle(item)}
                     style={{
                       textAlign: 'left' as const, width: '100%', padding: '8px 12px', cursor: 'pointer',
-                      fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 14, lineHeight: 1.3, fontWeight: on ? 700 : 600,
+                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.02em', lineHeight: 1.3, fontWeight: on ? 700 : 500,
                       border: `2px solid ${c}`, borderRadius: 4,
                       background: on ? c : '#fff6e0',
                       color: on ? '#fff' : '#5c4324',
@@ -6342,26 +6340,19 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
       {items.length > 0 && !pickerLoading && (
         <div style={{ background: '#fafafa', border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '14px 16px' }}>
           <div style={{ display: 'inline-block', marginBottom: 3 }}>
-            <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 14, fontWeight: 900, letterSpacing: -0.2, color: c }}>
+            <div style={{
+              fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14,
+              letterSpacing: '.06em', textTransform: 'uppercase' as const, color: c,
+            }}>
               Rank by most common
-            </span>
-            <svg viewBox="0 0 170 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 160 }}>
-              <path d="M0,3 C16,1 32,5 48,3 C64,1 80,5 96,3 C112,1 128,5 144,3 C154,1 164,4 170,3" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            </div>
+            <div style={{ borderTop: `2px solid ${c}`, marginTop: 3, maxWidth: 100 }} />
           </div>
-          <div style={{ fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 15, color: '#7a7a7a', marginBottom: 10 }}>Drag to reorder · #1 = your primary hypothesis</div>
+          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#7a7a7a', marginBottom: 10 }}>Drag to reorder · #1 = your primary hypothesis</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {items.map((item, i) => {
               const isDragging = dragIdx === i;
               const isOver     = overIdx === i && dragIdx !== i;
-              // Same hand-drawn wobble pattern used elsewhere in Idea/Hone — skipped while dragging so the
-              // native drag image isn't skewed.
-              const WOBBLE = [
-                { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.4 },
-                { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.4 },
-                { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.3 },
-                { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.4 },
-              ][i % 4];
               return (
                 <div
                   key={item}
@@ -6381,12 +6372,12 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
                   onDragEnd={() => { setDragIdx(null); setOverIdx(null); }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 12px', borderRadius: isDragging ? 8 : WOBBLE.borderRadius,
-                    transform: isDragging ? 'none' : `rotate(${WOBBLE.rotate}deg)`,
+                    padding: '9px 12px 9px 10px', borderRadius: 3,
+                    border: 'none',
+                    borderLeft: `4px solid ${isOver ? c : isDragging ? '#ccc' : i === 0 ? c : '#d8d8d8'}`,
                     background: isDragging ? '#f0f0f5' : i === 0 ? `${c}0d` : '#fffdf8',
-                    border: `${i === 0 ? '2.5px' : '2px'} solid ${isOver ? c : isDragging ? '#ccc' : i === 0 ? c : '#d8d8d8'}`,
                     opacity: isDragging ? 0.45 : 1,
-                    boxShadow: isOver ? `0 0 0 2px ${c}40` : '1px 2px 0 rgba(0,0,0,0.05)',
+                    boxShadow: isOver ? `0 0 0 2px ${c}40` : 'none',
                     transition: 'box-shadow .1s, border-color .1s',
                     cursor: 'grab',
                     userSelect: 'none' as const,
@@ -6396,12 +6387,12 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
                   <span style={{ color: '#ccc', fontSize: 14, flexShrink: 0, lineHeight: 1, letterSpacing: '-1px' }}>⠿</span>
 
                   {/* Rank badge */}
-                  <span style={{ fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 15, fontWeight: 700, color: i === 0 ? c : '#bbb', width: 24, flexShrink: 0, textAlign: 'center' as const }}>
+                  <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, color: i === 0 ? c : '#bbb', width: 24, flexShrink: 0, textAlign: 'center' as const }}>
                     {i === 0 ? '🎯' : `#${i + 1}`}
                   </span>
 
                   {/* Label */}
-                  <span style={{ flex: 1, fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 18, color: i === 0 ? '#1e293b' : '#555', fontWeight: i === 0 ? 700 : 600, lineHeight: 1.25 }}>{item}</span>
+                  <span style={{ flex: 1, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: i === 0 ? '#1e293b' : '#555', fontWeight: i === 0 ? 600 : 500, lineHeight: 1.3 }}>{item}</span>
 
                   {/* Remove */}
                   <button
@@ -6413,7 +6404,7 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
             })}
           </div>
           {items.length >= 2 && (
-            <div style={{ ...postcardStyle(1), marginTop: 12, fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: '#065f46', padding: '11px 15px' }}>
+            <div style={{ ...postcardStyle(1), marginTop: 12, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 700, color: '#065f46', padding: '11px 15px' }}>
               <PostcardStamp top={8} right={10} />
               <strong>Your hypothesis:</strong> Most people are solving this by <em>{items[0].charAt(0).toLowerCase() + items[0].slice(1)}</em>. You'll test this in Validate.
             </div>
@@ -14290,9 +14281,9 @@ export default function WorkPage() {
 
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff7ed', border: '1.5px solid #fde68a', borderRadius: 8, padding: '6px 12px', marginBottom: 12 }}>
         <span style={{ fontSize: 13 }}>💡</span>
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 15, color: '#92400e', fontWeight: 700 }}>This is your assumption — you'll validate it by talking to real people later.</span>
+        <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#92400e', fontWeight: 600 }}>This is your assumption — you'll validate it by talking to real people later.</span>
       </div>
-      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, color: '#475569', marginBottom: 10, lineHeight: 1.45 }}>
+      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#475569', marginBottom: 10, lineHeight: 1.5 }}>
         List the ways you <em>think</em> people cope with this today — then rank them from most to least common.
         The #1 approach becomes your primary hypothesis to test.
       </div>
