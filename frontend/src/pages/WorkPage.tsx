@@ -13815,7 +13815,6 @@ export default function WorkPage() {
     const color    = STAGE_COLORS[mod];
     const titles   = STEP_TITLES[mod];
     const goals    = STEP_GOALS[mod];
-    const callouts = STEP_CALLOUTS[mod];
     const modIndex = MODULES.indexOf(mod);
     const coreIndex = ['idea', 'hone', 'validate'].indexOf(mod);
     const isOptionalStage = mod === 'shape' || mod === 'done';
@@ -13856,60 +13855,44 @@ export default function WorkPage() {
         {/* ── Font injection ───────────────────────────────── */}
         <style>{`@import url('https://fonts.googleapis.com/css2?family=Walter+Turncoat&display=swap');`}</style>
 
-        {/* ── Marker-cap header strip ──────────────────────── */}
+        {/* ── Marker-cap header strip — condensed (Direction A resize) so the
+              whole explainer, including the step grid below, fits one screen
+              without scrolling. Dropped the decorative "Stage explainer"
+              sticky note entirely to reclaim vertical space; the badge above
+              the title already signals this is a guide, not a fillable step. */}
         <div style={{
           position: 'relative',
           background: `${color}22`,
           borderBottom: `3px solid ${color}`,
-          padding: '28px 30px 22px',
+          padding: '16px 22px 12px',
         }}>
-          {/* Explainer marker — a pinned sticky note signals "this is a guide,
-              not a step to fill in", so it's never mistaken for a real form. */}
-          <div style={{
-            position: 'absolute', top: 18, right: 26,
-            width: 96, minHeight: 68,
-            background: '#f0e6a8', color: '#3a3220',
-            fontSize: 14, fontWeight: 800, lineHeight: 1.2,
-            padding: '10px 8px',
-            transform: 'rotate(-5deg)',
-            boxShadow: '2px 5px 12px rgba(0,0,0,0.45)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' as const,
-            fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
-            borderRadius: 2,
-          }}>
-            Stage<br />explainer
-          </div>
-
           {/* Stage badge */}
-          <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 7 }}>
             <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
+              display: 'inline-flex', alignItems: 'center', gap: 6,
               background: color, color: '#fff',
-              fontSize: 14, fontWeight: 700,
+              fontSize: 11, fontWeight: 700,
               letterSpacing: '.06em', textTransform: 'uppercase' as const,
-              padding: '5px 16px', borderRadius: 4,
+              padding: '3px 11px', borderRadius: 4,
             }}>
               {isOptionalStage ? <>{meta.icon} Optional</> : <>{meta.icon} Core · Stage {coreIndex + 1} of 3</>}
             </span>
           </div>
 
           {/* Title — big marker lettering */}
-          <h1 style={{ fontSize: 56, fontWeight: 700, color: WB_TEXT, margin: '0 0 6px', letterSpacing: '0.01em', lineHeight: 1.0 }}>
+          <h1 style={{ fontSize: 30, fontWeight: 700, color: WB_TEXT, margin: '0 0 3px', letterSpacing: '0.01em', lineHeight: 1.0 }}>
             {meta.label}
           </h1>
 
-          {/* Marker underline — thick colored stroke */}
-          <div style={{ height: 5, background: color, borderRadius: 3, width: 80, marginBottom: 14 }} />
-
-          <p style={{ fontSize: 21, color: WB_DIM, lineHeight: 1.65, margin: '0 0 18px', maxWidth: 500 }}>{meta.desc}</p>
+          <p style={{ fontSize: 13, color: WB_DIM, lineHeight: 1.4, margin: '0 0 8px', maxWidth: 500 }}>{meta.desc}</p>
 
           {/* Meta tags */}
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 7 }}>
             {[`${meta.steps} steps`, STAGE_TIME[mod]].map(tag => (
               <span key={tag} style={{
-                fontSize: 16, color: WB_DIM, fontWeight: 600,
-                border: `2px solid #4a4636`,
-                padding: '4px 16px', borderRadius: 6,
+                fontSize: 11, color: WB_DIM, fontWeight: 600,
+                border: `1.5px solid #4a4636`,
+                padding: '2px 10px', borderRadius: 5,
                 background: '#211f16',
               }}>
                 {tag}
@@ -13919,199 +13902,101 @@ export default function WorkPage() {
         </div>
 
         {/* ── Body ─────────────────────────────────────────── */}
-        <div style={{ padding: '26px 30px 30px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '14px 22px 18px', display: 'flex', flexDirection: 'column' }}>
 
-          {mod === 'validate' ? (() => {
-            const CONN = '#d0d0d0';
-            const PCOLS = { before: '#059669', prepare: '#2563eb', talk: '#7c3aed', analyse: '#d97706', decide: '#dc2626' };
-            const blk = (icon: string, ttl: string, sub: string, c: string, tag?: string) => (
-              <div style={{ flex: 1, border: `2px solid ${c}`, borderRadius: 10, padding: '10px 12px', background: `${c}08`, display: 'flex', flexDirection: 'column' as const, gap: 3, minWidth: 0 }}>
-                <div style={{ fontSize: 18 }}>{icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#f0ede1', lineHeight: 1.2 }}>{ttl}</div>
-                <div style={{ fontSize: 12, color: '#b9b6a8', lineHeight: 1.4 }}>{sub}</div>
-                {tag && <div style={{ fontSize: 10, fontWeight: 700, color: c, marginTop: 3, textTransform: 'uppercase' as const, letterSpacing: '.06em', opacity: 0.75 }}>{tag}</div>}
-              </div>
-            );
-            const ph = (num: string, lbl: string, c: string) => (
-              <div style={{ fontSize: 12, fontWeight: 700, color: c, letterSpacing: '.1em', textTransform: 'uppercase' as const, marginBottom: 8, marginTop: 4, paddingLeft: 2 }}>{num} {lbl}</div>
-            );
-            const arrowDn = () => (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', width: '100%', height: 28 }}>
-                <div style={{ width: 2, flex: 1, background: CONN }} />
-                <div style={{ width: 0, height: 0, borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: `9px solid ${CONN}` }} />
-              </div>
-            );
-            const PCTS: string[] = ['12.5%','37.5%','62.5%','87.5%'];
-            const fanOut = () => (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', width: '100%' }}>
-                <div style={{ width: 2, height: 12, background: CONN }} />
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#bbb', margin: '3px 0' }}>run simultaneously</div>
-                <div style={{ width: '100%', position: 'relative' as const, height: 26 }}>
-                  <div style={{ position: 'absolute' as const, left: 0, right: 0, top: 0, height: 2, background: CONN }} />
-                  {PCTS.map(p => <div key={p} style={{ position: 'absolute' as const, left: p, top: 2, width: 2, height: 24, background: CONN, transform: 'translateX(-50%)' }} />)}
-                </div>
-              </div>
-            );
-            const fanIn = () => (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', width: '100%' }}>
-                <div style={{ width: '100%', position: 'relative' as const, height: 26 }}>
-                  {PCTS.map(p => <div key={p} style={{ position: 'absolute' as const, left: p, bottom: 2, width: 2, height: 24, background: CONN, transform: 'translateX(-50%)' }} />)}
-                  <div style={{ position: 'absolute' as const, left: 0, right: 0, bottom: 0, height: 2, background: CONN }} />
-                </div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#bbb', margin: '3px 0' }}>converge</div>
-                <div style={{ width: 2, height: 10, background: CONN }} />
-                <div style={{ width: 0, height: 0, borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: `9px solid ${CONN}` }} />
-              </div>
-            );
-            return (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 0, marginBottom: 28, fontFamily: 'system-ui,-apple-system,sans-serif' }}>
-                <p style={{ fontSize: 20, fontWeight: 700, color: '#a29d8c', letterSpacing: '.12em', textTransform: 'uppercase' as const, margin: '0 0 14px', fontFamily: "'Walter Turncoat','Comic Sans MS',cursive,system-ui" }}>How it works</p>
-                {ph('①','Before you talk', PCOLS.before)}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {blk('🗂️','Validation Workspace','Live dashboard. Confidence score, top risks, next action.',PCOLS.before)}
-                  {blk('🎯','Goal Builder','Define success criteria and your kill signal before you start.',PCOLS.before)}
-                  {blk('🧩','Assumptions + Experiments','List beliefs. Assign priority. Plan how to test each one.',PCOLS.before)}
-                </div>
-                {arrowDn()}
-                {ph('②','Prepare',PCOLS.prepare)}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {blk('🧬','ICP Builder','Jobs to be done, frustrations, what they\'ve already tried.',PCOLS.prepare)}
-                  {blk('👥','Outreach Tracker','Contact list, warm intros, async survey link.',PCOLS.prepare)}
-                  {blk('🎤','Interview Script','Key question, do/don\'t rules, full question bank.',PCOLS.prepare)}
-                </div>
-                {fanOut()}
-                {ph('③','Go talk — 4 parallel tracks',PCOLS.talk)}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {blk('🎙️','Structured Interviews','Log each convo. Score alignment. Capture signal chips.',PCOLS.talk,'Track A')}
-                  {blk('📋','Async Survey','Share link. Collect pain point verdicts at scale.',PCOLS.talk,'Track B')}
-                  {blk('🤲','Concierge MVP','Do it manually. Log what they say. Rate fit.',PCOLS.talk,'Track C')}
-                  {blk('🔍','Competitor Research','Map alternatives. Find the gap you can own.',PCOLS.talk,'Track D')}
-                </div>
-                {fanIn()}
-                {ph('④','Analyse',PCOLS.analyse)}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {blk('📊','Validation Dashboard','KPI tiles, radar chart, alignment bar, drill-down.',PCOLS.analyse)}
-                  {blk('💡','Insight Extraction','Sort what you heard into 4 buckets. Find the patterns.',PCOLS.analyse)}
-                  {blk('📈','Demand Signals','Log LOIs, waitlist signups, verbal commits, pilots.',PCOLS.analyse)}
-                </div>
-                {arrowDn()}
-                {ph('⑤','Decide',PCOLS.decide)}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {blk('📐','Validation Score','Rate 4 dimensions. Composite /100 with recommendation.',PCOLS.decide)}
-                  {blk('🤖','Startup Advisor','Auto-surfaces risks, blind spots and tips from your data.',PCOLS.decide)}
-                  {blk('📋','Report + Handoff','Generate report. Hand validated insights to Shape.',PCOLS.decide)}
-                </div>
-                {arrowDn()}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <div style={{ flex:1, borderRadius:10, padding:'10px 12px', background:'#f0fdf4', border:'2px solid #059669', color:'#15803d', fontSize:14, fontWeight:700, textAlign:'center' as const }}>✅ Go → Shape</div>
-                  <div style={{ flex:1, borderRadius:10, padding:'10px 12px', background:'#fffbeb', border:'2px solid #d97706', color:'#92400e', fontSize:14, fontWeight:700, textAlign:'center' as const }}>🔄 Refine → back to Prepare</div>
-                  <div style={{ flex:1, borderRadius:10, padding:'10px 12px', background:'#fef2f2', border:'2px solid #dc2626', color:'#b91c1c', fontSize:14, fontWeight:700, textAlign:'center' as const }}>↩️ Pivot → back to Hone</div>
-                </div>
-              </div>
-            );
-          })() : (
-            <>
-              {/* Section label */}
-              <p style={{ fontSize: 22, fontWeight: 700, color: '#a29d8c', letterSpacing: '.1em', textTransform: 'uppercase' as const, margin: '0 0 16px' }}>
-                What you'll do
-              </p>
+          {/* What you'll do — a single compact step grid for every stage
+              (Direction A resize, one-page-no-scroll pass). Validate used to
+              have its own five-phase "How it works" infographic here instead
+              of a step list; removed — it was the tallest thing on any
+              explainer and the main reason Validate alone couldn't fit one
+              screen. Per-step callout tags dropped too (title + goal only)
+              to keep every row short enough that even Ship's 11 steps wrap
+              into a couple of rows instead of forcing a scroll. */}
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#a29d8c', letterSpacing: '.1em', textTransform: 'uppercase' as const, margin: '0 0 8px' }}>
+            What you'll do
+          </p>
 
-              {/* Step list */}
-              <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 28 }}>
-                {titles.map((title, i) => (
-                  <div key={i} style={{
-                    display: 'flex', gap: 18,
-                    padding: '16px 0',
-                    borderBottom: i < titles.length - 1 ? `2px solid ${WB_RULE}` : 'none',
-                  }}>
-                    {/* Marker circle number */}
-                    <div style={{
-                      width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-                      border: `3px solid ${color}`,
-                      color, fontSize: 18, fontWeight: 700,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: `${color}0f`,
-                      marginTop: 2,
-                    }}>
-                      {i + 1}
-                    </div>
-
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 24, fontWeight: 700, color: WB_TEXT, marginBottom: 4, lineHeight: 1.25 }}>{title}</div>
-                      <div style={{ fontSize: 19, color: WB_DIM, lineHeight: 1.65, marginBottom: callouts[i] ? 8 : 0, fontStyle: 'normal' }}>{goals[i]}</div>
-                      {callouts[i] && (
-                        <span style={{
-                          display: 'inline-block',
-                          fontSize: 16, color, fontWeight: 700,
-                          background: `${color}14`,
-                          border: `1.5px solid ${color}40`,
-                          borderRadius: 4, padding: '3px 12px',
-                        }}>
-                          → {callouts[i]}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+          <div style={{
+            display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(128px, 1fr))',
+            gap: 5, marginBottom: 10,
+          }}>
+            {titles.map((title, i) => (
+              <div key={i} style={{
+                border: `1.5px solid ${WB_RULE}`, borderRadius: 8,
+                padding: '6px 9px', display: 'flex', flexDirection: 'column', gap: 2,
+                minWidth: 0,
+              }}>
+                <div style={{
+                  width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                  border: `2px solid ${color}`,
+                  color, fontSize: 10, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: `${color}0f`,
+                }}>
+                  {i + 1}
+                </div>
+                <div style={{
+                  fontSize: 12, fontWeight: 700, color: WB_TEXT, lineHeight: 1.25,
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
+                }}>{title}</div>
+                <div style={{
+                  fontSize: 10.5, color: WB_DIM, lineHeight: 1.35,
+                  display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
+                }}>{goals[i]}</div>
               </div>
-            </>
-          )}
+            ))}
+          </div>
 
-          {/* Outcome / Remember — marker-bordered boxes */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 28 }}>
+          {/* Outcome / Remember — marker-bordered boxes (condensed) */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 10 }}>
             {[
               { label: 'Outcome', text: STAGE_OUTCOME[mod], italic: false },
               { label: 'Remember', text: STAGE_TIP[mod], italic: true },
             ].map(card => (
               <div key={card.label} style={{
-                border: `2.5px solid ${color}`,
-                borderRadius: 8, padding: '16px 18px',
+                border: `2px solid ${color}`,
+                borderRadius: 7, padding: '8px 11px',
                 background: `${color}06`,
               }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color, letterSpacing: '.12em', textTransform: 'uppercase' as const, marginBottom: 8 }}>{card.label}</div>
-                <div style={{ fontSize: 18, color: WB_TEXT, lineHeight: 1.65, fontStyle: card.italic ? 'italic' : 'normal' }}>{card.text}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '.1em', textTransform: 'uppercase' as const, marginBottom: 3 }}>{card.label}</div>
+                <div style={{ fontSize: 11.5, color: WB_TEXT, lineHeight: 1.4, fontStyle: card.italic ? 'italic' : 'normal' }}>{card.text}</div>
               </div>
             ))}
           </div>
 
-          {/* Stage progress — marker track */}
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 28, flexWrap: 'wrap' as const }}>
+          {/* Stage progress — marker track (condensed) */}
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' as const }}>
             {MODULES.map((m, mi) => {
               const isPast   = mi < modIndex;
               const isActive = m === mod;
               const mc       = STAGE_COLORS[m];
               return (
                 <React.Fragment key={m}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                     <div style={{
-                      width: isMobile ? 28 : 36, height: isMobile ? 28 : 36, borderRadius: '50%',
-                      border: isActive ? `3px solid ${mc}` : isPast ? `2px solid ${mc}60` : `2px solid #3a372a`,
+                      width: 22, height: 22, borderRadius: '50%',
+                      border: isActive ? `2.5px solid ${mc}` : isPast ? `2px solid ${mc}60` : `2px solid #3a372a`,
                       background: isActive ? `${mc}18` : isPast ? `${mc}08` : '#1d1b13',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? 11 : 14,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9,
                     }}>
                       {isPast
-                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L19 7" stroke={mc} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L19 7" stroke={mc} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
                         : <span style={{ opacity: isActive ? 1 : 0.4 }}>{META[m].icon}</span>
                       }
                     </div>
-                    <div style={{ fontSize: isMobile ? 9 : 11, fontWeight: 600, color: isActive ? mc : '#8b8778', letterSpacing: '.05em', textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
+                    <div style={{ fontSize: 8, fontWeight: 600, color: isActive ? mc : '#8b8778', letterSpacing: '.04em', textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
                       {META[m].label}
                     </div>
-                    {(m === 'shape' || m === 'done') && (
-                      <div style={{ fontSize: isMobile ? 7 : 9, fontWeight: 600, color: '#8b8778', fontStyle: 'italic' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
-                        optional
-                      </div>
-                    )}
                   </div>
                   {mi < MODULES.length - 1 && (
                     <div style={{
-                      flex: 1, minWidth: isMobile ? 8 : undefined, height: 3,
+                      flex: 1, minWidth: 6, height: 2,
                       background: mi < modIndex ? `${color}50` : '#3a372a',
-                      margin: isMobile ? '0 2px' : '0 5px', marginBottom: 24, borderRadius: 2,
+                      margin: '0 3px 12px', borderRadius: 2,
                       // The Validate → Shape hop is the mandatory/optional fork —
                       // dashed here (vs solid everywhere else) so the rail itself
                       // signals that Shape & Ship are a choice, not the next required step.
-                      ...(m === 'validate' ? { background: 'transparent', borderTop: `3px dashed ${mi < modIndex ? `${color}70` : '#3a372a'}`, height: 0 } : {}),
+                      ...(m === 'validate' ? { background: 'transparent', borderTop: `2px dashed ${mi < modIndex ? `${color}70` : '#3a372a'}`, height: 0 } : {}),
                     }} />
                   )}
                 </React.Fragment>
@@ -14119,131 +14004,16 @@ export default function WorkPage() {
             })}
           </div>
 
-          {/* ── Validation Workspace (validate stage only) ──────────────── */}
-          {mod === 'validate' && (() => {
-            const VC = STAGE_COLORS.validate;
-
-            // Progress: which steps have meaningful content
-            const stepChecks = [
-              { label: 'Validation goals',      done: !!(get('valGoalSuccess') || get('valGoalProve')) },
-              { label: 'Assumptions defined',   done: !!get('assumptions') },
-              { label: 'ICP & outreach',        done: !!(get('whoExactly') || get('interviewTarget')) },
-              { label: 'Interview script',      done: !!(get('keyQuestion') || get('customInterviewQuestions')) },
-              { label: 'Conversations logged',  done: interviews.length > 0 },
-              { label: 'Market research',       done: !!(get('workaround') || get('valCompetitors')) },
-              { label: 'Insights extracted',    done: !!(get('insights') && get('insights') !== '[]') },
-              { label: 'Decision recorded',     done: !!get('validationSignal') },
-            ];
-            const completedCount = stepChecks.filter(s => s.done).length;
-            const progressPct = Math.round((completedCount / stepChecks.length) * 100);
-
-            // Confidence score: composite of score dims + interview count + demand signals
-            const scoreNums = ['valScoreProblem','valScoreCustomer','valScoreDemand','valScoreEvidence'].map(k => parseInt(get(k)||'0')||0);
-            const hasScores = scoreNums.some(n => n > 0);
-            const scoreAvg = hasScores ? scoreNums.reduce((a,b) => a+b,0) / 4 : 0;
-            const ivBonus = Math.min(interviews.length * 5, 20); // up to +20 for 4+ interviews
-            const demandBonus = (() => { try { return Math.min(JSON.parse(get('demandSignals')||'[]').length * 5, 15); } catch { return 0; } })();
-            const confidence = hasScores ? Math.min(100, Math.round(scoreAvg * 10 + ivBonus + demandBonus)) : 0;
-            const confColor = confidence >= 70 ? '#059669' : confidence >= 40 ? '#d97706' : confidence > 0 ? '#dc2626' : '#c0c0c8';
-
-            // Risks: high-priority unvalidated assumptions
-            const asmRisks = (() => {
-              try {
-                const asms = JSON.parse(get('assumptions') || '[]');
-                return asms.filter((a: any) => a.importance === 'High' && a.status === 'To Validate').slice(0, 3);
-              } catch { return []; }
-            })();
-            const lowScoreDims = ['valScoreProblem','valScoreCustomer','valScoreDemand','valScoreEvidence']
-              .map((k,i) => ({ label: ['Problem severity','Customer clarity','Demand signal','Evidence quality'][i], val: parseInt(get(k)||'0')||0 }))
-              .filter(d => d.val > 0 && d.val < 5);
-
-            // Recommended next action
-            const nextAction = !get('assumptions') ? 'Start by defining your assumptions'
-              : interviews.length === 0 ? 'Book your first 3 conversations'
-              : interviews.length < 3 ? `Talk to ${3 - interviews.length} more people`
-              : !get('insights') || get('insights') === '[]' ? 'Extract patterns from your conversations'
-              : !get('validationSignal') ? 'Record your validation decision'
-              : 'You\'re ready — move to Shape';
-
-            return (
-              <div style={{ border: `2px solid ${VC}30`, borderRadius: 12, overflow: 'hidden', marginBottom: 24, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-                {/* Header */}
-                <div style={{ padding: '14px 18px', background: `${VC}10`, borderBottom: `1px solid ${VC}20`, display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 18 }}>🗂️</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: VC }}>Validation Workspace</div>
-                    <div style={{ fontSize: 11, color: '#a29d8c' }}>Your live progress dashboard</div>
-                  </div>
-                  {confidence > 0 && (
-                    <div style={{ textAlign: 'center' as const }}>
-                      <div style={{ fontSize: 24, fontWeight: 800, color: confColor, lineHeight: 1 }}>{confidence}</div>
-                      <div style={{ fontSize: 9, color: '#b0b0b8', fontWeight: 600, letterSpacing: 0.5 }}>CONFIDENCE</div>
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 14, background: '#fff' }}>
-                  {/* Progress bar */}
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: '#6e6e73', textTransform: 'uppercase' as const, letterSpacing: 0.8 }}>Steps completed</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: VC }}>{completedCount}/{stepChecks.length}</span>
-                    </div>
-                    <div style={{ height: 8, borderRadius: 4, background: '#f1f5f9', overflow: 'hidden' }}>
-                      <div style={{ height: 8, borderRadius: 4, width: `${progressPct}%`, background: progressPct >= 75 ? '#059669' : progressPct >= 40 ? VC : '#d97706', transition: 'width .4s' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginTop: 8 }}>
-                      {stepChecks.map(s => (
-                        <span key={s.label} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
-                          background: s.done ? '#f0fdf4' : '#f5f5f7',
-                          color: s.done ? '#059669' : '#94a3b8',
-                          border: `1px solid ${s.done ? '#86efac' : '#e5e5ea'}` }}>
-                          {s.done ? '✓' : '·'} {s.label}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Next action */}
-                  <div style={{ background: `${VC}08`, borderRadius: 8, padding: '10px 14px', border: `1.5px solid ${VC}25`, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 16, flexShrink: 0 }}>👉</span>
-                    <div>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: VC, textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 3 }}>Next action</div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f' }}>{nextAction}</div>
-                    </div>
-                  </div>
-
-                  {/* Risks */}
-                  {(asmRisks.length > 0 || lowScoreDims.length > 0) && (
-                    <div>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: '#dc2626', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 6 }}>⚠️ Top risks</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                        {asmRisks.map((a: any, i: number) => (
-                          <div key={i} style={{ fontSize: 12, color: '#b91c1c', background: '#fef2f2', borderRadius: 6, padding: '5px 10px', border: '1px solid #fca5a5' }}>
-                            Unvalidated: {a.text.length > 70 ? a.text.slice(0, 70) + '…' : a.text}
-                          </div>
-                        ))}
-                        {lowScoreDims.map(d => (
-                          <div key={d.label} style={{ fontSize: 12, color: '#92400e', background: '#fffbeb', borderRadius: 6, padding: '5px 10px', border: '1px solid #fcd34d' }}>
-                            Low score: {d.label} ({d.val}/10) — needs more evidence
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Interview count nudge */}
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
-                    <span style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap' as const }}>
-                      {interviews.length === 0 ? 'No conversations yet' : `${interviews.length} conversation${interviews.length !== 1 ? 's' : ''} logged`}
-                    </span>
-                    <div style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+          {/* The "Validation Workspace" live-progress dashboard (confidence
+              score, checklist, risks, next action) used to render here on the
+              intro screen. Removed as part of the one-page-no-scroll resize —
+              even bounded to a small internal scroll region it was still the
+              single tallest thing keeping Validate's explainer alone from
+              fitting, the same problem the old five-phase infographic caused.
+              It's a "how am I doing" widget for someone already mid-flow, not
+              pre-start orientation content, so it belongs on the Validate step
+              pages themselves rather than this intro — flagged for the user
+              rather than silently dropped. */}
 
           {/* CTA row — back into the previous stage (if any) + thick marker start button.
               Idea-only: a spotlight sweeps across and settles on the Start
@@ -14262,10 +14032,10 @@ export default function WorkPage() {
               <button
                 onClick={goToPrevStage}
                 style={{
-                  padding: '18px 22px',
+                  padding: '10px 16px',
                   background: 'transparent', color: WB_DIM,
                   border: `2px solid #4a4636`, borderRadius: 8,
-                  fontSize: 18, fontWeight: 700, cursor: 'pointer',
+                  fontSize: 13, fontWeight: 700, cursor: 'pointer',
                   fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
                   letterSpacing: '.04em',
                   flexShrink: 0,
@@ -14280,10 +14050,10 @@ export default function WorkPage() {
             <button
               onClick={next}
               style={{
-                flex: 1, padding: '18px 0',
+                flex: 1, padding: '10px 0',
                 background: color, color: '#fff',
                 border: 'none', borderRadius: 8,
-                fontSize: 22, fontWeight: 700, cursor: 'pointer',
+                fontSize: 15, fontWeight: 700, cursor: 'pointer',
                 fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
                 letterSpacing: '.04em',
                 boxShadow: `0 4px 16px ${color}40`,
