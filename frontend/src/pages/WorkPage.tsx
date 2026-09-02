@@ -1522,106 +1522,133 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
   const done = stepIndex >= ONE_LINER_QUESTIONS.length;
   const activeQ = !done ? ONE_LINER_QUESTIONS[stepIndex] : null;
 
+  // ── "Magazine Cover Feature" treatment (Direction 13) ────────────────────
+  // Replaces the whiteboard/chat-bubble skin above with an editorial one:
+  // a masthead byline, the live question set as a bold condensed headline
+  // with a kicker + rule (like a cover line), earlier questions collapsed
+  // to small kickers, and answers rendered as serif pull-quotes instead of
+  // chat bubbles. Pure re-skin — every piece of state/logic above (turns,
+  // fields, submitAnswer, restart, the typewriter) is untouched.
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 8,
-      background: '#fefdfb', border: '1px solid #eceae4', borderRadius: 12,
-      padding: '14px 16px 12px',
+      background: '#fffdfa', border: '1px solid #e8e3d3',
+      borderTop: `4px solid ${STAGE_COLORS.idea}`, borderRadius: 10,
+      padding: '14px 18px 14px',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <AgentAvatar size={16} />
+          <span style={{
+            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12,
+            letterSpacing: '.14em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea,
+          }}>
+            Idea Desk · By Sage
+          </span>
+        </div>
         <button
           onClick={restart}
           style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            fontSize: 12, fontWeight: 600, fontFamily: "'Inter', system-ui, sans-serif",
+            fontSize: 11, fontWeight: 700, letterSpacing: '.02em', fontFamily: "'Inter', system-ui, sans-serif",
             color: confirmingRestart ? '#dc2626' : T3,
           }}
         >
           ↺ {confirmingRestart ? 'Click again to restart' : 'Restart this step'}
         </button>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' as const, paddingRight: 2 }}>
-        {turns.map((t, i) => (
-          <div key={i} style={{ display: 'flex', gap: 7, alignItems: 'flex-end', flexDirection: t.role === 'user' ? 'row-reverse' as const : 'row' as const }}>
-            {/* Only agent turns get an avatar now — an answered turn
-                compresses into a plain right-aligned pill below, so it
-                doesn't carry the same visual weight as the question it
-                answered. */}
-            {t.role === 'agent' && <AgentAvatar size={24} />}
-            {t.role === 'agent' && t.kind === 'react' ? (
-              <div style={{
-                maxWidth: '75%', padding: '5px 11px',
-                borderRadius: '12px 12px 12px 3px',
-                background: '#fdf8ef', border: '1px dashed #ecd9ab',
-                fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui",
-                fontStyle: 'italic', fontWeight: 600, fontSize: 15, lineHeight: 1.3,
-                color: STAGE_COLORS.idea, opacity: 0.95,
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflowY: 'auto' as const, paddingRight: 2 }}>
+        {turns.map((t, i) => {
+          const isLast = i === turns.length - 1;
+
+          if (t.role === 'agent' && t.kind === 'react') {
+            // Editor's-note caption reacting to the pull-quote above it —
+            // small italic serif instead of a chat bubble.
+            return (
+              <div key={i} style={{
+                fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
+                fontWeight: 600, fontSize: 13, lineHeight: 1.4, color: STAGE_COLORS.idea, opacity: 0.85,
+              }}>
+                — {t.text}
+              </div>
+            );
+          }
+
+          if (t.role === 'agent') {
+            // 'ask' turn. The live (last) question runs as the full cover
+            // headline; every earlier question collapses to a small kicker
+            // line sitting above the pull-quote that answered it.
+            if (isLast) {
+              return (
+                <div key={i}>
+                  <div style={{
+                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11,
+                    letterSpacing: '.14em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea, marginBottom: 4,
+                  }}>
+                    Question {stepIndex + 1} of {ONE_LINER_QUESTIONS.length}
+                  </div>
+                  <div style={{
+                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 27, lineHeight: 0.98,
+                    letterSpacing: '.005em', textTransform: 'uppercase' as const, color: T1,
+                  }}>
+                    {/* Only the CURRENT question (last turn) types itself out —
+                        every earlier ask in the history renders instantly. */}
+                    <TypewriterAsk text={t.text} />
+                  </div>
+                  <div style={{ borderTop: `3px solid ${T1}`, marginTop: 8 }} />
+                </div>
+              );
+            }
+            return (
+              <div key={i} style={{
+                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 10.5,
+                letterSpacing: '.1em', textTransform: 'uppercase' as const, color: T3,
               }}>
                 {t.text}
               </div>
-            ) : t.role === 'agent' ? (
+            );
+          }
+
+          // User answer — a serif pull-quote instead of an echo pill, so a
+          // finished exchange reads like a quoted line in the feature.
+          return (
+            <div key={i} style={{ borderLeft: `3px solid ${STAGE_COLORS.idea}`, paddingLeft: 10 }}>
               <div style={{
-                maxWidth: '75%', padding: '6px 12px',
-                borderRadius: '12px 12px 12px 3px',
-                background: '#fff7e6', border: '1px solid #f0d9a3',
-                fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui",
-                fontWeight: 400, fontSize: 15, lineHeight: 1.3,
-                color: T1,
+                fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
+                fontWeight: 600, fontSize: 15, lineHeight: 1.35, color: T1,
               }}>
-                {/* Only the CURRENT question (last turn) types itself out —
-                    every earlier ask in the history renders instantly. */}
-                {i === turns.length - 1 ? <TypewriterAsk text={t.text} /> : t.text}
+                "{t.text}"
               </div>
-            ) : (
-              // Compact "echo" pill for an answered turn: deliberately
-              // smaller and plainer than the agent's whiteboard-note
-              // bubbles above (dark ink fill, small bold sans instead of
-              // the cursive Kalam script), so a full 5-question exchange
-              // reads as a short receipt strip rather than a wall of
-              // equally-weighted chat bubbles.
-              <div style={{
-                maxWidth: '75%', padding: '5px 12px',
-                borderRadius: '12px 12px 3px 12px',
-                background: T1, border: 'none',
-                fontFamily: "'Inter', system-ui, sans-serif",
-                fontWeight: 700, fontSize: 12, lineHeight: 1.35,
-                color: '#fff7e6',
-                textAlign: 'left' as const,
-              }}>
-                {t.text}
-              </div>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
         {reacting && (
-          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-end' }}>
-            <AgentAvatar size={24} />
-            <div style={{
-              padding: '5px 11px', borderRadius: '12px 12px 12px 3px',
-              background: '#fdf8ef', border: '1px dashed #ecd9ab',
-              fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui",
-              fontStyle: 'italic', fontWeight: 600, fontSize: 13, color: STAGE_COLORS.idea, opacity: 0.75,
-            }}>…</div>
+          <div style={{
+            fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
+            fontSize: 13, color: STAGE_COLORS.idea, opacity: 0.6,
+          }}>
+            — gathering a quote…
           </div>
         )}
         {smoothing && (
-          <div style={{ display: 'flex', gap: 7, alignItems: 'flex-end' }}>
-            <AgentAvatar size={24} />
-            <div style={{
-              padding: '5px 11px', borderRadius: '12px 12px 12px 3px',
-              background: '#fdf8ef', border: '1px dashed #ecd9ab',
-              fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui",
-              fontStyle: 'italic', fontWeight: 600, fontSize: 13, color: STAGE_COLORS.idea, opacity: 0.75,
-            }}>✨ polishing your one-liner…</div>
+          <div style={{
+            fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
+            fontSize: 13, color: STAGE_COLORS.idea, opacity: 0.6,
+          }}>
+            ✨ — polishing the headline…
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
       {!done && (
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
-            style={{ ...inp, flex: 1, background: '#fff' }}
+            style={{
+              ...inp, flex: 1, background: 'transparent',
+              border: 'none', borderBottom: `1.5px solid ${BORDER}`, borderRadius: 0,
+              padding: '6px 2px', fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15,
+            }}
             value={draft}
             placeholder={activeQ ? activeQ.placeholder : ''}
             onChange={e => setDraft(e.target.value)}
@@ -1632,14 +1659,16 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
             onClick={submitAnswer}
             disabled={reacting || !draft.trim()}
             style={{
-              padding: '0 18px', borderRadius: 10, border: 'none',
-              background: STAGE_COLORS.idea, color: '#fff', fontWeight: 700, fontSize: 16,
+              padding: '8px 16px', borderRadius: 4, border: 'none',
+              background: STAGE_COLORS.idea, color: '#fff',
+              fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 13,
+              letterSpacing: '.08em', textTransform: 'uppercase' as const,
               cursor: reacting || !draft.trim() ? 'not-allowed' : 'pointer',
               opacity: reacting || !draft.trim() ? 0.5 : 1,
               flexShrink: 0,
             }}
           >
-            →
+            Next →
           </button>
         </div>
       )}
