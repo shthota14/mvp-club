@@ -6480,7 +6480,7 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
   const [reopenedKey, setReopenedKey] = useState<string | null>(null);
   return (
     <div style={col}>
-      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 600, color: '#334155' }}>Score each dimension 0–5 based on what you know today.</div>
+      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 500, color: '#334155' }}>Score each dimension 0–5 based on what you know today.</div>
       {SCORE_DIMS.map((d, di) => {
         const cur = parseInt(values[d.key] ?? '0') || 0;
         // Direction A: dimensions reveal one at a time, mirroring the
@@ -6498,12 +6498,12 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
         const rowOpen = !answered || reopenedKey === d.key;
         return (
           <div key={d.key} style={{ display: prevAnswered ? 'flex' : 'none', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
-            <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 600, color: '#1e293b', flex: 1 }}>{d.label}</div>
+            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#1e293b', flex: 1 }}>{d.label}</div>
             <div style={{ display: rowOpen ? 'flex' : 'none', gap: 4 }}>
               {[0, 1, 2, 3, 4, 5].map(n => (
                 <button key={n} onClick={() => { onChange(d.key, String(n)); setReopenedKey(null); }} style={{
                   width: 30, height: 30, borderRadius: '50%',
-                  fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900, cursor: 'pointer',
+                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15, cursor: 'pointer',
                   border: `2px solid ${cur === n ? c : '#bbb'}`,
                   background: cur === n ? c : '#fffdf8',
                   color: cur === n ? '#fff' : '#555',
@@ -6514,7 +6514,7 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
             <div style={{ display: !rowOpen ? 'flex' : 'none', alignItems: 'center', gap: 8 }}>
               <div style={{
                 width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900,
+                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15,
                 background: c, color: '#fff',
               }}>{cur}</div>
               <button
@@ -6530,8 +6530,8 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
       <div style={{ ...postcardStyle(1), borderTop: `4px solid ${grade.bc}`, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <PostcardStamp />
         <div>
-          <div style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900, letterSpacing: -0.1, color: '#666', marginBottom: 4 }}>Total score</div>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 20, color: grade.tc, fontWeight: 700 }}>{grade.label}</div>
+          <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.05em', textTransform: 'uppercase' as const, color: '#666', marginBottom: 4 }}>Total score</div>
+          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, color: grade.tc, fontWeight: 700 }}>{grade.label}</div>
         </div>
         {/* `key={total}` forces a remount on every score change, which is what
             replays the `tickPop` animation (defined in the shared keyframes
@@ -6540,7 +6540,7 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
             not a game. Deliberately not spread across every score button
             below: one focal pop reads as feedback, forty small ones would
             just feel busy. */}
-        <div key={total} style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 38, fontWeight: 900, color: grade.bc, letterSpacing: -1, animation: 'tickPop .4s ease' }}>{total}<span style={{ fontSize: 16, fontWeight: 600, color: '#888', fontFamily: 'inherit' }}>/40</span></div>
+        <div key={total} style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 42, color: grade.bc, animation: 'tickPop .4s ease' }}>{total}<span style={{ fontSize: 16, fontWeight: 600, color: '#888', fontFamily: 'inherit' }}>/40</span></div>
       </div>
     </div>
   );
@@ -14325,19 +14325,20 @@ export default function WorkPage() {
       <StepGoal text={STEP_GOALS.hone[5]} />
       <BMCLabel blocks={['Key Metrics']} />
       <H accent={STAGE_COLORS.hone}>How strong is your idea?</H>
-      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 600, color: '#334155', marginTop: -14, marginBottom: 18 }}>Rate each 0–5. You need 20+ to move forward.</div>
+      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 500, color: '#334155', marginTop: -14, marginBottom: 18 }}>Rate each 0–5. You need 20+ to move forward.</div>
       <HoneScorecard values={fields} onChange={(k, v) => set(k, v)} />
       {honeScore >= 20 ? (
         <>
           <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: 10, padding: '16px 18px' }}>
-            <div style={{ display: 'inline-block', marginBottom: 6 }}>
-              <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900, letterSpacing: -0.1, color: '#059669' }}>Summarise in one paragraph</span>
-              <svg viewBox="0 0 160 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 150 }}>
-                <path d="M0,3 C15,1 30,5 45,3 C60,1 75,5 90,3 C105,1 120,5 135,3 C145,1 155,4 160,3" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" />
-              </svg>
+            <div style={{ marginBottom: 6 }}>
+              <div style={{
+                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
+                letterSpacing: '.04em', textTransform: 'uppercase' as const, color: '#059669',
+              }}>Summarise in one paragraph</div>
+              <div style={{ borderTop: '2px solid #059669', marginTop: 3, maxWidth: 130 }} />
             </div>
             <textarea
-              style={{ ...ta(90), fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 18, fontWeight: 600 }}
+              style={{ ...ta(90), fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600 }}
               value={get('founderStatement')} onChange={e => set('founderStatement', e.target.value)} placeholder="Early-stage founders pre-seed struggle with knowing what to do next…" />
           </div>
           <NavRow onBack={back} onNext={async () => {
@@ -14349,8 +14350,8 @@ export default function WorkPage() {
       ) : (
         <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', borderRadius: 10, padding: '20px' }}>
           <div style={{ fontSize: 22, marginBottom: 8 }}>💡</div>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 20, fontWeight: 700, color: '#d97706', marginBottom: 6 }}>Score below 20 — consider refining further</div>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#92400e', lineHeight: 1.4, marginBottom: 14 }}>You can still continue to validate and shape — but a stronger foundation here will sharpen everything downstream.</div>
+          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 18, fontWeight: 700, color: '#d97706', marginBottom: 6 }}>Score below 20 — consider refining further</div>
+          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#92400e', lineHeight: 1.45, marginBottom: 14 }}>You can still continue to validate and shape — but a stronger foundation here will sharpen everything downstream.</div>
           <NavRow onBack={back} onNext={async () => {
             const sc: Record<string, string> = {}; SCORE_DIMS.forEach(d => { sc[d.key] = get(d.key) || '0'; });
             await save('hone', { ...sc, founderStatement: get('founderStatement'), honeScore: String(honeScore) });
