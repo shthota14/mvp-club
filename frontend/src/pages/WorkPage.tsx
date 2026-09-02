@@ -179,6 +179,28 @@ const formatProblemsForContext = (v: string): string =>
     return label ? `- (${label}) ${t}` : `- ${t}`;
   }).filter(Boolean).join('\n');
 
+// Composes a starter paragraph for the Hone scorecard's "summarise in one
+// paragraph" founder statement, stitched from answers already collected
+// earlier in Hone (persona, problem, pain, existing alternatives, founder
+// edge) so a founder facing a blank textarea has something concrete to
+// edit rather than starting from nothing. Every clause is optional and
+// silently skipped when its source field is empty, so this degrades
+// gracefully however far through Hone the founder actually got.
+const draftFounderStatement = (opts: {
+  who: string; problem: string; pain: string; alternative: string; founderFit: string;
+}): string => {
+  const { who, problem, pain, alternative, founderFit } = opts;
+  const lower = (s: string) => s ? s.charAt(0).toLowerCase() + s.slice(1) : s;
+  const sentences: string[] = [];
+  if (who && problem) sentences.push(`${who} face a real problem: ${problem}.`);
+  else if (problem) sentences.push(`The core problem: ${problem}.`);
+  else if (who) sentences.push(`${who} are who I'm building this for.`);
+  if (pain) sentences.push(`Left unresolved, it costs them ${pain}.`);
+  if (alternative) sentences.push(`Today they cope by ${lower(alternative)}, but that's not really working.`);
+  if (founderFit) sentences.push(/[.!?…]$/.test(founderFit) ? founderFit : `${founderFit}.`);
+  return sentences.join(' ');
+};
+
 // Pure utility — parse key_insights text into per-question blocks
 const parseInsights = (text: string): { question: string; signals: string[]; quote: string }[] => {
   if (!text) return [];
@@ -14354,12 +14376,35 @@ export default function WorkPage() {
       {honeScore >= 20 ? (
         <>
           <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: 10, padding: '16px 18px' }}>
-            <div style={{ marginBottom: 6 }}>
-              <div style={{
-                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
-                letterSpacing: '.04em', textTransform: 'uppercase' as const, color: '#059669',
-              }}>Summarise in one paragraph</div>
-              <div style={{ borderTop: '2px solid #059669', marginTop: 3, maxWidth: 130 }} />
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
+              <div>
+                <div style={{
+                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
+                  letterSpacing: '.04em', textTransform: 'uppercase' as const, color: '#059669',
+                }}>Summarise in one paragraph</div>
+                <div style={{ borderTop: '2px solid #059669', marginTop: 3, maxWidth: 130 }} />
+              </div>
+              {/* Easier-input option: rather than facing a blank textarea for a
+                  synthesis question, stitch a starter draft together from
+                  answers already given earlier in Hone (persona, problem,
+                  pain, alternatives, founder edge) — the founder edits it
+                  rather than writing it from scratch. Hidden once there's
+                  something to edit so it never clobbers what's been typed. */}
+              {!get('founderStatement').trim() && (
+                <Button
+                  variant="secondary" size="sm"
+                  onClick={() => set('founderStatement', draftFounderStatement({
+                    who: parseWhoDisplay(get('whoExactly')),
+                    problem: parseProblemDisplay(get('problemSentence')),
+                    pain: (get('painIfNothing') || '').split('|').filter(Boolean).slice(0, 2).map((s: string) => s.charAt(0).toLowerCase() + s.slice(1)).join(' and '),
+                    alternative: (get('solutionAlternatives') || '').split(MULTI_SEP).filter(Boolean)[0] || '',
+                    founderFit: get('founderFit').trim(),
+                  }))}
+                  style={{ borderColor: '#86efac', color: '#059669', flexShrink: 0 }}
+                >
+                  ✨ Draft it for me
+                </Button>
+              )}
             </div>
             <textarea
               style={{ ...ta(90), fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600 }}
