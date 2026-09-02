@@ -5315,14 +5315,15 @@ function FounderReadinessStep({
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: subtitle ? 4 : 0 }}>
         <span style={{ fontSize: 18 }}>{icon}</span>
-        <div style={{ display: 'inline-block' }}>
-          <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 15, fontWeight: 900, letterSpacing: -0.2, color: honeColor }}>{title}</span>
-          <svg viewBox="0 0 220 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 210 }}>
-            <path d="M0,3 C22,1 44,5 66,3 C88,1 110,5 132,3 C154,1 176,5 198,3 C208,1 216,4 220,3" fill="none" stroke={honeColor} strokeWidth="2" strokeLinecap="round" />
-          </svg>
+        <div>
+          <div style={{
+            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15,
+            letterSpacing: '.04em', textTransform: 'uppercase' as const, color: honeColor,
+          }}>{title}</div>
+          <div style={{ borderTop: `2px solid ${honeColor}`, marginTop: 3, maxWidth: 130 }} />
         </div>
       </div>
-      {subtitle && <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#3f3f46', lineHeight: 1.4, paddingLeft: 26 }}>{subtitle}</div>}
+      {subtitle && <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, fontWeight: 500, color: '#3f3f46', lineHeight: 1.45, paddingLeft: 26 }}>{subtitle}</div>}
     </div>
   );
 
@@ -5339,31 +5340,24 @@ function FounderReadinessStep({
         {/* Direction A: collapses to an echo pill once answered — same
             pattern as the who-pays / spark-type pickers. */}
         <div style={{ display: (!timeValue || timeOpen) ? 'flex' : 'none', flexDirection: 'column', gap: 10 }}>
-          {TIME_OPTIONS.map((opt, oi) => {
+          {TIME_OPTIONS.map((opt) => {
             const on = timeValue === opt.val;
-            const WOBBLE = [
-              { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.4 },
-              { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.4 },
-              { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.3 },
-              { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.4 },
-            ][oi % 4];
             return (
               <button key={opt.val} onClick={() => { onTimeChange(on ? '' : opt.val); setTimeOpen(false); }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '13px 16px', cursor: 'pointer',
+                  padding: '13px 16px 13px 14px', cursor: 'pointer',
                   fontFamily: 'inherit', textAlign: 'left' as const, width: '100%',
-                  border: `${on ? '2.5px' : '2px'} solid ${on ? honeColor : '#d8d8d8'}`,
-                  borderRadius: WOBBLE.borderRadius,
-                  transform: `rotate(${WOBBLE.rotate}deg)`,
+                  border: 'none',
+                  borderLeft: `4px solid ${on ? honeColor : '#d8d8d8'}`,
+                  borderRadius: 3,
                   background: on ? `${honeColor}0f` : '#fffdf8',
-                  boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
                   transition: 'all .15s',
                 }}>
                 <span style={{ fontSize: 22, flexShrink: 0 }}>{opt.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 20, fontWeight: on ? 700 : 600, color: on ? honeColor : '#1e293b' }}>{opt.label}</div>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 15, color: '#7a7a7a', marginTop: 1 }}>{opt.desc}</div>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: on ? 700 : 600, color: on ? honeColor : '#1e293b' }}>{opt.label}</div>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#7a7a7a', marginTop: 1 }}>{opt.desc}</div>
                 </div>
                 {on && <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill={honeColor}/><path d="M7 12l4 4 6-7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </button>
@@ -5373,9 +5367,10 @@ function FounderReadinessStep({
         <div style={{ display: (timeValue && !timeOpen) ? 'flex' : 'none', alignItems: 'center', gap: 10 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '5px 12px', borderRadius: '12px 12px 3px 12px',
-            background: T1, color: '#fff7e6',
-            fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: 12,
+            padding: '4px 12px', borderRadius: 4,
+            background: honeColor, color: '#fff',
+            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 12,
+            letterSpacing: '.05em', textTransform: 'uppercase' as const,
           }}>
             {TIME_OPTIONS.find(t => t.val === timeValue)?.icon} {TIME_OPTIONS.find(t => t.val === timeValue)?.label}
           </div>
@@ -5387,7 +5382,7 @@ function FounderReadinessStep({
           </button>
         </div>
         {timeValue === 'minimal' && (
-          <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: '#fffbeb', border: '1.5px solid #fcd34d', fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#92400e', lineHeight: 1.4 }}>
+          <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: '#fffbeb', border: '1.5px solid #fcd34d', fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#92400e', lineHeight: 1.45 }}>
             ⚠️ A few hours a week is rarely enough to get a startup off the ground. Consider what it would take to carve out more time before committing.
           </div>
         )}
@@ -5404,25 +5399,17 @@ function FounderReadinessStep({
           subtitle="Select everything that genuinely applies to you right now."
         />
         <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10 }}>
-          {SKILL_CHIPS.map((chip, ci) => {
+          {SKILL_CHIPS.map((chip) => {
             const on = selectedSkills.includes(chip.label);
-            const WOBBLE = [
-              { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.5 },
-              { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.6 },
-              { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.4 },
-              { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.5 },
-            ][ci % 4];
             return (
               <button key={chip.label} onClick={() => toggleSkill(chip.label)}
                 style={{
-                  padding: '7px 15px', cursor: 'pointer',
-                  fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 17, fontWeight: on ? 700 : 600,
-                  border: `${on ? '2.5px' : '2px'} solid ${on ? honeColor : '#d8d8d8'}`,
-                  borderRadius: WOBBLE.borderRadius,
-                  transform: `rotate(${WOBBLE.rotate}deg)`,
+                  padding: '7px 14px', cursor: 'pointer',
+                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.02em', fontWeight: on ? 700 : 500,
+                  border: `${on ? '2px' : '1.5px'} solid ${on ? honeColor : '#d8d8d8'}`,
+                  borderRadius: 4,
                   background: on ? `${honeColor}12` : '#fffdf8',
                   color: on ? honeColor : '#555',
-                  boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
                   transition: 'all .15s',
                 }}>
                 {chip.icon} {on ? '✓ ' : ''}{chip.label}
@@ -5440,33 +5427,26 @@ function FounderReadinessStep({
           subtitle="No commitment yet — just exploring. What skills would complement yours most? You can seek community matches during Validate."
         />
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
-          {COFOUNDER_ARCHETYPES.map((arch, ai) => {
+          {COFOUNDER_ARCHETYPES.map((arch) => {
             const on = selectedCofounders.includes(arch.val);
-            const WOBBLE = [
-              { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.4 },
-              { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.4 },
-              { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.3 },
-              { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.4 },
-            ][ai % 4];
             return (
               <button key={arch.val} onClick={() => toggleCofounder(arch.val)}
                 style={{
                   display: 'flex', alignItems: 'flex-start', gap: 10,
-                  padding: '12px 14px', cursor: 'pointer',
+                  padding: '12px 14px 12px 12px', cursor: 'pointer',
                   fontFamily: 'inherit', textAlign: 'left' as const,
-                  border: `${on ? '2.5px' : '2px'} solid ${on ? honeColor : '#d8d8d8'}`,
-                  borderRadius: WOBBLE.borderRadius,
-                  transform: `rotate(${WOBBLE.rotate}deg)`,
+                  border: 'none',
+                  borderLeft: `4px solid ${on ? honeColor : '#d8d8d8'}`,
+                  borderRadius: 3,
                   background: on ? `${honeColor}0f` : '#fffdf8',
-                  boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
                   transition: 'all .15s',
                 }}>
                 <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{arch.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: on ? 700 : 600, color: on ? honeColor : '#1e293b', marginBottom: 1 }}>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: on ? 700 : 600, color: on ? honeColor : '#1e293b', marginBottom: 1 }}>
                     {on ? '✓ ' : ''}{arch.label}
                   </div>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 14, color: '#7a7a7a' }}>{arch.desc}</div>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 13, color: '#7a7a7a' }}>{arch.desc}</div>
                 </div>
               </button>
             );
@@ -5489,7 +5469,7 @@ function FounderReadinessStep({
           style={{
             width: '100%', boxSizing: 'border-box' as const,
             border: '2px solid #e0e0e0', borderRadius: 10,
-            padding: '12px 14px', fontSize: 18, fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic',
+            padding: '12px 14px', fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
             color: USER_INPUT_COLOR, fontWeight: 600, lineHeight: 1.6, resize: 'vertical' as const, outline: 'none',
             transition: 'border-color .15s',
           }}
@@ -5504,12 +5484,13 @@ function FounderReadinessStep({
           ...postcardStyle(-1),
           borderTop: `4px solid ${honeColor}`,
           padding: '18px 22px',
-          fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
+          fontFamily: "'Playfair Display', Georgia, serif",
+          fontStyle: 'italic',
         }}>
           <PostcardStamp />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: honeColor }} />
-            <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: honeColor }}>Founder readiness snapshot</span>
+            <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: honeColor }}>Founder readiness snapshot</span>
           </div>
           <div style={{ fontSize: 19, lineHeight: 1.7, color: '#1a1a1a', fontWeight: 700, borderBottom: `3px solid ${honeColor}`, paddingBottom: 10, marginBottom: 12 }}>
             Committing <span style={{ color: honeColor }}>{TIME_OPTIONS.find(t => t.val === timeValue)?.label ?? timeValue}</span>, bringing <span style={{ color: honeColor }}>{selectedSkills.slice(0, 2).join(' & ')}{selectedSkills.length > 2 ? ` +${selectedSkills.length - 2} more` : ''}</span>{selectedCofounders.length > 0 && <>, looking for <span style={{ color: honeColor }}>{selectedCofounders.map(v => COFOUNDER_ARCHETYPES.find(a => a.val === v)?.label ?? v).join(' + ')}</span></>}.
