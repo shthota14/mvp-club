@@ -5277,6 +5277,21 @@ const COFOUNDER_ARCHETYPES = [
   { val: 'unsure',      label: 'Not sure yet',           desc: 'Need to figure this out',        icon: '🤔' },
 ];
 
+// Starter phrases for the "why you" free-text field below -- covers the
+// three edges the question itself calls out (lived experience, domain
+// knowledge, unique access) plus a couple of common others. Clicking one
+// seeds the textarea (or appends onto whatever's already there) rather
+// than replacing it outright, since this is a paragraph answer, not a
+// single-word pick like the other SuggestionChips usages in this file.
+const FOUNDER_FIT_CHIPS = [
+  "I've lived this problem myself",
+  "I have years of experience in this industry",
+  "I have direct access to the people who'd buy this",
+  "I've talked to dozens of people who have this problem",
+  "I have the technical skills to build this",
+  "I have a network that can open doors here",
+];
+
 function FounderReadinessStep({
   timeValue, onTimeChange,
   skillsValue, onSkillsChange,
@@ -5475,6 +5490,15 @@ function FounderReadinessStep({
           }}
           onFocus={e => { e.currentTarget.style.borderColor = honeColor; }}
           onBlur={e => { e.currentTarget.style.borderColor = '#e0e0e0'; }}
+        />
+        <SuggestionChips
+          chips={FOUNDER_FIT_CHIPS}
+          onSelect={v => {
+            const cur = founderFitValue.trim();
+            if (!cur) { onFounderFitChange(v); return; }
+            onFounderFitChange(`${cur}${/[.!?…]$/.test(cur) ? ' ' : '. '}${v}`);
+          }}
+          accent={honeColor}
         />
       </div>
 
