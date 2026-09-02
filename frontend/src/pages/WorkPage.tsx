@@ -2529,7 +2529,7 @@ function MarketSnapshotPanel({
 
       {!snapshot && !generating && (
         <div style={{
-          fontFamily: "'Caveat', cursive", fontSize: 19, lineHeight: 1.4, color: T1,
+          fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, lineHeight: 1.45, color: T1,
           background: `${STAGE_COLORS.idea}12`, borderRadius: 12, padding: '10px 14px',
         }}>
           Get an AI-drafted domain, rough market size, and a few competitors to research — a starting point, not a fact.
