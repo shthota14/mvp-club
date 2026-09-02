@@ -4383,6 +4383,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
   const [showCustom, setShowCustom] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [reopenedSeverityId, setReopenedSeverityId] = useState<string | null>(null);
 
   // ── Severity nudge ────────────────────────────────────────────────────────
   // When the founder clicks a Next button that's blocked because a problem has
@@ -4779,28 +4780,51 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                   <div
                     ref={el => { severityRowRefs.current[p.id] = el; }}
                     style={{
-                      display: 'flex', gap: 7, marginLeft: 36,
+                      marginLeft: 36, borderRadius: 12,
                       padding: pulseId === p.id ? '4px 8px' : undefined,
                       marginTop: pulseId === p.id ? -4 : undefined,
-                      borderRadius: 12,
                       animation: pulseId === p.id ? 'sevPulse 1.1s ease-in-out 3' : undefined,
                     }}
                   >
-                    {(Object.entries(SEVERITY_CONFIG) as [SeverityLevel, typeof SEVERITY_CONFIG[SeverityLevel]][]).map(([lvl, sc]) => {
-                      const on = p.severity === lvl;
-                      return (
-                        <button key={lvl} onClick={() => updateSeverity(p.id, lvl)} style={{
-                          padding: on ? '3px 11px 4px' : '3px 10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: on ? 800 : 600,
-                          transition: 'all .12s', display: 'flex', alignItems: 'center', gap: 4,
-                          border: on ? `2.5px solid ${sc.textColor}` : '1.5px solid #e5e5ea',
-                          borderRadius: on ? '50% 50% 48% 52% / 60% 55% 45% 40%' : 999,
-                          transform: on ? 'rotate(-1.2deg)' : 'none',
-                          background: on ? sc.bg : '#fff', color: on ? sc.textColor : '#b0b0b8',
+                    {/* Open picker: shown until a severity is set, or while the founder
+                        has tapped "change" to revisit an already-answered row. Kept
+                        mounted (display toggle, not unmount) alongside the echo pill
+                        below so the pulse/nudge system's ref never has to reattach. */}
+                    <div style={{ display: (!p.severity || reopenedSeverityId === p.id) ? 'flex' : 'none', gap: 7 }}>
+                      {(Object.entries(SEVERITY_CONFIG) as [SeverityLevel, typeof SEVERITY_CONFIG[SeverityLevel]][]).map(([lvl, sc]) => {
+                        const on = p.severity === lvl;
+                        return (
+                          <button key={lvl} onClick={() => { updateSeverity(p.id, lvl); setReopenedSeverityId(null); }} style={{
+                            padding: on ? '3px 11px 4px' : '3px 10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: on ? 800 : 600,
+                            transition: 'all .12s', display: 'flex', alignItems: 'center', gap: 4,
+                            border: on ? `2.5px solid ${sc.textColor}` : '1.5px solid #e5e5ea',
+                            borderRadius: on ? '50% 50% 48% 52% / 60% 55% 45% 40%' : 999,
+                            transform: on ? 'rotate(-1.2deg)' : 'none',
+                            background: on ? sc.bg : '#fff', color: on ? sc.textColor : '#b0b0b8',
+                          }}>
+                            {sc.icon} {sc.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Echo pill: once severity is set, collapse the 3-button row down
+                        to a compact badge matching the pattern used across Hone
+                        (who-pays / gauge / time / scorecard). "↺ change" reopens the
+                        picker above without touching p.severity. */}
+                    <div style={{ display: (p.severity && reopenedSeverityId !== p.id) ? 'flex' : 'none', alignItems: 'center', gap: 8 }}>
+                      {p.severity && (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          background: T1, color: '#fff7e6', fontFamily: "'Inter', system-ui, sans-serif",
+                          fontWeight: 700, fontSize: 12, borderRadius: '12px 12px 3px 12px', padding: '5px 12px',
                         }}>
-                          {sc.icon} {sc.label}
-                        </button>
-                      );
-                    })}
+                          {SEVERITY_CONFIG[p.severity].icon} {SEVERITY_CONFIG[p.severity].label}
+                        </span>
+                      )}
+                      <button onClick={() => setReopenedSeverityId(p.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: T3, padding: 0, fontFamily: 'inherit' }}>
+                        ↺ change
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
