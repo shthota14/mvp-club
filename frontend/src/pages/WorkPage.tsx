@@ -4671,13 +4671,14 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
           {displayGroups.map(group => (
             <div key={group.category} style={{ background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: '1.5px solid #cdac72', borderRadius: 10, padding: '10px 10px 14px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 1px 2px 4px rgba(0,0,0,.06)' }}>
-              <div style={{ display: 'inline-block', marginBottom: 8 }}>
-                <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900, letterSpacing: -0.2, color: group.color }}>
+              <div style={{ marginBottom: 8 }}>
+                <div style={{
+                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
+                  letterSpacing: '.08em', textTransform: 'uppercase' as const, color: group.color,
+                }}>
                   {group.category}
-                </span>
-                <svg viewBox="0 0 160 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 130 }}>
-                  <path d="M0,3 C15,1 30,5 45,3 C60,1 75,5 90,3 C105,1 120,5 135,3 C145,1 155,4 160,3" fill="none" stroke={group.color} strokeWidth="2" strokeLinecap="round" />
-                </svg>
+                </div>
+                <div style={{ borderTop: `2px solid ${group.color}`, marginTop: 3, maxWidth: 90 }} />
               </div>
               {/* Jenga tower — each suggestion is a stacked block; picking one slides
                   it out of the tower and fills it with the category colour, the way
@@ -4691,7 +4692,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                       onClick={() => toggleSuggestion(item)}
                       style={{
                         textAlign: 'left' as const, width: '100%', padding: '8px 12px', cursor: 'pointer',
-                        fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 14, lineHeight: 1.3, fontWeight: on ? 700 : 600,
+                        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.02em', lineHeight: 1.3, fontWeight: on ? 700 : 500,
                         border: `2px solid ${group.color}`, borderRadius: 4,
                         background: on ? group.color : '#fff6e0',
                         color: on ? '#fff' : '#5c4324',
@@ -4725,31 +4726,25 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
           {problems.filter(p => p.text.trim()).map((p, idx) => {
             const cfg = p.severity ? SEVERITY_CONFIG[p.severity] : null;
             const isEditing = editingId === p.id;
-            // Hand-drawn "wobble": each card gets a slightly different mismatched
-            // corner radius + tilt so the row doesn't look machine-stamped.
-            const WOBBLE = [
-              { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.6 },
-              { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.5 },
-              { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.4 },
-              { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.6 },
-            ][idx % 4];
+            // Crisp coverline row (Direction 13): a left rule in the
+            // severity color instead of the hand-drawn wobble/rotate tilt,
+            // matching the Idea-stage card lists.
             const inkColor = cfg ? cfg.textColor : '#1a1a1a';
             return (
               <div key={p.id} style={{
-                border: `2.5px solid ${isEditing ? '#1a1a1a' : cfg ? cfg.border : '#1a1a1a'}`,
-                borderRadius: WOBBLE.borderRadius,
-                transform: isEditing ? 'none' : `rotate(${WOBBLE.rotate}deg)`,
+                border: 'none',
+                borderLeft: `4px solid ${isEditing ? '#1a1a1a' : inkColor}`,
+                borderRadius: 3,
                 background: isEditing ? '#fff' : cfg ? cfg.bg : '#fffdf8',
-                boxShadow: isEditing ? 'none' : '2px 3px 0 rgba(0,0,0,0.06)',
                 padding: '12px 16px 12px 14px', transition: 'all .15s',
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: isEditing ? 8 : 8 }}>
                   <div style={{
-                    width: 26, height: 26, flexShrink: 0, marginTop: 1,
+                    width: 22, height: 22, flexShrink: 0, marginTop: 1,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900,
-                    border: `2.5px solid ${inkColor}`, color: inkColor, background: 'transparent',
-                    borderRadius: '50% 48% 52% 46% / 46% 52% 48% 54%',
+                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
+                    border: `2px solid ${inkColor}`, color: inkColor, background: 'transparent',
+                    borderRadius: '50%',
                   }}>
                     {idx + 1}
                   </div>
@@ -4763,7 +4758,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                       style={{ flex: 1, fontSize: 14, color: USER_INPUT_COLOR, lineHeight: 1.5, fontFamily: 'inherit', border: '1.5px solid #1a1a1a', borderRadius: 6, padding: '6px 10px', resize: 'none' as const, outline: 'none' }}
                     />
                   ) : (
-                    <div style={{ flex: 1, fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 23, fontWeight: 700, color: '#1e293b', lineHeight: 1.25, paddingTop: 1 }}>{p.text}</div>
+                    <div style={{ flex: 1, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#1e293b', lineHeight: 1.35, paddingTop: 1 }}>{p.text}</div>
                   )}
                   {!isEditing && (
                     <button onClick={() => startEdit(p)} title="Edit" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#b0b0b8', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>✏️</button>
@@ -4814,8 +4809,8 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                       {p.severity && (
                         <span style={{
                           display: 'inline-flex', alignItems: 'center', gap: 5,
-                          background: T1, color: '#fff7e6', fontFamily: "'Inter', system-ui, sans-serif",
-                          fontWeight: 700, fontSize: 12, borderRadius: '12px 12px 3px 12px', padding: '5px 12px',
+                          background: SEVERITY_CONFIG[p.severity].textColor, color: '#fff', fontFamily: "'Bebas Neue', 'Inter', sans-serif",
+                          fontWeight: 700, fontSize: 12, letterSpacing: '.05em', textTransform: 'uppercase' as const, borderRadius: 4, padding: '4px 12px',
                         }}>
                           {SEVERITY_CONFIG[p.severity].icon} {SEVERITY_CONFIG[p.severity].label}
                         </span>
@@ -4864,7 +4859,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
 
       {/* ── Summary — handwritten postcard style ── */}
       {filled.length > 0 && !pickerLoading && (
-        <div style={{ ...postcardStyle(-1), padding: '12px 16px', fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 17, fontWeight: 700, color: '#166534' }}>
+        <div style={{ ...postcardStyle(-1), padding: '12px 16px', fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 700, color: '#166534' }}>
           <PostcardStamp />
           ✓ {filled.length} problem{filled.length > 1 ? 's' : ''} captured
           {problems.some(p => p.severity === 'critical') && <span style={{ marginLeft: 8, color: '#dc2626' }}> · {problems.filter(p => p.severity === 'critical').length} 🔥 critical</span>}
