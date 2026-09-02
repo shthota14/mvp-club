@@ -4634,13 +4634,16 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
       {/* ── Suggestion chips by category — whiteboard style, AI-tailored once ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {displayGroups.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' as const }}>
-            <div style={{ fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: '#1e293b' }}>
-              Select everything that applies to your customer:
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' as const }}>
+              <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#1e293b' }}>
+                Select everything that applies to your customer:
+              </div>
+              <button onClick={retryProblemChips} style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                ask Sage again
+              </button>
             </div>
-            <button onClick={retryProblemChips} style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
-              ask Sage again
-            </button>
+            <div style={{ borderTop: '2px solid #1e293b', marginTop: 3, maxWidth: 130 }} />
           </div>
         )}
         {genState.loading && displayGroups.length === 0 && (
@@ -4650,7 +4653,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
               <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#b45309', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.15s' }} />
               <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#b45309', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.3s' }} />
             </div>
-            <span style={{ fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 19, color: '#92400e', fontWeight: 700 }}>
+            <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#92400e', fontWeight: 600 }}>
               Sage is reading your idea and coming up with relevant problems…
             </span>
           </div>
