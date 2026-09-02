@@ -2973,22 +2973,19 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 10, animation: 'ideaCardSlideIn .45s ease-out both' }}>
         <div style={{
-          background: '#fefefe',
-          border: '2px solid #e0e0e0',
+          background: '#fffdfa',
+          border: '1px solid #e8e3d3',
           borderTop: `4px solid ${sparkColor}`,
-          borderRadius: 12,
-          padding: '20px 24px 24px',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
-          fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
+          borderRadius: 10,
+          padding: '18px 22px 22px',
         }}>
           {/* Label chip */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: sparkColor }} />
-            <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' as const, color: '#aaa' }}>
-              Your why
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase' as const, color: sparkColor }}>
+              Your Why
             </span>
             {sparkType && (
-              <span style={{ fontSize: 12, color: '#ccc', marginLeft: 4 }}>
+              <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: T3 }}>
                 · {sparkType.icon} {sparkType.title}
               </span>
             )}
@@ -2996,21 +2993,22 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
 
           {/* Story text */}
           <div style={{
-            fontSize: 22, lineHeight: 1.65, color: '#1a1a1a', fontWeight: 600,
+            fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
+            fontSize: 17, lineHeight: 1.5, color: T1, fontWeight: 600,
             whiteSpace: 'pre-wrap' as const, wordBreak: 'break-word' as const,
             borderBottom: `3px solid ${sparkColor}`,
             paddingBottom: 10, marginBottom: 14,
           }}>
             {textContent
               ? `"${textContent}"`
-              : <span style={{ color: '#ccc', fontStyle: 'italic', fontWeight: 400 }}>Your story will appear here…</span>
+              : <span style={{ color: T3, fontWeight: 400 }}>Your story will appear here…</span>
             }
           </div>
 
           {/* Why me line */}
           {whyMe.trim() && (
-            <div style={{ fontSize: 17, color: '#666', lineHeight: 1.55 }}>
-              <span style={{ color: '#aaa' }}>Why me? </span>
+            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: T2, lineHeight: 1.5 }}>
+              <span style={{ color: T3 }}>Why me? </span>
               {whyMe.trim()}
             </div>
           )}
@@ -3035,15 +3033,17 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
       {/* ── Inputs ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* Step 1 — Origin story type — whiteboard style */}
+        {/* Step 1 — Origin story type — Magazine Cover Feature style
+            (Direction 13), matching Idea Step 1's masthead treatment. */}
         <div>
-          <div style={{ display: 'inline-block', marginBottom: 12 }}>
-            <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 15, fontWeight: 900, letterSpacing: -0.2, color: STAGE_COLORS.idea }}>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{
+              fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, lineHeight: 0.98,
+              letterSpacing: '.005em', textTransform: 'uppercase' as const, color: T1,
+            }}>
               What's your origin story?
-            </span>
-            <svg viewBox="0 0 170 6" width="90%" height="6" style={{ display: 'block', marginTop: 2, maxWidth: 160 }}>
-              <path d="M0,3 C16,1 32,5 48,3 C64,1 80,5 96,3 C112,1 128,5 144,3 C154,1 164,4 170,3" fill="none" stroke={STAGE_COLORS.idea} strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            </div>
+            <div style={{ borderTop: `3px solid ${T1}`, marginTop: 6, maxWidth: 220 }} />
           </div>
           {/* Unanswered: every card visible, tap one to pick your why.
               Answered: the cards collapse to a single echoed pill so this
@@ -3057,108 +3057,79 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
               SPARK_TYPES entries further down in that same branch
               ("Property does not exist on type 'never'"). `type` is only
               read inside style values below, never as a branch condition. */}
-          <div style={{ display: type === null ? 'flex' : 'none', flexDirection: 'column', gap: 10 }}>
-              {/* Same hand-drawn wobble pattern used for problem cards / suggestion chips — cycles per option index. */}
-              {(() => {
-                const WOBBLE = [
-                  { borderRadius: '9px 12px 8px 13px / 12px 8px 13px 9px', rotate: -0.4 },
-                  { borderRadius: '13px 8px 12px 9px / 9px 13px 8px 12px', rotate: 0.4 },
-                  { borderRadius: '8px 13px 9px 12px / 13px 9px 12px 8px', rotate: -0.3 },
-                  { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.4 },
-                ];
-                return <>
-                  {SPARK_TYPES.map((s, si) => {
-                    const isSelected = type === s.key;
-                    const w = WOBBLE[si % 4];
-                    return (
-                      <button
-                        // Remounting on the isSelected transition (rather than a
-                        // stable key) is what replays the flip below — it fires
-                        // once when a card is picked, not on every re-render
-                        // while it stays selected.
-                        key={isSelected ? `${s.key}-sel` : s.key}
-                        onClick={() => { setType(s.key); if (type === 'manual') { setStory(''); setWhyMe(''); } }}
-                        style={{
-                          display: 'flex', alignItems: 'flex-start', gap: 12,
-                          padding: '12px 15px', cursor: 'pointer', textAlign: 'left' as const,
-                          border: `${isSelected ? '2.5px' : '2px'} solid ${isSelected ? s.color : '#d8d8d8'}`,
-                          borderRadius: w.borderRadius,
-                          transform: `rotate(${w.rotate}deg)`,
-                          background: isSelected ? `${s.color}0c` : '#fffdf8',
-                          boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
-                          transition: 'all .15s', fontFamily: 'inherit', width: '100%',
-                          animation: isSelected ? 'ideaCardFlip .5s ease' : 'none',
-                        }}
-                      >
-                        <div style={{
-                          width: 20, height: 20, flexShrink: 0, marginTop: 2,
-                          borderRadius: '50% 48% 52% 46% / 46% 52% 48% 54%',
-                          border: `2.5px solid ${isSelected ? s.color : '#ccc'}`,
-                          background: isSelected ? s.color : 'transparent',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          transition: 'all .15s',
-                        }}>
-                          {isSelected && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
-                        </div>
-                        <div>
-                          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: isSelected ? s.color : '#1e293b' }}>
-                            {s.icon} {s.title}
-                          </div>
-                          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#7a7a7a', marginTop: 1 }}>
-                            {s.desc}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
+          <div style={{ display: type === null ? 'flex' : 'none', flexDirection: 'column', gap: 8 }}>
+              {/* Magazine Cover Feature (Direction 13): crisp numbered
+                  coverline list instead of the hand-drawn wobble cards —
+                  a left rule that inks in the option's color on selection
+                  rather than a flip/rotate micro-interaction. */}
+              {SPARK_TYPES.map((s, si) => {
+                const isSelected = type === s.key;
+                return (
+                  <button
+                    key={s.key}
+                    onClick={() => { setType(s.key); if (type === 'manual') { setStory(''); setWhyMe(''); } }}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 12,
+                      padding: '11px 14px', cursor: 'pointer', textAlign: 'left' as const,
+                      border: 'none', borderLeft: `4px solid ${isSelected ? s.color : '#e5e1d3'}`,
+                      borderRadius: 3,
+                      background: isSelected ? `${s.color}10` : '#fffdfa',
+                      transition: 'all .15s', fontFamily: 'inherit', width: '100%',
+                    }}
+                  >
+                    <div style={{
+                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15,
+                      color: isSelected ? s.color : T3, flexShrink: 0, minWidth: 20,
+                    }}>
+                      {String(si + 1).padStart(2, '0')}
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: isSelected ? s.color : T1 }}>
+                        {s.icon} {s.title}
+                      </div>
+                      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 13, color: T2, marginTop: 2, lineHeight: 1.4 }}>
+                        {s.desc}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
 
-                  {/* Manual entry option */}
-                  {(() => {
-                    const w = WOBBLE[SPARK_TYPES.length % 4];
-                    return (
-                      <button
-                        onClick={() => setType('manual')}
-                        style={{
-                          display: 'flex', alignItems: 'flex-start', gap: 12,
-                          padding: '12px 15px', cursor: 'pointer', textAlign: 'left' as const,
-                          border: `${type === 'manual' ? '2.5px' : '2px'} dashed ${type === 'manual' ? '#6e6e73' : '#d8d8d8'}`,
-                          borderRadius: w.borderRadius,
-                          transform: `rotate(${w.rotate}deg)`,
-                          background: type === 'manual' ? '#6e6e730c' : '#fffdf8',
-                          boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
-                          transition: 'all .15s', fontFamily: 'inherit', width: '100%',
-                        }}
-                      >
-                        <div style={{
-                          width: 20, height: 20, flexShrink: 0, marginTop: 2,
-                          borderRadius: '50% 48% 52% 46% / 46% 52% 48% 54%',
-                          border: `2.5px solid ${type === 'manual' ? '#6e6e73' : '#ccc'}`,
-                          background: type === 'manual' ? '#6e6e73' : 'transparent',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          transition: 'all .15s',
-                        }}>
-                          {type === 'manual' && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
-                        </div>
-                        <div>
-                          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: type === 'manual' ? '#6e6e73' : '#1e293b' }}>
-                            ✏️ Write my own
-                          </div>
-                          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#7a7a7a', marginTop: 1 }}>
-                            in your own words
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })()}
-                </>;
-              })()}
+              {/* Manual entry option */}
+              <button
+                onClick={() => setType('manual')}
+                style={{
+                  display: 'flex', alignItems: 'flex-start', gap: 12,
+                  padding: '11px 14px', cursor: 'pointer', textAlign: 'left' as const,
+                  border: 'none', borderLeft: `4px solid ${type === 'manual' ? '#6e6e73' : '#e5e1d3'}`,
+                  borderRadius: 3,
+                  background: type === 'manual' ? '#6e6e7310' : '#fffdfa',
+                  transition: 'all .15s', fontFamily: 'inherit', width: '100%',
+                }}
+              >
+                <div style={{
+                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15,
+                  color: type === 'manual' ? '#6e6e73' : T3, flexShrink: 0, minWidth: 20,
+                }}>
+                  {String(SPARK_TYPES.length + 1).padStart(2, '0')}
+                </div>
+                <div>
+                  <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: type === 'manual' ? '#6e6e73' : T1 }}>
+                    ✏️ Write my own
+                  </div>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 13, color: T2, marginTop: 2, lineHeight: 1.4 }}>
+                    in your own words
+                  </div>
+                </div>
+              </button>
             </div>
           <div style={{ display: type === null ? 'none' : 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '5px 12px', borderRadius: '12px 12px 3px 12px',
-                background: T1, color: '#fff7e6',
-                fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: 12,
+                padding: '4px 12px', borderRadius: 4,
+                background: type === 'manual' ? '#6e6e73' : (selected?.color || T1), color: '#fff',
+                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 12,
+                letterSpacing: '.05em', textTransform: 'uppercase' as const,
               }}>
                 {type === 'manual' ? '✏️' : selected?.icon} {type === 'manual' ? 'Write my own' : selected?.title}
               </div>
@@ -3175,11 +3146,10 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
         {type === 'manual' && (
           <div style={{ animation: 'wup .2s ease' }}>
             <div style={{
-              background: '#f5f5f7', border: '1.5px solid #e5e5ea',
-              borderRadius: 12, padding: '12px 14px', marginBottom: 12,
-              fontSize: 16, color: '#6e6e73', lineHeight: 1.55, fontStyle: 'italic',
+              fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
+              fontSize: 14, color: T2, lineHeight: 1.6, marginBottom: 10,
             }}>
-              ✏️ Tell us why this idea matters to you — your personal connection, what you've observed, what's changed, or why now is the right time.
+              Tell us why this idea matters to you — your personal connection, what you've observed, what's changed, or why now is the right time.
             </div>
             <textarea
               value={manual}
@@ -3187,7 +3157,7 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
               onFocus={() => setFocused('manual')}
               onBlur={() => setFocused(null)}
               placeholder={"I've spent years watching teams struggle with this problem. What changed recently is that AI made it possible to solve it differently — and I'm the right person to build it because I've lived inside this industry for 6 years…"}
-              style={{ ...taStyle('manual', '#059669'), minHeight: 140, fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 20, fontWeight: 700, color: '#059669' }}
+              style={{ ...taStyle('manual', '#059669'), minHeight: 140, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#059669' }}
               autoFocus
             />
             <div style={{ fontSize: 12, color: '#b0b0b8', marginTop: 6, textAlign: 'right' as const }}>
@@ -3204,9 +3174,9 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
               { key: 'what',   label: "What's the worst thing that doesn't get fixed?", val: dWhat, set: setDWhat, chips: ['wasted time', 'lost money', 'missed growth', 'daily stress', 'churn'] },
               { key: 'origin', label: 'What made you think of this idea?',       val: dOrigin, set: setDOrigin, chips: ['personal pain', 'saw it repeatedly', 'friend struggled', 'market gap', 'new tech'] },
             ].map((q, i) => (
-              <div key={q.key} style={{ background: '#fff', border: `1.5px solid ${q.val.trim() ? '#64748b40' : '#e5e5ea'}`, borderRadius: 12, padding: '12px 14px', transition: 'border-color .15s' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: 0.8, color: q.val.trim() ? '#64748b' : '#b0b0b8', marginBottom: 6 }}>
-                  {i + 1}. {q.label}
+              <div key={q.key} style={{ borderLeft: `4px solid ${q.val.trim() ? '#64748b' : '#e5e1d3'}`, paddingLeft: 12, transition: 'border-color .15s' }}>
+                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: q.val.trim() ? '#64748b' : T3, marginBottom: 6 }}>
+                  {String(i + 1).padStart(2, '0')} — {q.label}
                 </div>
                 <SuggestionChips chips={q.chips} onSelect={q.set} accent="#64748b" />
                 <input
@@ -3215,7 +3185,7 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
                   onFocus={() => setFocused(q.key)}
                   onBlur={() => setFocused(null)}
                   placeholder="Your answer…"
-                  style={{ width: '100%', boxSizing: 'border-box', marginTop: 8, padding: '8px 10px', border: `1.5px solid ${focused === q.key ? '#64748b' : '#e5e5ea'}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: USER_INPUT_COLOR, transition: 'border-color .15s' }}
+                  style={{ width: '100%', boxSizing: 'border-box', marginTop: 8, padding: '6px 2px', border: 'none', borderBottom: `1.5px solid ${focused === q.key ? '#64748b' : BORDER}`, borderRadius: 0, fontSize: 14, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', outline: 'none', color: USER_INPUT_COLOR, background: 'transparent', transition: 'border-color .15s' }}
                 />
               </div>
             ))}
@@ -3231,7 +3201,7 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
         {/* Step 2 — Guided story prompt */}
         {selected && selected.key !== 'unsure' && (
           <div style={{ animation: 'wup .2s ease' }}>
-            <div style={{ fontSize: 13, color: T2, lineHeight: 1.6, marginBottom: 10 }}>
+            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: T2, lineHeight: 1.6, marginBottom: 10 }}>
               {selected.prompt}
             </div>
             <textarea
@@ -3240,7 +3210,7 @@ function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string
               onFocus={() => setFocused('story')}
               onBlur={() => setFocused(null)}
               placeholder={selected.ph}
-              style={{ ...taStyle('story'), minHeight: 80 }}
+              style={{ ...taStyle('story'), minHeight: 80, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15 }}
               autoFocus
             />
           </div>
