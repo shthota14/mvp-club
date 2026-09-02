@@ -5268,6 +5268,10 @@ function FounderReadinessStep({
   founderFitValue: string; onFounderFitChange: (v: string) => void;
 }) {
   const isMobile = useIsMobile();
+  // Direction A: the time-commitment picker collapses to an echo pill once
+  // answered — this tracks an explicit "change" reopen, kept separate from
+  // `timeValue` itself so reopening never clears the actual answer.
+  const [timeOpen, setTimeOpen] = useState(false);
   const selectedSkills = (skillsValue || '').split('|').filter(Boolean);
   const toggleSkill = (label: string) => {
     const next = selectedSkills.includes(label)
@@ -5311,7 +5315,9 @@ function FounderReadinessStep({
           title="How much time can you realistically commit?"
           subtitle="Be honest — under-committing is the #1 reason startups stall. What's true right now?"
         />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Direction A: collapses to an echo pill once answered — same
+            pattern as the who-pays / spark-type pickers. */}
+        <div style={{ display: (!timeValue || timeOpen) ? 'flex' : 'none', flexDirection: 'column', gap: 10 }}>
           {TIME_OPTIONS.map((opt, oi) => {
             const on = timeValue === opt.val;
             const WOBBLE = [
@@ -5321,7 +5327,7 @@ function FounderReadinessStep({
               { borderRadius: '12px 9px 13px 8px / 8px 12px 9px 13px', rotate: 0.4 },
             ][oi % 4];
             return (
-              <button key={opt.val} onClick={() => onTimeChange(on ? '' : opt.val)}
+              <button key={opt.val} onClick={() => { onTimeChange(on ? '' : opt.val); setTimeOpen(false); }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14,
                   padding: '13px 16px', cursor: 'pointer',
@@ -5342,6 +5348,22 @@ function FounderReadinessStep({
               </button>
             );
           })}
+        </div>
+        <div style={{ display: (timeValue && !timeOpen) ? 'flex' : 'none', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '5px 12px', borderRadius: '12px 12px 3px 12px',
+            background: T1, color: '#fff7e6',
+            fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: 12,
+          }}>
+            {TIME_OPTIONS.find(t => t.val === timeValue)?.icon} {TIME_OPTIONS.find(t => t.val === timeValue)?.label}
+          </div>
+          <button
+            onClick={() => setTimeOpen(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
+          >
+            ↺ change
+          </button>
         </div>
         {timeValue === 'minimal' && (
           <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: '#fffbeb', border: '1.5px solid #fcd34d', fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#92400e', lineHeight: 1.4 }}>
@@ -5672,6 +5694,12 @@ function PainGaugeStep({
 
   const [score, setScore] = useState<number>(() => freqValue ? (SCORE_FROM_FREQ[freqValue] ?? 5) : 5);
   const seededFreq = useRef(false);
+  // Direction A: once freqValue is set, the intensity card collapses into an
+  // echo pill (see below) — this tracks whether the user has explicitly
+  // reopened it via "change" to adjust their answer. Deliberately separate
+  // from `freqValue` itself: closing/reopening must never touch the actual
+  // answer, only which view is showing.
+  const [gaugeOpen, setGaugeOpen] = useState(false);
 
   useEffect(() => {
     if (!seededFreq.current && freqValue) {
@@ -5683,12 +5711,14 @@ function PainGaugeStep({
   const updateScore = (n: number) => {
     setScore(n);
     onFreqChange(freqFromScore(n));
+    setGaugeOpen(false);
   };
 
   const updateFreqLabel = (f: string) => {
     const s = SCORE_FROM_FREQ[f] ?? 5;
     setScore(s);
     onFreqChange(f);
+    setGaugeOpen(false);
   };
 
   const CHIPS = [
@@ -5736,6 +5766,10 @@ function PainGaugeStep({
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
       {/* ── Intensity gauge ──────────────────────────────────────────── */}
+      {/* Direction A: collapses to an echo pill once answered, same pattern
+          as the who-pays picker and the Idea-stage spark cards — "change"
+          reopens it without touching the underlying score/frequency. */}
+      <div style={{ display: (!freqValue || gaugeOpen) ? 'block' : 'none' }}>
       <div style={{
         background: gauge.bg, border: `2px solid ${gauge.ringColor}`,
         borderRadius: 16, padding: '20px 22px', transition: 'border-color .2s, background .2s',
@@ -5797,6 +5831,26 @@ function PainGaugeStep({
             );
           })}
         </div>
+      </div>
+      </div>
+
+      {/* Direction A: echo pill for the intensity gauge, shown once
+          answered and not currently reopened for editing. */}
+      <div style={{ display: (freqValue && !gaugeOpen) ? 'flex' : 'none', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '5px 12px', borderRadius: '12px 12px 3px 12px',
+          background: T1, color: '#fff7e6',
+          fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: 12,
+        }}>
+          {gauge.label} · {score}/10 · {freq}
+        </div>
+        <button
+          onClick={() => setGaugeOpen(true)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
+        >
+          ↺ change
+        </button>
       </div>
 
       {/* Direction A: consequence chips + live pitch stay hidden until the
@@ -6432,6 +6486,11 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
   const grade = total >= 32 ? { label: 'Strong — move to Validate.', bg: '#f0fdf4', bc: '#059669', tc: '#065f46' }
     : total >= 20 ? { label: 'Needs refinement. Revisit Who + What.', bg: '#fffbeb', bc: '#d97706', tc: '#92400e' }
     : { label: 'Likely vague — deepen your thinking.', bg: '#fef2f2', bc: '#dc2626', tc: '#991b1b' };
+  // Direction A: which already-answered dimension (if any) the user has
+  // explicitly reopened via "change" to re-score. Separate from the values
+  // themselves so reopening a row never clears its score — only one row is
+  // ever reopened at a time, mirroring the mockup's "1 of 8" chat flow.
+  const [reopenedKey, setReopenedKey] = useState<string | null>(null);
   return (
     <div style={col}>
       <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 600, color: '#334155' }}>Score each dimension 0–5 based on what you know today.</div>
@@ -6446,12 +6505,16 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
         // answered and unlocks the next row. `display` toggle keeps every
         // row mounted so later rows' own scores aren't lost while hidden.
         const prevAnswered = di === 0 || (values[SCORE_DIMS[di - 1].key] !== undefined && values[SCORE_DIMS[di - 1].key] !== '');
+        const answered = values[d.key] !== undefined && values[d.key] !== '';
+        // The 0-5 picker stays open until answered, then collapses to a
+        // compact echo badge — reopened only by tapping "change".
+        const rowOpen = !answered || reopenedKey === d.key;
         return (
           <div key={d.key} style={{ display: prevAnswered ? 'flex' : 'none', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
             <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 600, color: '#1e293b', flex: 1 }}>{d.label}</div>
-            <div style={{ display: 'flex', gap: 4 }}>
+            <div style={{ display: rowOpen ? 'flex' : 'none', gap: 4 }}>
               {[0, 1, 2, 3, 4, 5].map(n => (
-                <button key={n} onClick={() => onChange(d.key, String(n))} style={{
+                <button key={n} onClick={() => { onChange(d.key, String(n)); setReopenedKey(null); }} style={{
                   width: 30, height: 30, borderRadius: '50%',
                   fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900, cursor: 'pointer',
                   border: `2px solid ${cur === n ? c : '#bbb'}`,
@@ -6460,6 +6523,19 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
                   transition: 'all .15s',
                 }}>{n}</button>
               ))}
+            </div>
+            <div style={{ display: !rowOpen ? 'flex' : 'none', alignItems: 'center', gap: 8 }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 13, fontWeight: 900,
+                background: c, color: '#fff',
+              }}>{cur}</div>
+              <button
+                onClick={() => setReopenedKey(d.key)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
+              >
+                ↺ change
+              </button>
             </div>
           </div>
         );
@@ -14307,7 +14383,12 @@ export default function WorkPage() {
           internal state never resets while it's hidden. */}
       <div style={{ display: get('whoExactly').split(MULTI_SEP).some(p => p.trim().length > 3) ? 'block' : 'none' }}>
         <FieldLabel n={2} ask="Who pays for this?" accent={STAGE_COLORS.hone}>Who actually pays?</FieldLabel>
-        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+        {/* Direction A: once answered, collapse the two cards into a dark
+            "echo" pill — same pattern as the Idea stage's spark-type picker
+            — instead of leaving both options sitting on screen next to the
+            one you picked. `display` toggle, not unmount, so nothing about
+            the free-text field below resets when you tap "change". */}
+        <div style={{ display: get('whoPays') ? 'none' : 'flex', gap: 10, marginBottom: 10 }}>
           {[
             { val: 'Same person', label: 'Same person', icon: '👤', desc: 'The user pays directly' },
             { val: 'Someone else', label: 'Someone else', icon: '🏢', desc: 'Manager, company, or procurement' },
@@ -14327,6 +14408,22 @@ export default function WorkPage() {
               </button>
             );
           })}
+        </div>
+        <div style={{ display: get('whoPays') ? 'flex' : 'none', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '5px 12px', borderRadius: '12px 12px 3px 12px',
+            background: T1, color: '#fff7e6',
+            fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: 12,
+          }}>
+            {get('whoPays') === 'Same person' ? '👤 Same person' : `🏢 ${get('whoPays') === 'Someone else' ? 'Someone else' : get('whoPays')}`}
+          </div>
+          <button
+            onClick={() => { set('whoPays', ''); if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: '' }).catch(() => {}); }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
+          >
+            ↺ change
+          </button>
         </div>
         {(get('whoPays') === 'Someone else' || (get('whoPays') && get('whoPays') !== 'Same person')) && (
           <input style={inp} placeholder="Who exactly? e.g. Their manager, IT / procurement, the company…" value={get('whoPays') === 'Someone else' ? '' : get('whoPays')} onChange={e => set('whoPays', e.target.value)} />
