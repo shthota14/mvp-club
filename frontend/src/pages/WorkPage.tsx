@@ -1327,7 +1327,7 @@ const ONE_LINER_QUESTIONS: { key: OneLinerFieldKey; ask: string; placeholder: st
   { key: 'b', ask: 'In one phrase, what are you building?', placeholder: 'a mobile app, a marketplace, a tool…' },
   { key: 'f', ask: "Who's it for?", placeholder: 'busy first-time founders' },
   { key: 'w', ask: 'What are they struggling with?', placeholder: "not knowing if their idea's any good" },
-  { key: 'o', ask: 'So they can do what, exactly?', placeholder: 'decide to build, pivot, or drop it' },
+  { key: 'o', ask: "And once that's solved, what can they do?", placeholder: 'decide to build, pivot, or drop it' },
 ];
 
 const ONE_LINER_FALLBACK_REACTIONS = ['Got it.', "Noted — that's clear.", 'Okay, makes sense.', "Good, I can picture that.", 'Makes sense to me.'];
