@@ -8826,10 +8826,10 @@ function ValidateChip() {
   const isMobile = useIsMobile();
   return (
     <ChipPopover icon={META.validate.icon} label={META.validate.label} subLabel="Mom Test" color={c} width={580}>
-      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#334155', marginBottom: 16 }}>📋 The Mom Test — Do's & Don'ts</div>
+      <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#334155', marginBottom: 16 }}>📋 The Mom Test — Do's & Don'ts</div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
         <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: 14, padding: '18px 20px' }}>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 26, fontWeight: 700, color: '#059669', marginBottom: 12 }}>✅ Do</div>
+          <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#059669', marginBottom: 12 }}>✅ Do</div>
           {['Ask about specific past behavior', 'Ask what they\'ve already tried', 'Ask what it costs them — time or money', 'Ask "why" and "tell me more"', 'Let silence sit — don\'t rush to fill it', 'Keep it to 20–30 min'].map(t => (
             <div key={t} style={{ fontSize: 15, color: '#166534', marginBottom: 10, display: 'flex', gap: 8, lineHeight: 1.5 }}>
               <span style={{ flexShrink: 0 }}>·</span><span>{t}</span>
@@ -8837,7 +8837,7 @@ function ValidateChip() {
           ))}
         </div>
         <div style={{ background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: 14, padding: '18px 20px' }}>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 26, fontWeight: 700, color: '#dc2626', marginBottom: 12 }}>❌ Don't</div>
+          <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#dc2626', marginBottom: 12 }}>❌ Don't</div>
           {['Pitch your idea or solution', 'Ask hypothetical "would you" questions', 'Ask leading questions', 'Treat a compliment as validation', 'Defend your assumptions', 'Rush to solutions'].map(t => (
             <div key={t} style={{ fontSize: 15, color: '#991b1b', marginBottom: 10, display: 'flex', gap: 8, lineHeight: 1.5 }}>
               <span style={{ flexShrink: 0 }}>·</span><span>{t}</span>
@@ -12175,27 +12175,27 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                       <div style={{ margin: '8px 20px 0', borderRadius: 10, background: `${ac}08`, border: `1.5px solid ${ac}25`, overflow: 'hidden' }}>
                         <div style={{ padding: '5px 10px', background: `${ac}15`, display: 'flex', alignItems: 'center', gap: 5 }}>
                           <span style={{ fontSize: 12 }}>🎯</span>
-                          <span style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 13, fontWeight: 700, letterSpacing: 0.3, color: '#dc2626', textTransform: 'uppercase' as const }}>Problem being validated</span>
+                          <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.03em', color: '#dc2626', textTransform: 'uppercase' as const }}>Problem being validated</span>
                         </div>
                         {isParsed ? (
                           <div style={{ padding: '7px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
                             <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                              <span style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 12, fontWeight: 700, color: ac, minWidth: 62, paddingTop: 1 }}>WHO</span>
-                              <span style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 15, fontWeight: 700, color: '#2563eb', lineHeight: 1.4 }}>{who}</span>
+                              <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.03em', color: ac, minWidth: 62, paddingTop: 1 }}>WHO</span>
+                              <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#2563eb', lineHeight: 1.4 }}>{who}</span>
                             </div>
                             <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                              <span style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 12, fontWeight: 700, color: ac, minWidth: 62, paddingTop: 1 }}>STRUGGLE</span>
-                              <span style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 15, fontWeight: 700, color: '#2563eb', lineHeight: 1.4 }}>{prob}</span>
+                              <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.03em', color: ac, minWidth: 62, paddingTop: 1 }}>STRUGGLE</span>
+                              <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#2563eb', lineHeight: 1.4 }}>{prob}</span>
                             </div>
                             {root && (
                               <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                                <span style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 12, fontWeight: 700, color: ac, minWidth: 62, paddingTop: 1 }}>WHY</span>
-                                <span style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 15, fontWeight: 700, color: '#2563eb', lineHeight: 1.4 }}>{root}{cons ? `, resulting in ${cons}` : ''}</span>
+                                <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.03em', color: ac, minWidth: 62, paddingTop: 1 }}>WHY</span>
+                                <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#2563eb', lineHeight: 1.4 }}>{root}{cons ? `, resulting in ${cons}` : ''}</span>
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div style={{ padding: '7px 10px', fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 15, fontWeight: 700, color: '#2563eb', lineHeight: 1.4 }}>{problemContext}</div>
+                          <div style={{ padding: '7px 10px', fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#2563eb', lineHeight: 1.4 }}>{problemContext}</div>
                         )}
                       </div>
                     );
@@ -12203,10 +12203,10 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
 
                   {/* Question card */}
                   <div style={{ margin: '10px 20px 0', padding: '12px 14px', borderRadius: 12, background: `${ac}08`, border: `1.5px solid ${ac}25` }}>
-                    <div style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 12, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' as const, color: ac, marginBottom: 6 }}>
+                    <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.04em', textTransform: 'uppercase' as const, color: ac, marginBottom: 6 }}>
                       Ask them →
                     </div>
-                    <div style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1, lineHeight: 1.35, marginBottom: 8 }}>
+                    <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 18, fontWeight: 600, color: T1, lineHeight: 1.4, marginBottom: 8 }}>
                       "{q.q}"
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, padding: '5px 8px', borderRadius: 7, background: 'rgba(255,255,255,.7)', border: `1px solid ${ac}20` }}>
@@ -12231,7 +12231,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                     return (
                       <div style={{ margin: '10px 20px 0' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6, flexWrap: 'wrap' as const }}>
-                          <div style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 12, fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase' as const, color: '#8a8a90' }}>
+                          <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#8a8a90' }}>
                             What did you observe?
                           </div>
                           {isGenerating && <span style={{ fontSize: 10, fontWeight: 700, color: '#b45309' }}>🤖 tailoring options to this question…</span>}
@@ -12261,7 +12261,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
 
                   {/* Quote / note */}
                   <div style={{ margin: '10px 20px 0' }}>
-                    <div style={{ fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 12, fontWeight: 700, letterSpacing: 0.3, textTransform: 'uppercase' as const, color: '#8a8a90', marginBottom: 5 }}>
+                    <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#8a8a90', marginBottom: 5 }}>
                       Their words (optional)
                     </div>
                     <div style={{ position: 'relative' as const }}>
@@ -12275,8 +12275,8 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                           width: '100%', boxSizing: 'border-box',
                           padding: '7px 10px 7px 26px',
                           border: `1.5px solid ${ans.quote ? ac + '60' : BORDER}`,
-                          borderRadius: 8, fontSize: 15, fontWeight: 700, resize: 'vertical' as const,
-                          fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", outline: 'none', lineHeight: 1.4,
+                          borderRadius: 8, fontSize: 15, fontWeight: 600, resize: 'vertical' as const,
+                          fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, outline: 'none', lineHeight: 1.4,
                           color: USER_INPUT_COLOR, background: ans.quote ? `${ac}04` : '#fff',
                           transition: 'border-color .15s',
                         }}
@@ -12288,13 +12288,13 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                   <div style={{ display: 'flex', gap: 8, padding: '10px 20px 14px' }}>
                     <button
                       onClick={() => setStep(s => s > 1 ? s - 1 : 0)}
-                      style={{ padding: '8px 14px', borderRadius: 9, border: `1.5px solid ${BORDER}`, background: '#f5f5f7', color: '#525257', fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                      style={{ padding: '8px 14px', borderRadius: 9, border: `1.5px solid ${BORDER}`, background: '#f5f5f7', color: '#525257', fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, fontSize: 13, cursor: 'pointer' }}
                     >
                       ← Back
                     </button>
                     <button
                       onClick={() => setStep(s => s + 1)}
-                      style={{ flex: 1, padding: '8px 14px', borderRadius: 9, border: 'none', background: ac, color: '#fff', fontFamily: "'Kalam', 'Comic Sans MS', cursive, system-ui", fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+                      style={{ flex: 1, padding: '8px 14px', borderRadius: 9, border: 'none', background: ac, color: '#fff', fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, fontSize: 13, cursor: 'pointer' }}
                     >
                       {step === totalQ ? 'Finish & review →' : `Next question →`}
                     </button>
@@ -16229,22 +16229,22 @@ export default function WorkPage() {
                     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 4 }}>ICP</div>
-                        <div style={{ fontSize: 18, fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", color: '#78350f', lineHeight: 1.5 }}>{focus.icpSummary}</div>
+                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5 }}>{focus.icpSummary}</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 4 }}>Problem domain</div>
-                        <div style={{ fontSize: 18, fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", color: '#78350f', lineHeight: 1.5 }}>{focus.problemDomain}</div>
+                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5 }}>{focus.problemDomain}</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 4 }}>Business process</div>
-                        <div style={{ fontSize: 18, fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", color: '#78350f', lineHeight: 1.5 }}>{focus.businessProcess}</div>
+                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5 }}>{focus.businessProcess}</div>
                       </div>
                       {focus.keyAssumptions?.length > 0 && (
                         <div>
                           <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 6 }}>Assumptions to explore indirectly</div>
                           <ul style={{ margin: 0, paddingLeft: 20 }}>
                             {focus.keyAssumptions.map((a: string, i: number) => (
-                              <li key={i} style={{ fontSize: 18, fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", color: '#78350f', lineHeight: 1.5, marginBottom: 6 }}>{a}</li>
+                              <li key={i} style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5, marginBottom: 6 }}>{a}</li>
                             ))}
                           </ul>
                         </div>
@@ -16336,7 +16336,7 @@ export default function WorkPage() {
                       <div style={{ padding: '13px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: `linear-gradient(135deg, ${ac}12 0%, #fefaf0 100%)` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                           <span style={{ fontSize: 22 }}>🎙️</span>
-                          <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#0f172a', lineHeight: 1.1 }}>
+                          <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.15 }}>
                             {pendingInterviewName.trim() ? `Recording the interview with ${pendingInterviewName.trim()}` : 'Recording a new interview'}
                           </span>
                         </div>
@@ -16390,7 +16390,7 @@ export default function WorkPage() {
                               <span style={{ fontSize: 22, flexShrink: 0 }}>🎙️</span>
                               <div style={{ minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-                                  <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#0f172a', lineHeight: 1.1 }}>
+                                  <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.15 }}>
                                     Recording the interview with {pName}
                                   </span>
                                   {isEditing && <span style={{ fontSize: 10, fontWeight: 800, color: ac, background: `${ac}18`, borderRadius: 8, padding: '2px 8px', flexShrink: 0 }}>✎ Editing</span>}
@@ -16432,7 +16432,7 @@ export default function WorkPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                             <span style={{ fontSize: 20, flexShrink: 0 }}>📝</span>
                             <div style={{ minWidth: 0 }}>
-                              <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 22, fontWeight: 700, color: '#0f172a', lineHeight: 1.1 }}>
+                              <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 18, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.15 }}>
                                 Reviewing the interview with {pName}
                               </span>
                               {pRole && <div style={{ fontSize: 11, color: T2, marginTop: 1 }}>{pRole}</div>}
