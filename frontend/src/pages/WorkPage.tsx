@@ -15001,16 +15001,16 @@ export default function WorkPage() {
                   return (
                     <div>
                       <div style={{ marginBottom: 12 }}>
-                        <div style={{ display: 'inline-block' }}>
-                          <span style={{ fontSize: 16, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.3 }}>
-                            What's the single most important thing to prove?
-                          </span>
-                          <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 2 }}>
-                            <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" />
-                          </svg>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div>
+                            <div style={{ fontSize: 16, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.25 }}>
+                              What's the single most important thing to prove?
+                            </div>
+                            <div style={{ borderTop: '2px solid #6366f1', marginTop: 3, maxWidth: 150 }} />
+                          </div>
+                          <span style={{ fontSize: 18 }}>🎯</span>
                         </div>
-                        <span style={{ fontSize: 16, marginLeft: 6 }}>🎯</span>
-                        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 3 }}>Tap in order of priority — first tap = #1.</div>
+                        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 5 }}>Tap in order of priority — first tap = #1.</div>
                       </div>
                       <JengaTower
                         items={PROVE_CHIPS}
@@ -15047,16 +15047,16 @@ export default function WorkPage() {
                   return (
                     <div>
                       <div style={{ marginBottom: 12 }}>
-                        <div style={{ display: 'inline-block' }}>
-                          <span style={{ fontSize: 16, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.3 }}>
-                            What would tell you this idea isn't working?
-                          </span>
-                          <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 2 }}>
-                            <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
-                          </svg>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div>
+                            <div style={{ fontSize: 16, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.25 }}>
+                              What would tell you this idea isn't working?
+                            </div>
+                            <div style={{ borderTop: '2px solid #ef4444', marginTop: 3, maxWidth: 150 }} />
+                          </div>
+                          <span style={{ fontSize: 18 }}>🛑</span>
                         </div>
-                        <span style={{ fontSize: 16, marginLeft: 6 }}>🛑</span>
-                        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 3 }}>Tap to accept the rules that apply to you.</div>
+                        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 5 }}>Tap to accept the rules that apply to you.</div>
                       </div>
                       <JengaTower
                         items={STOP_RULES}
