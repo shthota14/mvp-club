@@ -17285,11 +17285,11 @@ export default function WorkPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 24 }}>✅</span>
           <div>
-            <div style={{ display: 'inline-block' }}>
-              <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 15, fontWeight: 900, color: '#0f172a', letterSpacing: -0.2 }}>What's your verdict?</span>
-              <svg viewBox="0 0 220 6" width="150" height="6" style={{ display: 'block', marginTop: 2 }}><path d="M0,3 C20,1 40,5 60,3 C80,1 100,5 120,3 C140,1 160,5 180,3 C195,1 210,4 220,3" fill="none" stroke={STAGE_COLORS.validate} strokeWidth="2" strokeLinecap="round" /></svg>
+            <div>
+              <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>What's your verdict?</div>
+              <div style={{ borderTop: `2px solid ${STAGE_COLORS.validate}`, marginTop: 3, maxWidth: 130 }} />
             </div>
-            <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', marginTop: 2 }}>Make a call. Proceed, refine, or pivot.</div>
+            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 15, fontStyle: 'italic', color: '#7a7a7a', marginTop: 4 }}>Make a call. Proceed, refine, or pivot.</div>
           </div>
         </div>
       </div>
@@ -17414,13 +17414,11 @@ export default function WorkPage() {
             {[0,1,2,3,4,5,6,7,8,9,10].map(i => <line key={i} x1="0" y1={`${i*10}%`} x2="100%" y2={`${i*10}%`} stroke="#334155" strokeWidth="1" />)}
           </svg>
           <div style={{ position: 'relative', marginBottom: 14 }}>
-            <div style={{ display: 'inline-block' }}>
-              <span style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.5, lineHeight: 1.2 }}>
+            <div>
+              <div style={{ fontSize: 22, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
                 What did you find?
-              </span>
-              <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3 }}>
-                <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
+              </div>
+              <div style={{ borderTop: '2px solid #6366f1', marginTop: 4, maxWidth: 220 }} />
             </div>
             <span style={{ fontSize: 20, marginLeft: 10, verticalAlign: 'middle' }}>📝</span>
           </div>
@@ -17434,13 +17432,11 @@ export default function WorkPage() {
             {[0,1,2,3,4,5,6,7,8,9,10].map(i => <line key={i} x1="0" y1={`${i*10}%`} x2="100%" y2={`${i*10}%`} stroke="#334155" strokeWidth="1" />)}
           </svg>
           <div style={{ position: 'relative' }}>
-            <div style={{ display: 'inline-block' }}>
-              <span style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.5, lineHeight: 1.2 }}>
+            <div>
+              <div style={{ fontSize: 22, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
                 Did the problem get confirmed?
-              </span>
-              <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3 }}>
-                <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
+              </div>
+              <div style={{ borderTop: '2px solid #6366f1', marginTop: 4, maxWidth: 280 }} />
             </div>
             <span style={{ fontSize: 20, marginLeft: 10, verticalAlign: 'middle' }}>✅</span>
           </div>
@@ -17450,22 +17446,21 @@ export default function WorkPage() {
             { k: 'Yes — strong signal',       icon: '✅', desc: 'Multiple people expressed real pain and urgency.',       color: '#059669' },
             { k: 'Partially — needs refining', icon: '◐', desc: 'Real but I need to narrow my audience or reframe.',     color: '#d97706' },
             { k: 'No — time to pivot',         icon: '↩️', desc: "The pain isn't strong enough. Back to Hone.",           color: '#dc2626' },
-          ].map((opt, oi) => {
+          ].map((opt) => {
             const sel = get('validationSignal') === opt.k;
-            const w = WOBBLE_VARIANTS[oi % 4];
             return (
               <button type="button" key={opt.k} onClick={() => set('validationSignal', opt.k)} style={{
                 display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px',
                 border: `${sel ? 2.5 : 2}px solid ${sel ? opt.color : '#d8d8d8'}`,
                 background: sel ? `${opt.color}0c` : '#fffdf8',
-                borderRadius: w.borderRadius, transform: `rotate(${w.rotate}deg)`,
+                borderRadius: 10,
                 boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
                 cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit', transition: 'all .15s',
               }}>
                 <span style={{ fontSize: 22, flexShrink: 0 }}>{opt.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: sel ? opt.color : '#1e293b' }}>{opt.k}</div>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#7a7a7a', marginTop: 1 }}>{opt.desc}</div>
+                  <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: sel ? opt.color : '#1e293b' }}>{opt.k}</div>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 14, color: '#7a7a7a', marginTop: 2 }}>{opt.desc}</div>
                 </div>
                 <div style={{ width: 20, height: 20, borderRadius: '50% 48% 52% 46% / 46% 52% 48% 54%', border: `2.5px solid ${sel ? opt.color : '#ccc'}`, background: sel ? opt.color : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {sel && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
@@ -17488,7 +17483,7 @@ export default function WorkPage() {
           <div style={{ ...postcardStyle(-1), borderTop: `4px solid ${vm.color}`, padding: '14px 18px' }}>
             <PostcardStamp />
             <div style={{ ...TYPE.postcardLabel, color: vm.color, marginBottom: 4 }}>YOUR CALL</div>
-            <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 20, fontWeight: 700, color: '#1e293b', lineHeight: 1.5 }}>{vm.icon} {get('validationSignal')}</div>
+            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 18, fontWeight: 600, color: '#1e293b', lineHeight: 1.5 }}>{vm.icon} {get('validationSignal')}</div>
           </div>
         );
       })()}
