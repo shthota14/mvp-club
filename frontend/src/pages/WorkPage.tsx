@@ -7514,14 +7514,11 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
         {/* ── Part 1: From your own network ── */}
         <div>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
-            <div style={{ display: 'inline-block' }}>
-              <span style={{ fontSize: 20, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.4, lineHeight: 1.2 }}>
+            <div>
+              <div style={{ fontSize: 19, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
                 From your own network
-              </span>
-              <svg viewBox="0 0 220 8" width="100%" height="8" style={{ display: 'block', marginTop: 3, maxWidth: 260 }}>
-                <path d="M0,4 C22,1 44,7 66,4 C88,1 110,7 132,4 C154,1 176,7 198,4 C206,2 214,5 220,4" fill="none" stroke="#4f46e5" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-              <span style={{ fontSize: 17, marginLeft: 8, verticalAlign: 'middle' }}>🙋</span>
+              </div>
+              <div style={{ borderTop: '2px solid #4f46e5', marginTop: 3, maxWidth: 170 }} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
               <button
@@ -7601,7 +7598,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                         background: isSelected ? `radial-gradient(circle at 35% 35%, ${SEL}ee, ${SEL}99)` : `radial-gradient(circle at 35% 35%, ${VC}ee, ${VC}99)`,
                         boxShadow: isSelected ? `0 0 0 3px ${SEL}44, 0 6px 16px ${SEL}44` : '0 3px 10px rgba(0,0,0,.12), inset 0 1px 2px rgba(255,255,255,.5)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: '"Arial Black", sans-serif', fontSize: 15, fontWeight: 900, color: '#fff',
+                        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 16, letterSpacing: '.02em', fontWeight: 700, color: '#fff',
                       }}>
                         {initials(c.name)}
                         {/* Status dot */}
@@ -7639,7 +7636,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#fff'; (e.currentTarget as HTMLButtonElement).style.color = '#bbb'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#fff'; }}
                         >×</button>
                       </div>
-                      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, fontWeight: 700, color: '#1e293b', textAlign: 'center' as const, lineHeight: 1.25, wordBreak: 'break-word' as const, maxWidth: '100%' }}>
+                      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, fontWeight: 600, color: '#1e293b', textAlign: 'center' as const, lineHeight: 1.3, wordBreak: 'break-word' as const, maxWidth: '100%' }}>
                         {c.name.length > 18 ? c.name.slice(0, 16) + '…' : c.name}
                       </div>
                     </div>
@@ -7665,7 +7662,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                       boxShadow: '0 3px 10px rgba(0,0,0,.06), inset 0 1px 2px rgba(255,255,255,.6)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', color: VC, fontSize: 20, fontWeight: 700,
                     }}>+</div>
-                    <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 15, color: '#9ca3af', fontWeight: 600, textAlign: 'center' as const }}>Add person</div>
+                    <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 13, color: '#9ca3af', fontWeight: 600, textAlign: 'center' as const }}>Add person</div>
                   </div>
                 ))}
 
@@ -7933,7 +7930,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
             hrefs and handlers as before — only the container styling changed. ── */}
         <div>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
-            <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#0f172a' }}>
+            <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a' }}>
               📋 Not enough names yet?
             </span>
             <button
@@ -7973,7 +7970,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
               background: '#fef9c3', borderRadius: 4, padding: '14px 16px 16px', flex: '0 0 auto', minWidth: 200,
               boxShadow: '0 4px 10px rgba(0,0,0,.14)', transform: 'rotate(-1.4deg)',
             }}>
-              <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: '#78350f', marginBottom: 2 }}>
+              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#78350f', marginBottom: 2 }}>
                 Ask a friend to vouch
               </div>
               <div style={{ fontSize: 10.5, color: '#92400e', fontWeight: 600, marginBottom: 10 }}>
@@ -7990,7 +7987,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
               background: '#dbeafe', borderRadius: 4, padding: '14px 16px 16px', flex: '1 1 280px', minWidth: 260,
               boxShadow: '0 4px 10px rgba(0,0,0,.14)', transform: 'rotate(0.8deg)',
             }}>
-              <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: '#1e3a8a', marginBottom: 2 }}>
+              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#1e3a8a', marginBottom: 2 }}>
                 Or shout it from the rooftops
               </div>
               <div style={{ fontSize: 10.5, color: '#1d4ed8', fontWeight: 600, marginBottom: 10 }}>
@@ -8203,7 +8200,7 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
     return (
       <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
 
-        {/* Header — small icon + whiteboard-marker subheading (same Caveat
+        {/* Header — small icon + Bebas Neue kicker subheading (same
             treatment as the Sage guide above), a compact "total / bank"
             stat line, and a single round "+" icon that writes a blank
             question straight in (the old two-pill "Write your own" /
@@ -8213,7 +8210,7 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
               <span style={{ fontSize: 19 }}>🗣️</span>
-              <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: T1 }}>Your discovery questions</span>
+              <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: T1 }}>Your discovery questions</span>
             </div>
             <div style={{ fontSize: 10.5, color: '#64748b', paddingLeft: 26, marginTop: 2 }}>
               {editQs.length} / {bankTotal} · interview bank
@@ -8653,7 +8650,7 @@ function MergedInterviewLog({ manual, ai, framework, title }: {
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: `${ac}0c`, borderBottom: open ? `1px solid ${ac}25` : 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', cursor: 'pointer', textAlign: 'left' as const }}
       >
         <div>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 20, fontWeight: 700, color: T1 }}>📋 Interview question backlog</div>
+          <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: T1 }}>📋 Interview question backlog</div>
           <div style={{ fontSize: 10.5, color: ac, fontWeight: 700, marginTop: 2 }}>{selectedCount} of {total} selected for the interview</div>
         </div>
         <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -8918,7 +8915,7 @@ function InterviewGuidePanel({ stored, onSave, genContext }: {
     return (
       <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 14, padding: '32px 24px', textAlign: 'center' as const, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
         <SageAvatar size={144} />
-        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 22, fontWeight: 700, color: T1 }}>Ask Sage@MVP Club to draft your guide</div>
+        <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 19, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: T1 }}>Ask Sage@MVP Club to draft your guide</div>
         <div style={{ fontSize: 12.5, color: T2, maxWidth: 440, lineHeight: 1.5 }}>
           Sage reads your Idea and Hone answers, then writes a solution-agnostic 30-minute interview guide grounded in your problem space — without ever revealing what you're building.
         </div>
@@ -8933,14 +8930,14 @@ function InterviewGuidePanel({ stored, onSave, genContext }: {
   const totalMinutes = guide.sections.reduce((sum, s) => sum + (s.minutes || 0), 0);
   const totalQuestions = guide.sections.reduce((n, s) => n + s.questions.length, 0);
 
-  // Minimal version — small icon, whiteboard-marker subheading (the same
-  // Caveat handwritten treatment used elsewhere for Sage's voice), small
-  // stacked meta line, and the regenerate action as a plain text link.
+  // Minimal version — small icon, Bebas Neue kicker subheading (the same
+  // treatment used elsewhere for Sage's voice), small stacked meta line,
+  // and the regenerate action as a plain text link.
   return (
     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2, padding: '2px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
         <span style={{ fontSize: 19 }}>🧙</span>
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: T1 }}>Sage's interview guide is ready</span>
+        <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: T1 }}>Sage's interview guide is ready</span>
         <span style={{ fontSize: 9, fontWeight: 800, color: ac }}>✓</span>
       </div>
       <div style={{ fontSize: 10.5, color: '#64748b', paddingLeft: 26 }}>
@@ -15290,8 +15287,8 @@ export default function WorkPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#fff', border: `1.5px solid ${STAGE_COLORS.validate}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0, boxShadow: `0 2px 6px ${STAGE_COLORS.validate}15` }}>📝</div>
           <div>
-            <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 30, fontWeight: 700, color: '#0f172a', letterSpacing: -0.3, lineHeight: 1.15 }}>Build your interview script</div>
-            <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 19, fontWeight: 600, color: '#475569', marginTop: 3 }}>The right questions unlock honest answers. Build them now.</div>
+            <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>Build your interview script</div>
+            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#475569', marginTop: 4 }}>The right questions unlock honest answers. Build them now.</div>
           </div>
         </div>
       </div>
@@ -15392,8 +15389,8 @@ export default function WorkPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 32 }}>🙋</span>
               <div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 30, fontWeight: 700, color: '#0f172a', letterSpacing: -0.3, lineHeight: 1.15 }}>Find the people you'll talk to</div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 19, fontWeight: 600, color: '#475569', marginTop: 3 }}>Real names beat personas — round them up here, then reach out.</div>
+                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>Find the people you'll talk to</div>
+                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#475569', marginTop: 4 }}>Real names beat personas — round them up here, then reach out.</div>
               </div>
             </div>
           </div>
