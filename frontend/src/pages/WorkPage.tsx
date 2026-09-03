@@ -6867,7 +6867,7 @@ function ValidateHero({ step }: { step: number }) {
       <div style={{ width: 52, height: 52, borderRadius: '50%', background: `${ac}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>{h.icon}</div>
       <div>
         <div style={{ marginBottom: 5 }}><MarkerQuestion accent={ac}>{h.title}</MarkerQuestion></div>
-        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 17, fontStyle: 'italic', color: '#7a7a7a', lineHeight: 1.5 }}>{h.sub}</div>
+        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', lineHeight: 1.5 }}>{h.sub}</div>
       </div>
     </div>
   );
@@ -15125,9 +15125,9 @@ export default function WorkPage() {
 
       {/* Target customer — confirmed from Hone */}
       <div style={{ background: `${STAGE_COLORS.validate}08`, border: `1.5px solid ${STAGE_COLORS.validate}22`, borderRadius: 14, padding: '16px 18px' }}>
-        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 30, fontWeight: 700, color: '#0f172a', letterSpacing: -0.3, lineHeight: 1.15, marginBottom: 8 }}>Who you're targeting · from Hone</div>
+        <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2, marginBottom: 8 }}>Who you're targeting · from Hone</div>
         {get('whoExactly') ? (
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 28, fontWeight: 700, fontStyle: 'italic', color: '#15803d', lineHeight: 1.5 }}>{parseWhoDisplay(get('whoExactly'))}</div>
+          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, fontWeight: 600, fontStyle: 'italic', color: '#15803d', lineHeight: 1.45 }}>{parseWhoDisplay(get('whoExactly'))}</div>
         ) : (
           <div style={{ fontSize: 13, color: T2, fontStyle: 'italic' }}>Not defined yet — go back to Hone to describe your target customer.</div>
         )}
@@ -15140,13 +15140,11 @@ export default function WorkPage() {
             {[0,1,2,3,4,5,6,7,8,9,10].map(i => <line key={i} x1="0" y1={`${i*10}%`} x2="100%" y2={`${i*10}%`} stroke="#334155" strokeWidth="1" />)}
           </svg>
           <div style={{ position: 'relative', marginBottom: 2 }}>
-            <div style={{ display: 'inline-block' }}>
-              <span style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.5, lineHeight: 1.2 }}>
+            <div>
+              <div style={{ fontSize: 22, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
                 Ideal Customer Profile
-              </span>
-              <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3 }}>
-                <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke="#0ea5e9" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
+              </div>
+              <div style={{ borderTop: '2px solid #0ea5e9', marginTop: 4, maxWidth: 220 }} />
             </div>
             <span style={{ fontSize: 20, marginLeft: 10, verticalAlign: 'middle' }}>🎯</span>
           </div>
@@ -15223,15 +15221,13 @@ export default function WorkPage() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
                   <span style={{ fontSize: 20, lineHeight: 1 }}>{qc.emoji}</span>
                   <div>
-                    <div style={{ display: 'inline-block' }}>
-                      <span style={{ fontSize: 16, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black","Arial Bold",Gadget,sans-serif', letterSpacing: -0.3, lineHeight: 1.2 }}>
+                    <div>
+                      <div style={{ fontSize: 15, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
                         {label}
-                      </span>
-                      <svg viewBox="0 0 300 6" width="100%" height="6" style={{ display: 'block', marginTop: 2 }}>
-                        <path d="M0,3 C30,1 60,5 90,3 C120,1 150,5 180,3 C210,1 240,5 270,3 C285,1 295,4 300,3" fill="none" stroke={qc.accent} strokeWidth="2" strokeLinecap="round" />
-                      </svg>
+                      </div>
+                      <div style={{ borderTop: `2px solid ${qc.accent}`, marginTop: 3, maxWidth: 150 }} />
                     </div>
-                    <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 15, fontStyle: 'italic', color: '#7a7a7a', marginTop: 4 }}>{sub}</div>
+                    <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 14, fontStyle: 'italic', color: '#7a7a7a', marginTop: 5 }}>{sub}</div>
                   </div>
                 </div>
                 <div style={{ marginBottom: selected.length ? 8 : 0 }}>
@@ -15243,7 +15239,7 @@ export default function WorkPage() {
                   />
                 </div>
                 {selected.length > 0 && (
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, color: '#7a7a7a', marginBottom: 6 }}>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#7a7a7a', marginBottom: 6 }}>
                     Selected: {selected.map((c, i) => (
                       <span key={i} style={{ color: qc.accent, fontWeight: 700 }}>{c}{i < selected.length - 1 ? ' · ' : ''}</span>
                     ))}
@@ -15260,8 +15256,9 @@ export default function WorkPage() {
                       border: `none`,
                       borderBottom: `2px solid ${qc.accent}`,
                       background: 'transparent',
-                      fontSize: 24,
-                      fontFamily: '"Caveat", cursive',
+                      fontSize: 18,
+                      fontFamily: "'Playfair Display', Georgia, serif",
+                      fontStyle: 'italic' as const,
                       fontWeight: 600,
                       color: '#1d4ed8',
                       outline: 'none',
