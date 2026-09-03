@@ -15724,8 +15724,8 @@ export default function WorkPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ fontSize: 32 }}>🗓️</span>
               <div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 30, fontWeight: 700, color: '#0f172a', letterSpacing: -0.3, lineHeight: 1.15 }}>Interview Summary Dashboard</div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontSize: 19, fontWeight: 600, color: '#475569', marginTop: 3 }}>Open your calendar, then offer a free video call — they pick a time themselves.</div>
+                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>Interview Summary Dashboard</div>
+                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#475569', marginTop: 4 }}>Open your calendar, then offer a free video call — they pick a time themselves.</div>
               </div>
             </div>
           </div>
@@ -15757,7 +15757,7 @@ export default function WorkPage() {
           {/* Validation window: sticky-note trio (Target/Booked/Awaiting/Open days) — whiteboard style, matching the Assumptions cards' handwritten language */}
           {!schedLoading && schedContacts.length > 0 && (
             <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 14, padding: '14px 16px', background: '#fbfbf9' }}>
-              <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 22, fontWeight: 700, color: '#1e293b' }}>
+              <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 18, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#1e293b' }}>
                 Where your validation stands:
               </div>
               <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
@@ -15771,13 +15771,13 @@ export default function WorkPage() {
                       transform: `rotate(${rotations[i % rotations.length]}deg)`,
                       boxShadow: '1px 3px 7px rgba(0,0,0,.1)',
                     }}>
-                      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 36, fontWeight: 700, color: s2.c, lineHeight: 1 }}>{s2.n}</div>
+                      <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 34, letterSpacing: '.01em', color: s2.c, lineHeight: 1 }}>{s2.n}</div>
                       <div style={{ fontSize: 11.5, color: '#7a7a7a', textTransform: 'uppercase' as const, letterSpacing: '0.04em', marginTop: 4 }}>{s2.l}</div>
                     </div>
                   );
                 })}
               </div>
-              <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, color: '#7a7a7a', marginTop: 12 }}>
+              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#7a7a7a', marginTop: 12 }}>
                 {valTarget > 0
                   ? `${Math.round(valProgressPct)}% of the way there — ${valProgressPct >= 50 ? 'nice pace!' : 'keep it going!'}`
                   : (timelineLabel ? (timelineVal === 'open' ? 'Open-ended — no fixed deadline' : `Aim to decide within ${timelineLabel}`) : 'Set a decision deadline in your validation goal')}
@@ -15795,18 +15795,18 @@ export default function WorkPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                   }}>
-                    <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#d1fae5' }}>{pacePerWeek}</span>
+                    <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, letterSpacing: '.01em', color: '#d1fae5' }}>{pacePerWeek}</span>
                   </div>
                 )}
                 <div>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 28, fontWeight: 700, color: '#2d2d2a' }}>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 22, fontWeight: 600, color: '#2d2d2a', lineHeight: 1.35 }}>
                     {pacePerWeek !== null
                       ? `About ${pacePerWeek} a week keeps you on pace.`
                       : founderTimeLabel
                         ? <>You said you can commit {founderTimeLabel}.</>
                         : 'Open enough slots to fit everyone in.'}
                   </div>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontStyle: 'italic', fontWeight: 600, fontSize: 18, color: '#7a7a7a', marginTop: 4, lineHeight: 1.5 }}>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 600, fontSize: 15, color: '#7a7a7a', marginTop: 4, lineHeight: 1.5 }}>
                     {pacePerWeek !== null ? (
                       <>{paceRemaining} remain, {paceWeeksLeft} week{paceWeeksLeft !== 1 ? 's' : ''} to go — about {paceMinutesEach} minutes each, review included.</>
                     ) : valTarget > 0 && paceRemaining <= 0 ? (
@@ -15839,7 +15839,7 @@ export default function WorkPage() {
                   </svg>
                   <div style={{ position: 'relative' as const, padding: '11px 16px 3px' }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' as const }}>
-                      <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 24, fontWeight: 700, color: '#0f172a' }}>🗓️ Confirmed schedule</span>
+                      <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 19, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a' }}>🗓️ Confirmed schedule</span>
                       {valStartDate && (
                         <span style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 600 }}>{ganttFmt(valStartDate)} – {ganttEnd ? ganttFmt(ganttEnd) : 'ongoing'}</span>
                       )}
@@ -15866,7 +15866,7 @@ export default function WorkPage() {
                             const rows = byDate[dk];
                             return (
                               <div key={dk}>
-                                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 17, fontWeight: 700, color: '#475569', borderBottom: '1.5px dashed #cbd5e1', paddingBottom: 3, marginBottom: 6 }}>
+                                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#475569', borderBottom: '1.5px dashed #cbd5e1', paddingBottom: 3, marginBottom: 6 }}>
                                   {rows[0].day}
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
@@ -15925,7 +15925,7 @@ export default function WorkPage() {
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(i => <line key={i} x1="0" y1={`${i * 7}%`} x2="100%" y2={`${i * 7}%`} stroke="#334155" strokeWidth="1" />)}
                 </svg>
                 <div style={{ position: 'relative' as const, padding: '11px 16px 3px' }}>
-                  <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 22, fontWeight: 700, color: '#0f172a' }}>📨 Outreach pipeline</span>
+                  <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 18, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a' }}>📨 Outreach pipeline</span>
                   {/* This panel owns "who/status" -- invites, replies, nudges.
                       "When" (date/time + join link) lives in the Confirmed
                       schedule panel on the left, not repeated here. */}
@@ -15941,7 +15941,7 @@ export default function WorkPage() {
                       { l: 'Booked', n: ovBooked, c: '#15803d', bg: '#e9f7ef' },
                     ].map(s => (
                       <div key={s.l} style={{ flex: 1, minWidth: 70, background: s.bg, borderRadius: 8, padding: 7, textAlign: 'center' as const }}>
-                        <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 20, fontWeight: 700, color: s.c }}>{s.n}</div>
+                        <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 19, letterSpacing: '.01em', color: s.c }}>{s.n}</div>
                         <div style={{ fontSize: 9, color: T2, textTransform: 'uppercase' as const }}>{s.l}</div>
                       </div>
                     ))}
@@ -15950,7 +15950,7 @@ export default function WorkPage() {
 
                 {needsNudgeContacts.length > 0 && (
                   <div style={{ position: 'relative' as const, margin: '10px 16px 0', padding: '10px 12px', background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: 10 }}>
-                    <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, fontWeight: 700, color: '#92400e' }}>
+                    <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#92400e' }}>
                       🔔 {needsNudgeContacts.length} need{needsNudgeContacts.length === 1 ? 's' : ''} a nudge
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginTop: 8 }}>
