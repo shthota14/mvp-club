@@ -96,7 +96,7 @@ function JengaBlock({ label, color, selected, badge, icon, onClick }: {
       onClick={onClick}
       style={{
         textAlign: 'left' as const, width: '100%', padding: '8px 12px', cursor: 'pointer',
-        fontFamily: "'Short Stack', 'Comic Sans MS', cursive, system-ui", fontSize: 14, lineHeight: 1.3, fontWeight: selected ? 700 : 600,
+        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.02em', lineHeight: 1.3, fontWeight: selected ? 700 : 500,
         border: `2px solid ${color}`, borderRadius: 4,
         background: selected ? color : '#fff6e0',
         color: selected ? '#fff' : '#5c4324',
@@ -14683,9 +14683,9 @@ export default function WorkPage() {
                 { term: 'Pain confirm', name: 'Real, unprompted pain', icon: '🔥', full: 'They describe the problem in their own words, unprompted, before you mention it.', bg: '#dcfce7', color: '#166534', rotate: -1 },
               ].map(({ term, name, icon, full, bg, color, rotate }) => (
                 <div key={term} style={{ background: bg, borderRadius: 4, padding: '10px 12px', boxShadow: '0 3px 8px rgba(0,0,0,0.14)', transform: `rotate(${rotate}deg)` }}>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontWeight: 700, fontSize: 18, color, marginBottom: 1, lineHeight: 1.1 }}>{icon} {term}</div>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontWeight: 700, fontSize: 13, fontStyle: 'italic', color, opacity: 0.85, marginBottom: 3, lineHeight: 1.15 }}>{name}</div>
-                  <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontWeight: 600, fontSize: 14, lineHeight: 1.25, color: '#3f3f46' }}>{full}</div>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 700, fontSize: 17, color, marginBottom: 1, lineHeight: 1.15 }}>{icon} {term}</div>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: 12, fontStyle: 'italic', color, opacity: 0.85, marginBottom: 3, lineHeight: 1.2 }}>{name}</div>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 500, fontSize: 13, lineHeight: 1.3, color: '#3f3f46' }}>{full}</div>
                 </div>
               ))}
             </div>
@@ -14695,10 +14695,10 @@ export default function WorkPage() {
                 continuous whiteboard surface (a single faint grid backdrop
                 spanning the whole card) instead of five separate per-question
                 grid+background sections. The growing bubble pickers are
-                replaced with flat chip rows; the question headlines keep the
-                marker-written Arial Black title + hand-drawn underline
-                treatment, and the recap keeps its existing Caveat
-                hand-lettering. The WTP/ICP/Pain-confirm key-terms sticky notes
+                replaced with flat chip rows; the question headlines use the
+                Bebas Neue kicker + ink-rule treatment (Magazine Cover
+                Feature, Direction 13), and the recap uses Playfair Display
+                italic. The WTP/ICP/Pain-confirm key-terms sticky notes
                 that used to open this section now live in the header row
                 above instead, so they don't repeat further down. ── */}
             <div style={{ position: 'relative', background: '#f9f9f5' }}>
@@ -14753,14 +14753,12 @@ export default function WorkPage() {
 
                   // Marker-written question headline + hand-drawn underline — unchanged treatment, now a shared helper.
                   const MarkerQuestion = ({ accent, emoji, children }: { accent: string; emoji: string; children: React.ReactNode }) => (
-                    <div style={{ marginBottom: 12 }}>
-                      <div style={{ display: 'inline-block' }}>
-                        <span style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.5, lineHeight: 1.2 }}>{children}</span>
-                        <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3 }}>
-                          <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
-                        </svg>
+                    <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div>
+                        <div style={{ fontSize: 17, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.25 }}>{children}</div>
+                        <div style={{ borderTop: `2px solid ${accent}`, marginTop: 3, maxWidth: 150 }} />
                       </div>
-                      <span style={{ fontSize: 20, marginLeft: 10, verticalAlign: 'middle' }}>{emoji}</span>
+                      <span style={{ fontSize: 20 }}>{emoji}</span>
                     </div>
                   );
 
@@ -14930,9 +14928,9 @@ export default function WorkPage() {
                         <div style={{ gridColumn: '1 / -1', padding: '20px 24px 22px', borderRadius: 14, background: '#fff', border: '2px solid #e2e8f0' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                             <span style={{ fontSize: 22 }}>🎉</span>
-                            <span style={{ fontSize: 13, fontWeight: 800, color: '#64748b', letterSpacing: '0.1em', textTransform: 'uppercase' as const, fontFamily: '"Arial Black", sans-serif' }}>You win if…</span>
+                            <span style={{ fontSize: 13, color: '#64748b', letterSpacing: '.06em', textTransform: 'uppercase' as const, fontFamily: "'Bebas Neue', 'Inter', sans-serif" }}>You win if…</span>
                           </div>
-                          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 36, fontWeight: 700, color: '#000', lineHeight: 1.5 }}>{summary}</div>
+                          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 26, fontWeight: 600, color: '#000', lineHeight: 1.4 }}>{summary}</div>
                         </div>
                       ) : (
                         <div style={{ gridColumn: '1 / -1', padding: '12px 16px', borderRadius: 10, background: '#fff', border: `1px dashed ${BORDER}` }}>
