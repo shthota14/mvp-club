@@ -3816,13 +3816,11 @@ const AssumptionsStep = React.forwardRef<AssumptionsHandle, {
           <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
             <span style={{ fontSize: 20, lineHeight: 1.3 }}>🎲</span>
             <div>
-              <div style={{ display: 'inline-block' }}>
-                <span style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.5, lineHeight: 1.2 }}>
+              <div>
+                <div style={{ fontSize: 22, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
                   What are you assuming?
-                </span>
-                <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3 }}>
-                  <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke="#8b5cf6" strokeWidth="2.5" strokeLinecap="round" />
-                </svg>
+                </div>
+                <div style={{ borderTop: '2px solid #8b5cf6', marginTop: 4, maxWidth: 190 }} />
               </div>
               <div style={{ fontSize: 12, color: T3, marginTop: 5 }}>Add what you believe. Your conversations will confirm or kill each one — the status below updates itself once your interviews are analyzed.</div>
             </div>
@@ -3859,9 +3857,10 @@ const AssumptionsStep = React.forwardRef<AssumptionsHandle, {
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                     <div style={{
                       flex: 1,
-                      fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
-                      fontSize: 20, fontWeight: 700, color: isBusted ? '#78716c' : '#1c1917',
-                      lineHeight: 1.35,
+                      fontFamily: "'Playfair Display', Georgia, serif",
+                      fontStyle: 'italic' as const,
+                      fontSize: 17, fontWeight: 600, color: isBusted ? '#78716c' : '#1c1917',
+                      lineHeight: 1.4,
                       textDecoration: isBusted ? 'line-through' : 'none',
                     }}>{a.text}</div>
                     {/* Remove-assumption control. Deliberately NOT the '✕' glyph —
