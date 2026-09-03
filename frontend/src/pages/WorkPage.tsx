@@ -715,27 +715,29 @@ function EditableText({ value, placeholder, onSave, onDelete, accent, multiline 
 }
 
 
-// Reusable hand-drawn "whiteboard" toggle chip — wobble via WOBBLE_VARIANTS[index % 4]
-// plus Caveat handwriting font, matching the chip treatment used throughout
-// Idea/Hone. Used for the many flat toggle-chip lists across Validate/Shape/Done.
+// Toggle chip — crisp Bebas Neue pill (Magazine Cover Feature, Direction
+// 13). Was a hand-drawn "wobble" chip using WOBBLE_VARIANTS[index % 4] for
+// rotation/irregular corners plus Caveat handwriting; the `index` prop is
+// kept for call-site compatibility with not-yet-reskinned Shape/Done
+// call sites, which still reference WOBBLE_VARIANTS directly.
 function WobbleChip({ index, active, color, onClick, children, size = 'md' }: { index: number; active: boolean; color: string; onClick: () => void; children: React.ReactNode; size?: 'sm' | 'md' }) {
-  const w = WOBBLE_VARIANTS[index % 4];
+  void index;
   return (
     <button
       type="button"
       onClick={onClick}
       style={{
         padding: size === 'sm' ? '5px 12px' : '7px 14px',
-        fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
-        fontSize: size === 'sm' ? 15 : 17,
-        fontWeight: active ? 700 : 600,
+        fontFamily: "'Bebas Neue', 'Inter', sans-serif",
+        letterSpacing: '.02em',
+        textTransform: 'uppercase' as const,
+        fontSize: size === 'sm' ? 13 : 14,
         cursor: 'pointer',
         border: `${active ? 2.5 : 2}px solid ${active ? color : '#d8d8d8'}`,
         background: active ? `${color}12` : '#fffdf8',
         color: active ? color : '#555',
         boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
-        borderRadius: w.borderRadius,
-        transform: `rotate(${w.rotate}deg)`,
+        borderRadius: 20,
         transition: 'all .12s',
       }}
     >
@@ -8751,7 +8753,7 @@ function CollapsibleSection({ title, defaultOpen = false, children }: { title: s
         onClick={() => setOpen(o => !o)}
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fafafa', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
       >
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700, color: '#334155' }}>{title}</span>
+        <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 16, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#334155' }}>{title}</span>
         <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
           {open ? 'collapse' : 'click to expand'}
           <span style={{ fontSize: 13, transition: 'transform .2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
@@ -16561,11 +16563,11 @@ export default function WorkPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 24 }}>🔍</span>
           <div>
-            <div style={{ display: 'inline-block' }}>
-              <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 15, fontWeight: 900, color: '#0f172a', letterSpacing: -0.2 }}>Find the patterns</span>
-              <svg viewBox="0 0 220 6" width="150" height="6" style={{ display: 'block', marginTop: 2 }}><path d="M0,3 C20,1 40,5 60,3 C80,1 100,5 120,3 C140,1 160,5 180,3 C195,1 210,4 220,3" fill="none" stroke={STAGE_COLORS.validate} strokeWidth="2" strokeLinecap="round" /></svg>
+            <div>
+              <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>Find the patterns</div>
+              <div style={{ borderTop: `2px solid ${STAGE_COLORS.validate}`, marginTop: 3, maxWidth: 130 }} />
             </div>
-            <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', marginTop: 2 }}>What did the data actually tell you?</div>
+            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 15, fontStyle: 'italic', color: '#7a7a7a', marginTop: 4 }}>What did the data actually tell you?</div>
           </div>
         </div>
       </div>
@@ -17045,8 +17047,8 @@ export default function WorkPage() {
             {/* Pivot gate */}
             {pivot && (
               <div style={{ background: '#fffbeb', border: '2px solid #f59e0b', borderRadius: 12, padding: '16px 18px' }}>
-                <div style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 15, fontWeight: 900, color: '#92400e', marginBottom: 6 }}>⚠️ Mixed signals — consider refining before building</div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 17, color: '#78350f', lineHeight: 1.5, marginBottom: 10 }}>Less than half your conversations confirmed the problem. Before committing to building, consider:</div>
+                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 16, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#92400e', marginBottom: 6 }}>⚠️ Mixed signals — consider refining before building</div>
+                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#78350f', lineHeight: 1.5, marginBottom: 10 }}>Less than half your conversations confirmed the problem. Before committing to building, consider:</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                   {['Narrow the audience', 'Reframe the problem', 'Talk to 3 more people', 'Pivot the idea'].map((opt, oi) => (
                     <WobbleChip key={opt} index={oi} active={get('pivotOption') === opt} color="#d97706" onClick={() => set('pivotOption', opt)}>
@@ -17153,13 +17155,11 @@ export default function WorkPage() {
                 {[0,1,2,3,4,5,6,7,8,9,10].map(i => <line key={i} x1="0" y1={`${i*10}%`} x2="100%" y2={`${i*10}%`} stroke="#334155" strokeWidth="1" />)}
               </svg>
               <div style={{ position: 'relative', marginBottom: 10 }}>
-                <div style={{ display: 'inline-block' }}>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: '#0f172a', fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', letterSpacing: -0.5, lineHeight: 1.2 }}>
+                <div>
+                  <div style={{ fontSize: 22, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
                     What patterns are you seeing?
-                  </span>
-                  <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3 }}>
-                    <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
-                  </svg>
+                  </div>
+                  <div style={{ borderTop: '2px solid #10b981', marginTop: 4, maxWidth: 240 }} />
                 </div>
                 <span style={{ fontSize: 20, marginLeft: 10, verticalAlign: 'middle' }}>🔬</span>
               </div>
