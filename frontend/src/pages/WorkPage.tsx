@@ -4720,6 +4720,21 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
     }
   };
 
+  // Lets the Step 2 queue card capture severity in the same tap as adding —
+  // used by the "One Equal Row" (Skip / Minor / Major / Critical) action row
+  // below, instead of the two-step toggleSuggestion() + separate severity
+  // pick in the "Selected" list further down.
+  const addSuggestionWithSeverity = (text: string, severity: SeverityLevel) => {
+    const blankIdx = problems.findIndex(p => !p.text.trim());
+    let next: SeverityProblem[];
+    if (blankIdx !== -1) {
+      next = problems.map((p, i) => i === blankIdx ? { ...p, text, severity } : p);
+    } else {
+      next = [...problems, { id: Date.now().toString(36), text, severity }];
+    }
+    setProblems(next); emitList(next);
+  };
+
   const updateSeverity = (id: string, severity: SeverityLevel) => {
     // Pre-existing type gap fixed in passing: the '' branch of this ternary
     // was inferred as plain string, not the '' | SeverityLevel union
@@ -4879,27 +4894,30 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                 <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 18, lineHeight: 1.45, color: '#1d1d1f', fontWeight: 600 }}>
                   {currentSuggestion.text}
                 </div>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 6 }}>
                   <button
                     onClick={() => setSkippedSuggestions(prev => { const next = new Set(prev); next.add(currentSuggestion.text); return next; })}
                     style={{
-                      flex: 1, padding: '11px 16px', borderRadius: 10, cursor: 'pointer',
-                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.03em',
+                      flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
+                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
                       border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontWeight: 700,
                     }}
                   >
                     Skip
                   </button>
-                  <button
-                    onClick={() => toggleSuggestion(currentSuggestion.text)}
-                    style={{
-                      flex: 2, padding: '11px 16px', borderRadius: 10, cursor: 'pointer',
-                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.03em',
-                      border: `2px solid ${STAGE_COLORS.hone}`, background: `${STAGE_COLORS.hone}0c`, color: STAGE_COLORS.hone, fontWeight: 700,
-                    }}
-                  >
-                    ✓ Add to my list
-                  </button>
+                  {(['minor', 'major', 'critical'] as SeverityLevel[]).map(lvl => (
+                    <button
+                      key={lvl}
+                      onClick={() => addSuggestionWithSeverity(currentSuggestion.text, lvl)}
+                      style={{
+                        flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
+                        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
+                        border: `1.5px solid ${SEVERITY_CONFIG[lvl].textColor}`, background: '#fff', color: SEVERITY_CONFIG[lvl].textColor, fontWeight: 700,
+                      }}
+                    >
+                      {SEVERITY_CONFIG[lvl].label}
+                    </button>
+                  ))}
                 </div>
               </div>
             ) : (
