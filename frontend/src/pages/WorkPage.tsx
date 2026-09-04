@@ -4865,27 +4865,27 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
             </div>
             {currentSuggestion ? (
               <div style={{
-                background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: `1.5px solid ${currentSuggestion.color}`,
-                borderRadius: 14, padding: '22px 22px 18px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 0 3px 10px rgba(0,0,0,.08)',
-                display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 420,
+                background: '#fff', border: '1.5px solid #e5e5ea',
+                borderRadius: 14, padding: '24px 22px', boxShadow: '0 1px 2px rgba(0,0,0,.04)',
+                display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 420,
               }}>
                 <div style={{
-                  alignSelf: 'flex-start', fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12,
-                  letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#fff', background: currentSuggestion.color,
-                  padding: '3px 10px', borderRadius: 999,
+                  alignSelf: 'flex-start', fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11,
+                  letterSpacing: '.08em', textTransform: 'uppercase' as const, color: currentSuggestion.color,
+                  border: `1.5px solid ${currentSuggestion.color}`, padding: '3px 10px', borderRadius: 999,
                 }}>
                   {currentSuggestion.category}
                 </div>
-                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 19, lineHeight: 1.4, color: '#3a2c14', fontWeight: 600 }}>
+                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 18, lineHeight: 1.45, color: '#1d1d1f', fontWeight: 600 }}>
                   {currentSuggestion.text}
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <button
                     onClick={() => setSkippedSuggestions(prev => { const next = new Set(prev); next.add(currentSuggestion.text); return next; })}
                     style={{
-                      flex: 1, padding: '11px 16px', borderRadius: 9, cursor: 'pointer',
+                      flex: 1, padding: '11px 16px', borderRadius: 10, cursor: 'pointer',
                       fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.03em',
-                      border: '2px solid #cdac72', background: 'transparent', color: '#8a6d3b', fontWeight: 700,
+                      border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontWeight: 700,
                     }}
                   >
                     Skip
@@ -4893,10 +4893,9 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                   <button
                     onClick={() => toggleSuggestion(currentSuggestion.text)}
                     style={{
-                      flex: 2, padding: '11px 16px', borderRadius: 9, cursor: 'pointer',
+                      flex: 2, padding: '11px 16px', borderRadius: 10, cursor: 'pointer',
                       fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.03em',
-                      border: `2px solid ${currentSuggestion.color}`, background: currentSuggestion.color, color: '#fff', fontWeight: 700,
-                      boxShadow: '2px 3px 6px rgba(0,0,0,.15)',
+                      border: `2px solid ${STAGE_COLORS.hone}`, background: `${STAGE_COLORS.hone}0c`, color: STAGE_COLORS.hone, fontWeight: 700,
                     }}
                   >
                     ✓ Add to my list
