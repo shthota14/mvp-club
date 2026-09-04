@@ -608,7 +608,7 @@ function AskCommunityButton({ ask }: { ask: string }) {
 // Builder's questions (Arial Black, dark navy, tight tracking) plus a
 // hand-drawn underline in the given accent colour. Reusable anywhere a
 // "question" should read as bold/marker-style rather than plain text.
-function MarkerQuestion({ children, accent = '#2563eb' }: { children: React.ReactNode; accent?: string }) {
+function MarkerQuestion({ children, accent = '#2563eb', underline = true }: { children: React.ReactNode; accent?: string; underline?: boolean }) {
   return (
     <span style={{ display: 'inline-block' }}>
       <span style={{
@@ -618,9 +618,11 @@ function MarkerQuestion({ children, accent = '#2563eb' }: { children: React.Reac
       }}>
         {children}
       </span>
-      <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3, maxWidth: 380 }}>
-        <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
-      </svg>
+      {underline && (
+        <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3, maxWidth: 380 }}>
+          <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" />
+        </svg>
+      )}
     </span>
   );
 }
@@ -5247,45 +5249,47 @@ function SageProblemInterview({
   );
 }
 
-function ProblemInterviewLauncher({
-  oneLiner, segment, onAdd,
-}: {
-  oneLiner: string;
-  segment: { role: string; detail: string };
-  onAdd: (texts: string[]) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  if (open) {
-    return <SageProblemInterview oneLiner={oneLiner} segment={segment} onAdd={onAdd} onClose={() => setOpen(false)} />;
-  }
-  // Illustrated Sage wizard mark carries the "you're talking to Sage" cue on
-  // its own -- no explicit "AI" badge/label (2026-09-04: Sam asked not to
-  // call it out by name here).
+// ── Question header bar — BMC eyebrow + compact Sage entry point, separated
+// from the question below by a hairline rule (2026-09-04 UI/UX pick, "Split
+// Header Bar"). Replaces the old pattern of BMCLabel, then a wavy-underlined
+// question, then a big standalone Sage pill card stacked beneath it.
+function StepQuestionBar({ blocks, children }: { blocks: string[]; children?: React.ReactNode }) {
   return (
-    <button
-      onClick={() => setOpen(true)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 12, alignSelf: 'flex-start',
-        padding: '10px 18px 10px 10px', borderRadius: 14, border: '2px solid #C4B5FD',
-        background: 'linear-gradient(135deg, #EDE9FE 0%, #F5F3FF 100%)', color: '#5B21B6', fontFamily: 'inherit', cursor: 'pointer',
-        boxShadow: '1px 2px 4px rgba(91,33,182,0.08)',
-      }}
-    >
-      <SageAvatar size={34} />
-      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-        <span style={{ fontSize: 14, fontWeight: 800 }}>Prefer to talk it through?</span>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6D28D9' }}>Chat it out with Sage, your guide →</span>
-      </span>
-    </button>
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+      paddingBottom: 10, borderBottom: `1px solid ${BORDER}`, marginBottom: 14, flexWrap: 'wrap' as const,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' as const }}>
+        <span style={{ fontSize: 10, fontStyle: 'italic', color: '#c8c8d0' }}>fills BMC →</span>
+        {blocks.map(b => (
+          <span key={b} style={{ fontSize: 10, fontStyle: 'italic', color: '#c0b8e8', padding: '0 2px' }}>{b}</span>
+        ))}
+      </div>
+      {children}
+    </div>
   );
 }
 
-// ── Generic "Sage interviews you" -- reusable across steps beyond Hone
-// step 2's problem interview above. Same chat mechanics (SageProblemInterview
-// reused via shared ChatTurn/ProblemEvidence/EVIDENCE_CONFIG types), but
-// parameterized by `topic` (which grounded system prompt the backend uses),
-// a caller-supplied opener question, and the header/added/done copy so each
-// step's launcher can speak to what it's actually collecting.
+// Compact text-link entry point to the Sage interview, styled to sit inside
+// a StepQuestionBar. Replaces the old illustrated-avatar pill card (too much
+// real estate per Sam, 2026-09-04) -- the purple link color alone now
+// carries "this opens Sage."
+function SageCtaLink({ onClick }: { onClick: () => void }) {
+  return (
+    <span onClick={onClick} style={{ fontSize: 11.5, fontWeight: 700, color: '#6D28D9', cursor: 'pointer', flexShrink: 0 }}>
+      Prefer to talk it through? Chat it out with Sage, your guide →
+    </span>
+  );
+}
+
+// ── Generic "Sage interviews you" panel -- reusable across steps beyond
+// Hone step 2's problem interview (SageProblemInterview, above). Same chat
+// mechanics (reused via shared ChatTurn/ProblemEvidence/EVIDENCE_CONFIG
+// types), but parameterized by `topic` (which grounded system prompt the
+// backend uses), a caller-supplied opener question, and the header/added/done
+// copy, so each call site can speak to what it's actually collecting. Opened
+// directly from each step's StepQuestionBar trigger (2026-09-04) rather than
+// through a dedicated launcher wrapper.
 function SageStepInterview({
   topic, oneLiner, segment, opener, headerLabel, addedLabel, doneMessage, onAdd, onClose,
 }: {
@@ -5416,48 +5420,6 @@ function SageStepInterview({
   );
 }
 
-function SageInterviewLauncher({
-  topic, oneLiner, segment, opener, headerLabel, addedLabel, doneMessage, buttonTitle, buttonSubtitle, onAdd,
-}: {
-  topic: StepInterviewTopic;
-  oneLiner: string;
-  segment: { role: string; detail: string };
-  opener: string;
-  headerLabel: string;
-  addedLabel: string;
-  doneMessage: string;
-  buttonTitle: string;
-  buttonSubtitle: string;
-  onAdd: (texts: string[]) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  if (open) {
-    return (
-      <SageStepInterview
-        topic={topic} oneLiner={oneLiner} segment={segment} opener={opener}
-        headerLabel={headerLabel} addedLabel={addedLabel} doneMessage={doneMessage}
-        onAdd={onAdd} onClose={() => setOpen(false)}
-      />
-    );
-  }
-  return (
-    <button
-      onClick={() => setOpen(true)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 12, alignSelf: 'flex-start',
-        padding: '10px 18px 10px 10px', borderRadius: 14, border: '2px solid #C4B5FD',
-        background: 'linear-gradient(135deg, #EDE9FE 0%, #F5F3FF 100%)', color: '#5B21B6', fontFamily: 'inherit', cursor: 'pointer',
-        boxShadow: '1px 2px 4px rgba(91,33,182,0.08)',
-      }}
-    >
-      <SageAvatar size={34} />
-      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-        <span style={{ fontSize: 14, fontWeight: 800 }}>{buttonTitle}</span>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6D28D9' }}>{buttonSubtitle}</span>
-      </span>
-    </button>
-  );
-}
 
 
 
@@ -13004,6 +12966,13 @@ export default function WorkPage() {
   const personaPickerRef = useRef<PersonaPickerHandle>(null);
   const problemBuilderRef = useRef<ProblemBuilderHandle>(null);
   const alternativeRankingRef = useRef<AlternativeRankingHandle>(null);
+  // Open/closed state for the Sage interview panels now triggered from each
+  // step's StepQuestionBar (2026-09-04 "Split Header Bar" UI/UX pick) --
+  // lifted up here instead of living inside ProblemInterviewLauncher /
+  // SageInterviewLauncher (both retired) so the bar's compact trigger link
+  // and the full-width panel below the question can share one open flag.
+  const [problemCtaOpen, setProblemCtaOpen] = useState(false);
+  const [copingCtaOpen, setCopingCtaOpen] = useState(false);
   const assumptionsRef = useRef<AssumptionsHandle>(null);
   // Remembers the last step visited in each stage, so switching stages via the
   // sidebar (goMod) resumes where the founder left off instead of always
@@ -14031,10 +14000,10 @@ export default function WorkPage() {
 
   // Step title — mirrors explainer's bold title style but at 26px (vs 38px in explainer).
   // The softer "Step N of M" pill + smaller size is the deliberate difference.
-  const H = ({ children, accent }: { children: React.ReactNode; accent?: string }) => (
+  const H = ({ children, accent, underline }: { children: React.ReactNode; accent?: string; underline?: boolean }) => (
     accent ? (
       <h2 style={{ margin: '0 0 8px', display: 'inline-block' }}>
-        <MarkerQuestion accent={accent}>{children}</MarkerQuestion>
+        <MarkerQuestion accent={accent} underline={underline}>{children}</MarkerQuestion>
       </h2>
     ) : (
       <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.5, lineHeight: 1.25, margin: '0 0 8px', color: T1, fontFamily: "'Playfair Display', Georgia, serif" }}>{children}</h2>
@@ -14391,6 +14360,11 @@ export default function WorkPage() {
         const hasPersona = get('whoExactly').split(MULTI_SEP).some(p => p.trim().length > 3);
         const draftValid = !!personaPickerRef.current?.isDraftValid();
         const [personaReopened, setPersonaReopened] = React.useState(false);
+        // Sage interview open state for this panel's StepQuestionBar trigger
+        // (2026-09-04 "Split Header Bar" UI/UX pick) -- see the note on
+        // problemCtaOpen/copingCtaOpen above for why this replaced
+        // SageInterviewLauncher's own internal open state.
+        const [personaCtaOpen, setPersonaCtaOpen] = React.useState(false);
         const showPersonaPanel = !hasPersona || personaReopened;
 
         const primaryPersonaList = ensurePrimary(initPersonas(get('whoExactly')));
@@ -14437,22 +14411,26 @@ export default function WorkPage() {
 
         const personaPanel = (
           <div style={{ display: showPersonaPanel ? 'flex' : 'none', flexDirection: 'column' as const, gap: 14, flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-              <H accent={STAGE_COLORS.hone}>Who do you think has this problem?</H>
-              {tracker}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, paddingBottom: 10, borderBottom: `1px solid ${BORDER}` }}>
+              <H accent={STAGE_COLORS.hone} underline={false}>Who do you think has this problem?</H>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                {!personaCtaOpen && <SageCtaLink onClick={() => setPersonaCtaOpen(true)} />}
+                {tracker}
+              </div>
             </div>
-            <SageInterviewLauncher
-              topic="persona"
-              oneLiner={get('oneLiner')}
-              segment={{ role: '', detail: '' }}
-              opener="Think of the last specific person you watched struggle with this — not a category, a real person. What's their role, and what situation were they in?"
-              headerLabel="Sage is interviewing you about who has this problem"
-              addedLabel="Added to your segments below"
-              doneMessage="That's enough to sketch a segment — refine it below, or keep describing more yourself."
-              buttonTitle="Prefer to talk it through?"
-              buttonSubtitle="Chat it out with Sage, your guide →"
-              onAdd={texts => personaPickerRef.current?.addPersonas(texts)}
-            />
+            {personaCtaOpen && (
+              <SageStepInterview
+                topic="persona"
+                oneLiner={get('oneLiner')}
+                segment={{ role: '', detail: '' }}
+                opener="Think of the last specific person you watched struggle with this — not a category, a real person. What's their role, and what situation were they in?"
+                headerLabel="Sage is interviewing you about who has this problem"
+                addedLabel="Added to your segments below"
+                doneMessage="That's enough to sketch a segment — refine it below, or keep describing more yourself."
+                onAdd={texts => personaPickerRef.current?.addPersonas(texts)}
+                onClose={() => setPersonaCtaOpen(false)}
+              />
+            )}
             <PersonaPickerStep ref={personaPickerRef} value={get('whoExactly')} onChange={v => set('whoExactly', v)} oneLiner={get('oneLiner')} />
           </div>
         );
@@ -14555,13 +14533,18 @@ export default function WorkPage() {
     <div key="h1" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={1} />
       <StepGoal text={STEP_GOALS.hone[1]} />
-      <BMCLabel blocks={['Value Proposition']} />
-      <H accent={STAGE_COLORS.hone}>What are the problems?</H>
-      <ProblemInterviewLauncher
-        oneLiner={get('oneLiner')}
-        segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
-        onAdd={texts => problemBuilderRef.current?.addProblems(texts)}
-      />
+      <StepQuestionBar blocks={['Value Proposition']}>
+        {!problemCtaOpen && <SageCtaLink onClick={() => setProblemCtaOpen(true)} />}
+      </StepQuestionBar>
+      <H accent={STAGE_COLORS.hone} underline={false}>What are the problems?</H>
+      {problemCtaOpen && (
+        <SageProblemInterview
+          oneLiner={get('oneLiner')}
+          segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
+          onAdd={texts => problemBuilderRef.current?.addProblems(texts)}
+          onClose={() => setProblemCtaOpen(false)}
+        />
+      )}
       <ProblemBuilder
         ref={problemBuilderRef}
         value={get('problemSentence')}
@@ -14629,8 +14612,10 @@ export default function WorkPage() {
     <div key="h3" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={3} />
       <StepGoal text={STEP_GOALS.hone[3]} />
-      <BMCLabel blocks={['Customer Relationships', 'Revenue Streams']} />
-      <H accent={STAGE_COLORS.hone}>What do you think people are doing to solve this?</H>
+      <StepQuestionBar blocks={['Customer Relationships', 'Revenue Streams']}>
+        {!copingCtaOpen && <SageCtaLink onClick={() => setCopingCtaOpen(true)} />}
+      </StepQuestionBar>
+      <H accent={STAGE_COLORS.hone} underline={false}>What do you think people are doing to solve this?</H>
 
       {/* ── Context reminder ── */}
       <ProblemContextCard
@@ -14647,22 +14632,23 @@ export default function WorkPage() {
         List the ways you <em>think</em> people cope with this today — then rank them from most to least common.
         The #1 approach becomes your primary hypothesis to test.
       </div>
-      <SageInterviewLauncher
-        topic="coping"
-        oneLiner={get('oneLiner')}
-        segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
-        opener={(() => {
-          const seg = personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null);
-          const label = seg.role || 'your customer';
-          return `Think about the last time you saw or heard someone in your "${label}" segment try to deal with this problem some other way. What did they actually do?`;
-        })()}
-        headerLabel="Sage is interviewing you about how people cope today"
-        addedLabel="Added to your list below"
-        doneMessage="That's plenty to go on — pick from what's below, or keep describing more yourself."
-        buttonTitle="Prefer to talk it through?"
-        buttonSubtitle="Chat it out with Sage, your guide →"
-        onAdd={texts => alternativeRankingRef.current?.addAlternatives(texts)}
-      />
+      {copingCtaOpen && (
+        <SageStepInterview
+          topic="coping"
+          oneLiner={get('oneLiner')}
+          segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
+          opener={(() => {
+            const seg = personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null);
+            const label = seg.role || 'your customer';
+            return `Think about the last time you saw or heard someone in your "${label}" segment try to deal with this problem some other way. What did they actually do?`;
+          })()}
+          headerLabel="Sage is interviewing you about how people cope today"
+          addedLabel="Added to your list below"
+          doneMessage="That's plenty to go on — pick from what's below, or keep describing more yourself."
+          onAdd={texts => alternativeRankingRef.current?.addAlternatives(texts)}
+          onClose={() => setCopingCtaOpen(false)}
+        />
+      )}
       <AlternativeRankingStep
         ref={alternativeRankingRef}
         value={get('solutionAlternatives')}
