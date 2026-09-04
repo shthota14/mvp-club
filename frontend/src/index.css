@@ -69,7 +69,17 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* ── Base ──────────────────────────────────────────────────────────────────── */
-html { font-size: 16px; }
+html {
+  font-size: 16px;
+  /* Global legibility bump (2026-09-04): almost every fontSize in
+     WorkPage.tsx is a raw px number, not rem, so a root font-size change
+     alone wouldn't cascade into them. `zoom` scales the whole rendered
+     page -- type, icons, spacing, borders -- together, reflows layout
+     normally, and (verified) keeps position:fixed overlays like modals
+     covering the true viewport correctly. Bump this single number to
+     make the whole app bigger or smaller everywhere at once. */
+  zoom: 1.15;
+}
 
 body {
   font-family: var(--font-ui);
