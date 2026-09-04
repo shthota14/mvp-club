@@ -14289,88 +14289,182 @@ export default function WorkPage() {
       )}
       <StepGoal text={STEP_GOALS.hone[0]} />
       <BMCLabel blocks={['Customer Segments']} />
-      <H accent={STAGE_COLORS.hone}>Who do you think has this problem?</H>
-      <SageInterviewLauncher
-        topic="persona"
-        oneLiner={get('oneLiner')}
-        segment={{ role: '', detail: '' }}
-        opener="Think of the last specific person you watched struggle with this — not a category, a real person. What's their role, and what situation were they in?"
-        headerLabel="Sage is interviewing you about who has this problem"
-        addedLabel="Added to your segments below"
-        doneMessage="That's enough to sketch a segment — refine it below, or keep describing more yourself."
-        buttonTitle="Prefer to talk it through?"
-        buttonSubtitle="Chat it out with Sage, your guide →"
-        onAdd={texts => personaPickerRef.current?.addPersonas(texts)}
-      />
-      <PersonaPickerStep ref={personaPickerRef} value={get('whoExactly')} onChange={v => set('whoExactly', v)} oneLiner={get('oneLiner')} />
-      {false && <MultiEntryShell
-        fieldValue={get('whoExactly')}
-        onFieldChange={v => set('whoExactly', v)}
-        renderBuilder={(val, onChange, key) => (
-          <AudienceBuilder key={key} value={val} onChange={onChange} whoPaysValue="" onWhoPaysChange={() => {}} hideWhoPays />
-        )}
-        renderCard={(entry, i, onRemove) => (
-          <PersonaEntryCard key={i} entry={entry} index={i} onRemove={onRemove} />
-        )}
-        addLabel="Add another persona"
-        accentColor={STAGE_COLORS.hone}
-        isEntryValid={v => v.trim().length > 5 && !v.includes('___')}
-      />}
-      {/* Direction A: this question stays hidden until at least one real
-          persona has been named — one question on screen at a time,
-          mirroring the Idea-stage chat, instead of both fields showing at
-          once. Uses `display` (not an unmount) so PersonaPickerStep's own
-          internal state never resets while it's hidden. */}
-      <div style={{ display: get('whoExactly').split(MULTI_SEP).some(p => p.trim().length > 3) ? 'block' : 'none' }}>
-        <FieldLabel n={2} ask="Who pays for this?" accent={STAGE_COLORS.hone}>Who actually pays?</FieldLabel>
-        {/* Direction A: once answered, collapse the two cards into a dark
-            "echo" pill — same pattern as the Idea stage's spark-type picker
-            — instead of leaving both options sitting on screen next to the
-            one you picked. `display` toggle, not unmount, so nothing about
-            the free-text field below resets when you tap "change". */}
-        <div style={{ display: get('whoPays') ? 'none' : 'flex', gap: 10, marginBottom: 10 }}>
-          {[
-            { val: 'Same person', label: 'Same person', icon: '👤', desc: 'The user pays directly' },
-            { val: 'Someone else', label: 'Someone else', icon: '🏢', desc: 'Manager, company, or procurement' },
-          ].map(opt => {
-            const on = get('whoPays') === opt.val || (opt.val === 'Someone else' && get('whoPays') && get('whoPays') !== 'Same person');
-            return (
-              <button key={opt.val} onClick={() => {
-                const newVal = on ? '' : opt.val;
-                set('whoPays', newVal);
-                // Immediately persist button selection (don't rely solely on 1200ms debounce)
-                if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: newVal }).catch(() => {});
-              }}
-                style={{ flex: 1, padding: '14px 12px', borderRadius: 12, border: `2px solid ${on ? STAGE_COLORS.hone : BORDER}`, background: on ? `${STAGE_COLORS.hone}08` : '#fff', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center' as const, transition: 'all .15s' }}>
-                <div style={{ fontSize: 22, marginBottom: 4 }}>{opt.icon}</div>
-                <div style={{ fontSize: 13, fontWeight: on ? 700 : 500, color: on ? STAGE_COLORS.hone : T1 }}>{opt.label}</div>
-                <div style={{ fontSize: 11, color: T3, marginTop: 2 }}>{opt.desc}</div>
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ display: get('whoPays') ? 'flex' : 'none', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '4px 12px', borderRadius: 4,
-            background: STAGE_COLORS.hone, color: '#fff',
-            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 12,
-            letterSpacing: '.05em', textTransform: 'uppercase' as const,
-          }}>
-            {get('whoPays') === 'Same person' ? '👤 Same person' : `🏢 ${get('whoPays') === 'Someone else' ? 'Someone else' : get('whoPays')}`}
+      {/* M1 "ID / Contact Card" — split-panel layout (2026-09-04 UI/UX pick,
+          merging Option 3 "Swap, Don't Stack" with Option 7 "Split Preview
+          Panel"). The two sub-questions ("who has this problem" / "who
+          actually pays") swap in place on the left, tracked by a tiny 2-dot
+          indicator, instead of stacking with an echo-pill like the rest of
+          Hone's "Direction A" steps. A live ID-card preview sits on the
+          right (stacked on top on mobile) and always reflects the current
+          PRIMARY persona + pays answer, updating as you type. All existing
+          persona data/logic (multi-persona list, B2B/B2C fields, Sage AI
+          launcher, primary-segment flag) is unchanged — only the layout and
+          the sub-question navigation are new. */}
+      {(() => {
+        const isMobileNow = useIsMobile();
+        const hasPersona = get('whoExactly').split(MULTI_SEP).some(p => p.trim().length > 3);
+        const draftValid = !!personaPickerRef.current?.isDraftValid();
+        const [personaReopened, setPersonaReopened] = React.useState(false);
+        const showPersonaPanel = !hasPersona || personaReopened;
+
+        const primaryPersonaList = ensurePrimary(initPersonas(get('whoExactly')));
+        const primaryPersona = primaryPersonaList.find(p => p.primary) || null;
+        const primaryLabel = primaryPersona
+          ? (primaryPersona.legacy ? { role: primaryPersona.role, detail: '' } : personaSegmentLabel(primaryPersona))
+          : { role: '', detail: '' };
+
+        const tracker = (
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: showPersonaPanel ? STAGE_COLORS.hone : BORDER2, transition: 'background .2s' }} />
+            <span style={{ width: showPersonaPanel ? 7 : 20, height: 7, borderRadius: 4, background: showPersonaPanel ? BORDER2 : STAGE_COLORS.hone, transition: 'all .2s' }} />
           </div>
-          <button
-            onClick={() => { set('whoPays', ''); if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: '' }).catch(() => {}); }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
-          >
-            ↺ change
-          </button>
-        </div>
-        {(get('whoPays') === 'Someone else' || (get('whoPays') && get('whoPays') !== 'Same person')) && (
-          <input style={inp} placeholder="Who exactly? e.g. Their manager, IT / procurement, the company…" value={get('whoPays') === 'Someone else' ? '' : get('whoPays')} onChange={e => set('whoPays', e.target.value)} />
-        )}
-      </div>
-      <NavRow onNext={async () => { const flushed = personaPickerRef.current?.flush(); await save('hone', { whoExactly: flushed || get('whoExactly'), whoPays: get('whoPays') }); next(); }} nextLabel="Next →" disabled={!get('whoExactly').split(MULTI_SEP).some(p => p.trim().length > 3) && !personaPickerRef.current?.isDraftValid()} disabledReason="Add at least one customer segment first." stageColor={STAGE_COLORS.idea} stepTitle="Who do you think has this problem?" ideaId={activeIdea.id} />
+        );
+
+        const previewCard = (
+          <div style={{
+            background: '#f8faff', border: '1px solid #dbe6fb', borderRadius: 16,
+            padding: '20px 18px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 7,
+            width: isMobileNow ? '100%' : 226, flexShrink: 0, boxSizing: 'border-box' as const,
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: STAGE_COLORS.hone, textTransform: 'uppercase' as const, letterSpacing: '.08em' }}>Your persona so far</div>
+            <UserAvatar size={50} />
+            {primaryLabel.role ? (
+              <>
+                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: 15, color: T1, textAlign: 'center' as const }}>{primaryLabel.role}</div>
+                {primaryLabel.detail && <div style={{ fontSize: 11.5, color: T2, textAlign: 'center' as const, lineHeight: 1.5 }}>{primaryLabel.detail}</div>}
+                {primaryPersonaList.length > 1 && <div style={{ fontSize: 10.5, color: T3 }}>+{primaryPersonaList.length - 1} more segment{primaryPersonaList.length > 2 ? 's' : ''}</div>}
+              </>
+            ) : (
+              <div style={{ fontSize: 12.5, color: T3, fontStyle: 'italic' as const, textAlign: 'center' as const }}>Describe who has this problem to see them here</div>
+            )}
+            <div style={{ borderTop: `1px solid ${BORDER}`, width: '100%', margin: '4px 0' }} />
+            <div style={{ fontSize: 10.5, color: T3, textTransform: 'uppercase' as const, letterSpacing: '.05em' }}>Pays</div>
+            {get('whoPays') ? (
+              <div style={{ fontSize: 13, fontWeight: 700, color: STAGE_COLORS.hone }}>
+                {get('whoPays') === 'Same person' ? '👤 Same person' : `🏢 ${get('whoPays') === 'Someone else' ? 'Someone else' : get('whoPays')}`}
+              </div>
+            ) : (
+              <div style={{ fontSize: 12.5, color: T3, fontStyle: 'italic' as const }}>not yet answered</div>
+            )}
+          </div>
+        );
+
+        const personaPanel = (
+          <div style={{ display: showPersonaPanel ? 'flex' : 'none', flexDirection: 'column' as const, gap: 14, flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+              <H accent={STAGE_COLORS.hone}>Who do you think has this problem?</H>
+              {tracker}
+            </div>
+            <SageInterviewLauncher
+              topic="persona"
+              oneLiner={get('oneLiner')}
+              segment={{ role: '', detail: '' }}
+              opener="Think of the last specific person you watched struggle with this — not a category, a real person. What's their role, and what situation were they in?"
+              headerLabel="Sage is interviewing you about who has this problem"
+              addedLabel="Added to your segments below"
+              doneMessage="That's enough to sketch a segment — refine it below, or keep describing more yourself."
+              buttonTitle="Prefer to talk it through?"
+              buttonSubtitle="Chat it out with Sage, your guide →"
+              onAdd={texts => personaPickerRef.current?.addPersonas(texts)}
+            />
+            <PersonaPickerStep ref={personaPickerRef} value={get('whoExactly')} onChange={v => set('whoExactly', v)} oneLiner={get('oneLiner')} />
+          </div>
+        );
+
+        const paysPanel = (
+          <div style={{ display: showPersonaPanel ? 'none' : 'flex', flexDirection: 'column' as const, gap: 14, flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+              <H accent={STAGE_COLORS.hone}>Who actually pays?</H>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <AskCommunityButton ask="Who pays for this?" />
+                {tracker}
+              </div>
+            </div>
+            <div style={{ fontSize: 12.5, color: T2, marginTop: -6 }}>
+              For: <b style={{ color: T1 }}>{primaryLabel.role || 'your persona'}</b>{' '}
+              <button onClick={() => setPersonaReopened(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, fontWeight: 700, color: STAGE_COLORS.hone, textDecoration: 'underline', fontFamily: 'inherit' }}>
+                · edit
+              </button>
+            </div>
+            {/* Direction A: once answered, collapse the two cards into a dark
+                "echo" pill — same pattern as the Idea stage's spark-type picker
+                — instead of leaving both options sitting on screen next to the
+                one you picked. `display` toggle, not unmount, so nothing about
+                the free-text field below resets when you tap "change". */}
+            <div style={{ display: get('whoPays') ? 'none' : 'flex', gap: 10 }}>
+              {[
+                { val: 'Same person', label: 'Same person', icon: '👤', desc: 'The user pays directly' },
+                { val: 'Someone else', label: 'Someone else', icon: '🏢', desc: 'Manager, company, or procurement' },
+              ].map(opt => {
+                const on = get('whoPays') === opt.val || (opt.val === 'Someone else' && get('whoPays') && get('whoPays') !== 'Same person');
+                return (
+                  <button key={opt.val} onClick={() => {
+                    const newVal = on ? '' : opt.val;
+                    set('whoPays', newVal);
+                    // Immediately persist button selection (don't rely solely on 1200ms debounce)
+                    if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: newVal }).catch(() => {});
+                  }}
+                    style={{ flex: 1, padding: '14px 12px', borderRadius: 12, border: `2px solid ${on ? STAGE_COLORS.hone : BORDER}`, background: on ? `${STAGE_COLORS.hone}08` : '#fff', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center' as const, transition: 'all .15s' }}>
+                    <div style={{ fontSize: 22, marginBottom: 4 }}>{opt.icon}</div>
+                    <div style={{ fontSize: 13, fontWeight: on ? 700 : 500, color: on ? STAGE_COLORS.hone : T1 }}>{opt.label}</div>
+                    <div style={{ fontSize: 11, color: T3, marginTop: 2 }}>{opt.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ display: get('whoPays') ? 'flex' : 'none', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 12px', borderRadius: 4,
+                background: STAGE_COLORS.hone, color: '#fff',
+                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 12,
+                letterSpacing: '.05em', textTransform: 'uppercase' as const,
+              }}>
+                {get('whoPays') === 'Same person' ? '👤 Same person' : `🏢 ${get('whoPays') === 'Someone else' ? 'Someone else' : get('whoPays')}`}
+              </div>
+              <button
+                onClick={() => { set('whoPays', ''); if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: '' }).catch(() => {}); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
+              >
+                ↺ change
+              </button>
+            </div>
+            {(get('whoPays') === 'Someone else' || (get('whoPays') && get('whoPays') !== 'Same person')) && (
+              <input style={inp} placeholder="Who exactly? e.g. Their manager, IT / procurement, the company…" value={get('whoPays') === 'Someone else' ? '' : get('whoPays')} onChange={e => set('whoPays', e.target.value)} />
+            )}
+          </div>
+        );
+
+        return (
+          <>
+            <div style={{ display: 'flex', flexDirection: isMobileNow ? 'column' as const : 'row' as const, gap: 20, alignItems: isMobileNow ? 'stretch' : 'flex-start' }}>
+              {isMobileNow && previewCard}
+              {personaPanel}
+              {paysPanel}
+              {!isMobileNow && previewCard}
+            </div>
+            <NavRow
+              onBack={showPersonaPanel ? undefined : () => setPersonaReopened(true)}
+              onNext={async () => {
+                if (showPersonaPanel) {
+                  const flushed = personaPickerRef.current?.flush();
+                  if ((flushed || get('whoExactly')).split(MULTI_SEP).some(p => p.trim().length > 3) || draftValid) setPersonaReopened(false);
+                  return;
+                }
+                const flushed = personaPickerRef.current?.flush();
+                await save('hone', { whoExactly: flushed || get('whoExactly'), whoPays: get('whoPays') });
+                next();
+              }}
+              nextLabel={showPersonaPanel ? 'Next: who pays →' : 'Continue →'}
+              disabled={showPersonaPanel ? (!hasPersona && !draftValid) : false}
+              disabledReason="Add at least one customer segment first."
+              stageColor={STAGE_COLORS.hone}
+              stepTitle={showPersonaPanel ? 'Who do you think has this problem?' : 'Who actually pays?'}
+              ideaId={activeIdea.id}
+            />
+          </>
+        );
+      })()}
     </div>,
     <div key="h1" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={1} />
