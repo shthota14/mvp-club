@@ -4241,7 +4241,153 @@ function severityMissingCount(raw: string): number {
 
 // Fired when the founder clicks a Next button that's blocked on severity.
 // ProblemBuilder listens and animates a pointer to the first unanswered row.
+// (No longer dispatched -- severity is no longer a hard Next-button block,
+// see SeverityGateModal below -- but left in place in case a future call
+// site wants the same pulse-and-scroll nudge.)
 const SEVERITY_NUDGE_EVENT = 'mvpclub:nudge-severity';
+
+// Shown when the founder hits Next on "What are the problems?" with some
+// problems still missing a severity. These are pre-validation assumptions,
+// not confirmed facts, so we no longer hard-block progress on tagging every
+// one individually -- instead this offers a fast bulk call ("mark
+// everything left as Major") alongside the option to still go one by one.
+// Either path ends by handing the fully-assembled `problemSentence` string
+// back via onDone so the caller can save + advance.
+function SeverityGateModal({ raw, accentColor, onClose, onDone }: {
+  raw: string;
+  accentColor: string;
+  onClose: () => void;
+  onDone: (nextRaw: string) => void;
+}) {
+  // Snapshot parsed once -- stable for this modal's lifetime even as the
+  // founder answers questions one by one.
+  const [entries] = React.useState(() =>
+    raw.split(MULTI_SEP).filter(Boolean).map(seg => {
+      const [text, sev] = seg.split(FIELD_SEP);
+      return {
+        text: text ?? '',
+        severity: (['critical', 'major', 'minor'].includes(sev ?? '') ? sev : '') as SeverityLevel | '',
+      };
+    })
+  );
+  const missingIdx = React.useMemo(() => entries.map((e, i) => (e.severity ? -1 : i)).filter(i => i !== -1), [entries]);
+  const [mode, setMode] = React.useState<'choose' | 'one-by-one'>('choose');
+  const [cursor, setCursor] = React.useState(0);
+  const [answers, setAnswers] = React.useState<Record<number, SeverityLevel>>({});
+
+  const assemble = (finalAnswers: Record<number, SeverityLevel>) =>
+    entries.map((e, i) => {
+      const sev = e.severity || finalAnswers[i];
+      return sev ? [e.text, sev].join(FIELD_SEP) : e.text;
+    }).join(MULTI_SEP);
+
+  const applyBulk = (sev: SeverityLevel) => {
+    const finalAnswers = { ...answers };
+    missingIdx.forEach(i => { finalAnswers[i] = sev; });
+    onDone(assemble(finalAnswers));
+  };
+
+  const pickOne = (sev: SeverityLevel) => {
+    const idx = missingIdx[cursor];
+    const nextAnswers = { ...answers, [idx]: sev };
+    setAnswers(nextAnswers);
+    if (cursor + 1 < missingIdx.length) {
+      setCursor(c => c + 1);
+    } else {
+      onDone(assemble(nextAnswers));
+    }
+  };
+
+  const total = missingIdx.length;
+  const current = mode === 'one-by-one' ? entries[missingIdx[cursor]] : null;
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 480, maxHeight: '85vh', overflow: 'auto', padding: '28px 28px 24px', boxShadow: '0 20px 60px rgba(0,0,0,.22)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: mode === 'choose' ? 18 : 22 }}>
+          <div style={{ fontSize: 30, lineHeight: 1 }}>🎯</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#1d1d1f', lineHeight: 1.2 }}>
+              {mode === 'choose' ? 'How severe are these, really?' : `Problem ${cursor + 1} of ${total}`}
+            </div>
+            {mode === 'choose' && (
+              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#6e6e73', lineHeight: 1.5, marginTop: 4 }}>
+                These are still your own assumptions, not confirmed facts — a quick gut call is fine. {total} {total === 1 ? "problem hasn't" : "problems haven't"} been tagged yet.
+              </div>
+            )}
+          </div>
+          <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: 20, color: '#b0b0b8', cursor: 'pointer', lineHeight: 1, padding: 4 }}>✕</button>
+        </div>
+
+        {mode === 'choose' ? (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginBottom: 20, maxHeight: 140, overflow: 'auto' }}>
+              {missingIdx.map(i => (
+                <div key={i} style={{ borderLeft: `3px solid ${BORDER2}`, paddingLeft: 10, fontSize: 12.5, color: '#6e6e73', lineHeight: 1.4 }}>
+                  {entries[i].text}
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginBottom: 16 }}>
+              {(Object.entries(SEVERITY_CONFIG) as [SeverityLevel, typeof SEVERITY_CONFIG[SeverityLevel]][]).map(([lvl, sc]) => (
+                <button key={lvl} onClick={() => applyBulk(lvl)} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
+                  border: `1.5px solid ${sc.border}`, borderRadius: 12, background: sc.bg,
+                  cursor: 'pointer', textAlign: 'left' as const, transition: 'all .12s',
+                }}>
+                  <span style={{ fontSize: 20 }}>{sc.icon}</span>
+                  <div>
+                    <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: sc.textColor }}>Mark everything left {sc.label}</div>
+                    <div style={{ fontSize: 11.5, color: '#8a8a90', marginTop: 1 }}>
+                      {lvl === 'critical' ? "Deal-breaker level pain, if it's real." : lvl === 'major' ? 'A real problem worth solving.' : 'Annoying, but low-stakes.'}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div style={{ textAlign: 'center' as const, fontSize: 11.5, color: '#b0b0b8', marginBottom: 10 }}>— or —</div>
+
+            <button onClick={() => setMode('one-by-one')} style={{
+              width: '100%', padding: '11px 16px', borderRadius: 12, border: `1.5px solid ${accentColor}40`,
+              background: `${accentColor}08`, color: accentColor, fontWeight: 700, fontSize: 13,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}>
+              Let me choose one by one →
+            </button>
+          </>
+        ) : (
+          <>
+            <div style={{ background: '#fafafa', border: `1.5px solid ${BORDER}`, borderRadius: 14, padding: '16px 18px', marginBottom: 18 }}>
+              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#1e293b', lineHeight: 1.4 }}>
+                "{current?.text}"
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginBottom: 16 }}>
+              {(Object.entries(SEVERITY_CONFIG) as [SeverityLevel, typeof SEVERITY_CONFIG[SeverityLevel]][]).map(([lvl, sc]) => (
+                <button key={lvl} onClick={() => pickOne(lvl)} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
+                  border: `1.5px solid ${sc.border}`, borderRadius: 12, background: sc.bg,
+                  cursor: 'pointer', textAlign: 'left' as const, transition: 'all .12s',
+                }}>
+                  <span style={{ fontSize: 20 }}>{sc.icon}</span>
+                  <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: sc.textColor }}>{sc.label}</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setMode('choose')} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: '#94a3b8', padding: 0, fontFamily: 'inherit' }}>
+              ← Back to bulk options
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function PainPointCard({
   entry, idx, total, active, onActivate, onChange, onRemove,
@@ -14256,26 +14402,42 @@ export default function WorkPage() {
         const raw        = get('problemSentence');
         const hasProblem = raw.split(MULTI_SEP).filter(Boolean).some(s => s.trim().length > 5 && !s.includes('___'));
         const missing    = severityMissingCount(raw);
-        // Next stays blocked until every problem carries a severity.
-        const blocked    = !hasProblem || missing > 0;
+        const [showSeverityGate, setShowSeverityGate] = React.useState(false);
+
+        const goNext = async (finalRaw: string) => {
+          await save('hone', { problemSentence: finalRaw });
+          next();
+        };
+
         return (
-          <NavRow
-            onBack={back}
-            onNext={async () => { await save('hone', { problemSentence: raw }); next(); }}
-            nextLabel="Next →"
-            disabled={blocked}
-            disabledReason={
-              !hasProblem
-                ? 'Describe at least one real problem to continue.'
-                : `Pick how severe ${missing === 1 ? 'the remaining problem is' : `each of the ${missing} remaining problems is`} — critical, major or minor.`
-            }
-            onDisabledClick={hasProblem && missing > 0
-              ? () => window.dispatchEvent(new CustomEvent(SEVERITY_NUDGE_EVENT))
-              : undefined}
-            stageColor={STAGE_COLORS.idea}
-            stepTitle="What are the problems?"
-            ideaId={activeIdea.id}
-          />
+          <>
+            <NavRow
+              onBack={back}
+              onNext={async () => {
+                if (!hasProblem) return;
+                if (missing > 0) { setShowSeverityGate(true); return; }
+                await goNext(raw);
+              }}
+              nextLabel="Next →"
+              disabled={!hasProblem}
+              disabledReason="Describe at least one real problem to continue."
+              stageColor={STAGE_COLORS.idea}
+              stepTitle="What are the problems?"
+              ideaId={activeIdea.id}
+            />
+            {showSeverityGate && (
+              <SeverityGateModal
+                raw={raw}
+                accentColor={STAGE_COLORS.hone}
+                onClose={() => setShowSeverityGate(false)}
+                onDone={finalRaw => {
+                  set('problemSentence', finalRaw);
+                  setShowSeverityGate(false);
+                  goNext(finalRaw);
+                }}
+              />
+            )}
+          </>
         );
       })()}
     </div>,
