@@ -5207,10 +5207,9 @@ function ProblemInterviewLauncher({
   if (open) {
     return <SageProblemInterview oneLiner={oneLiner} segment={segment} onAdd={onAdd} onClose={() => setOpen(false)} />;
   }
-  // Uses the same illustrated Sage wizard mark + purple "AI" framing as the
-  // other Ask-Sage panels elsewhere in the app (guide drafting, hypothesis
-  // drafting, channel ranking) -- founders were missing that this option
-  // talks to an AI at all when it was just a small blue "S" circle.
+  // Illustrated Sage wizard mark carries the "you're talking to Sage" cue on
+  // its own -- no explicit "AI" badge/label (2026-09-04: Sam asked not to
+  // call it out by name here).
   return (
     <button
       onClick={() => setOpen(true)}
@@ -5223,11 +5222,8 @@ function ProblemInterviewLauncher({
     >
       <SageAvatar size={34} />
       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 14, fontWeight: 800 }}>Prefer to talk it through?</span>
-          <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.06em', background: '#7C3AED', color: '#fff', borderRadius: 999, padding: '2px 7px' }}>AI</span>
-        </span>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6D28D9' }}>Chat it out with Sage, your AI guide →</span>
+        <span style={{ fontSize: 14, fontWeight: 800 }}>Prefer to talk it through?</span>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6D28D9' }}>Chat it out with Sage, your guide →</span>
       </span>
     </button>
   );
@@ -5405,10 +5401,7 @@ function SageInterviewLauncher({
     >
       <SageAvatar size={34} />
       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 14, fontWeight: 800 }}>{buttonTitle}</span>
-          <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.06em', background: '#7C3AED', color: '#fff', borderRadius: 999, padding: '2px 7px' }}>AI</span>
-        </span>
+        <span style={{ fontSize: 14, fontWeight: 800 }}>{buttonTitle}</span>
         <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6D28D9' }}>{buttonSubtitle}</span>
       </span>
     </button>
@@ -14306,7 +14299,7 @@ export default function WorkPage() {
         addedLabel="Added to your segments below"
         doneMessage="That's enough to sketch a segment — refine it below, or keep describing more yourself."
         buttonTitle="Prefer to talk it through?"
-        buttonSubtitle="Chat it out with Sage, your AI guide →"
+        buttonSubtitle="Chat it out with Sage, your guide →"
         onAdd={texts => personaPickerRef.current?.addPersonas(texts)}
       />
       <PersonaPickerStep ref={personaPickerRef} value={get('whoExactly')} onChange={v => set('whoExactly', v)} oneLiner={get('oneLiner')} />
@@ -14487,7 +14480,7 @@ export default function WorkPage() {
         addedLabel="Added to your list below"
         doneMessage="That's plenty to go on — pick from what's below, or keep describing more yourself."
         buttonTitle="Prefer to talk it through?"
-        buttonSubtitle="Chat it out with Sage, your AI guide →"
+        buttonSubtitle="Chat it out with Sage, your guide →"
         onAdd={texts => alternativeRankingRef.current?.addAlternatives(texts)}
       />
       <AlternativeRankingStep
