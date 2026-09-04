@@ -6445,6 +6445,23 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
   // list/hypothesis card below doesn't flicker away for no visible reason.
   const pickerLoading = genState.loading && displayGroups.length === 0;
 
+  // ── One-at-a-time queue over the coping-method chips ─────────────────────
+  // Same pattern as Step 2's suggestion queue: flattens the AI-tailored
+  // category groups into a single ordered list and tracks what's been
+  // skipped this browsing session (not persisted). "Add" reuses the
+  // existing toggle() below, so selection still goes through the same
+  // items/commit path as everywhere else in this component.
+  const allAlternativesFlat = React.useMemo(() => {
+    const flat: { category: string; text: string }[] = [];
+    displayGroups.forEach(g => g.items.forEach(item => flat.push({ category: g.category, text: item })));
+    return flat;
+  }, [displayGroups]);
+  const [skippedAlternatives, setSkippedAlternatives] = useState<Set<string>>(() => new Set());
+  useEffect(() => { setSkippedAlternatives(new Set()); }, [genGroups]);
+  const remainingAlternativesQueue = allAlternativesFlat.filter(s => !items.includes(s.text) && !skippedAlternatives.has(s.text));
+  const currentAlternative = remainingAlternativesQueue[0] || null;
+  const alternativesReviewedCount = allAlternativesFlat.length - remainingAlternativesQueue.length;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
@@ -6483,44 +6500,62 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
           ask Sage again
         </button>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
-        {displayGroups.map(group => (
-          <div key={group.category} style={{ background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: '1.5px solid #cdac72', borderRadius: 10, padding: '10px 10px 14px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 1px 2px 4px rgba(0,0,0,.06)' }}>
-            <div style={{ marginBottom: 8 }}>
-              <div style={{
-                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
-                letterSpacing: '.08em', textTransform: 'uppercase' as const, color: c,
-              }}>
-                {group.category}
-              </div>
-              <div style={{ borderTop: `2px solid ${c}`, marginTop: 3, maxWidth: 90 }} />
-            </div>
-            {/* Jenga tower — each coping method is a stacked block; picking one slides
-                it out of the tower and fills it with the stage colour, the way you'd
-                pull a Jenga block free. Click again to slide it back in. */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {group.items.map(item => {
-                const on = items.includes(item);
-                return (
-                  <button key={item} onClick={() => toggle(item)}
-                    style={{
-                      textAlign: 'left' as const, width: '100%', padding: '8px 12px', cursor: 'pointer',
-                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.02em', lineHeight: 1.3, fontWeight: on ? 700 : 500,
-                      border: `2px solid ${c}`, borderRadius: 4,
-                      background: on ? c : '#fff6e0',
-                      color: on ? '#fff' : '#5c4324',
-                      transform: on ? 'translateX(22px)' : 'translateX(0)',
-                      boxShadow: on ? '2px 3px 6px rgba(0,0,0,.2)' : '0 1px 2px rgba(0,0,0,.08)',
-                      transition: 'transform .25s cubic-bezier(.3,.6,.4,1), background .25s, color .25s, box-shadow .25s',
-                    }}>
-                    {on ? '✓ ' : ''}{item}
-                  </button>
-                );
-              })}
-            </div>
+      {displayGroups.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#b0b0b8', letterSpacing: '.06em' }}>
+            {Math.min(alternativesReviewedCount + (currentAlternative ? 1 : 0), allAlternativesFlat.length)} of {allAlternativesFlat.length} reviewed
           </div>
-        ))}
-      </div>
+          {currentAlternative ? (
+            <div style={{
+              background: '#fff', border: '1.5px solid #e5e5ea',
+              borderRadius: 14, padding: '24px 22px', boxShadow: '0 1px 2px rgba(0,0,0,.04)',
+              display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 420,
+            }}>
+              <div style={{
+                alignSelf: 'flex-start', fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11,
+                letterSpacing: '.08em', textTransform: 'uppercase' as const, color: c,
+                border: `1.5px solid ${c}`, padding: '3px 10px', borderRadius: 999,
+              }}>
+                {currentAlternative.category}
+              </div>
+              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 18, lineHeight: 1.45, color: '#1d1d1f', fontWeight: 600 }}>
+                {currentAlternative.text}
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onClick={() => setSkippedAlternatives(prev => { const next = new Set(prev); next.add(currentAlternative.text); return next; })}
+                  style={{
+                    flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
+                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
+                    border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontWeight: 700,
+                  }}
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={() => toggle(currentAlternative.text)}
+                  style={{
+                    flex: 2, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
+                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
+                    border: `1.5px solid ${c}`, background: '#fff', color: c, fontWeight: 700,
+                  }}
+                >
+                  + Add
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#94a3b8', padding: '10px 2px' }}>
+              <span>{skippedAlternatives.size > 0 ? `You've been through all ${allAlternativesFlat.length} suggestions.` : `That's everything Sage suggested — nice work.`}</span>
+              {skippedAlternatives.size > 0 && (
+                <button onClick={() => setSkippedAlternatives(new Set())} style={{ fontSize: 12, fontWeight: 700, color: '#b45309', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                  ↺ review the {skippedAlternatives.size} you skipped
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Custom entry ── */}
       {showCustom ? (
