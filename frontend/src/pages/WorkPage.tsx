@@ -4682,6 +4682,24 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
   // summary sections below don't flicker away for no visible reason.
   const pickerLoading = genState.loading && displayGroups.length === 0;
 
+  // ── One-at-a-time swipe queue over the suggestion chips ──────────────────
+  // Flattens the AI-tailored category groups into a single ordered list, and
+  // tracks which ones the founder has skipped in this browsing session (not
+  // persisted — a fresh mount, or Sage regenerating chips, starts clean).
+  // "Add" reuses the existing toggleSuggestion below, so selection still goes
+  // through the same problems/emitList path as everywhere else in this file.
+  const allSuggestionsFlat = React.useMemo(() => {
+    const flat: { category: string; color: string; text: string }[] = [];
+    displayGroups.forEach(g => g.items.forEach(item => flat.push({ category: g.category, color: g.color, text: item })));
+    return flat;
+  }, [displayGroups]);
+  const [skippedSuggestions, setSkippedSuggestions] = useState<Set<string>>(() => new Set());
+  useEffect(() => { setSkippedSuggestions(new Set()); }, [genGroups]);
+  const remainingSuggestionsQueue = allSuggestionsFlat.filter(s => !selectedTexts.includes(s.text) && !skippedSuggestions.has(s.text));
+  const currentSuggestion = remainingSuggestionsQueue[0] || null;
+  const suggestionsReviewedCount = allSuggestionsFlat.length - remainingSuggestionsQueue.length;
+
+
   const toggleSuggestion = (text: string) => {
     const already = problems.findIndex(p => p.text.trim() === text);
     if (already !== -1) {
@@ -4800,7 +4818,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
         </div>
       )}
 
-      {/* ── Suggestion chips by category — whiteboard style, AI-tailored once ── */}
+      {/* ── Suggestion chips — one at a time, swipe-style queue, AI-tailored once ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
         {displayGroups.length > 0 && (
           <div>
@@ -4840,47 +4858,63 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
             Add your one-liner on the Idea step and Sage will suggest problems tailored to it.
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
-          {displayGroups.map(group => (
-            <div key={group.category} style={{ background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: '1.5px solid #cdac72', borderRadius: 10, padding: '10px 10px 14px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 1px 2px 4px rgba(0,0,0,.06)' }}>
-              <div style={{ marginBottom: 8 }}>
-                <div style={{
-                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
-                  letterSpacing: '.08em', textTransform: 'uppercase' as const, color: group.color,
-                }}>
-                  {group.category}
-                </div>
-                <div style={{ borderTop: `2px solid ${group.color}`, marginTop: 3, maxWidth: 90 }} />
-              </div>
-              {/* Jenga tower — each suggestion is a stacked block; picking one slides
-                  it out of the tower and fills it with the category colour, the way
-                  you'd pull a Jenga block free. Click again to slide it back in. */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {group.items.map(item => {
-                  const on = selectedTexts.includes(item);
-                  return (
-                    <button
-                      key={item}
-                      onClick={() => toggleSuggestion(item)}
-                      style={{
-                        textAlign: 'left' as const, width: '100%', padding: '8px 12px', cursor: 'pointer',
-                        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.02em', lineHeight: 1.3, fontWeight: on ? 700 : 500,
-                        border: `2px solid ${group.color}`, borderRadius: 4,
-                        background: on ? group.color : '#fff6e0',
-                        color: on ? '#fff' : '#5c4324',
-                        transform: on ? 'translateX(22px)' : 'translateX(0)',
-                        boxShadow: on ? '2px 3px 6px rgba(0,0,0,.2)' : '0 1px 2px rgba(0,0,0,.08)',
-                        transition: 'transform .25s cubic-bezier(.3,.6,.4,1), background .25s, color .25s, box-shadow .25s',
-                      }}
-                    >
-                      {on ? '✓ ' : ''}{item}
-                    </button>
-                  );
-                })}
-              </div>
+        {displayGroups.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#b0b0b8', letterSpacing: '.06em' }}>
+              {Math.min(suggestionsReviewedCount + (currentSuggestion ? 1 : 0), allSuggestionsFlat.length)} of {allSuggestionsFlat.length} reviewed
             </div>
-          ))}
-        </div>
+            {currentSuggestion ? (
+              <div style={{
+                background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: `1.5px solid ${currentSuggestion.color}`,
+                borderRadius: 14, padding: '22px 22px 18px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 0 3px 10px rgba(0,0,0,.08)',
+                display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 420,
+              }}>
+                <div style={{
+                  alignSelf: 'flex-start', fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12,
+                  letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#fff', background: currentSuggestion.color,
+                  padding: '3px 10px', borderRadius: 999,
+                }}>
+                  {currentSuggestion.category}
+                </div>
+                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 19, lineHeight: 1.4, color: '#3a2c14', fontWeight: 600 }}>
+                  {currentSuggestion.text}
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={() => setSkippedSuggestions(prev => { const next = new Set(prev); next.add(currentSuggestion.text); return next; })}
+                    style={{
+                      flex: 1, padding: '11px 16px', borderRadius: 9, cursor: 'pointer',
+                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.03em',
+                      border: '2px solid #cdac72', background: 'transparent', color: '#8a6d3b', fontWeight: 700,
+                    }}
+                  >
+                    Skip
+                  </button>
+                  <button
+                    onClick={() => toggleSuggestion(currentSuggestion.text)}
+                    style={{
+                      flex: 2, padding: '11px 16px', borderRadius: 9, cursor: 'pointer',
+                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.03em',
+                      border: `2px solid ${currentSuggestion.color}`, background: currentSuggestion.color, color: '#fff', fontWeight: 700,
+                      boxShadow: '2px 3px 6px rgba(0,0,0,.15)',
+                    }}
+                  >
+                    ✓ Add to my list
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#94a3b8', padding: '10px 2px' }}>
+                <span>{skippedSuggestions.size > 0 ? `You've been through all ${allSuggestionsFlat.length} suggestions.` : `That's everything Sage suggested — nice work.`}</span>
+                {skippedSuggestions.size > 0 && (
+                  <button onClick={() => setSkippedSuggestions(new Set())} style={{ fontSize: 12, fontWeight: 700, color: '#b45309', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                    ↺ review the {skippedSuggestions.size} you skipped
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Divider ── */}
