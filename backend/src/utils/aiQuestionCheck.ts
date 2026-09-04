@@ -959,22 +959,22 @@ const BANNED_GENERIC_PROBLEM_ITEMS = new Set([
 
 const PROBLEM_CHIPS_SYSTEM_PROMPT = `You help a startup founder brainstorm the problems their specific target customer has, sorted into five fixed dimensions: Time, Cost, Frustration, Access, and Growth. You're given the founder's one-line idea description and who their target customer is (and sometimes problems they've already named, which you must not repeat).
 
-For EACH of the five dimensions, write exactly 6 short (under 12 words), concrete, tappable problem-symptom phrases describing something THIS specific customer plausibly experiences — grounded in the founder's own business domain, workflow, and terminology. Never write generic, could-apply-to-any-startup phrases like "takes too long to do manually" or "existing tools are confusing" — every phrase must read as obviously about THIS domain, not a placeholder that could sit under any idea. The 6 phrases in a dimension must each name a genuinely distinct symptom — no near-duplicates that just reword the same underlying complaint — so a founder scanning all 6 sees 6 different real situations, not one situation said six ways.
+For EACH of the five dimensions, write exactly 4 short (under 12 words), concrete, tappable problem-symptom phrases describing something THIS specific customer plausibly experiences — grounded in the founder's own business domain, workflow, and terminology. Never write generic, could-apply-to-any-startup phrases like "takes too long to do manually" or "existing tools are confusing" — every phrase must read as obviously about THIS domain, not a placeholder that could sit under any idea.
 
 WORKED EXAMPLE
 One-liner: "A tool that helps finance teams run what-if budget scenarios without spreadsheets"
 Segment: "FP&A analysts at 50-500 person companies"
-Time: ["Rebuilding the same scenario model after every assumption change", "Waiting days for finance leadership to approve one forecast", "Manually re-linking formulas whenever headcount numbers change", "A board deck that's stale by presentation day", "Re-running the same three scenarios by hand every Monday", "Losing an afternoon reconciling last quarter's actuals against the model"]
-Cost: ["Paying consultants for one-off scenario modelling", "Licensing a full BI suite just to run simple what-ifs", "Broken spreadsheet models cost analyst hours every quarter", "Manual-model errors lead to costly budget mis-calls", "Overtime pay during every close because the model can't keep up", "Buying a second tool just to sanity-check the first one's numbers"]
-(...and similarly specific, domain-grounded, non-redundant phrases for Frustration, Access, and Growth)
+Time: ["Rebuilding the same scenario model after every assumption change", "Waiting days for finance leadership to approve one forecast", "Manually re-linking formulas whenever headcount numbers change", "A board deck that's stale by presentation day"]
+Cost: ["Paying consultants for one-off scenario modelling", "Licensing a full BI suite just to run simple what-ifs", "Broken spreadsheet models cost analyst hours every quarter", "Manual-model errors lead to costly budget mis-calls"]
+(...and similarly specific, domain-grounded phrases for Frustration, Access, and Growth)
 
 Respond with ONLY a JSON object, no other text, in this exact shape:
 {"groups": [
-  {"category": "Time", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
-  {"category": "Cost", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
-  {"category": "Frustration", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
-  {"category": "Access", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
-  {"category": "Growth", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>", "<phrase>", "<phrase>"]}
+  {"category": "Time", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Cost", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Frustration", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Access", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>"]},
+  {"category": "Growth", "items": ["<phrase>", "<phrase>", "<phrase>", "<phrase>"]}
 ]}`;
 
 function buildProblemChipsUserContent(ctx: ProblemChipsContext): string {
@@ -1004,7 +1004,7 @@ function sanitizeProblemGroups(raw: any): ProblemChipGroup[] {
         if (seen.has(key) || BANNED_GENERIC_PROBLEM_ITEMS.has(key)) continue;
         seen.add(key);
         items.push(trimmed);
-        if (items.length >= 6) break;
+        if (items.length >= 4) break;
       }
     }
     if (items.length) out.push({ category: cat, items });
@@ -1062,7 +1062,7 @@ async function generateProblemChipsClaude(ctx: ProblemChipsContext): Promise<Pro
   const userContent = buildProblemChipsUserContent(ctx);
   const message = await anthropicClient!.messages.create({
     model: ANTHROPIC_MODEL_CHEAP,
-    max_tokens: 1400,
+    max_tokens: 900,
     temperature: 0.6,
     system: PROBLEM_CHIPS_SYSTEM_PROMPT,
     messages: [{ role: 'user', content: userContent }],

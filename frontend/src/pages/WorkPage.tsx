@@ -4840,26 +4840,22 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
             Add your one-liner on the Idea step and Sage will suggest problems tailored to it.
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
           {displayGroups.map(group => (
-            <div key={group.category} style={{ background: '#fffdf8', border: '1px solid #ece5d8', borderRadius: 8, padding: '11px 11px 12px' }}>
-              <div style={{ marginBottom: 6 }}>
+            <div key={group.category} style={{ background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: '1.5px solid #cdac72', borderRadius: 10, padding: '10px 10px 14px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 1px 2px 4px rgba(0,0,0,.06)' }}>
+              <div style={{ marginBottom: 8 }}>
                 <div style={{
-                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5,
+                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
                   letterSpacing: '.08em', textTransform: 'uppercase' as const, color: group.color,
                 }}>
                   {group.category}
                 </div>
-                <div style={{ borderTop: `2px solid ${group.color}`, marginTop: 3, maxWidth: 80 }} />
+                <div style={{ borderTop: `2px solid ${group.color}`, marginTop: 3, maxWidth: 90 }} />
               </div>
-              {/* Quiet checklist (Direction 13 clean pass, 2026-09-04): replaces the
-                  earlier tan-gradient "Jenga tower" card (thick rainbow borders,
-                  colour-filled + slid-out selected state) that read as gaudy once
-                  each category grew to 6 items. Selected state is now a thin tinted
-                  rule + filled checkbox rather than a full colour flip, and item text
-                  moved off the condensed display face onto plain sans -- 30 short
-                  sentences stay scannable instead of shouting. */}
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {/* Jenga tower — each suggestion is a stacked block; picking one slides
+                  it out of the tower and fills it with the category colour, the way
+                  you'd pull a Jenga block free. Click again to slide it back in. */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {group.items.map(item => {
                   const on = selectedTexts.includes(item);
                   return (
@@ -4867,23 +4863,17 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                       key={item}
                       onClick={() => toggleSuggestion(item)}
                       style={{
-                        textAlign: 'left' as const, width: '100%', padding: '5px 8px', cursor: 'pointer',
-                        display: 'flex', alignItems: 'flex-start', gap: 7,
-                        fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12.5, lineHeight: 1.35, fontWeight: on ? 600 : 400,
-                        border: 'none', borderLeft: `3px solid ${on ? group.color : 'transparent'}`, borderRadius: 3,
-                        background: on ? `${group.color}0f` : 'transparent',
-                        color: on ? '#1e293b' : '#57534e',
-                        transition: 'background .12s, border-color .12s, color .12s',
+                        textAlign: 'left' as const, width: '100%', padding: '8px 12px', cursor: 'pointer',
+                        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.02em', lineHeight: 1.3, fontWeight: on ? 700 : 500,
+                        border: `2px solid ${group.color}`, borderRadius: 4,
+                        background: on ? group.color : '#fff6e0',
+                        color: on ? '#fff' : '#5c4324',
+                        transform: on ? 'translateX(22px)' : 'translateX(0)',
+                        boxShadow: on ? '2px 3px 6px rgba(0,0,0,.2)' : '0 1px 2px rgba(0,0,0,.08)',
+                        transition: 'transform .25s cubic-bezier(.3,.6,.4,1), background .25s, color .25s, box-shadow .25s',
                       }}
                     >
-                      <span style={{
-                        flexShrink: 0, width: 13, height: 13, marginTop: 2, borderRadius: 3,
-                        border: `1.5px solid ${on ? group.color : '#d6d0c4'}`, background: on ? group.color : 'transparent',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        {on && <span style={{ color: '#fff', fontSize: 8.5, lineHeight: 1, fontWeight: 900 }}>✓</span>}
-                      </span>
-                      {item}
+                      {on ? '✓ ' : ''}{item}
                     </button>
                   );
                 })}
