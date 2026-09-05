@@ -547,6 +547,91 @@ function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: 
   );
 }
 
+// One-card-at-a-time queue for a ranked multi-select (2026-09-05, applying
+// the same "know it before you commit" principle from ValidationGoalBuilder
+// to Validate Step 2's tap-in-priority-order chip picker). Shows the running
+// ranked list, then the next undecided candidate with an explicit Add/Skip
+// choice — never a whole grid of chips to scan and tap blindly.
+function RankedPickQueue({ items, ranked, accent, emoji, onAdd, onRemove }: {
+  items: string[]; ranked: string[]; accent: string; emoji: string;
+  onAdd: (item: string) => void; onRemove: (item: string) => void;
+}) {
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const remaining = items.filter(i => !ranked.includes(i) && !skipped.includes(i));
+  const current = remaining[0];
+  return (
+    <div>
+      {ranked.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginBottom: 10 }}>
+          {ranked.map((item, i) => (
+            <div key={item} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', borderRadius: 8, background: `${accent}12`, border: `1px solid ${accent}30` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: accent, flexShrink: 0 }}>#{i + 1}</span>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>{item}</span>
+              </div>
+              <button type="button" onClick={() => onRemove(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: T3, flexShrink: 0, fontFamily: 'inherit' }}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {current ? (
+        <div style={{ padding: '14px 16px', borderRadius: 10, background: '#fff', border: `2px solid ${accent}40` }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginBottom: 10 }}>{emoji} {current}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={() => onAdd(current)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', background: accent, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>+ Add as #{ranked.length + 1}</button>
+            <button type="button" onClick={() => setSkipped(s => [...s, current])} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: T3, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Skip for now</button>
+          </div>
+        </div>
+      ) : skipped.length > 0 ? (
+        <div style={{ padding: '10px 14px', borderRadius: 8, border: `1px dashed ${BORDER}`, fontSize: 12, color: T3 }}>
+          {skipped.length} skipped. <button type="button" onClick={() => setSkipped([])} style={{ background: 'none', border: 'none', color: accent, fontWeight: 700, cursor: 'pointer', fontSize: 12, padding: 0, fontFamily: 'inherit' }}>↺ review them</button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// One-card-at-a-time queue for an unordered accept/skip multi-select — the
+// Step 2 "stop rules" equivalent of RankedPickQueue, minus the ordering.
+function AcceptQueue({ items, accepted, accent, emoji, onAccept, onRemove }: {
+  items: string[]; accepted: string[]; accent: string; emoji: string;
+  onAccept: (item: string) => void; onRemove: (item: string) => void;
+}) {
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const remaining = items.filter(i => !accepted.includes(i) && !skipped.includes(i));
+  const current = remaining[0];
+  return (
+    <div>
+      {accepted.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginBottom: 10 }}>
+          {accepted.map(item => (
+            <div key={item} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', borderRadius: 8, background: `${accent}12`, border: `1px solid ${accent}30` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <span style={{ fontSize: 12 }}>✓</span>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>{item}</span>
+              </div>
+              <button type="button" onClick={() => onRemove(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: T3, flexShrink: 0, fontFamily: 'inherit' }}>✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {current ? (
+        <div style={{ padding: '14px 16px', borderRadius: 10, background: '#fff', border: `2px solid ${accent}40` }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginBottom: 10 }}>{emoji} {current}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={() => onAccept(current)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', background: accent, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>✓ Accept</button>
+            <button type="button" onClick={() => setSkipped(s => [...s, current])} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: T3, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Skip</button>
+          </div>
+        </div>
+      ) : skipped.length > 0 ? (
+        <div style={{ padding: '10px 14px', borderRadius: 8, border: `1px dashed ${BORDER}`, fontSize: 12, color: T3 }}>
+          {skipped.length} skipped. <button type="button" onClick={() => setSkipped([])} style={{ background: 'none', border: 'none', color: accent, fontWeight: 700, cursor: 'pointer', fontSize: 12, padding: 0, fontFamily: 'inherit' }}>↺ review them</button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 const MULTI_SEP = '|||';
 const FIELD_SEP = '~~'; // internal field separator within one persona entry
 
@@ -15334,7 +15419,7 @@ export default function WorkPage() {
               {/* Q2 + Q3: Sticky-note tag chips (2026-08-05, two-column layout) */}
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
 
-                {/* Column 1: Most important thing to prove */}
+                {/* Column 1: Most important thing to prove — one candidate at a time, tap Add to lock in its rank */}
                 {(() => {
                   const PROVE_CHIPS = [
                     'This is a real, recurring problem',
@@ -15347,12 +15432,7 @@ export default function WorkPage() {
                   const ranked: string[] = raw
                     ? raw.split('\n').map((l: string) => l.replace(/^#\d+: /, '')).filter(Boolean)
                     : [];
-                  const toggleChip = (chip: string) => {
-                    const next = ranked.includes(chip)
-                      ? ranked.filter((c: string) => c !== chip)
-                      : [...ranked, chip];
-                    set('valGoalProve', next.map((c: string, i: number) => `#${i + 1}: ${c}`).join('\n'));
-                  };
+                  const writeRanked = (next: string[]) => set('valGoalProve', next.map((c: string, i: number) => `#${i + 1}: ${c}`).join('\n'));
                   return (
                     <div>
                       <div style={{ marginBottom: 12 }}>
@@ -15365,25 +15445,21 @@ export default function WorkPage() {
                           </div>
                           <span style={{ fontSize: 18 }}>🎯</span>
                         </div>
-                        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 5 }}>Tap in order of priority — first tap = #1.</div>
+                        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 5 }}>One at a time — add it to your ranking, or skip and come back.</div>
                       </div>
-                      <JengaTower
+                      <RankedPickQueue
                         items={PROVE_CHIPS}
-                        color="#6366f1"
-                        isSelected={chip => ranked.includes(chip)}
-                        onToggle={toggleChip}
-                        rankOf={chip => { const r = ranked.indexOf(chip); return r === -1 ? null : r + 1; }}
+                        ranked={ranked}
+                        accent="#6366f1"
+                        emoji="🎯"
+                        onAdd={chip => writeRanked([...ranked, chip])}
+                        onRemove={chip => writeRanked(ranked.filter(c => c !== chip))}
                       />
-                      {ranked.length > 0 && (
-                        <div style={{ marginTop: 10, fontSize: 11, color: T3 }}>
-                          Priority: {ranked.map((c, i) => `#${i + 1} ${c}`).join(' · ')}
-                        </div>
-                      )}
                     </div>
                   );
                 })()}
 
-                {/* Column 2: What would tell you this idea isn't working */}
+                {/* Column 2: What would tell you this idea isn't working — one rule at a time, Accept or Skip */}
                 {(() => {
                   const STOP_RULES = [
                     'If fewer than 3 people confirm the pain → pivot',
@@ -15393,12 +15469,7 @@ export default function WorkPage() {
                   ];
                   const raw = get('valGoalStop') || '';
                   const accepted: string[] = raw ? raw.split('\n').filter(Boolean) : [];
-                  const toggleRule = (rule: string) => {
-                    const next = accepted.includes(rule)
-                      ? accepted.filter((r: string) => r !== rule)
-                      : [...accepted, rule];
-                    set('valGoalStop', next.join('\n'));
-                  };
+                  const writeAccepted = (next: string[]) => set('valGoalStop', next.join('\n'));
                   return (
                     <div>
                       <div style={{ marginBottom: 12 }}>
@@ -15411,13 +15482,15 @@ export default function WorkPage() {
                           </div>
                           <span style={{ fontSize: 18 }}>🛑</span>
                         </div>
-                        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 5 }}>Tap to accept the rules that apply to you.</div>
+                        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 5 }}>One at a time — accept the rules that apply to you.</div>
                       </div>
-                      <JengaTower
+                      <AcceptQueue
                         items={STOP_RULES}
-                        color="#ef4444"
-                        isSelected={rule => accepted.includes(rule)}
-                        onToggle={toggleRule}
+                        accepted={accepted}
+                        accent="#ef4444"
+                        emoji="🛑"
+                        onAccept={rule => writeAccepted([...accepted, rule])}
+                        onRemove={rule => writeAccepted(accepted.filter(r => r !== rule))}
                       />
                     </div>
                   );
