@@ -2147,6 +2147,20 @@ function MarketFeatureChip({ v }: { v: FeatureCoverage }) {
   );
 }
 
+// "Coverage Heatmap" cell (Hone Step 7, Competitive landscape — replaces the
+// old per-feature checkmark table, which needed horizontal scroll on mobile).
+// Color + opacity carries the signal instead of a checkmark/dash glyph, so
+// the whole grid stays legible as small squares at any column count.
+function MarketCoverageHeatCell({ v }: { v: FeatureCoverage }) {
+  const styles: Record<FeatureCoverage, { bg: string; opacity: number }> = {
+    yes: { bg: '#059669', opacity: 1 },
+    partial: { bg: '#d97706', opacity: 0.85 },
+    no: { bg: BORDER, opacity: 0.6 },
+  };
+  const s = styles[v];
+  return <div style={{ width: '100%', aspectRatio: '1', borderRadius: 4, background: s.bg, opacity: s.opacity }} />;
+}
+
 // Each competitor's own real feature list, side by side — independent of
 // (and not bounded to) the differentiators Sage chose to score everyone
 // against above. Only renders once at least one competitor has one, so
@@ -2678,113 +2692,73 @@ function MarketSnapshotPanel({
                   ...c,
                   score: (c.features || []).reduce((sum, v) => sum + (COVERAGE_SCORE[v] ?? 0), 0),
                   color: MARKET_SERIES_COLORS[i] || MARKET_SERIES_FALLBACK,
-                  monthlyPrice: parseMonthlyPrice(c.price),
                 }));
-                const maxScore = Math.max(1, yourScore, ...rows.map(r => r.score));
-                const maxPrice = Math.max(1, ...rows.map(r => r.monthlyPrice ?? 0));
                 const fmtScore = (s: number) => (s % 1 === 0 ? s : s.toFixed(1));
 
                 return (
                   <div>
                     <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>Competitive landscape</div>
                     <div style={{ fontSize: 12, color: T3, marginBottom: 12 }}>
-                      {ideaName?.trim() || 'Your idea'} vs. {rows.length} competitor{rows.length === 1 ? '' : 's'} Sage found — feature coverage and monthly-equivalent price shown inline.
+                      {ideaName?.trim() || 'Your idea'} vs. {rows.length} competitor{rows.length === 1 ? '' : 's'} Sage found — color intensity shows feature coverage at a glance.
                     </div>
-                    <div style={{ overflowX: 'auto', border: `1.5px solid ${BORDER}`, borderRadius: 12 }}>
-                      <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 560 + n * 90, fontSize: 12.5 }}>
-                        <thead>
-                          <tr>
-                            <th style={{ position: 'sticky', left: 0, top: 0, zIndex: 2, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const, minWidth: 168, boxShadow: `1px 0 0 ${BORDER}` }}>Product</th>
-                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'center' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Coverage</th>
-                            {snapshot.differentiators.map((d, i) => (
-                              <th key={i} style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'center' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>{d}</th>
-                            ))}
-                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Area</th>
-                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Price</th>
-                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Rating</th>
-                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Users</th>
-                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}>Founded</th>
-                            <th style={{ position: 'sticky', top: 0, background: '#fff', textAlign: 'left' as const, fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .4, padding: '10px 12px', borderBottom: `1.5px solid ${BORDER}`, whiteSpace: 'nowrap' as const }}
-                              title="Sage's rough, unverified estimate — not a sourced figure">Market share †</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className={revealing ? 'msnap-tag-pop' : undefined}>
-                            <td style={{ position: 'sticky', left: 0, background: `${STAGE_COLORS.idea}1f`, borderLeft: `3px solid ${STAGE_COLORS.idea}`, padding: '10px 12px', borderBottom: `1px solid ${BORDER}`, boxShadow: `1px 0 0 ${BORDER}` }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 700, color: STAGE_COLORS.idea, whiteSpace: 'nowrap' as const }}>
-                                <span style={{ width: 9, height: 9, borderRadius: '50%', background: STAGE_COLORS.idea, flexShrink: 0, boxShadow: `0 0 0 3px ${STAGE_COLORS.idea}22` }} />
-                                {ideaName?.trim() || 'Your idea'}
-                              </div>
-                              <div style={{ fontSize: 10.5, color: T3, marginTop: 1 }}>Your idea</div>
-                            </td>
-                            <td style={{ padding: '10px 12px', background: `${STAGE_COLORS.idea}12`, borderBottom: `1px solid ${BORDER}` }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 120 }}>
-                                <div style={{ flex: 1, height: 7, borderRadius: 4, background: BORDER }}><div style={{ width: `${(yourScore / maxScore) * 100}%`, height: '100%', borderRadius: 4, background: STAGE_COLORS.idea }} /></div>
-                                <span style={{ fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10.5, color: T2, width: 28, flexShrink: 0, textAlign: 'right' as const }}>{fmtScore(yourScore)}/{n}</span>
-                              </div>
-                            </td>
-                            {snapshot.differentiators.map((_, i) => (
-                              <td key={i} style={{ textAlign: 'center' as const, padding: '10px 12px', background: `${STAGE_COLORS.idea}12`, borderBottom: `1px solid ${BORDER}` }}>
-                                <MarketFeatureChip v={snapshot.yourCoverage[i] || 'no'} />
-                              </td>
-                            ))}
-                            <td colSpan={6} style={{ padding: '10px 12px', background: `${STAGE_COLORS.idea}12`, borderBottom: `1px solid ${BORDER}`, color: T3, fontSize: 11 }}>—</td>
-                          </tr>
-                          {rows.map((c, ci) => (
-                            <tr key={ci} className={revealing ? 'msnap-tag-pop' : undefined} style={{ animationDelay: revealing ? `${0.2 + ci * 0.1}s` : undefined }}>
-                              <td style={{ position: 'sticky', left: 0, background: '#fff', borderLeft: `3px solid ${c.color}`, padding: '10px 12px', borderBottom: `1px solid ${BORDER}`, boxShadow: `1px 0 0 ${BORDER}` }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontWeight: 700, color: T1, whiteSpace: 'nowrap' as const }}>
-                                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: c.color, flexShrink: 0, boxShadow: `0 0 0 3px ${c.color}22` }} />
-                                  {c.name}
-                                  <a href={`https://www.google.com/search?q=${encodeURIComponent(c.name + ' official site')}`} target="_blank" rel="noopener noreferrer"
-                                    title={`Search for ${c.name}'s official site`}
-                                    style={{ display: 'inline-flex', color: T3, textDecoration: 'none', fontSize: 11, fontWeight: 400 }}
-                                    onClick={e => e.stopPropagation()}>🔗</a>
-                                  <a href={`https://www.google.com/search?q=${encodeURIComponent(c.name + ' reviews')}`} target="_blank" rel="noopener noreferrer"
-                                    title={`Search for what customers say about ${c.name}`}
-                                    style={{ display: 'inline-flex', color: T3, textDecoration: 'none', fontSize: 11, fontWeight: 400 }}
-                                    onClick={e => e.stopPropagation()}>💬</a>
-                                </div>
-                                {c.note && <div style={{ fontSize: 10.5, color: T3, marginTop: 1, maxWidth: 180 }}>{c.note}</div>}
-                              </td>
-                              <td style={{ padding: '10px 12px', borderBottom: `1px solid ${BORDER}` }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 120 }}>
-                                  <div style={{ flex: 1, height: 7, borderRadius: 4, background: BORDER }}><div style={{ width: `${(c.score / maxScore) * 100}%`, height: '100%', borderRadius: 4, background: c.color }} /></div>
-                                  <span style={{ fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10.5, color: T2, width: 28, flexShrink: 0, textAlign: 'right' as const }}>{fmtScore(c.score)}/{n}</span>
-                                </div>
-                              </td>
-                              {snapshot.differentiators.map((_, i) => (
-                                <td key={i} style={{ textAlign: 'center' as const, padding: '10px 12px', borderBottom: `1px solid ${BORDER}` }}>
-                                  <MarketFeatureChip v={c.features?.[i] || 'no'} />
-                                </td>
-                              ))}
-                              <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.area || '—'}</td>
-                              <td style={{ padding: '10px 12px', borderBottom: `1px solid ${BORDER}` }}>
-                                {c.monthlyPrice !== null ? (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 108 }}>
-                                    <div style={{ width: 44, height: 6, borderRadius: 3, background: BORDER, flexShrink: 0 }}><div style={{ width: `${Math.max(4, (c.monthlyPrice / maxPrice) * 100)}%`, height: '100%', borderRadius: 3, background: 'linear-gradient(90deg, #d4a03a, #b8862f)' }} /></div>
-                                    <span style={{ fontSize: 11.5, color: T2, whiteSpace: 'nowrap' as const }}>{c.price}</span>
-                                  </div>
-                                ) : (
-                                  <span style={{ fontSize: 11.5, color: c.price ? T2 : T3, whiteSpace: 'nowrap' as const }}>{c.price || '—'}</span>
-                                )}
-                              </td>
-                              <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.rating ? `${c.rating}★` : '—'}</td>
-                              <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.users || '—'}</td>
-                              <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>{c.founded || '—'}</td>
-                              <td style={{ padding: '10px 12px', fontSize: 11, color: T2, borderBottom: `1px solid ${BORDER}` }}>
-                                {c.marketShare ? (
-                                  <span title="Sage's rough, unverified estimate — not a sourced figure" style={{ fontStyle: 'italic', color: T2, borderBottom: '1px dotted ' + T3, cursor: 'help' }}>{c.marketShare}</span>
-                                ) : '—'}
-                              </td>
-                            </tr>
+                    <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 14px 12px', overflowX: 'auto' }}>
+                      <div style={{ minWidth: 96 + n * 30, display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: `minmax(96px,168px) repeat(${n}, minmax(24px,1fr))`, gap: 5, alignItems: 'end', marginBottom: 4 }}>
+                          <span />
+                          {snapshot.differentiators.map((d, i) => (
+                            <div key={i} style={{
+                              writingMode: 'vertical-rl' as const, transform: 'rotate(180deg)', fontSize: 9.5, fontWeight: 700,
+                              color: T3, height: 66, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                              whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const,
+                            }}>{d}</div>
                           ))}
-                        </tbody>
-                      </table>
+                        </div>
+                        <div className={revealing ? 'msnap-tag-pop' : undefined}
+                          style={{ display: 'grid', gridTemplateColumns: `minmax(96px,168px) repeat(${n}, minmax(24px,1fr))`, gap: 5, alignItems: 'center', padding: '5px 0' }}>
+                          <div style={{ borderLeft: `3px solid ${STAGE_COLORS.idea}`, paddingLeft: 8, minWidth: 0 }}>
+                            <div style={{ fontWeight: 800, color: STAGE_COLORS.idea, fontSize: 11.5, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>
+                              {ideaName?.trim() || 'Your idea'}
+                            </div>
+                            <div style={{ fontSize: 9.5, color: T3 }}>{fmtScore(yourScore)}/{n} covered</div>
+                          </div>
+                          {snapshot.differentiators.map((_, i) => (
+                            <MarketCoverageHeatCell key={i} v={snapshot.yourCoverage[i] || 'no'} />
+                          ))}
+                        </div>
+                        {rows.map((c, ci) => (
+                          <div key={ci} className={revealing ? 'msnap-tag-pop' : undefined}
+                            style={{
+                              animationDelay: revealing ? `${0.2 + ci * 0.1}s` : undefined,
+                              display: 'grid', gridTemplateColumns: `minmax(96px,168px) repeat(${n}, minmax(24px,1fr))`,
+                              gap: 5, alignItems: 'center', padding: '5px 0', borderTop: `1px solid ${BORDER}`,
+                            }}>
+                            <div style={{ borderLeft: `3px solid ${c.color}`, paddingLeft: 8, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, color: T1, fontSize: 11.5, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>
+                                {c.name}
+                                <a href={`https://www.google.com/search?q=${encodeURIComponent(c.name + ' official site')}`} target="_blank" rel="noopener noreferrer"
+                                  title={`Search for ${c.name}'s official site`}
+                                  style={{ display: 'inline-flex', color: T3, textDecoration: 'none', fontSize: 11, fontWeight: 400, flexShrink: 0 }}
+                                  onClick={e => e.stopPropagation()}>🔗</a>
+                                <a href={`https://www.google.com/search?q=${encodeURIComponent(c.name + ' reviews')}`} target="_blank" rel="noopener noreferrer"
+                                  title={`Search for what customers say about ${c.name}`}
+                                  style={{ display: 'inline-flex', color: T3, textDecoration: 'none', fontSize: 11, fontWeight: 400, flexShrink: 0 }}
+                                  onClick={e => e.stopPropagation()}>💬</a>
+                              </div>
+                              <div style={{ fontSize: 9.5, color: T3, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>
+                                {fmtScore(c.score)}/{n} · {[c.area, c.price, c.rating ? `${c.rating}★` : null, c.users, c.founded].filter(Boolean).join(' · ') || '—'}
+                                {c.marketShare && <span title="Sage's rough, unverified estimate — not a sourced figure" style={{ borderBottom: '1px dotted ' + T3, cursor: 'help' }}> · {c.marketShare}†</span>}
+                              </div>
+                              {c.note && <div style={{ fontSize: 9.5, color: T3, marginTop: 1 }}>{c.note}</div>}
+                            </div>
+                            {snapshot.differentiators.map((_, i) => (
+                              <MarketCoverageHeatCell key={i} v={c.features?.[i] || 'no'} />
+                            ))}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const, fontSize: 11, color: T3, marginTop: 10 }}>
-                      <span>✓ full coverage · ◐ partial · — none, as best Sage can tell</span>
-                      <span>Price bar shown only where Sage could normalize to a monthly-equivalent (hourly pricing shown as text only, to avoid comparing across units)</span>
+                      <span>Darker green = full coverage · amber = partial · light gray = none, as best Sage can tell</span>
                       <span>🔗 site · 💬 reviews — both open a search, since Sage can't confirm a live URL directly</span>
                       <span>† Market share is Sage's roughest field — a hedged, unsourced estimate, not a researched figure. Treat it as a starting guess to verify, same as everything else on this card.</span>
                     </div>
