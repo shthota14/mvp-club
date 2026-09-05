@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ProfilePanel from './ProfilePanel';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
@@ -50,6 +50,8 @@ export default function AppShell() {
   const [unread, setUnread] = useState(0);
   const [onboardingDone, setOnboardingDone] = useState(true); // assume done until user loads
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [helpMenuOpen, setHelpMenuOpen] = useState(false);
+  const helpMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user && !user.is_admin) {
@@ -71,12 +73,31 @@ export default function AppShell() {
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
+  // Close the "?" help/feedback menu on an outside click — same pattern as
+  // NotificationBell's own dropdown.
+  useEffect(() => {
+    if (!helpMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (helpMenuRef.current && !helpMenuRef.current.contains(e.target as Node)) {
+        setHelpMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [helpMenuOpen]);
+
   const iconBtn: React.CSSProperties = {
     width: 34, height: 34, borderRadius: '50%',
     background: 'transparent', border: '1px solid #d2d2d7',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', transition: 'all .18s', flexShrink: 0,
     color: '#6e6e73', fontSize: 13, fontWeight: 700,
+  };
+
+  const helpMenuItemStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+    padding: '12px 16px', background: 'none', border: 'none', textAlign: 'left' as const,
+    fontSize: 13, fontWeight: 600, color: '#1d1d1f', cursor: 'pointer', fontFamily: 'inherit',
   };
 
   return (
@@ -91,7 +112,7 @@ export default function AppShell() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 24px', height: 64,
       }}>
-        <Logo size="lg" />
+        <Logo size={isMobile ? 'sm' : 'lg'} />
 
         {/* Desktop nav links — hidden on mobile */}
         {!isMobile && (
@@ -115,25 +136,51 @@ export default function AppShell() {
         {isMobile && <div />}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button
-            onClick={() => navigate(`/help?guide=${guideForPath(location.pathname)}`)}
-            title="How-to guides"
-            style={iconBtn}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f7'; (e.currentTarget as HTMLButtonElement).style.color = '#1d1d1f'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#6e6e73'; }}
-          >
-            ?
-          </button>
+          <div ref={helpMenuRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setHelpMenuOpen(v => !v)}
+              title="Help & feedback"
+              style={iconBtn}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f7'; (e.currentTarget as HTMLButtonElement).style.color = '#1d1d1f'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#6e6e73'; }}
+            >
+              ?
+            </button>
 
-          <button
-            onClick={() => setFeedbackOpen(true)}
-            title="Feature request, bug report, or feedback"
-            style={{ ...iconBtn, fontSize: 15 }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f7'; (e.currentTarget as HTMLButtonElement).style.color = '#1d1d1f'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#6e6e73'; }}
-          >
-            💬
-          </button>
+            {/* "?" menu — consolidates the how-to guides link and the feedback
+                panel trigger behind one icon instead of two separate header
+                buttons (plus FeedbackWidget's own persistent floating tab,
+                now removed), which was crowding the mobile header and
+                forcing the logo's wordmark to wrap onto two lines. */}
+            {helpMenuOpen && (
+              <div style={{
+                position: isMobile ? 'fixed' : 'absolute',
+                top: isMobile ? 64 + bannerOffset : 42,
+                right: 0,
+                left: isMobile ? 0 : 'auto',
+                width: isMobile ? '100%' : 210,
+                background: '#fff',
+                borderRadius: isMobile ? 0 : 14,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
+                border: '1px solid #e5e5ea',
+                overflow: 'hidden',
+                zIndex: 200,
+              }}>
+                <button
+                  onClick={() => { setHelpMenuOpen(false); navigate(`/help?guide=${guideForPath(location.pathname)}`); }}
+                  style={helpMenuItemStyle}
+                >
+                  📖 How-to guides
+                </button>
+                <button
+                  onClick={() => { setHelpMenuOpen(false); setFeedbackOpen(true); }}
+                  style={{ ...helpMenuItemStyle, borderTop: '1px solid #f0f0f5' }}
+                >
+                  💬 Feedback
+                </button>
+              </div>
+            )}
+          </div>
 
           <NotificationBell />
 

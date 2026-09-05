@@ -56,7 +56,7 @@ export default function Logo({ size = 'md', href, dark = false }: LogoProps) {
 
       {/* Wordmark */}
       <div style={{ textAlign: 'left', lineHeight: 1 }}>
-        <div style={{ fontSize: titleSize, fontWeight: 900, letterSpacing: -0.4, color: fg, lineHeight: 1 }}>
+        <div style={{ fontSize: titleSize, fontWeight: 900, letterSpacing: -0.4, color: fg, lineHeight: 1, whiteSpace: 'nowrap' as const }}>
           MVP <span style={{ fontWeight: 300, letterSpacing: size === 'lg' ? 3 : 2, fontSize: size === 'lg' ? titleSize * 0.70 : titleSize * 0.85 }}>CLUB</span>
         </div>
         <div style={{ fontSize: tagSize, color: fgMuted, fontWeight: 400, marginTop: 3, letterSpacing: 0.3, whiteSpace: 'nowrap' }}>

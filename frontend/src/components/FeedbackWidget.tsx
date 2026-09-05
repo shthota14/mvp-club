@@ -3,11 +3,11 @@ import { useLocation } from 'react-router-dom';
 import { feedbackApi } from '@/api/client';
 
 // ── Global feedback / feature-request / bug-report widget ──────────────────
-// Mounted once in AppShell.tsx so it's visible on every page. Opens from
-// either the top-nav icon or the floating tab on the right edge. (Previously
-// lived on the left edge, but that collided with WorkPage's collapsed left
-// sidebar rail — moved to the right, which is otherwise unused now that the
-// CommunitySidebar right-edge tab has been removed.)
+// Mounted once in AppShell.tsx so it's visible on every page. Opens from the
+// "?" header menu's "Feedback" item (AppShell.tsx) — it used to also have its
+// own persistent floating tab on the right edge, but that was redundant with
+// the header entry point and, on mobile, overlapped page content; removed
+// 2026-09-05 in favor of a single entry point.
 // Submissions go to a private, admin-only inbox — see backend/src/routes/
 // feedback.ts and the Feedback tab in AdminPage.tsx.
 
@@ -67,40 +67,6 @@ export default function FeedbackWidget({ open, onOpenChange }: Props) {
 
   return (
     <>
-      {/* ── Toggle tab (right edge) ── */}
-      <div
-        onClick={() => onOpenChange(!open)}
-        title={open ? 'Close feedback panel' : 'Got feedback? Tell us!'}
-        style={{
-          position: 'fixed',
-          right: open ? PANEL_W : 0,
-          top: '68%',
-          transform: 'translateY(-50%)',
-          zIndex: 210,
-          background: COLOR,
-          color: '#fff',
-          borderRadius: '10px 0 0 10px',
-          padding: '14px 7px',
-          cursor: 'pointer',
-          userSelect: 'none',
-          boxShadow: '-2px 0 16px rgba(0,0,0,.14)',
-          transition: 'right .25s ease',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 6,
-        }}
-      >
-        <span style={{ fontSize: 16 }}>💬</span>
-        <span style={{
-          fontSize: 10, fontWeight: 800, letterSpacing: 1,
-          writingMode: 'vertical-rl', textOrientation: 'mixed',
-        }}>
-          Feedback
-        </span>
-        <span style={{ fontSize: 12, opacity: .7 }}>{open ? '›' : '‹'}</span>
-      </div>
-
       {/* ── Slide-in panel ── */}
       <div style={{
         position: 'fixed',
