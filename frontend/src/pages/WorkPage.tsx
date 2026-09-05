@@ -5743,7 +5743,7 @@ function PainGaugeStep({
           immediately; `freqValue` only becomes truthy once the user has
           actually clicked something. */}
       <div style={{ display: freqValue ? 'flex' : 'none', flexDirection: 'column' as const, gap: 18 }}>
-      {/* ── Consequence chips — whiteboard style ──────────────────────── */}
+      {/* ── Consequence toggles — whiteboard style ──────────────────────── */}
       <div style={{
         border: `2px solid ${selected.length > 0 ? gauge.ringColor : BORDER}`,
         borderRadius: 16, padding: '18px 20px',
@@ -5762,19 +5762,33 @@ function PainGaugeStep({
         <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#475569', marginBottom: 14, lineHeight: 1.4 }}>
           Select all that apply — precision makes the pitch. What do they actually lose?
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10 }}>
-          {CHIPS.map((chip) => {
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
+          {CHIPS.map((chip, i) => {
             const on = selected.includes(chip);
             return (
               <button key={chip} onClick={() => toggleChip(chip)} style={{
-                padding: '7px 14px', cursor: 'pointer', fontFamily: "'Bebas Neue', 'Inter', sans-serif",
-                fontSize: 14, letterSpacing: '.02em', fontWeight: on ? 700 : 500, transition: 'all .12s',
-                border: `${on ? '2px' : '1.5px'} solid ${on ? gauge.color : '#d8d8d8'}`,
-                borderRadius: 4,
-                background: on ? `${gauge.color}12` : '#fffdf8',
-                color: on ? gauge.color : '#555',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
+                width: '100%', textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit',
+                background: 'none', border: 'none',
+                borderBottom: i < CHIPS.length - 1 ? `1px solid ${on ? `${gauge.color}22` : '#ececec'}` : 'none',
+                padding: '11px 2px', transition: 'all .12s',
               }}>
-                {on && <span style={{ marginRight: 4 }}>✓</span>}{chip}
+                <span style={{
+                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14.5, letterSpacing: '.02em',
+                  fontWeight: on ? 700 : 500, color: on ? gauge.color : '#444', transition: 'color .12s',
+                }}>
+                  {chip}
+                </span>
+                <span style={{
+                  position: 'relative' as const, flexShrink: 0, width: 40, height: 22, borderRadius: 11,
+                  background: on ? gauge.color : '#dcdce0', transition: 'background .16s',
+                }}>
+                  <span style={{
+                    position: 'absolute' as const, top: 2, left: on ? 20 : 2, width: 18, height: 18,
+                    borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.25)',
+                    transition: 'left .16s',
+                  }} />
+                </span>
               </button>
             );
           })}
