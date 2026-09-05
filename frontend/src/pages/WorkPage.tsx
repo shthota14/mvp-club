@@ -5962,9 +5962,6 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
   const [items, setItems] = useState<string[]>(() => toList(value));
   const [customText, setCustomText] = useState('');
   const [showCustom, setShowCustom] = useState(false);
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [overIdx, setOverIdx] = useState<number | null>(null);
-
   useEffect(() => {
     if (value && items.length === 0) {
       const loaded = toList(value);
@@ -6246,65 +6243,51 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
           the instant loading finishes. */}
       {items.length > 0 && !pickerLoading && (
         <div style={{ background: '#fafafa', border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '10px 14px' }}>
-          <div style={{ marginBottom: 7 }}>
-            <span style={{
-              fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11.5, fontWeight: 700,
-              letterSpacing: '.05em', textTransform: 'uppercase' as const, color: c,
-            }}>
-              Rank by most common
-            </span>
-            <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 12, color: '#9a9aa0', marginLeft: 6 }}>
-              · drag to reorder · #1 = primary hypothesis
-            </span>
-          </div>
+          {items.length >= 2 && (
+            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 12, color: '#9a9aa0', marginBottom: 6 }}>
+              Tap ★ next to the one you think is most common
+            </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             {items.map((item, i) => {
-              const isDragging = dragIdx === i;
-              const isOver     = overIdx === i && dragIdx !== i;
+              const isPrimary = i === 0;
               return (
                 <div
                   key={item}
-                  draggable
-                  onDragStart={() => setDragIdx(i)}
-                  onDragEnter={() => setOverIdx(i)}
-                  onDragOver={e => e.preventDefault()}
-                  onDrop={() => {
-                    if (dragIdx === null || dragIdx === i) return;
-                    const n = [...items];
-                    const [moved] = n.splice(dragIdx, 1);
-                    n.splice(i, 0, moved);
-                    commit(n);
-                    setDragIdx(null);
-                    setOverIdx(null);
-                  }}
-                  onDragEnd={() => { setDragIdx(null); setOverIdx(null); }}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 12px 9px 10px', borderRadius: 3,
-                    border: 'none',
-                    borderLeft: `4px solid ${isOver ? c : isDragging ? '#ccc' : i === 0 ? c : '#d8d8d8'}`,
-                    background: isDragging ? '#f0f0f5' : i === 0 ? `${c}0d` : '#fffdf8',
-                    opacity: isDragging ? 0.45 : 1,
-                    boxShadow: isOver ? `0 0 0 2px ${c}40` : 'none',
-                    transition: 'box-shadow .1s, border-color .1s',
-                    cursor: 'grab',
-                    userSelect: 'none' as const,
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '8px 10px', borderRadius: 3,
+                    borderLeft: `4px solid ${isPrimary ? c : '#d8d8d8'}`,
+                    background: isPrimary ? `${c}0d` : '#fffdf8',
+                    transition: 'background .12s, border-color .12s',
                   }}
                 >
-                  {/* Drag handle */}
-                  <span style={{ color: '#ccc', fontSize: 14, flexShrink: 0, lineHeight: 1, letterSpacing: '-1px' }}>⠿</span>
-
-                  {/* Rank badge */}
-                  <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, color: i === 0 ? c : '#bbb', width: 24, flexShrink: 0, textAlign: 'center' as const }}>
-                    {i === 0 ? '🎯' : `#${i + 1}`}
-                  </span>
+                  {/* Mark as most common — replaces full drag-to-reorder;
+                      only the #1 slot ever mattered downstream (it's what
+                      "Your hypothesis" below and Validate actually test),
+                      so picking it directly is a one-tap action instead of
+                      dragging every item into a full ranked order. */}
+                  {items.length >= 2 && (
+                    <button
+                      onClick={() => { if (!isPrimary) commit([item, ...items.filter(x => x !== item)]); }}
+                      title="Mark as most common"
+                      style={{
+                        width: 20, height: 20, border: 'none', background: 'transparent',
+                        cursor: isPrimary ? 'default' : 'pointer', fontSize: 15, lineHeight: 1,
+                        color: isPrimary ? c : '#d0d0d5', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                      }}
+                    >
+                      {isPrimary ? '★' : '☆'}
+                    </button>
+                  )}
 
                   {/* Label */}
-                  <span style={{ flex: 1, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: i === 0 ? '#1e293b' : '#555', fontWeight: i === 0 ? 600 : 500, lineHeight: 1.3 }}>{item}</span>
+                  <span style={{ flex: 1, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: isPrimary ? '#1e293b' : '#555', fontWeight: isPrimary ? 600 : 500, lineHeight: 1.3 }}>{item}</span>
 
                   {/* Remove */}
                   <button
-                    onClick={e => { e.stopPropagation(); remove(item); }}
+                    onClick={() => remove(item)}
                     style={{ width: 20, height: 20, border: 'none', borderRadius: 4, background: 'transparent', color: '#ccc', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}
                   >×</button>
                 </div>
