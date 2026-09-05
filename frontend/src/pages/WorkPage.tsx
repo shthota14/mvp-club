@@ -4554,6 +4554,9 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [reopenedSeverityId, setReopenedSeverityId] = useState<string | null>(null);
+  // Grouped-by-severity declutter (Option 4, 2026-09-05 canvas): open/closed
+  // state for the three collapsible Critical/Major/Minor sections below.
+  const [openSeverityGroups, setOpenSeverityGroups] = useState<Record<SeverityLevel, boolean>>({ critical: false, major: false, minor: false });
 
   // ── Severity nudge ────────────────────────────────────────────────────────
   // When the founder clicks a Next button that's blocked because a problem has
@@ -4799,6 +4802,118 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
 
   const filled = problems.filter(p => p.text.trim().length > 5);
 
+  // Grouped-by-severity declutter (Option 4, 2026-09-05 canvas): each
+  // problem card's render logic, extracted so it's shared between the
+  // always-open "needs a severity" section and the three collapsible
+  // Critical/Major/Minor sections below.
+  const renderProblemCard = (p: SeverityProblem, displayIdx: number) => {
+            const cfg = p.severity ? SEVERITY_CONFIG[p.severity] : null;
+            const isEditing = editingId === p.id;
+            // Crisp coverline row (Direction 13): a left rule in the
+            // severity color instead of the hand-drawn wobble/rotate tilt,
+            // matching the Idea-stage card lists.
+            const inkColor = cfg ? cfg.textColor : '#1a1a1a';
+            return (
+              <div key={p.id} style={{
+                border: 'none',
+                borderLeft: `4px solid ${isEditing ? '#1a1a1a' : inkColor}`,
+                borderRadius: 3,
+                background: isEditing ? '#fff' : cfg ? cfg.bg : '#fffdf8',
+                padding: '12px 16px 12px 14px', transition: 'all .15s',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: isEditing ? 8 : 8 }}>
+                  <div style={{
+                    width: 22, height: 22, flexShrink: 0, marginTop: 1,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
+                    border: `2px solid ${inkColor}`, color: inkColor, background: 'transparent',
+                    borderRadius: '50%',
+                  }}>
+                    {displayIdx + 1}
+                  </div>
+                  {isEditing ? (
+                    <textarea
+                      autoFocus
+                      rows={2}
+                      value={editText}
+                      onChange={e => setEditText(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(p.id); } if (e.key === 'Escape') { setEditingId(null); } }}
+                      style={{ flex: 1, fontSize: 14, color: USER_INPUT_COLOR, lineHeight: 1.5, fontFamily: 'inherit', border: '1.5px solid #1a1a1a', borderRadius: 6, padding: '6px 10px', resize: 'none' as const, outline: 'none' }}
+                    />
+                  ) : (
+                    <div style={{ flex: 1, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#1e293b', lineHeight: 1.35, paddingTop: 1 }}>{p.text}</div>
+                  )}
+                  {!isEditing && (
+                    <button onClick={() => startEdit(p)} title="Edit" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#b0b0b8', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>✏️</button>
+                  )}
+                  <button onClick={() => isEditing ? setEditingId(null) : removeProblem(p.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 16, color: '#b0b0b8', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>{isEditing ? '✕' : '✕'}</button>
+                </div>
+                {isEditing ? (
+                  <div style={{ display: 'flex', gap: 8, marginLeft: 36 }}>
+                    <button onClick={() => commitEdit(p.id)} disabled={!editText.trim()} style={{ padding: '5px 14px', borderRadius: 7, border: 'none', background: editText.trim() ? '#1a1a1a' : '#e5e5ea', color: editText.trim() ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: editText.trim() ? 'pointer' : 'default' }}>Save</button>
+                    <button onClick={() => setEditingId(null)} style={{ padding: '5px 12px', borderRadius: 7, border: '1.5px solid #e0e0e0', background: '#fff', color: '#888', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                  </div>
+                ) : (
+                  <div
+                    ref={el => { severityRowRefs.current[p.id] = el; }}
+                    style={{
+                      marginLeft: 36, borderRadius: 12,
+                      padding: pulseId === p.id ? '4px 8px' : undefined,
+                      marginTop: pulseId === p.id ? -4 : undefined,
+                      animation: pulseId === p.id ? 'sevPulse 1.1s ease-in-out 3' : undefined,
+                    }}
+                  >
+                    {/* Open picker: shown until a severity is set, or while the founder
+                        has tapped "change" to revisit an already-answered row. Kept
+                        mounted (display toggle, not unmount) alongside the echo pill
+                        below so the pulse/nudge system's ref never has to reattach. */}
+                    <div style={{ display: (!p.severity || reopenedSeverityId === p.id) ? 'flex' : 'none', gap: 7 }}>
+                      {(Object.entries(SEVERITY_CONFIG) as [SeverityLevel, typeof SEVERITY_CONFIG[SeverityLevel]][]).map(([lvl, sc]) => {
+                        const on = p.severity === lvl;
+                        return (
+                          <button key={lvl} onClick={() => { updateSeverity(p.id, lvl); setReopenedSeverityId(null); }} style={{
+                            padding: on ? '3px 11px 4px' : '3px 10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: on ? 800 : 600,
+                            transition: 'all .12s', display: 'flex', alignItems: 'center', gap: 4,
+                            border: on ? `2.5px solid ${sc.textColor}` : '1.5px solid #e5e5ea',
+                            borderRadius: on ? '50% 50% 48% 52% / 60% 55% 45% 40%' : 999,
+                            transform: on ? 'rotate(-1.2deg)' : 'none',
+                            background: on ? sc.bg : '#fff', color: on ? sc.textColor : '#b0b0b8',
+                          }}>
+                            {sc.icon} {sc.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Echo pill: once severity is set, collapse the 3-button row down
+                        to a compact badge matching the pattern used across Hone
+                        (who-pays / gauge / time / scorecard). "↺ change" reopens the
+                        picker above without touching p.severity. */}
+                    <div style={{ display: (p.severity && reopenedSeverityId !== p.id) ? 'flex' : 'none', alignItems: 'center', gap: 8 }}>
+                      {p.severity && (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          background: SEVERITY_CONFIG[p.severity].textColor, color: '#fff', fontFamily: "'Bebas Neue', 'Inter', sans-serif",
+                          fontWeight: 700, fontSize: 12, letterSpacing: '.05em', textTransform: 'uppercase' as const, borderRadius: 4, padding: '4px 12px',
+                        }}>
+                          {SEVERITY_CONFIG[p.severity].icon} {SEVERITY_CONFIG[p.severity].label}
+                        </span>
+                      )}
+                      <button onClick={() => setReopenedSeverityId(p.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: T3, padding: 0, fontFamily: 'inherit' }}>
+                        ↺ change
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+  };
+
+  const renderedProblems = problems.filter(p => p.text.trim());
+  const needsSeverityProblems = renderedProblems.filter(p => !p.severity);
+  const bySeverity: Record<SeverityLevel, SeverityProblem[]> = { critical: [], major: [], minor: [] };
+  renderedProblems.forEach(p => { if (p.severity) bySeverity[p.severity].push(p); });
+  const toggleSeverityGroup = (lvl: SeverityLevel) => setOpenSeverityGroups(prev => ({ ...prev, [lvl]: !prev[lvl] }));
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
@@ -4939,7 +5054,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
       {/* ── Divider ── */}
       <div style={{ height: 1, background: '#e8e8e8' }} />
 
-      {/* ── Selected problems list with severity — whiteboard sticky-note style ── */}
+      {/* ── Selected problems list with severity — grouped-by-severity declutter (Option 4) ── */}
       {/* Held back while Sage is still generating fresh chips above, so a
           confident-looking "captured" list doesn't sit next to a loading
           indicator that's still saying it's reading the idea. */}
@@ -4948,102 +5063,40 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
           <div style={{ fontSize: 12, fontWeight: 700, color: '#aaa', letterSpacing: '.1em', textTransform: 'uppercase' as const }}>
             Selected · how severe?
           </div>
-          {problems.filter(p => p.text.trim()).map((p, idx) => {
-            const cfg = p.severity ? SEVERITY_CONFIG[p.severity] : null;
-            const isEditing = editingId === p.id;
-            // Crisp coverline row (Direction 13): a left rule in the
-            // severity color instead of the hand-drawn wobble/rotate tilt,
-            // matching the Idea-stage card lists.
-            const inkColor = cfg ? cfg.textColor : '#1a1a1a';
+
+          {/* Not yet tagged — always rendered open. The severity-nudge effect
+              above (SEVERITY_NUDGE_EVENT) scrollIntoView()s and pulses the
+              first unanswered row, so it must never sit inside a collapsed
+              group. */}
+          {needsSeverityProblems.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {needsSeverityProblems.map((p, i) => renderProblemCard(p, i))}
+            </div>
+          )}
+
+          {(['critical', 'major', 'minor'] as SeverityLevel[]).map(lvl => {
+            const group = bySeverity[lvl];
+            if (group.length === 0) return null;
+            const sc = SEVERITY_CONFIG[lvl];
+            const isOpen = openSeverityGroups[lvl];
             return (
-              <div key={p.id} style={{
-                border: 'none',
-                borderLeft: `4px solid ${isEditing ? '#1a1a1a' : inkColor}`,
-                borderRadius: 3,
-                background: isEditing ? '#fff' : cfg ? cfg.bg : '#fffdf8',
-                padding: '12px 16px 12px 14px', transition: 'all .15s',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: isEditing ? 8 : 8 }}>
-                  <div style={{
-                    width: 22, height: 22, flexShrink: 0, marginTop: 1,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
-                    border: `2px solid ${inkColor}`, color: inkColor, background: 'transparent',
-                    borderRadius: '50%',
-                  }}>
-                    {idx + 1}
-                  </div>
-                  {isEditing ? (
-                    <textarea
-                      autoFocus
-                      rows={2}
-                      value={editText}
-                      onChange={e => setEditText(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commitEdit(p.id); } if (e.key === 'Escape') { setEditingId(null); } }}
-                      style={{ flex: 1, fontSize: 14, color: USER_INPUT_COLOR, lineHeight: 1.5, fontFamily: 'inherit', border: '1.5px solid #1a1a1a', borderRadius: 6, padding: '6px 10px', resize: 'none' as const, outline: 'none' }}
-                    />
-                  ) : (
-                    <div style={{ flex: 1, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#1e293b', lineHeight: 1.35, paddingTop: 1 }}>{p.text}</div>
-                  )}
-                  {!isEditing && (
-                    <button onClick={() => startEdit(p)} title="Edit" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#b0b0b8', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>✏️</button>
-                  )}
-                  <button onClick={() => isEditing ? setEditingId(null) : removeProblem(p.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 16, color: '#b0b0b8', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>{isEditing ? '✕' : '✕'}</button>
+              <div key={lvl} style={{ display: 'flex', flexDirection: 'column', gap: isOpen ? 10 : 0 }}>
+                <div
+                  onClick={() => toggleSeverityGroup(lvl)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+                    borderRadius: 8, background: sc.bg, cursor: 'pointer', userSelect: 'none' as const,
+                  }}
+                >
+                  <span style={{ fontSize: 11, color: sc.textColor, width: 12, flexShrink: 0, textAlign: 'center' as const }}>{isOpen ? '▾' : '▸'}</span>
+                  <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.05em', color: sc.textColor, textTransform: 'uppercase' as const }}>
+                    {sc.icon} {sc.label}
+                  </span>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: sc.textColor }}>{group.length}</span>
                 </div>
-                {isEditing ? (
-                  <div style={{ display: 'flex', gap: 8, marginLeft: 36 }}>
-                    <button onClick={() => commitEdit(p.id)} disabled={!editText.trim()} style={{ padding: '5px 14px', borderRadius: 7, border: 'none', background: editText.trim() ? '#1a1a1a' : '#e5e5ea', color: editText.trim() ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: editText.trim() ? 'pointer' : 'default' }}>Save</button>
-                    <button onClick={() => setEditingId(null)} style={{ padding: '5px 12px', borderRadius: 7, border: '1.5px solid #e0e0e0', background: '#fff', color: '#888', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
-                  </div>
-                ) : (
-                  <div
-                    ref={el => { severityRowRefs.current[p.id] = el; }}
-                    style={{
-                      marginLeft: 36, borderRadius: 12,
-                      padding: pulseId === p.id ? '4px 8px' : undefined,
-                      marginTop: pulseId === p.id ? -4 : undefined,
-                      animation: pulseId === p.id ? 'sevPulse 1.1s ease-in-out 3' : undefined,
-                    }}
-                  >
-                    {/* Open picker: shown until a severity is set, or while the founder
-                        has tapped "change" to revisit an already-answered row. Kept
-                        mounted (display toggle, not unmount) alongside the echo pill
-                        below so the pulse/nudge system's ref never has to reattach. */}
-                    <div style={{ display: (!p.severity || reopenedSeverityId === p.id) ? 'flex' : 'none', gap: 7 }}>
-                      {(Object.entries(SEVERITY_CONFIG) as [SeverityLevel, typeof SEVERITY_CONFIG[SeverityLevel]][]).map(([lvl, sc]) => {
-                        const on = p.severity === lvl;
-                        return (
-                          <button key={lvl} onClick={() => { updateSeverity(p.id, lvl); setReopenedSeverityId(null); }} style={{
-                            padding: on ? '3px 11px 4px' : '3px 10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: on ? 800 : 600,
-                            transition: 'all .12s', display: 'flex', alignItems: 'center', gap: 4,
-                            border: on ? `2.5px solid ${sc.textColor}` : '1.5px solid #e5e5ea',
-                            borderRadius: on ? '50% 50% 48% 52% / 60% 55% 45% 40%' : 999,
-                            transform: on ? 'rotate(-1.2deg)' : 'none',
-                            background: on ? sc.bg : '#fff', color: on ? sc.textColor : '#b0b0b8',
-                          }}>
-                            {sc.icon} {sc.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {/* Echo pill: once severity is set, collapse the 3-button row down
-                        to a compact badge matching the pattern used across Hone
-                        (who-pays / gauge / time / scorecard). "↺ change" reopens the
-                        picker above without touching p.severity. */}
-                    <div style={{ display: (p.severity && reopenedSeverityId !== p.id) ? 'flex' : 'none', alignItems: 'center', gap: 8 }}>
-                      {p.severity && (
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 5,
-                          background: SEVERITY_CONFIG[p.severity].textColor, color: '#fff', fontFamily: "'Bebas Neue', 'Inter', sans-serif",
-                          fontWeight: 700, fontSize: 12, letterSpacing: '.05em', textTransform: 'uppercase' as const, borderRadius: 4, padding: '4px 12px',
-                        }}>
-                          {SEVERITY_CONFIG[p.severity].icon} {SEVERITY_CONFIG[p.severity].label}
-                        </span>
-                      )}
-                      <button onClick={() => setReopenedSeverityId(p.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: T3, padding: 0, fontFamily: 'inherit' }}>
-                        ↺ change
-                      </button>
-                    </div>
+                {isOpen && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {group.map((p, i) => renderProblemCard(p, i))}
                   </div>
                 )}
               </div>
