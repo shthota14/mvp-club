@@ -4954,7 +4954,7 @@ function StepQuestionBar({ blocks, children }: { blocks: string[]; children?: Re
 // carries "this opens Sage."
 function SageCtaLink({ onClick }: { onClick: () => void }) {
   return (
-    <span onClick={onClick} style={{ fontSize: 11.5, fontWeight: 700, color: '#6D28D9', cursor: 'pointer', flexShrink: 0 }}>
+    <span onClick={onClick} style={{ fontSize: 10, fontWeight: 700, color: '#6D28D9', cursor: 'pointer', flexShrink: 0 }}>
       Prefer to talk it through? Chat it out with Sage, your guide →
     </span>
   );
@@ -5820,9 +5820,9 @@ function PainGaugeStep({
 
         {/* Pitch text */}
         <div style={{
-          fontSize: 22, lineHeight: 1.65, color: '#1a1a1a', fontWeight: 600,
-          borderBottom: `3px solid ${gauge.color}`,
-          paddingBottom: 10, marginBottom: 14,
+          fontSize: 15.5, lineHeight: 1.55, color: '#1a1a1a', fontWeight: 600,
+          borderBottom: `2px solid ${gauge.color}`,
+          paddingBottom: 8, marginBottom: 12,
         }}>
           "{pitchSentence}"
         </div>
@@ -6245,18 +6245,19 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
           still says "reading your problem..." reads as a contradiction. It reappears
           the instant loading finishes. */}
       {items.length > 0 && !pickerLoading && (
-        <div style={{ background: '#fafafa', border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '14px 16px' }}>
-          <div style={{ display: 'inline-block', marginBottom: 3 }}>
-            <div style={{
-              fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14,
-              letterSpacing: '.06em', textTransform: 'uppercase' as const, color: c,
+        <div style={{ background: '#fafafa', border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '10px 14px' }}>
+          <div style={{ marginBottom: 7 }}>
+            <span style={{
+              fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11.5, fontWeight: 700,
+              letterSpacing: '.05em', textTransform: 'uppercase' as const, color: c,
             }}>
               Rank by most common
-            </div>
-            <div style={{ borderTop: `2px solid ${c}`, marginTop: 3, maxWidth: 100 }} />
+            </span>
+            <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 12, color: '#9a9aa0', marginLeft: 6 }}>
+              · drag to reorder · #1 = primary hypothesis
+            </span>
           </div>
-          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#7a7a7a', marginBottom: 10 }}>Drag to reorder · #1 = your primary hypothesis</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             {items.map((item, i) => {
               const isDragging = dragIdx === i;
               const isOver     = overIdx === i && dragIdx !== i;
@@ -14309,10 +14310,6 @@ export default function WorkPage() {
         pain={(get('painIfNothing') || '').split('|').filter((s: string) => ['Lost revenue','Wasted time','Team burnout',"Can't scale",'Customer churn','Reputation damage','Falling behind','Morale drops','Constant firefighting','Debt builds up','Harder to fix later','Competitors pull ahead'].includes(s))}
       />
 
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff7ed', border: '1.5px solid #fde68a', borderRadius: 8, padding: '6px 12px', marginBottom: 12 }}>
-        <span style={{ fontSize: 13 }}>💡</span>
-        <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#92400e', fontWeight: 600 }}>This is your assumption — you'll validate it by talking to real people later.</span>
-      </div>
       <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#475569', marginBottom: 10, lineHeight: 1.5 }}>
         List the ways you <em>think</em> people cope with this today — then rank them from most to least common.
         The #1 approach becomes your primary hypothesis to test.
