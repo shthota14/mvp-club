@@ -193,7 +193,7 @@ function SliderTower({ items, color, iconOf, labelOf, isSelected, onToggle }: {
         })}
       </div>
       <div style={{ fontSize: 12, fontWeight: 700, color: selectedIdx >= 0 ? c : T3, minHeight: 16 }}>
-        {selectedIdx >= 0 ? (<>{iconOf?.(items[selectedIdx])} {labelOf ? labelOf(items[selectedIdx]) : items[selectedIdx]}</>) : 'Tap a segment to choose'}
+        {selectedIdx >= 0 ? (<>{iconOf?.(items[selectedIdx])} {labelOf ? labelOf(items[selectedIdx]) : items[selectedIdx]}</>) : 'Tap a segment to preview it'}
       </div>
     </div>
   );
@@ -246,8 +246,40 @@ function GoalQuestionRow({ visible, open, accent, emoji, question, echoLabel, on
 // auto-collapse its row (only a slider tap does) so the row doesn't
 // vanish mid-keystroke; the next question still reveals as soon as any
 // value — preset or typed — is present.
+// Locks in a slider's tentatively-tapped segment. Split out from the tap
+// itself (2026-09-05, user feedback: a single tap was committing the answer
+// and collapsing the question before there was any chance to see what a
+// segment meant relative to the others) — tapping a segment now only
+// previews it; this button is the actual commit.
+function ConfirmAnswerButton({ accent, disabled, onClick }: { accent: string; disabled: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      style={{
+        marginTop: 8, padding: '7px 16px', borderRadius: 8, border: 'none',
+        background: disabled ? '#e5e5ea' : accent, color: disabled ? '#999' : '#fff',
+        fontSize: 12.5, fontWeight: 700, cursor: disabled ? 'default' : 'pointer', fontFamily: 'inherit',
+      }}
+    >
+      Confirm ✓
+    </button>
+  );
+}
+
 function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: (k: string, v: string) => void }) {
   const [reopenedKey, setReopenedKey] = useState<string | null>(null);
+  // Tap-to-preview, button-to-commit (2026-09-05, user feedback: a single tap
+  // was committing + collapsing the row before there was any chance to
+  // compare options). Each question keeps its own pending candidate so
+  // reopening an already-answered row doesn't clobber a different row that
+  // is independently open for the first time.
+  const [pendingQ1, setPendingQ1] = useState('');
+  const [pendingQ2, setPendingQ2] = useState('');
+  const [pendingQ3, setPendingQ3] = useState('');
+  const [pendingQ4, setPendingQ4] = useState('');
+  const [pendingQ5, setPendingQ5] = useState('');
 
   const rateOpts   = [{ v:'50', label:'50% or more' }, { v:'60', label:'60% or more' }, { v:'80', label:'80% or more' }, { v:'100', label:'All of them' }];
   const signalOpts = [
@@ -270,6 +302,14 @@ function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: 
   const signal  = get('valGoalSignal')  || '';
   const icpOn   = get('valGoalICP')     || '';
   const time    = get('valGoalTime')    || '';
+
+  // What the slider previews right now: a tapped-but-not-yet-confirmed
+  // candidate if there is one, else the already-committed answer.
+  const activeQ1 = pendingQ1 || convos;
+  const activeQ2 = pendingQ2 || rate;
+  const activeQ3 = pendingQ3 || signal;
+  const activeQ4 = pendingQ4 || icpOn;
+  const activeQ5 = pendingQ5 || time;
 
   const writeSuccess = (c: string, r: string, s: string, icp: string, t: string) => {
     if (!c && !r && !s) { set('valGoalSuccess', ''); return; }
@@ -345,22 +385,27 @@ function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: 
         open={!convos || reopenedKey === 'q1' || !q1Preset}
         accent="#2563eb" emoji="🗣️" question="How many real conversations count?"
         echoLabel={q1Preset ? `${q1ByV.get(convos)?.emoji} ${convos} — ${q1ByV.get(convos)?.vibe}` : convos}
-        onReopen={() => setReopenedKey('q1')}
+        onReopen={() => { setPendingQ1(''); setReopenedKey('q1'); }}
       >
         <SliderTower
           items={Q1_OPTS.map(o => o.v)}
           color="#2563eb"
           labelOf={v => { const o = q1ByV.get(v)!; return `${v} — ${o.vibe}`; }}
           iconOf={v => q1ByV.get(v)?.emoji}
-          isSelected={v => convos === v}
-          onToggle={v => { set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); setReopenedKey(null); }}
+          isSelected={v => activeQ1 === v}
+          onToggle={v => setPendingQ1(v)}
+        />
+        <ConfirmAnswerButton
+          accent="#2563eb"
+          disabled={!activeQ1}
+          onClick={() => { set('valGoalConvos', activeQ1); writeSuccess(activeQ1, rate, signal, icpOn, time); setPendingQ1(''); setReopenedKey(null); }}
         />
         <div style={{ marginTop: 8 }}>
           <GoalCustomInput
             accent="#2563eb"
             placeholder="or type your own…"
             value={q1Preset ? '' : convos}
-            onChange={v => { set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); }}
+            onChange={v => { setPendingQ1(''); set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); }}
           />
         </div>
       </GoalQuestionRow>
@@ -370,22 +415,27 @@ function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: 
         open={!rate || reopenedKey === 'q2' || !q2Preset}
         accent="#f59e0b" emoji="🎯" question="What % must feel the pain for it to be real?"
         echoLabel={q2Preset ? `${Q2_OPTS.find(o => o.v === rate)?.emoji} ${rateOpts.find(ro => ro.v === rate)?.label}` : rate}
-        onReopen={() => setReopenedKey('q2')}
+        onReopen={() => { setPendingQ2(''); setReopenedKey('q2'); }}
       >
         <SliderTower
           items={Q2_OPTS.map(o => o.v)}
           color="#d97706"
           labelOf={v => rateOpts.find(ro => ro.v === v)?.label}
           iconOf={v => Q2_OPTS.find(o => o.v === v)?.emoji}
-          isSelected={v => rate === v}
-          onToggle={v => { set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); setReopenedKey(null); }}
+          isSelected={v => activeQ2 === v}
+          onToggle={v => setPendingQ2(v)}
+        />
+        <ConfirmAnswerButton
+          accent="#d97706"
+          disabled={!activeQ2}
+          onClick={() => { set('valGoalRate', activeQ2); writeSuccess(convos, activeQ2, signal, icpOn, time); setPendingQ2(''); setReopenedKey(null); }}
         />
         <div style={{ marginTop: 8 }}>
           <GoalCustomInput
             accent="#d97706"
             placeholder="or type your own %…"
             value={q2Preset ? '' : rate}
-            onChange={v => { set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); }}
+            onChange={v => { setPendingQ2(''); set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); }}
           />
         </div>
       </GoalQuestionRow>
@@ -395,22 +445,27 @@ function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: 
         open={!signal || reopenedKey === 'q3' || !q3Preset}
         accent="#10b981" emoji="🔑" question="What's your proof this problem truly exists?"
         echoLabel={q3Preset ? `${Q3_OPTS.find(o => o.v === signal)?.emoji} ${signalOpts.find(o => o.v === signal)?.label}` : signal}
-        onReopen={() => setReopenedKey('q3')}
+        onReopen={() => { setPendingQ3(''); setReopenedKey('q3'); }}
       >
         <SliderTower
           items={Q3_OPTS.map(o => o.v)}
           color="#059669"
           iconOf={v => Q3_OPTS.find(o => o.v === v)?.emoji}
           labelOf={v => signalOpts.find(o => o.v === v)?.label}
-          isSelected={v => signal === v}
-          onToggle={v => { set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); setReopenedKey(null); }}
+          isSelected={v => activeQ3 === v}
+          onToggle={v => setPendingQ3(v)}
+        />
+        <ConfirmAnswerButton
+          accent="#059669"
+          disabled={!activeQ3}
+          onClick={() => { set('valGoalSignal', activeQ3); writeSuccess(convos, rate, activeQ3, icpOn, time); setPendingQ3(''); setReopenedKey(null); }}
         />
         <div style={{ marginTop: 8 }}>
           <GoalCustomInput
             accent="#059669"
             placeholder="or describe your own proof…"
             value={q3Preset ? '' : signal}
-            onChange={v => { set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); }}
+            onChange={v => { setPendingQ3(''); set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); }}
           />
         </div>
       </GoalQuestionRow>
@@ -420,22 +475,27 @@ function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: 
         open={!icpOn || reopenedKey === 'q4' || !q4Preset}
         accent="#7c3aed" emoji="🔍" question="Can you picture your customer right now?"
         echoLabel={q4Preset ? `${q4ByV.get(icpOn)?.emoji} ${q4ByV.get(icpOn)?.vibe}` : icpOn}
-        onReopen={() => setReopenedKey('q4')}
+        onReopen={() => { setPendingQ4(''); setReopenedKey('q4'); }}
       >
         <SliderTower
           items={Q4_OPTS.map(o => o.val)}
           color="#7c3aed"
           labelOf={v => q4ByV.get(v)?.vibe}
           iconOf={v => q4ByV.get(v)?.emoji}
-          isSelected={v => icpOn === v}
-          onToggle={v => { set('valGoalICP', v); writeSuccess(convos, rate, signal, v, time); setReopenedKey(null); }}
+          isSelected={v => activeQ4 === v}
+          onToggle={v => setPendingQ4(v)}
+        />
+        <ConfirmAnswerButton
+          accent="#7c3aed"
+          disabled={!activeQ4}
+          onClick={() => { set('valGoalICP', activeQ4); writeSuccess(convos, rate, signal, activeQ4, time); setPendingQ4(''); setReopenedKey(null); }}
         />
         <div style={{ marginTop: 8 }}>
           <GoalCustomInput
             accent="#7c3aed"
             placeholder="or describe your customer…"
             value={q4Preset ? '' : icpOn}
-            onChange={v => { set('valGoalICP', v); writeSuccess(convos, rate, signal, v, time); }}
+            onChange={v => { setPendingQ4(''); set('valGoalICP', v); writeSuccess(convos, rate, signal, v, time); }}
           />
         </div>
       </GoalQuestionRow>
@@ -445,22 +505,27 @@ function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: 
         open={!time || reopenedKey === 'q5' || !q5Preset}
         accent="#ef4444" emoji="⏱️" question="When will you stop validating and decide?"
         echoLabel={q5Preset ? `${Q5_OPTS.find(o => o.v === time)?.emoji} ${timeOpts.find(o => o.v === time)?.label}` : time}
-        onReopen={() => setReopenedKey('q5')}
+        onReopen={() => { setPendingQ5(''); setReopenedKey('q5'); }}
       >
         <SliderTower
           items={Q5_OPTS.map(o => o.v)}
           color="#dc2626"
           iconOf={v => Q5_OPTS.find(o => o.v === v)?.emoji}
           labelOf={v => timeOpts.find(o => o.v === v)?.label}
-          isSelected={v => time === v}
-          onToggle={v => { set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); setReopenedKey(null); }}
+          isSelected={v => activeQ5 === v}
+          onToggle={v => setPendingQ5(v)}
+        />
+        <ConfirmAnswerButton
+          accent="#dc2626"
+          disabled={!activeQ5}
+          onClick={() => { set('valGoalTime', activeQ5); writeSuccess(convos, rate, signal, icpOn, activeQ5); setPendingQ5(''); setReopenedKey(null); }}
         />
         <div style={{ marginTop: 8 }}>
           <GoalCustomInput
             accent="#dc2626"
             placeholder="or type your own timeframe…"
             value={q5Preset ? '' : time}
-            onChange={v => { set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); }}
+            onChange={v => { setPendingQ5(''); set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); }}
           />
         </div>
       </GoalQuestionRow>
