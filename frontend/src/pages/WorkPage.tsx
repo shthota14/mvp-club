@@ -2258,45 +2258,85 @@ function MarketPositioningPlot({ snapshot }: { snapshot: MarketSnapshotData }) {
     quads[cheap ? (loved ? 0 : 2) : (loved ? 1 : 3)].items.push(p);
   });
 
+  const [open, setOpen] = useState<Record<string, number | null>>({});
+
+  // Grounded purely in price/rating vs. the group median already shown above —
+  // nothing new fetched, nothing invented.
+  const pillStory = (label: string, p: (typeof pts)[number]): string => {
+    const q = quads.find(x => x.label === label)!;
+    const peers = q.items.filter(x => x.name !== p.name).map(x => x.name);
+    const priceDiff = p.price - medPrice;
+    const ratingDiff = p.rating - medRating;
+    const priceWord = priceDiff === 0
+      ? `right at the $${medPrice.toFixed(0)}/mo median`
+      : `$${Math.abs(priceDiff).toFixed(0)} ${priceDiff < 0 ? 'below' : 'above'} the $${medPrice.toFixed(0)}/mo median`;
+    const ratingWord = ratingDiff === 0
+      ? `right at the ${medRating.toFixed(1)}★ median`
+      : `${Math.abs(ratingDiff).toFixed(1)} ${ratingDiff < 0 ? 'below' : 'above'} the ${medRating.toFixed(1)}★ median`;
+    const peerText = peers.length === 0
+      ? `Nobody else you're tracking lands in this quadrant.`
+      : `Shares this quadrant with ${peers.join(' and ')}.`;
+    return `${p.name} is $${p.price.toFixed(0)}/mo (${priceWord}) and ${p.rating.toFixed(1)}★ (${ratingWord}). ${peerText}`;
+  };
+
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>Price vs. how much people like it</div>
       <div style={{ fontSize: 12, color: T3, marginBottom: 12 }}>
         Only competitors where Sage found both a price and a rating appear here ({pts.length} of {snapshot.competitors.length}).
-        Grouped by the median among them — ${medPrice.toFixed(0)}/mo and {medRating.toFixed(1)}★.
+        Grouped by the median among them — ${medPrice.toFixed(0)}/mo and {medRating.toFixed(1)}★. Tap a competitor for how they compare to the group.
       </div>
       <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-        {quads.map(q => (
-          <div key={q.label} style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '10px 12px' }}>
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: T1 }}>{q.label}</div>
-            <div style={{ fontSize: 10.5, color: T3, marginBottom: 8 }}>{q.sub}</div>
-            {q.items.length === 0 ? (
-              <div style={{ fontSize: 11.5, color: T3 }}>None of your tracked competitors land here.</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
-                {q.items.map((p, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
-                    <span style={{ fontWeight: 700, color: T1 }}>{p.name}</span>
-                    <span style={{ color: T3 }}>${p.price.toFixed(0)}/mo · {p.rating.toFixed(1)}★</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+        {quads.map(q => {
+          const activeIdx = open[q.label] ?? null;
+          const activeItem = activeIdx !== null ? q.items[activeIdx] : null;
+          return (
+            <div key={q.label} style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '10px 12px' }}>
+              <div style={{ fontSize: 11.5, fontWeight: 800, color: T1 }}>{q.label}</div>
+              <div style={{ fontSize: 10.5, color: T3, marginBottom: 8 }}>{q.sub}</div>
+              {q.items.length === 0 ? (
+                <div style={{ fontSize: 11.5, color: T3 }}>None of your tracked competitors land here.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 3 }}>
+                  {q.items.map((p, i) => {
+                    const isActive = activeIdx === i;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setOpen(o => ({ ...o, [q.label]: o[q.label] === i ? null : i }))}
+                        aria-expanded={isActive}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, font: 'inherit', textAlign: 'left' as const,
+                          background: isActive ? `${p.color}14` : 'transparent', border: `1px solid ${isActive ? p.color : 'transparent'}`,
+                          borderRadius: 8, padding: '4px 6px', margin: '-4px -6px', cursor: 'pointer', width: 'calc(100% + 12px)',
+                        }}
+                      >
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                        <span style={{ fontWeight: 700, color: T1 }}>{p.name}</span>
+                        <span style={{ color: T3 }}>${p.price.toFixed(0)}/mo · {p.rating.toFixed(1)}★</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              {activeItem && (
+                <div style={{
+                  marginTop: 8, padding: '8px 10px', borderRadius: 8,
+                  background: `${activeItem.color}0c`, border: `1.5px solid ${activeItem.color}33`,
+                  fontSize: 11.5, color: T2, lineHeight: 1.5,
+                }}>
+                  {pillStory(q.label, activeItem)}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-
-// ── Derived SWOT ─────────────────────────────────────────────────────────
-// Nothing here is written copy: every line is computed from the snapshot the
-// founder already has — their own coverage against each differentiator, the
-// competitors' coverage, prices and ratings. It therefore changes whenever
-// the snapshot is regenerated or hand-edited, and says nothing when the data
-// is too thin to support a claim.
 function MarketSwotPanel({ snapshot, ideaName }: { snapshot: MarketSnapshotData; ideaName: string }) {
   const me = ideaName?.trim() || 'Your idea';
   const n = snapshot.differentiators.length;
