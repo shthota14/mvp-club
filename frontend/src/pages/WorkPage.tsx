@@ -1982,6 +1982,76 @@ function OneLinerPreviewCard({ value, onChange, publicOn, onTogglePublic }: { va
   );
 }
 
+// ── One-liner Quality Meter (Idea step, live feedback) ────────────────────
+// The one-liner isn't freeform text — IdeaOneLinerChat assembles it from
+// four named blanks ("I'm building {what} for {who} who {struggle} so they
+// can {outcome}."), so there's already a natural, honest 4-part breakdown to
+// chart against instead of guessing at NLP quality. Word count is used as a
+// rough, transparent proxy for specificity (never claimed as a real
+// AI-graded score) — kept instant/client-side so it updates the moment the
+// founder types, with no AI call and nothing new to fetch.
+const ONE_LINER_PILLARS: { key: 'b' | 'f' | 'w' | 'o'; label: string }[] = [
+  { key: 'b', label: 'What' },
+  { key: 'f', label: "Who it's for" },
+  { key: 'w', label: 'Their struggle' },
+  { key: 'o', label: 'What happens next' },
+];
+
+function oneLinerPillarScore(text: string): number {
+  const t = (text || '').trim();
+  if (!t || t.includes('___')) return 0;
+  const words = t.split(/\s+/).filter(Boolean).length;
+  if (words <= 1) return 30;
+  if (words <= 3) return 55;
+  if (words <= 6) return 80;
+  return 100;
+}
+
+function OneLinerQualityMeter({ value }: { value: string }) {
+  const m = value.match(/I'?m building (.+?) for (.+?) who (.+?) so they can (.+?)\.?$/i);
+  const parts: Record<'b' | 'f' | 'w' | 'o', string> = { b: m?.[1] ?? '', f: m?.[2] ?? '', w: m?.[3] ?? '', o: m?.[4] ?? '' };
+  const started = Object.values(parts).some(v => v && !v.includes('___'));
+  if (!started) return null;
+
+  const penColor = '#0ea5e9';
+  const rows = ONE_LINER_PILLARS.map(p => ({ ...p, text: parts[p.key], score: oneLinerPillarScore(parts[p.key]) }));
+  const overall = Math.round(rows.reduce((s, p) => s + p.score, 0) / rows.length);
+  const weakest = [...rows].filter(p => p.text && !p.text.includes('___')).sort((a, b) => a.score - b.score)[0];
+
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+      border: '1px solid #93c5fd', borderTop: `4px solid ${penColor}`,
+      borderRadius: 12, padding: '16px 20px 18px', fontFamily: "'Inter', system-ui, sans-serif",
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' as const, color: '#93a5c4' }}>
+          One-liner clarity
+        </span>
+        <span style={{ fontSize: 18, fontWeight: 800, color: penColor }}>{overall}<span style={{ fontSize: 12, fontWeight: 700, color: '#93c5fd' }}>/100</span></span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+        {rows.map(p => {
+          const has = !!p.text && !p.text.includes('___');
+          return (
+            <div key={p.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 132, fontSize: 11, fontWeight: 700, color: '#1e40af', flexShrink: 0, whiteSpace: 'nowrap' as const }}>{p.label}</div>
+              <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#bfdbfe', overflow: 'hidden' }}>
+                <div style={{ width: `${p.score}%`, height: '100%', borderRadius: 4, background: has ? penColor : 'transparent', transition: 'width .3s ease' }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {weakest && weakest.score < 60 && (
+        <div style={{ fontSize: 11, color: '#1e40af', marginTop: 10, lineHeight: 1.5 }}>
+          💡 &ldquo;{weakest.label}&rdquo; is thin — a few more specific words there usually sharpens the whole line.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Market Snapshot (Idea Step 1) ────────────────────────────────────────────
 // Once the one-liner is complete, an optional AI-drafted domain + rough
 // TAM/SAM + short competitor list, shown as a small infographic. This is the
@@ -14103,12 +14173,15 @@ export default function WorkPage() {
         const setPublicSection = (key: keyof PublicSections, on: boolean) =>
           set('publicSections', JSON.stringify({ ...publicSections, [key]: on }));
         return (
-          <OneLinerPreviewCard
-            value={get('oneLiner')}
-            onChange={v => set('oneLiner', v)}
-            publicOn={!!publicSections.oneLiner}
-            onTogglePublic={() => setPublicSection('oneLiner', !publicSections.oneLiner)}
-          />
+          <>
+            <OneLinerPreviewCard
+              value={get('oneLiner')}
+              onChange={v => set('oneLiner', v)}
+              publicOn={!!publicSections.oneLiner}
+              onTogglePublic={() => setPublicSection('oneLiner', !publicSections.oneLiner)}
+            />
+            <OneLinerQualityMeter value={get('oneLiner')} />
+          </>
         );
       })()}
       {/* "What's motivating you to build this?" (the Spark Builder step)
