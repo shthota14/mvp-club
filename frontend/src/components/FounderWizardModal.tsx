@@ -96,8 +96,8 @@ export function calcEffort(profile: FounderProfile, idea: IdeaAnswers): EffortRe
 
   // Rationale
   const expLabel   = { first: 'a first-time founder', side: 'someone who has built a side project', previous: 'an experienced founder', serial: 'a serial founder' }[profile.experience] ?? 'a founder';
-  const techLabel  = { none: 'no technical background', ai: 'AI-assisted development', dev: 'a software developer', team: 'a team of developers' }[profile.technical] ?? '';
-  const prodLabel  = { saas: 'SaaS', mobile: 'mobile app', marketplace: 'marketplace', ai_tool: 'AI tool', chrome: 'Chrome extension', api: 'API product', physical: 'physical product', other: 'product' }[idea.productType] ?? 'product';
+  const techLabel  = { none: 'no technical background', ai: 'vibe-coding tools', dev: 'a software developer', team: 'a team of developers' }[profile.technical] ?? '';
+  const prodLabel  = { saas: 'SaaS', mobile: 'mobile app', marketplace: 'marketplace', ai_tool: 'smart tool', chrome: 'Chrome extension', api: 'API product', physical: 'physical product', other: 'product' }[idea.productType] ?? 'product';
   const hpwLabel   = profile.hoursPerWeek === 40 ? 'full-time' : `${profile.hoursPerWeek} hrs/week`;
   const valSaved   = valRed > 0 ? ` Your existing validation work saves ~${valRed} hours.` : '';
 
@@ -216,7 +216,7 @@ export default function FounderWizardModal({ userId, ideaId, ideaName, initialPr
             ['saas',        '🖥',  'SaaS',           'Web-based subscription product'],
             ['mobile',      '📱',  'Mobile app',     'iOS or Android application'],
             ['marketplace', '🏪',  'Marketplace',    'Connects buyers and sellers'],
-            ['ai_tool',     '🤖',  'AI Tool',        'AI-powered product or feature'],
+            ['ai_tool',     '✨',  'Smart Tool',        'Automated or intelligent product or feature'],
             ['chrome',      '🔌',  'Chrome Extension','Browser add-on'],
             ['api',         '⚡',  'API / Platform', 'Developer-facing product'],
             ['physical',    '📦',  'Physical product','Hardware or physical goods'],
@@ -285,7 +285,7 @@ export default function FounderWizardModal({ userId, ideaId, ideaName, initialPr
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {([
             ['none', '🤷', 'No technical skills',  'Will hire or use no-code tools'],
-            ['ai',   '🤖', 'Can build with AI',    'Vibe coding, Cursor, Bolt, etc.'],
+            ['ai',   '✨', 'Can vibe-code it myself',    'Vibe coding, Cursor, Bolt, etc.'],
             ['dev',  '💻', 'Software developer',   'Can build it myself'],
             ['team', '👥', 'Team of developers',   'Dedicated engineering team'],
           ] as const).map(([val, icon, label, sub]) => (

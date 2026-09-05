@@ -110,7 +110,7 @@ const SUGGESTIONS: Record<string, string[]> = {
     'Real-time insights, not weekly reports',
     'Integrates with tools you already use',
     'Works offline',
-    'Self-improving with AI',
+    'Gets smarter the more you use it',
     'Done-for-you, not DIY',
   ],
   cr: [

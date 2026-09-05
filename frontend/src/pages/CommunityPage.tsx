@@ -1055,7 +1055,7 @@ function PostCollabModal({ onClose, onPosted }: {
                 autoFocus
                 value={initiative}
                 onChange={e => setInitiative(e.target.value)}
-                placeholder="e.g. An AI scheduling tool for independent therapists — I've validated demand with 12 interviews and need a technical co-founder to build the MVP."
+                placeholder="e.g. A scheduling tool for independent therapists — I've validated demand with 12 interviews and need a technical co-founder to build the MVP."
                 rows={3}
                 style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.65, marginBottom: 18 }}
                 onFocus={e => (e.target.style.borderColor = LIT.accent)}
@@ -4055,7 +4055,7 @@ const FOUNDER_FAQS: FounderFaq[] = [
   { q: 'How is my Thinking Points score calculated?', a: 'Points come from contributions you make to other founders’ ideas on the Challenges tab (questions, evidence, solutions) plus engagement your own posts receive. See the Leaderboard tab for the full breakdown.' },
   { q: 'What’s an MVP, really?', a: 'The smallest version of your product that lets you test your riskiest assumption with real users — not a stripped-down version of your final vision, but the fastest path to a real answer.' },
   { q: 'Is my idea data private?', a: 'Your working notes inside each stage (Idea → Hone → Validate → Shape → Ship) are private to you. Only what you explicitly post to the Community tabs is visible to other members.' },
-  { q: 'How often does the Funding News ticker update?', a: 'Automatically once a day via a scheduled job, with real headlines pulled from Google News and rephrased by a local AI model. Admins can also trigger an on-demand refresh from the Admin Panel.' },
+  { q: 'How often does the Funding News ticker update?', a: 'Automatically once a day via a scheduled job, with real headlines pulled from Google News and rephrased automatically by a local language model. Admins can also trigger an on-demand refresh from the Admin Panel.' },
   { q: 'I’m stuck between two ideas — what should I do?', a: 'Run the same validation step (e.g. 5 customer conversations) on both in parallel rather than debating in the abstract. The market will disagree with you faster than your own reasoning will.' },
 ];
 

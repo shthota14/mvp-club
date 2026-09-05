@@ -53,7 +53,7 @@ export default function HeroPage() {
   const faqs = [
     { icon: '🆓', q: 'Is MVP Club actually free?', a: "Yes \u2014 every core feature, for every founder, always. No paywalls, no feature gates that only unlock if you pay. If you find it useful, there's an optional way to support the project, but nothing here is held behind it." },
     { icon: '🤝', q: 'Why should I trust this?', a: "Honestly? Think of whoever's behind this as someone quietly on your side \u2014 conspiring, in the best sense of that word, to see you succeed. Not chasing your attention, not selling you something you don't need. Just someone who wants your idea to actually go somewhere, and will keep telling you the honest next step even when it isn't the exciting one." },
-    { icon: '🤔', q: 'Is this AI giving me business advice, or is it just organizing my own thinking?', a: "MVP Club doesn't tell you what your idea should be. It asks you the questions a good advisor would ask, in the right order, and helps you organize what you already know \u2014 your assumptions, your interview notes, your decisions. The thinking stays yours." },
+    { icon: '🤔', q: 'Is this giving me business advice, or is it just organizing my own thinking?', a: "MVP Club doesn't tell you what your idea should be. It asks you the questions a good advisor would ask, in the right order, and helps you organize what you already know \u2014 your assumptions, your interview notes, your decisions. The thinking stays yours." },
     { icon: '🔒', q: 'Do I have to share my idea publicly?', a: "No! Not without your consent. You control what you'd like to seek the community's assistance for \u2014 sharing your progress is something you choose to do, when you're ready, not something that happens automatically. Your workspace, the Idea, Hone, Validate, Shape, and Done stages, stays yours. Remember, this is a community-oriented initiative, built with one objective: to see you succeed." },
     { icon: '🎯', q: 'Is this for any kind of startup, or a specific type?', a: "Early-stage, pre-launch. If you have an idea and haven't validated it with real users yet, MVP Club is built for exactly that stage \u2014 from first sentence to first customer." },
   ];
@@ -441,7 +441,7 @@ export default function HeroPage() {
               {
                 name: 'Priya M.', initials: 'PM', avatar: '#6366f1',
                 stage: 'Validate', stageColor: '#34d399',
-                idea: 'AI scheduling assistant for independent therapists — auto-fills cancellations, sends reminders, handles intake forms.',
+                idea: 'Scheduling assistant for independent therapists — auto-fills cancellations, sends reminders, handles intake forms.',
                 replies: 12, encouraged: 34, time: '2h ago',
               },
               {

@@ -156,7 +156,7 @@ export default function RoadmapWidget({ result, profile, answers, ideaName, onRe
 
           {/* AI rationale */}
           <div style={{ margin: '16px 0', padding: '14px 16px', borderRadius: 12, background: '#f9f9fb', border: '1.5px solid #ebebf0' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#b0b0b8', letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 6 }}>AI Assessment</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#b0b0b8', letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 6 }}>Roadmap Assessment</div>
             <div style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.65 }}>{liveResult.rationale}</div>
           </div>
 

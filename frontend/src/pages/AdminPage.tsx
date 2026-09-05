@@ -1272,7 +1272,7 @@ export default function AdminPage() {
                         {newsResult.stored} headline{newsResult.stored !== 1 ? 's' : ''} stored
                       </div>
                       <div style={{ fontSize: 12, color: '#166534', marginTop: 2 }}>
-                        {newsResult.fetched} candidate{newsResult.fetched !== 1 ? 's' : ''} fetched, {newsResult.kept} kept after AI curation. Visible on the Community home page now.
+                        {newsResult.fetched} candidate{newsResult.fetched !== 1 ? 's' : ''} fetched, {newsResult.kept} kept after automatic curation. Visible on the Community home page now.
                       </div>
                     </div>
                   </div>

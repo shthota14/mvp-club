@@ -245,7 +245,7 @@ const STEP_DETAILS: Record<string, Record<string, StepDetail>> = {
       what: 'Write a single sentence that describes what you\'re building, who it\'s for, and what problem it solves.',
       why: 'A sharp one-liner forces clarity. If you can\'t say it in one sentence, you don\'t understand it yet.',
       tip: 'Use the formula: "I\'m building [X] for [Y] who struggle with [Z]."',
-      example: '"I\'m building an AI scheduling tool for freelancers who waste hours chasing clients for meeting times."',
+      example: '"I\'m building a scheduling tool for freelancers who waste hours chasing clients for meeting times."',
       effort: '~30 mins',
     },
     'Define your why': {
@@ -289,7 +289,7 @@ const STEP_DETAILS: Record<string, Record<string, StepDetail>> = {
       what: 'Write a 2-sentence pitch that combines who you are, what you\'re building, and why you\'re the right person to build it.',
       why: 'This becomes your intro at events, your LinkedIn headline, and your cold email opener.',
       tip: 'End with a question hook: "…and I\'d love to show you a demo — when\'s a good time?"',
-      example: '"I\'m Shyam, ex-ML engineer, building an AI podcast platform for B2B SaaS companies. We replace a $15k/yr agency with a $99/mo tool — happy to send you a free pilot."',
+      example: '"I\'m Shyam, ex-ML engineer, building a podcast platform for B2B SaaS companies. We replace a $15k/yr agency with a $99/mo tool — happy to send you a free pilot."',
       effort: '~30 mins',
     },
   },
@@ -865,7 +865,7 @@ function NewIdeaModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
                 autoFocus value={name}
                 onChange={e => { setName(e.target.value); setError(''); }}
                 onKeyDown={e => e.key === 'Enter' && create()}
-                placeholder="e.g. AI meal planner for what's in your fridge"
+                placeholder="e.g. Meal planner for what's in your fridge"
                 style={{ width: '100%', padding: '13px 16px', border: `2px solid ${error ? '#fca5a5' : '#e5e5ea'}`, borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', background: '#fff', color: '#1d1d1f', transition: 'border-color .15s' }}
                 onFocus={e => { (e.target as HTMLInputElement).style.borderColor = '#7c3aed'; }}
                 onBlur={e => { (e.target as HTMLInputElement).style.borderColor = error ? '#fca5a5' : '#e5e5ea'; }}

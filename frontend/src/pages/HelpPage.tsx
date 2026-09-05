@@ -1057,7 +1057,7 @@ const GUIDES: GuideContent[] = [
       { icon: '🏁', text: 'Secondary sale: founders or early investors sell shares to a later-stage investor. Provides liquidity without an exit.' },
       { icon: '🏁', text: 'Management buyout (MBO): management team buys out investors. Common in bootstrapped companies.' },
       { icon: '🏁', text: 'Strategic vs financial acquirers: strategic buyers pay more but want integration. Financial (PE) wants cashflow.' },
-      { icon: '🏁', text: 'Acqui-hire: company is bought primarily for the team, not the product. Common in early-stage AI/engineering.' },
+      { icon: '🏁', text: 'Acqui-hire: company is bought primarily for the team, not the product. Common in early-stage tech/engineering.' },
       { icon: '🏁', text: 'Build relationships with potential acquirers 2–3 years before you\'re ready. M&A is a relationship business.' },
       { icon: '🏁', text: 'Liquidation preference: in a sub-optimal exit, investors get paid before founders. Know your waterfall.' },
       { icon: '🏁', text: 'Acquirer due diligence checklist: clean cap table, assigned IP, employment contracts, audited financials.' },

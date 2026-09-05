@@ -49,7 +49,7 @@ export default function StoryPage() {
           Our goal is simple: help founders turn an idea into evidence before turning it into a product.
         </p>
         <p style={proseStyle}>
-          Instead of relying only on opinions, assumptions or AI-generated market research, MVPClub is built around
+          Instead of relying only on opinions, assumptions or generic secondhand research, MVPClub is built around
           the things that matter most — understanding the problem, identifying the right customers, testing
           assumptions, collecting real feedback and learning from what people actually do.
         </p>

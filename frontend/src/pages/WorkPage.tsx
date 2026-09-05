@@ -265,8 +265,8 @@ const STEP_GOALS: Record<Mod, string[]> = {
     'Turn everything you\'ve validated into a build-ready specification.',
     'Match the tool to your spec\'s complexity and your own comfort with code.',
     'Turn your feature list into the flows and screens you need to build.',
-    'Implementation-ready prompts, one per screen — ready to paste into your AI builder.',
-    'One reusable prompt with the full product context, so you never re-explain your idea to an AI tool.',
+    'Implementation-ready prompts, one per screen — ready to paste into your builder.',
+    'One reusable prompt with the full product context, so you never re-explain your idea to your builder tool.',
     'One Build Card per feature — story, flow, logic, edge cases, and a constrained coding + QA prompt.',
     'Not every change needs a full Build Card. Turn a plain-language request into a constrained coding prompt.',
     'Five checkpoints — functional, UI, regression, mobile, accessibility — built from what you\'ve already generated.',
@@ -338,7 +338,7 @@ const STEP_CALLOUTS: Record<Mod, string[]> = {
     'No wrong answer — just the right one for your spec and your comfort level.',
     'This becomes the input to every UI prompt you generate next.',
     'Copy it straight into Lovable, Cursor, or whoever\'s building this.',
-    'Paste this at the start of every new session with your AI coding tool.',
+    'Paste this at the start of every new session with your coding tool.',
     'Build and test one feature at a time — not the whole app in one prompt.',
     'Add a feature, tweak the UI, fix a bug, add payments — describe it and get a ready-to-paste prompt.',
     'Run each prompt, then mark Passed, Needs attention, or Failed.',
@@ -2488,7 +2488,7 @@ function MarketSnapshotPanel({
         return;
       } catch (e: any) {
         if (attempt === MAX_AUTO_RETRIES) {
-          setError(e?.response?.data?.error || 'Could not reach the AI right now — please try Regenerate.');
+          setError(e?.response?.data?.error || 'Could not reach Sage right now — please try Regenerate.');
           setGenerating(false);
           setRetryAttempt(0);
           return;
@@ -2542,7 +2542,7 @@ function MarketSnapshotPanel({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 15 }}>🔎</span>
           <span style={{ fontSize: 13, fontWeight: 800, color: T1 }}>Sage Market Snapshot</span>
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 999, padding: '2px 8px' }}>AI draft — verify</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 999, padding: '2px 8px' }}>Sage draft — verify</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {snapshot && !editing && <PublicToggle on={publicOn} onToggle={onTogglePublic} label="Market Snapshot" />}
@@ -2560,7 +2560,7 @@ function MarketSnapshotPanel({
           fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, lineHeight: 1.45, color: T1,
           background: `${STAGE_COLORS.idea}12`, borderRadius: 12, padding: '10px 14px',
         }}>
-          Get an AI-drafted domain, rough market size, and a few competitors to research — a starting point, not a fact.
+          Get a Sage-drafted domain, rough market size, and a few competitors to research — a starting point, not a fact.
         </div>
       )}
       {generating && (
@@ -9444,8 +9444,8 @@ interface BuildSpecUI {
 // Must stay in sync with the equivalent chip lists in
 // backend/src/utils/aiQuestionCheck.ts (generateBuildSpec) — the AI is
 // constrained to these exact values so the dropdowns below always match.
-const BUILD_APP_TYPE_OPTS = ['Web app', 'Mobile app', 'Chrome extension', 'Slack bot', 'API', 'Marketplace', 'Dashboard', 'AI tool', 'Automation'];
-const BUILD_DATABASE_OPTS = ['None needed', 'Simple key-value store', 'Relational (Postgres/MySQL)', 'Document store (Mongo/Firestore)', 'Vector DB (for AI/semantic search)'];
+const BUILD_APP_TYPE_OPTS = ['Web app', 'Mobile app', 'Chrome extension', 'Slack bot', 'API', 'Marketplace', 'Dashboard', 'Automation'];
+const BUILD_DATABASE_OPTS = ['None needed', 'Simple key-value store', 'Relational (Postgres/MySQL)', 'Document store (Mongo/Firestore)', 'Vector DB (for semantic search)'];
 const BUILD_AUTH_OPTS = ['None needed', 'Email/password', 'Social login (Google/GitHub)', 'Magic link', 'SSO / enterprise'];
 const BUILD_PAYMENTS_OPTS = ['None needed', 'Stripe subscriptions', 'Stripe one-time', 'Marketplace payouts', 'Manual invoicing'];
 
@@ -9641,7 +9641,7 @@ function ShipBuildSpecPanel({ genContext, initialSpec, onSave, color }: {
                 onSave={v => commit({ ...spec, technicalRequirements: { ...tr, integrations: v.split(',').map(s => s.trim()).filter(Boolean) } })} />
             </div>
             <div>
-              <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>AI / LLM usage</div>
+              <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>LLM usage</div>
               <EditableText value={tr.ai} accent={color} multiline textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
                 onSave={v => commit({ ...spec, technicalRequirements: { ...tr, ai: v } })} />
             </div>
@@ -9699,8 +9699,8 @@ interface BuildPathGenContext {
 type BuildPathKey = 'app-builder' | 'coding-env' | 'dev-handoff';
 
 const BUILD_PATH_OPTIONS: { key: BuildPathKey; icon: string; label: string; desc: string }[] = [
-  { key: 'app-builder', icon: '⚡', label: 'AI App Builder', desc: 'Chat your way to a working app — fastest to something live' },
-  { key: 'coding-env', icon: '👨‍💻', label: 'AI Coding Environment', desc: 'You drive, AI assists — more control, more custom' },
+  { key: 'app-builder', icon: '⚡', label: 'App Builder', desc: 'Chat your way to a working app — fastest to something live' },
+  { key: 'coding-env', icon: '👨‍💻', label: 'Coding Environment', desc: 'You write the code yourself — more control, more custom' },
   { key: 'dev-handoff', icon: '🤝', label: 'Developer Handoff', desc: 'Hand the spec to a hired developer' },
 ];
 
@@ -9710,12 +9710,12 @@ const BUILD_PATH_TOOLS: Record<BuildPathKey, { name: string; desc: string; prici
   'app-builder': [
     { name: 'Lovable', desc: 'Chat-based full-stack web app builder', pricing: '~free tier, $25+/mo' },
     { name: 'Bolt.new', desc: 'Instant full-stack scaffolding + deploy', pricing: '~free tier, $20+/mo' },
-    { name: 'Replit', desc: 'Full IDE + AI agent + one-click hosting', pricing: '~free tier, $25+/mo' },
+    { name: 'Replit', desc: 'Full IDE + coding agent + one-click hosting', pricing: '~free tier, $25+/mo' },
   ],
   'coding-env': [
-    { name: 'Cursor', desc: 'AI-native code editor (VS Code-based)', pricing: '~$20/mo' },
+    { name: 'Cursor', desc: 'Modern code editor (VS Code-based)', pricing: '~$20/mo' },
     { name: 'Claude Code', desc: 'Terminal-based agentic coding assistant', pricing: 'Usage-based (Claude plan/API)' },
-    { name: 'Codex CLI', desc: 'AI coding agent in your IDE or terminal', pricing: 'Usage-based (ChatGPT/API plan)' },
+    { name: 'Codex CLI', desc: 'Coding agent in your IDE or terminal', pricing: 'Usage-based (ChatGPT/API plan)' },
   ],
   'dev-handoff': [
     { name: 'Upwork / Toptal', desc: 'Freelance developer marketplaces', pricing: 'Varies — project or hourly' },
@@ -10138,7 +10138,7 @@ function ScreenPromptCard({ screen, prompt, onGenerate, onEdit, loading, error, 
               {copiedPulse ? '✓ Copied' : '📋 Copy prompt'}
             </button>
             <button onClick={doSend} style={{ padding: '7px 14px', borderRadius: 999, border: 'none', background: color, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-              {sentPulse ? `✓ Copied — paste into ${buildTool || 'your tool'}` : `→ Send to ${buildTool || 'AI builder'}`}
+              {sentPulse ? `✓ Copied — paste into ${buildTool || 'your tool'}` : `→ Send to ${buildTool || 'your builder'}`}
             </button>
           </div>
         </>
@@ -10278,7 +10278,7 @@ function MasterPromptOutput({ prompt, buildTool, color }: { prompt: string; buil
           {copiedPulse ? '✓ Copied' : '📋 Copy prompt'}
         </button>
         <button onClick={doSend} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', background: color, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-          {sentPulse ? `✓ Copied — paste into ${buildTool || 'your tool'}` : `→ Send to ${buildTool || 'AI builder'}`}
+          {sentPulse ? `✓ Copied — paste into ${buildTool || 'your tool'}` : `→ Send to ${buildTool || 'your builder'}`}
         </button>
       </div>
     </div>
@@ -16752,7 +16752,7 @@ export default function WorkPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {fillableCount > 0 && (
                         <button onClick={applyAllVera} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 20, border: `1.5px solid ${STAGE_COLORS.validate}40`, background: `${STAGE_COLORS.validate}12`, color: STAGE_COLORS.validate, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                          🤖 Auto-fill {fillableCount} from AI
+                          ✨ Auto-fill {fillableCount} from Sage
                         </button>
                       )}
                       {ratedCount > 0 && (
@@ -16835,7 +16835,7 @@ export default function WorkPage() {
                             {vOpt ? (
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
                                 <span style={{ fontSize: 10.5, fontWeight: 700, color: vOpt.color, background: vOpt.bg, border: `1px solid ${vOpt.border}`, borderRadius: 20, padding: '2px 9px', whiteSpace: 'nowrap' as const }}>
-                                  🤖 AI reads: {vOpt.label}
+                                  ✨ Sage reads: {vOpt.label}
                                 </span>
                                 <span style={{ fontSize: 10.5, color: '#8e8e93' }}>{v.reason}</span>
                                 {verdict !== v.verdict && (
@@ -16846,7 +16846,7 @@ export default function WorkPage() {
                               </div>
                             ) : (
                               <div style={{ fontSize: 10.5, color: '#b0b0b8', fontStyle: 'italic' }}>
-                                🤖 No AI-tagged evidence yet — rate manually, or run "Analyze with AI" on more interviews.
+                                ✨ No Sage-tagged evidence yet — rate manually, or run "Analyze with Sage" on more interviews.
                               </div>
                             )}
                           </div>
@@ -18103,7 +18103,7 @@ export default function WorkPage() {
       <H accent={STAGE_COLORS.shape}>What will you build?</H>
       {(() => {
         const SC = STAGE_COLORS.shape;
-        const TYPE_CHIPS = ['Web app', 'Mobile app', 'Chrome extension', 'Slack bot', 'API', 'Marketplace', 'Dashboard', 'AI tool', 'Automation'];
+        const TYPE_CHIPS = ['Web app', 'Mobile app', 'Chrome extension', 'Slack bot', 'API', 'Marketplace', 'Dashboard', 'Automation'];
         const ACTION_CHIPS = ['find', 'manage', 'automate', 'track', 'connect', 'generate', 'organise', 'analyse', 'share'];
         const OUTCOME_CHIPS = ['save time', 'reduce errors', 'make money', 'grow faster', 'stay organised', 'make decisions', 'ship faster', 'focus better'];
         const USER_CHIPS = ['Founder', 'Designer', 'Developer', 'Manager', 'Marketer', 'Freelancer', 'Team lead', 'Operator'].filter(u => {
@@ -18536,7 +18536,7 @@ export default function WorkPage() {
         const DIST_CHIPS = ['DM validation contacts', 'LinkedIn post', 'Slack communities', 'Cold email', 'Reddit', 'Twitter / X', 'Referrals', 'Product Hunt', 'Friends & network', 'Paid ads'];
         const REV_CHIPS = ['Monthly SaaS', 'Annual plan', 'One-time fee', 'Freemium', 'Pay per use', 'Commission %', 'Service fee', 'Free beta first'];
         const PRICE_CHIPS = ['$9/mo', '$29/mo', '$49/mo', '$99/mo', '$200/mo', '$500/mo', 'Custom pricing'];
-        const COST_CHIPS = ['Cloud hosting', 'AI / LLM API', 'Payment fees', 'Support time', 'Marketing', 'Contractors'];
+        const COST_CHIPS = ['Cloud hosting', 'LLM API', 'Payment fees', 'Support time', 'Marketing', 'Contractors'];
         // Chips are shortcuts that append into the same free-text field —
         // shapePayer stays a plain string elsewhere (save call, summary
         // rows), so we join/split on ', ' here rather than introducing a
@@ -18659,7 +18659,7 @@ export default function WorkPage() {
               <div>
                 <FieldLabel n={5} accent={STAGE_COLORS.shape}>Key platforms & integrations (pick all that apply)</FieldLabel>
                 {(() => {
-                  const PARTNER_CHIPS = ['Stripe', 'OpenAI / AI API', 'Twilio / SMS', 'SendGrid / Email', 'AWS / GCP / Azure', 'Vercel / Netlify', 'Supabase / Firebase', 'Zapier / Make', 'Slack API', 'Google APIs', 'HubSpot / CRM', 'Shopify'];
+                  const PARTNER_CHIPS = ['Stripe', 'OpenAI / LLM API', 'Twilio / SMS', 'SendGrid / Email', 'AWS / GCP / Azure', 'Vercel / Netlify', 'Supabase / Firebase', 'Zapier / Make', 'Slack API', 'Google APIs', 'HubSpot / CRM', 'Shopify'];
                   const partnerList = (get('partnerPlan') || '').split('|').filter(Boolean);
                   const togglePartner = (v: string) => { const next = partnerList.includes(v) ? partnerList.filter(s => s !== v) : [...partnerList, v]; set('partnerPlan', next.join('|')); };
                   return (
@@ -18950,7 +18950,7 @@ export default function WorkPage() {
           lines.push(`Authentication: ${spec.technicalRequirements.authentication}`);
           lines.push(`Payments: ${spec.technicalRequirements.payments}`);
           lines.push(`Integrations: ${spec.technicalRequirements.integrations.join(', ') || 'None'}`);
-          lines.push(`AI / LLM usage: ${spec.technicalRequirements.ai}`);
+          lines.push(`LLM usage: ${spec.technicalRequirements.ai}`);
           lines.push(`Analytics: ${spec.technicalRequirements.analytics}`, '');
           lines.push('## Suggested Build Sequence');
           spec.buildSequence.forEach((s, i) => lines.push(`${i + 1}. ${s}`));
@@ -19173,7 +19173,7 @@ export default function WorkPage() {
               </div>
             )}
             <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.5 }}>
-              This assembles everything above into one reusable prompt — paste it at the start of any new session with your AI coding tool so you never have to re-explain the product. The three fields below are the only new inputs; everything else comes from your build spec and tool choice.
+              This assembles everything above into one reusable prompt — paste it at the start of any new session with your coding tool so you never have to re-explain the product. The three fields below are the only new inputs; everything else comes from your build spec and tool choice.
             </div>
 
             <div>
@@ -19186,7 +19186,7 @@ export default function WorkPage() {
             </div>
             <div>
               <FieldLabel n={3} accent={DC}>First task</FieldLabel>
-              <textarea style={ta(60)} placeholder="What the AI should build first" value={get('mvpFirstTask')} onChange={e => set('mvpFirstTask', e.target.value)} />
+              <textarea style={ta(60)} placeholder="What to build first" value={get('mvpFirstTask')} onChange={e => set('mvpFirstTask', e.target.value)} />
             </div>
 
             <div>
@@ -19348,7 +19348,7 @@ export default function WorkPage() {
         return (
           <>
             <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.5 }}>
-              Five checkpoints, each a ready-to-run QA prompt built from your feature acceptance criteria and screen inventory. Run each with your AI coding tool (or by hand), then mark what came back.
+              Five checkpoints, each a ready-to-run QA prompt built from your feature acceptance criteria and screen inventory. Run each with your coding tool (or by hand), then mark what came back.
             </div>
             <ShipQACheckpointsPanel
               statuses={savedStatuses}

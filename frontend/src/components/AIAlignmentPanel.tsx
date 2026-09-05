@@ -60,7 +60,7 @@ export default function AIAlignmentPanel({ interview, qa, problemSentence, painP
     s === 3 ? { label: 'Confirmed', icon: '✅', color: '#059669' }
     : s === 2 ? { label: 'Partial signal', icon: '◐', color: '#d97706' }
     : s === 1 ? { label: 'Not confirmed', icon: '❌', color: '#dc2626' }
-    : { label: 'Not yet analyzed', icon: '🤖', color: '#94a3b8' };
+    : { label: 'Not yet analyzed', icon: '✨', color: '#94a3b8' };
   const aiMeta = scoreMeta(aiScore);
 
   const runClassify = async () => {
@@ -74,9 +74,9 @@ export default function AIAlignmentPanel({ interview, qa, problemSentence, painP
       });
       const data = res.ok ? await res.json() : null;
       if (data?.interview) { onUpdate(data.interview); onAnalyzed?.(data.interview); }
-      else setErr('Could not reach the AI — try again in a moment.');
+      else setErr('Could not reach Sage — try again in a moment.');
     } catch {
-      setErr('Could not reach the AI — try again in a moment.');
+      setErr('Could not reach Sage — try again in a moment.');
     } finally {
       setAnalyzing(false);
     }
@@ -94,9 +94,9 @@ export default function AIAlignmentPanel({ interview, qa, problemSentence, painP
       });
       const data = res.ok ? await res.json() : null;
       if (data?.interview) onUpdate(data.interview);
-      else setErr('Could not reach the AI — try again.');
+      else setErr('Could not reach Sage — try again.');
     } catch {
-      setErr('Could not reach the AI — try again.');
+      setErr('Could not reach Sage — try again.');
     } finally {
       setSending(false);
     }
@@ -105,9 +105,9 @@ export default function AIAlignmentPanel({ interview, qa, problemSentence, painP
   return (
     <div style={{ border: `1.5px solid ${aiMeta.color}30`, borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
       <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 10, background: `${aiMeta.color}0a`, borderBottom: `1px solid ${aiMeta.color}20` }}>
-        <span style={{ fontSize: 18, marginTop: 1 }}>{aiScore != null ? aiMeta.icon : '🤖'}</span>
+        <span style={{ fontSize: 18, marginTop: 1 }}>{aiScore != null ? aiMeta.icon : '✨'}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: aiMeta.color }}>AI's read: {aiMeta.label}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: aiMeta.color }}>Sage's read: {aiMeta.label}</div>
           {interview?.ai_reasoning && (
             <div style={{ fontSize: 11.5, color: '#444', marginTop: 3, lineHeight: 1.5 }}>{interview.ai_reasoning}</div>
           )}
@@ -115,7 +115,7 @@ export default function AIAlignmentPanel({ interview, qa, problemSentence, painP
         {aiScore == null ? (
           <button onClick={runClassify} disabled={analyzing || !qa.length}
             style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 8, border: 'none', background: analyzing ? '#e5e5ea' : '#1d1d1f', color: '#fff', fontSize: 11, fontWeight: 700, cursor: analyzing ? 'default' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
-            {analyzing ? 'Analyzing…' : '🤖 Analyze with AI'}
+            {analyzing ? 'Analyzing…' : '✨ Analyze with Sage'}
           </button>
         ) : (
           evidence.length > 0 && (
@@ -129,7 +129,7 @@ export default function AIAlignmentPanel({ interview, qa, problemSentence, painP
 
       {mismatched && (
         <div style={{ padding: '9px 14px', background: '#fffbeb', borderBottom: '1px solid #fcd34d', fontSize: 11.5, color: '#92400e', lineHeight: 1.5 }}>
-          ⚠️ Your call ({scoreMeta(humanScore).label}) differs from the AI's read ({aiMeta.label}) — {interview?.ai_reasoning || 'see its reasoning above.'}
+          ⚠️ Your call ({scoreMeta(humanScore).label}) differs from Sage's read ({aiMeta.label}) — {interview?.ai_reasoning || 'see its reasoning above.'}
         </div>
       )}
 
@@ -146,7 +146,7 @@ export default function AIAlignmentPanel({ interview, qa, problemSentence, painP
 
       {aiScore != null && (
         <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>Reason with the AI</div>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' as const, letterSpacing: 0.5 }}>Reason with Sage</div>
           {chatLog.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, maxHeight: 220, overflowY: 'auto' as const }}>
               {chatLog.map((m, i) => (
@@ -166,7 +166,7 @@ export default function AIAlignmentPanel({ interview, qa, problemSentence, painP
               value={chatDraft}
               onChange={e => setChatDraft(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReason(); } }}
-              placeholder="Disagree with the AI? Tell it why…"
+              placeholder="Disagree with Sage? Tell it why…"
               style={{ flex: 1, minWidth: 0, padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${BORDER}`, fontSize: 12, fontFamily: 'inherit', outline: 'none', color: USER_INPUT_COLOR }}
             />
             <button onClick={sendReason} disabled={sending || !chatDraft.trim()}

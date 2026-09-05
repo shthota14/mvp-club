@@ -74,7 +74,7 @@ export function computeValidationConfidence(interviews: any[], get: (k: string) 
   const breakdown: ConfidenceBreakdown[] = [
     { key: 'sample',      label: 'Sample size',          score: sampleSizeScore,     weight: 0.30, detail: `${interviews.length} of your ${target}-conversation target` },
     { key: 'signal',      label: 'Signal strength',      score: signalStrengthScore, weight: 0.35, detail: `${Math.round(actualRate)}% confirmed vs. your ${targetRate}% bar` },
-    { key: 'consistency', label: 'AI/founder agreement', score: consistencyScore,    weight: 0.15, detail: bothScored.length ? `${bothScored.length - mismatched.length} of ${bothScored.length} interviews agree` : 'No comparisons yet' },
+    { key: 'consistency', label: 'Sage/founder agreement', score: consistencyScore,    weight: 0.15, detail: bothScored.length ? `${bothScored.length - mismatched.length} of ${bothScored.length} interviews agree` : 'No comparisons yet' },
     { key: 'evidence',    label: 'Evidence depth',       score: evidenceDepthScore,  weight: 0.20, detail: `${avgEvidence.toFixed(1)} evidence quotes / classified interview` },
   ];
 

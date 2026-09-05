@@ -71,7 +71,7 @@ function VerdictGauge({ score }: { score: 1 | 2 | 3 | null | undefined }) {
   const pct = score ? score / 3 : 0;
   const HALF_C = Math.PI * 54;
   return (
-    <ChartCard title="Verdict" subtitle="This interview's AI read">
+    <ChartCard title="Verdict" subtitle="This interview's Sage read">
       <div style={{ textAlign: 'center' as const }}>
         <svg width="130" height="70" viewBox="0 0 130 74">
           <path d="M10,64 A55,55 0 0,1 120,64" fill="none" stroke={TRACK} strokeWidth="11" strokeLinecap="round" />
@@ -115,7 +115,7 @@ function EvidenceBreakdown({ evidence }: { evidence: Evidence[] }) {
           </div>
         </>
       ) : (
-        <div style={{ fontSize: 12, color: T3 }}>The AI didn't extract any standout quotes from this transcript.</div>
+        <div style={{ fontSize: 12, color: T3 }}>Sage didn't extract any standout quotes from this transcript.</div>
       )}
     </ChartCard>
   );
@@ -131,14 +131,14 @@ function AgreementStrip({ aiScore, humanScore, overridden }: { aiScore: 1 | 2 | 
   const humanMeta = verdictMeta(humanScore);
   const showBoth = overridden && humanScore != null && aiScore != null && humanScore !== aiScore;
   return (
-    <ChartCard title="AI vs. your call" subtitle={showBoth ? 'You overrode the AI’s read' : 'Your call matches the AI’s read'}>
+    <ChartCard title="Sage vs. your call" subtitle={showBoth ? 'You overrode Sage’s read' : 'Your call matches Sage’s read'}>
       <div style={{ position: 'relative' as const, height: 34, margin: '6px 4px 0' }}>
         <div style={{ position: 'absolute' as const, top: 15, left: 0, right: 0, height: 4, borderRadius: 2, background: TRACK }} />
         {[1, 2, 3].map(s => (
           <div key={s} style={{ position: 'absolute' as const, top: 8, left: posFor(s), width: 2, height: 18, background: '#e5e5ea', transform: 'translateX(-1px)' }} />
         ))}
         {aiScore != null && (
-          <div title={`AI: ${aiMeta.label}`} style={{ position: 'absolute' as const, top: showBoth ? 2 : 8, left: posFor(aiScore), width: 16, height: 16, borderRadius: '50%', background: aiMeta.color, border: '2px solid #fff', boxShadow: '0 0 0 1px ' + aiMeta.color + '50', transform: 'translateX(-8px)' }} />
+          <div title={`Sage: ${aiMeta.label}`} style={{ position: 'absolute' as const, top: showBoth ? 2 : 8, left: posFor(aiScore), width: 16, height: 16, borderRadius: '50%', background: aiMeta.color, border: '2px solid #fff', boxShadow: '0 0 0 1px ' + aiMeta.color + '50', transform: 'translateX(-8px)' }} />
         )}
         {showBoth && (
           <div title={`You: ${humanMeta.label}`} style={{ position: 'absolute' as const, top: 20, left: posFor(humanScore as number), width: 16, height: 16, borderRadius: '50%', background: '#fff', border: `2.5px solid ${humanMeta.color}`, transform: 'translateX(-8px)' }} />
@@ -149,7 +149,7 @@ function AgreementStrip({ aiScore, humanScore, overridden }: { aiScore: 1 | 2 | 
       </div>
       {showBoth && (
         <div style={{ display: 'flex', gap: 14, fontSize: 11, color: T2 }}>
-          <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: aiMeta.color, marginRight: 5 }} />AI: {aiMeta.label}</span>
+          <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: aiMeta.color, marginRight: 5 }} />Sage: {aiMeta.label}</span>
           <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', border: `2px solid ${humanMeta.color}`, marginRight: 5 }} />You: {humanMeta.label}</span>
         </div>
       )}
