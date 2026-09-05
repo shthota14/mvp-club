@@ -2729,8 +2729,7 @@ function MarketSnapshotPanel({
                           {snapshot.differentiators.map((d, i) => (
                             <div key={i} style={{
                               writingMode: 'vertical-rl' as const, transform: 'rotate(180deg)', fontSize: 9.5, fontWeight: 700,
-                              color: T3, height: 66, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-                              whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const,
+                              color: T3, whiteSpace: 'nowrap' as const, justifySelf: 'center',
                             }}>{d}</div>
                           ))}
                         </div>
