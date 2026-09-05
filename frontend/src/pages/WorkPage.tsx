@@ -605,10 +605,13 @@ function AskCommunityButton({ ask }: { ask: string }) {
 // ── Primitives ─────────────────────────────────────────────────────────────
 
 // Marker-written question style — same treatment as the Validation Goal
-// Builder's questions (Arial Black, dark navy, tight tracking) plus a
-// hand-drawn underline in the given accent colour. Reusable anywhere a
-// "question" should read as bold/marker-style rather than plain text.
-function MarkerQuestion({ children, accent = '#2563eb', underline = true }: { children: React.ReactNode; accent?: string; underline?: boolean }) {
+// Builder's questions (Arial Black, dark navy, tight tracking). Reusable
+// anywhere a "question" should read as bold/marker-style rather than plain
+// text. Used to always draw a hand-drawn underline in the accent colour by
+// default (opt-out via underline={false}); flipped to opt-in 2026-09-05 —
+// removed app-wide per user request, so a handful of Hone steps that had
+// already turned it off explicitly are now just redundant, not special.
+function MarkerQuestion({ children, accent = '#2563eb', underline = false }: { children: React.ReactNode; accent?: string; underline?: boolean }) {
   return (
     <span style={{ display: 'inline-block' }}>
       <span style={{
