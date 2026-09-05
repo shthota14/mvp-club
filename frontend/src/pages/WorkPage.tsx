@@ -2151,14 +2151,25 @@ function MarketFeatureChip({ v }: { v: FeatureCoverage }) {
 // old per-feature checkmark table, which needed horizontal scroll on mobile).
 // Color + opacity carries the signal instead of a checkmark/dash glyph, so
 // the whole grid stays legible as small squares at any column count.
-function MarketCoverageHeatCell({ v }: { v: FeatureCoverage }) {
+function MarketCoverageHeatCell({ v, onClick, active, ringColor }: { v: FeatureCoverage; onClick?: () => void; active?: boolean; ringColor?: string }) {
   const styles: Record<FeatureCoverage, { bg: string; opacity: number }> = {
     yes: { bg: '#059669', opacity: 1 },
     partial: { bg: '#d97706', opacity: 0.85 },
     no: { bg: BORDER, opacity: 0.6 },
   };
   const s = styles[v];
-  return <div style={{ width: '100%', aspectRatio: '1', borderRadius: 4, background: s.bg, opacity: s.opacity }} />;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={onClick ? !!active : undefined}
+      style={{
+        width: '100%', aspectRatio: '1', borderRadius: 4, background: s.bg, opacity: s.opacity,
+        border: active ? `2px solid ${ringColor || T1}` : 'none', boxShadow: active ? `0 0 0 2px ${ringColor || T1}33` : 'none',
+        padding: 0, margin: 0, cursor: onClick ? 'pointer' : 'default', transition: 'box-shadow .15s ease',
+      }}
+    />
+  );
 }
 
 // Each competitor's own real feature list, side by side — independent of
@@ -2499,6 +2510,9 @@ function MarketSnapshotPanel({
   // to its final state. Purely cosmetic; auto-clears itself shortly after.
   const [revealing, setRevealing] = useState(false);
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Which Competitive-landscape heat cell (if any) has its "why" text open —
+  // 'you' for your own row, or the competitor's index in snapshot.competitors.
+  const [openCell, setOpenCell] = useState<{ row: 'you' | number; col: number } | null>(null);
   // Tracks which idea we've already auto-triggered a generation for, so the
   // auto-trigger below fires once per idea rather than once per component mount.
   const autoTriedForIdeaRef = useRef<string | null>(null);
@@ -2740,6 +2754,38 @@ function MarketSnapshotPanel({
                 }));
                 const fmtScore = (s: number) => (s % 1 === 0 ? s : s.toFixed(1));
 
+                const scoreLabel = (s: number) => s === 1 ? 'full coverage' : s === 0.5 ? 'partial coverage' : 'none';
+                // Same "why" story whichever cell was tapped — yours, or a competitor's —
+                // grounded only in the scores already on the grid, nothing fabricated.
+                const cellStory = (col: number, row: 'you' | number): string => {
+                  const d = snapshot.differentiators[col];
+                  const mine = yourValues[col];
+                  const compScores = rows.map(c => COVERAGE_SCORE[c.features?.[col] ?? 'no'] ?? 0);
+                  if (row === 'you') {
+                    const bestIdx = compScores.reduce((bi, s, i) => (s > compScores[bi] ? i : bi), 0);
+                    const best = { name: rows[bestIdx]?.name, s: rows.length ? compScores[bestIdx] : -1 };
+                    const matching = rows.filter((_, i) => compScores[i] === mine && mine > 0).map(c => c.name);
+                    if (mine === 1) {
+                      if (best.s <= 0) return `You have full coverage of "${d}"${rows.length ? ` and none of the ${rows.length} competitor${rows.length === 1 ? '' : 's'} cover it at all` : ''} — open ground you already hold.`;
+                      if (best.s === 1) return `You have full coverage of "${d}". So does ${matching.join(' and ')} — table stakes here, not a differentiator on its own.`;
+                      return `You have full coverage of "${d}"; the closest competitor, ${best.name}, only has partial coverage — a real edge for you.`;
+                    }
+                    if (mine === 0.5) {
+                      if (best.s === 1) return `You have partial coverage of "${d}"; ${best.name} covers it fully — worth closing before it becomes a talking point against you.`;
+                      if (best.s === 0.5) return `You have partial coverage of "${d}", same as every competitor who covers it at all — nobody has fully solved this yet.`;
+                      return `You have partial coverage of "${d}"${rows.length ? ' and no competitor covers it at all yet' : ''} — you're ahead, though not finished.`;
+                    }
+                    if (best.s === 1) return `You don't cover "${d}" yet; ${best.name} covers it fully — likely to come up the first time a customer compares you side by side.`;
+                    if (best.s === 0.5) return `You don't cover "${d}" yet; ${best.name} covers it partially — nobody has this fully solved.`;
+                    return `Nobody${rows.length ? ' — including you —' : ''} covers "${d}" yet. Open ground for whoever moves first.`;
+                  }
+                  const c = rows[row];
+                  const theirs = compScores[row];
+                  if (theirs > mine) return `${c.name} has ${scoreLabel(theirs)} of "${d}" versus your ${scoreLabel(mine)} — likely to come up the first time a customer compares you side by side.`;
+                  if (theirs < mine) return `${c.name} has ${scoreLabel(theirs)} of "${d}" versus your ${scoreLabel(mine)} — an edge you hold over them specifically.`;
+                  return `${c.name} matches your ${scoreLabel(mine)} of "${d}" — not a differentiator between the two of you.`;
+                };
+
                 return (
                   <div>
                     <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>Competitive landscape</div>
@@ -2766,7 +2812,13 @@ function MarketSnapshotPanel({
                             <div style={{ fontSize: 9.5, color: T3 }}>{fmtScore(yourScore)}/{n} covered</div>
                           </div>
                           {snapshot.differentiators.map((_, i) => (
-                            <MarketCoverageHeatCell key={i} v={snapshot.yourCoverage[i] || 'no'} />
+                            <MarketCoverageHeatCell
+                              key={i}
+                              v={snapshot.yourCoverage[i] || 'no'}
+                              ringColor={STAGE_COLORS.idea}
+                              active={openCell?.row === 'you' && openCell.col === i}
+                              onClick={() => setOpenCell(prev => (prev && prev.row === 'you' && prev.col === i) ? null : { row: 'you', col: i })}
+                            />
                           ))}
                         </div>
                         {rows.map((c, ci) => (
@@ -2795,14 +2847,35 @@ function MarketSnapshotPanel({
                               {c.note && <div style={{ fontSize: 9.5, color: T3, marginTop: 1 }}>{c.note}</div>}
                             </div>
                             {snapshot.differentiators.map((_, i) => (
-                              <MarketCoverageHeatCell key={i} v={c.features?.[i] || 'no'} />
+                              <MarketCoverageHeatCell
+                                key={i}
+                                v={c.features?.[i] || 'no'}
+                                ringColor={c.color}
+                                active={openCell?.row === ci && openCell.col === i}
+                                onClick={() => setOpenCell(prev => (prev && prev.row === ci && prev.col === i) ? null : { row: ci, col: i })}
+                              />
                             ))}
                           </div>
                         ))}
                       </div>
                     </div>
+                    {openCell && (() => {
+                      const row = openCell.row;
+                      const color = row === 'you' ? STAGE_COLORS.idea : (rows[row]?.color || T3);
+                      const name = row === 'you' ? (ideaName?.trim() || 'Your idea') : rows[row]?.name;
+                      return (
+                        <div style={{
+                          marginTop: 10, padding: '10px 12px', borderRadius: 10,
+                          background: `${color}0c`, border: `1.5px solid ${color}33`,
+                          fontSize: 12.5, color: T2, lineHeight: 1.5,
+                        }}>
+                          <strong style={{ color: T1, fontWeight: 700 }}>{name} · {snapshot.differentiators[openCell.col]}</strong>
+                          <div style={{ marginTop: 3 }}>{cellStory(openCell.col, openCell.row)}</div>
+                        </div>
+                      );
+                    })()}
                     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' as const, fontSize: 11, color: T3, marginTop: 10 }}>
-                      <span>Darker green = full coverage · amber = partial · light gray = none, as best Sage can tell</span>
+                      <span>Darker green = full coverage · amber = partial · light gray = none, as best Sage can tell — tap any square for the story behind it</span>
                       <span>🔗 site · 💬 reviews — both open a search, since Sage can't confirm a live URL directly</span>
                       <span>† Market share is Sage's roughest field — a hedged, unsourced estimate, not a researched figure. Treat it as a starting guess to verify, same as everything else on this card.</span>
                     </div>
