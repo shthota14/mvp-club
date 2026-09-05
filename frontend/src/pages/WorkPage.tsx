@@ -222,7 +222,7 @@ const MODULES = ['idea', 'hone', 'validate', 'shape', 'done'] as const;
 type Mod = typeof MODULES[number];
 
 const META: Record<Mod, { icon: string; label: string; steps: number; desc: string }> = {
-  idea:     { icon: '💡', label: 'Idea',     steps: 2, desc: 'Capture a problem worth solving.' },
+  idea:     { icon: '💡', label: 'Idea',     steps: 1, desc: 'Capture a problem worth solving.' },
   hone:     { icon: '🎯', label: 'Hone',     steps: 7, desc: 'Sharpen until it\'s specific and real.' },
   validate: { icon: '🧪', label: 'Validate', steps: 10, desc: 'Test with people before you build.' },
   shape:    { icon: '🔨', label: 'Shape',    steps: 5, desc: 'Define the smallest possible MVP.' },
@@ -232,7 +232,6 @@ const META: Record<Mod, { icon: string; label: string; steps: number; desc: stri
 const STEP_GOALS: Record<Mod, string[]> = {
   idea: [
     'Put your idea into one sentence. If you can\'t say it simply, you can\'t build it clearly.',
-    'The "why" behind your idea is as important as the idea itself.',
   ],
   hone: [
     'Reject "everyone." The more specific you are, the better. Remember — at this stage you\'re making an assumption. That\'s okay.',
@@ -278,7 +277,7 @@ const STEP_GOALS: Record<Mod, string[]> = {
 };
 
 const STEP_TITLES: Record<Mod, string[]> = {
-  idea:     ["What's your idea?", "What's motivating you to build this?"],
+  idea:     ["What's your idea?"],
   hone:     ["Who do you think has this problem?", "What are the problems?", "What breaks if these problems are unresolved?", "What do you think people are doing to solve this?", "Are you set up to win?", "How strong is your idea?", "Where does your idea stand in the market?"],
   validate: ["Set your success bar", "Decide what you'll prove", "Name your assumptions", "Choose who to talk to", "Build your script", "Add your contacts", "Interview Summary Dashboard", "Log your conversations", "Analyse what you found", "Make the call"],
   shape:    ["What did you learn from users?", "What will you build?", "Shape your features", "How will you reach users and charge?", "Build your backlog"],
@@ -294,7 +293,7 @@ const STAGE_TIME: Record<Mod, string> = {
 };
 
 const STEP_ICONS: Record<Mod, string[]> = {
-  idea:     ['🎯', '🌟'],
+  idea:     ['🎯'],
   hone:     ['👥', '📝', '💪', '🔎', '🧠', '📊', '📈'],
   validate: ['🎯', '📋', '💭', '👤', '📝', '🙋', '🗓️', '🎤', '📈', '✅'],
   shape:    ['📖', '💡', '⚡', '💰', '🗂️'],
@@ -2875,383 +2874,6 @@ function MarketSnapshotPanel({
   );
 }
 
-// ── Spark Builder ─────────────────────────────────────────────────────────
-
-const SPARK_TYPES = [
-  {
-    key: 'lived',
-    icon: '🙋',
-    title: 'I lived this problem',
-    desc: 'You felt this pain personally. It happened to you.',
-    prompt: 'Describe the moment you felt this pain. What happened, and why did it stick with you?',
-    ph: "I spent years trying to solve this myself. I'd waste hours every week on X and there was nothing that worked…",
-    color: '#7c3aed',
-  },
-  {
-    key: 'spotted',
-    icon: '👁️',
-    title: 'I spotted a gap',
-    desc: 'You watched others struggle with it — repeatedly.',
-    prompt: 'Where did you see this problem? Who was struggling and what were the consequences?',
-    ph: "While working in [industry] I kept watching people deal with X. Every team I talked to had the same complaint…",
-    color: '#2563eb',
-  },
-  {
-    key: 'shift',
-    icon: '🔮',
-    title: 'The timing is right',
-    desc: 'Something changed — in tech, behaviour, or the world — that makes this solvable now.',
-    prompt: "What's the shift? What's changed that makes this the right moment to build?",
-    ph: "AI/regulation/remote work has fundamentally changed how people do X. The old solutions no longer work because…",
-    color: '#059669',
-  },
-  {
-    key: 'unsure',
-    icon: '🤔',
-    title: "I'm not sure yet",
-    desc: "Answer 3 quick questions and we'll help you find your why.",
-    prompt: '',
-    ph: '',
-    color: '#64748b',
-  },
-] as const;
-
-type SparkType = typeof SPARK_TYPES[number]['key'] | 'manual';
-
-function SparkBuilder({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [type, setType]       = useState<SparkType | null>(null);
-  const [story, setStory]     = useState('');
-  const [whyMe, setWhyMe]     = useState('');
-  const [manual, setManual]   = useState('');
-  const [focused, setFocused] = useState<string | null>(null);
-  // Discovery prompts for "I'm not sure yet"
-  const [dWho,    setDWho]    = useState('');
-  const [dWhat,   setDWhat]   = useState('');
-  const [dOrigin, setDOrigin] = useState('');
-
-  const init = React.useRef(false);
-  useEffect(() => {
-    if (init.current || !value) return;
-    init.current = true;
-    // Saved format is `[Title]\n<story>` — no "Why me:" segment is ever written,
-    // so the parser here must match what save actually produces (previously it
-    // required a "Why me:" segment that never existed, which meant every saved
-    // preset-type entry silently fell back to raw "manual" text with the
-    // literal [Title] bracket tag visible on reload).
-    const m = value.match(/^\[(.+?)\]\s*([\s\S]*)$/);
-    if (m) {
-      const t = SPARK_TYPES.find(s => s.title === m[1]);
-      if (t) { setType(t.key); setStory(m[2].trim()); }
-      // Unknown/legacy bracket tag — still strip it so it never renders raw.
-      else { setType('manual'); setManual(m[2].trim() || value); }
-    } else { setType('manual'); setManual(value); }
-  }, [value]);
-
-  // Assemble and bubble up
-  useEffect(() => {
-    if (type === 'manual') { onChange(manual); return; }
-    if (type === 'unsure') {
-      const parts = [
-        dWho.trim()    && `Who it helps: ${dWho.trim()}`,
-        dWhat.trim()   && `What stays broken: ${dWhat.trim()}`,
-        dOrigin.trim() && `Why I thought of it: ${dOrigin.trim()}`,
-      ].filter(Boolean).join('\n');
-      onChange(parts || '');
-      return;
-    }
-    const selected = SPARK_TYPES.find(s => s.key === type);
-    const parts = [
-      selected ? `[${selected.title}]` : '',
-      story.trim(),
-    ].filter(Boolean).join('\n');
-    onChange(parts);
-  }, [type, story, manual, dWho, dWhat, dOrigin]);
-
-  const selected = type !== 'manual' ? SPARK_TYPES.find(s => s.key === type) : null;
-  const accent = selected?.color ?? '#7c3aed';
-  const isComplete = type === 'manual'
-    ? manual.trim().length > 10
-    : type === 'unsure'
-      ? !!(dWho.trim() && dWhat.trim() && dOrigin.trim())
-      : !!(type && story.trim().length > 20);
-
-  const taStyle = (field: string, accentColor = accent): React.CSSProperties => ({
-    width: '100%', boxSizing: 'border-box',
-    padding: '14px 16px', border: `2px solid ${focused === field ? accentColor : '#e5e5ea'}`,
-    borderRadius: 12, fontSize: 15, outline: 'none', resize: 'vertical' as const,
-    lineHeight: 1.65, fontFamily: 'inherit', background: '#fff', color: USER_INPUT_COLOR,
-    minHeight: 100, transition: 'border-color .18s',
-  });
-
-  // Preview panel — whiteboard marker style, consistent with one-liner
-  const hasPreviewContent = type !== null && (story.trim() || whyMe.trim() || manual.trim());
-  const sparkColor = STAGE_COLORS.idea;
-
-  // Was a function component defined inline in SparkBuilder's own render
-  // body (`const PreviewPanel = () => {...}`, invoked as `<PreviewPanel />`
-  // below) — React treats an inline-defined component as a NEW component
-  // type on every parent render, so it was fully unmounting and remounting
-  // on every keystroke, replaying its entrance animation each time instead
-  // of once when the preview first appears. Inlined as plain JSX instead so
-  // it mounts once and the slide-in below actually plays once.
-  const previewTextContent = type === 'manual' ? manual.trim() : story.trim();
-  const previewSparkType   = type !== 'manual' ? SPARK_TYPES.find(s => s.key === type) : null;
-  const PreviewPanelContent = hasPreviewContent ? (() => {
-    const textContent = previewTextContent;
-    const sparkType   = previewSparkType;
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 10, animation: 'ideaCardSlideIn .45s ease-out both' }}>
-        <div style={{
-          background: '#fffdfa',
-          border: '1px solid #e8e3d3',
-          borderTop: `4px solid ${sparkColor}`,
-          borderRadius: 10,
-          padding: '18px 22px 22px',
-        }}>
-          {/* Label chip */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase' as const, color: sparkColor }}>
-              Your Why
-            </span>
-            {sparkType && (
-              <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: T3 }}>
-                · {sparkType.icon} {sparkType.title}
-              </span>
-            )}
-          </div>
-
-          {/* Story text */}
-          <div style={{
-            fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
-            fontSize: 17, lineHeight: 1.5, color: T1, fontWeight: 600,
-            whiteSpace: 'pre-wrap' as const, wordBreak: 'break-word' as const,
-            borderBottom: `3px solid ${sparkColor}`,
-            paddingBottom: 10, marginBottom: 14,
-          }}>
-            {textContent
-              ? `"${textContent}"`
-              : <span style={{ color: T3, fontWeight: 400 }}>Your story will appear here…</span>
-            }
-          </div>
-
-          {/* Why me line */}
-          {whyMe.trim() && (
-            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: T2, lineHeight: 1.5 }}>
-              <span style={{ color: T3 }}>Why me? </span>
-              {whyMe.trim()}
-            </div>
-          )}
-        </div>
-
-        {isComplete && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, animation: 'wup .2s ease' }}>
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#059669' }} />
-            <span style={{ fontSize: 12, color: '#059669', fontWeight: 600 }}>Ready to continue</span>
-          </div>
-        )}
-      </div>
-    );
-  })() : null;
-
-  // Outer layout: when a type is chosen, split left/right
-  const showSplit = type !== null;
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-      {/* ── Inputs ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-        {/* Step 1 — Origin story type — Magazine Cover Feature style
-            (Direction 13), matching Idea Step 1's masthead treatment. */}
-        <div>
-          <div style={{ marginBottom: 14 }}>
-            <div style={{
-              fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, lineHeight: 0.98,
-              letterSpacing: '.005em', textTransform: 'uppercase' as const, color: T1,
-            }}>
-              What's your origin story?
-            </div>
-            <div style={{ borderTop: `3px solid ${T1}`, marginTop: 6, maxWidth: 220 }} />
-          </div>
-          {/* Unanswered: every card visible, tap one to pick your why.
-              Answered: the cards collapse to a single echoed pill so this
-              question doesn't keep taking up the same room the ones
-              before it already gave back — "change" reopens the cards.
-              Both states stay mounted, toggled with `display` rather than
-              a JS branch: branching this whole subtree on `type === null`
-              made TS narrow `type` to the literal `null` for the entire
-              branch (TS links a derived boolean back to the variable it
-              came from), which broke unrelated `.key`/`.color` lookups on
-              SPARK_TYPES entries further down in that same branch
-              ("Property does not exist on type 'never'"). `type` is only
-              read inside style values below, never as a branch condition. */}
-          <div style={{ display: type === null ? 'flex' : 'none', flexDirection: 'column', gap: 8 }}>
-              {/* Magazine Cover Feature (Direction 13): crisp numbered
-                  coverline list instead of the hand-drawn wobble cards —
-                  a left rule that inks in the option's color on selection
-                  rather than a flip/rotate micro-interaction. */}
-              {SPARK_TYPES.map((s, si) => {
-                const isSelected = type === s.key;
-                return (
-                  <button
-                    key={s.key}
-                    onClick={() => { setType(s.key); if (type === 'manual') { setStory(''); setWhyMe(''); } }}
-                    style={{
-                      display: 'flex', alignItems: 'flex-start', gap: 12,
-                      padding: '11px 14px', cursor: 'pointer', textAlign: 'left' as const,
-                      border: 'none', borderLeft: `4px solid ${isSelected ? s.color : '#e5e1d3'}`,
-                      borderRadius: 3,
-                      background: isSelected ? `${s.color}10` : '#fffdfa',
-                      transition: 'all .15s', fontFamily: 'inherit', width: '100%',
-                    }}
-                  >
-                    <div style={{
-                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15,
-                      color: isSelected ? s.color : T3, flexShrink: 0, minWidth: 20,
-                    }}>
-                      {String(si + 1).padStart(2, '0')}
-                    </div>
-                    <div>
-                      <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: isSelected ? s.color : T1 }}>
-                        {s.icon} {s.title}
-                      </div>
-                      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 13, color: T2, marginTop: 2, lineHeight: 1.4 }}>
-                        {s.desc}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-
-              {/* Manual entry option */}
-              <button
-                onClick={() => setType('manual')}
-                style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
-                  padding: '11px 14px', cursor: 'pointer', textAlign: 'left' as const,
-                  border: 'none', borderLeft: `4px solid ${type === 'manual' ? '#6e6e73' : '#e5e1d3'}`,
-                  borderRadius: 3,
-                  background: type === 'manual' ? '#6e6e7310' : '#fffdfa',
-                  transition: 'all .15s', fontFamily: 'inherit', width: '100%',
-                }}
-              >
-                <div style={{
-                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15,
-                  color: type === 'manual' ? '#6e6e73' : T3, flexShrink: 0, minWidth: 20,
-                }}>
-                  {String(SPARK_TYPES.length + 1).padStart(2, '0')}
-                </div>
-                <div>
-                  <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: type === 'manual' ? '#6e6e73' : T1 }}>
-                    ✏️ Write my own
-                  </div>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 13, color: T2, marginTop: 2, lineHeight: 1.4 }}>
-                    in your own words
-                  </div>
-                </div>
-              </button>
-            </div>
-          <div style={{ display: type === null ? 'none' : 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '4px 12px', borderRadius: 4,
-                background: type === 'manual' ? '#6e6e73' : (selected?.color || T1), color: '#fff',
-                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 12,
-                letterSpacing: '.05em', textTransform: 'uppercase' as const,
-              }}>
-                {type === 'manual' ? '✏️' : selected?.icon} {type === 'manual' ? 'Write my own' : selected?.title}
-              </div>
-              <button
-                onClick={() => setType(null)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
-              >
-                ↺ change
-              </button>
-            </div>
-        </div>
-
-        {/* Manual textarea */}
-        {type === 'manual' && (
-          <div style={{ animation: 'wup .2s ease' }}>
-            <div style={{
-              fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
-              fontSize: 14, color: T2, lineHeight: 1.6, marginBottom: 10,
-            }}>
-              Tell us why this idea matters to you — your personal connection, what you've observed, what's changed, or why now is the right time.
-            </div>
-            <textarea
-              value={manual}
-              onChange={e => setManual(e.target.value)}
-              onFocus={() => setFocused('manual')}
-              onBlur={() => setFocused(null)}
-              placeholder={"I've spent years watching teams struggle with this problem. What changed recently is that AI made it possible to solve it differently — and I'm the right person to build it because I've lived inside this industry for 6 years…"}
-              style={{ ...taStyle('manual', '#059669'), minHeight: 140, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#059669' }}
-              autoFocus
-            />
-            <div style={{ fontSize: 12, color: '#b0b0b8', marginTop: 6, textAlign: 'right' as const }}>
-              {manual.trim().length} characters
-            </div>
-          </div>
-        )}
-
-        {/* I'm not sure yet — 3-question discovery */}
-        {type === 'unsure' && (
-          <div style={{ animation: 'wup .2s ease', display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {[
-              { key: 'who',    label: 'Who suffers most if this stays broken?',  val: dWho,    set: setDWho,    chips: ['customers', 'founders', 'small teams', 'freelancers', 'operators'] },
-              { key: 'what',   label: "What's the worst thing that doesn't get fixed?", val: dWhat, set: setDWhat, chips: ['wasted time', 'lost money', 'missed growth', 'daily stress', 'churn'] },
-              { key: 'origin', label: 'What made you think of this idea?',       val: dOrigin, set: setDOrigin, chips: ['personal pain', 'saw it repeatedly', 'friend struggled', 'market gap', 'new tech'] },
-            ].map((q, i) => (
-              <div key={q.key} style={{ borderLeft: `4px solid ${q.val.trim() ? '#64748b' : '#e5e1d3'}`, paddingLeft: 12, transition: 'border-color .15s' }}>
-                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: q.val.trim() ? '#64748b' : T3, marginBottom: 6 }}>
-                  {String(i + 1).padStart(2, '0')} — {q.label}
-                </div>
-                <SuggestionChips chips={q.chips} onSelect={q.set} accent="#64748b" />
-                <input
-                  value={q.val}
-                  onChange={e => q.set(e.target.value)}
-                  onFocus={() => setFocused(q.key)}
-                  onBlur={() => setFocused(null)}
-                  placeholder="Your answer…"
-                  style={{ width: '100%', boxSizing: 'border-box', marginTop: 8, padding: '6px 2px', border: 'none', borderBottom: `1.5px solid ${focused === q.key ? '#64748b' : BORDER}`, borderRadius: 0, fontSize: 14, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', outline: 'none', color: USER_INPUT_COLOR, background: 'transparent', transition: 'border-color .15s' }}
-                />
-              </div>
-            ))}
-            {dWho && dWhat && dOrigin && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, animation: 'wup .2s ease' }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#059669' }} />
-                <span style={{ fontSize: 12, color: '#059669', fontWeight: 700 }}>You've found your why — ready to continue</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step 2 — Guided story prompt */}
-        {selected && selected.key !== 'unsure' && (
-          <div style={{ animation: 'wup .2s ease' }}>
-            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: T2, lineHeight: 1.6, marginBottom: 10 }}>
-              {selected.prompt}
-            </div>
-            <textarea
-              value={story}
-              onChange={e => setStory(e.target.value)}
-              onFocus={() => setFocused('story')}
-              onBlur={() => setFocused(null)}
-              placeholder={selected.ph}
-              style={{ ...taStyle('story'), minHeight: 80, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15 }}
-              autoFocus
-            />
-          </div>
-        )}
-
-      </div>
-
-      {/* ── Post-it preview below inputs ── */}
-      {showSplit && PreviewPanelContent}
-    </div>
-  );
-}
 
 // ── Audience Builder (Hone step 1) ────────────────────────────────────────
 
@@ -7264,7 +6886,7 @@ function StartChallengeModal({ ideaId, targetHint, onClose, onCreated }: {
 // ── Field → canonical stage map (module-level so load effect can use it) ──
 const FIELD_STAGE_CANONICAL: Record<string, string> = {
   // Idea
-  ideaName: 'idea', oneLiner: 'idea', spark: 'idea', publicSections: 'idea',
+  ideaName: 'idea', oneLiner: 'idea', publicSections: 'idea',
   // Hone — marketSnapshot moved here 2026-08-24 (see FIELD_STAGE above).
   marketSnapshot: 'hone',
   whoExactly: 'hone', whoPays: 'hone', problemSentence: 'hone',
@@ -12822,7 +12444,7 @@ export default function WorkPage() {
       // step already only ever unlocks Shape on a "Yes — strong signal" verdict.
       // This just makes the sidebar/mobile picker honor the same rule everywhere,
       // instead of only on the one linear path through Validate.
-      const ideaDone     = !!(map['oneLiner'] && map['spark']);
+      const ideaDone     = !!map['oneLiner'];
       const honeDone     = !!(map['founderStatement'] && hScore >= 20);
       const validateDone = !!(map['interviewResults'] || map['validatedProblem']);
       const shapeDone    = !!(map['distributionPlan']);
@@ -12960,7 +12582,7 @@ export default function WorkPage() {
   // ── Field → stage map for auto-save ──────────────────────────────────────
   const FIELD_STAGE: Record<string, Mod> = {
     // Idea
-    ideaName: 'idea', oneLiner: 'idea', spark: 'idea', publicSections: 'idea',
+    ideaName: 'idea', oneLiner: 'idea', publicSections: 'idea',
     // Hone — marketSnapshot moved here 2026-08-24 when its step relocated to
     // the end of Hone; the field key and its data are unchanged.
     marketSnapshot: 'hone',
@@ -14360,19 +13982,12 @@ export default function WorkPage() {
           />
         );
       })()}
-      <NavRow onNext={async () => { await save('idea', { ideaName: get('ideaName') || activeIdea.name, oneLiner: get('oneLiner') }); next(); }} nextLabel="Next →" disabled={!get('oneLiner').trim() || get('oneLiner').includes('___')} disabledReason="Finish your one-liner — every blank needs a real answer." stageColor={STAGE_COLORS.idea} stepTitle="What's your idea?" ideaId={activeIdea.id} />
-    </div>,
-    <div key="i1" style={col}>
-      <div><ModBadge mod="idea" /><StepBars mod="idea" step={1} /></div>
-      <div>
-        <H accent={STAGE_COLORS.idea}>What's motivating you to build this?</H>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <AgentAvatar size={36} />
-          <StepGoal text={STEP_GOALS.idea[1]} />
-        </div>
-      </div>
-      <SparkBuilder value={get('spark')} onChange={v => set('spark', v)} />
-      <NavRow onBack={back} onNext={async () => { await save('idea', { spark: get('spark') }); unlock('hone'); mark('idea'); next(); }} nextLabel="Complete Idea →" disabled={!get('spark').trim()} disabledReason="Share what's motivating you before moving on." stageColor={STAGE_COLORS.idea} stepTitle="What's motivating you to build this?" ideaId={activeIdea.id} />
+      {/* "What's motivating you to build this?" (the Spark Builder step)
+          removed 2026-09-05 per user request — Idea is now a single step,
+          so this step's own Next now does what the removed step's Next used
+          to do (unlock Hone, mark Idea complete) instead of advancing to a
+          second Idea step. */}
+      <NavRow onNext={async () => { await save('idea', { ideaName: get('ideaName') || activeIdea.name, oneLiner: get('oneLiner') }); unlock('hone'); mark('idea'); next(); }} nextLabel="Complete Idea →" disabled={!get('oneLiner').trim() || get('oneLiner').includes('___')} disabledReason="Finish your one-liner — every blank needs a real answer." stageColor={STAGE_COLORS.idea} stepTitle="What's your idea?" ideaId={activeIdea.id} />
     </div>,
     <CompleteBadge key="i-done" mod="idea" onContinue={() => goMod('hone')} onBack={back} />,
   ];
