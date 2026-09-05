@@ -2387,45 +2387,69 @@ function MarketSwotPanel({ snapshot, ideaName }: { snapshot: MarketSnapshotData;
     { label: 'Threats', sub: 'What makes incumbents hard to move', color: '#d97706', items: top(threats) },
   ];
 
+  const [open, setOpen] = useState<Record<string, number | null>>({});
+
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>What this adds up to</div>
-      <div style={{ fontSize: 12, color: T3, marginBottom: 12 }}>
+      <div style={{ fontSize: 12, color: T3, marginBottom: 14 }}>
         Worked out from the table above — your coverage against each competitor's, plus their prices and ratings.
-        Nothing here is written by hand, so it changes whenever the snapshot does.
+        Nothing here is written by hand, so it changes whenever the snapshot does. Tap a square for the story behind it.
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
-        {[
-          { title: 'About you', groups: [quads[0], quads[1]] },
-          { title: 'About the market', groups: [quads[2], quads[3]] },
-        ].map(section => (
-          <div key={section.title} style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '12px 14px 14px', background: '#fcfcfd' }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .6, marginBottom: 12 }}>{section.title}</div>
-            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
-              {section.groups.map(q => (
-                <div key={q.label}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' as const, color: q.color }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: q.color, flexShrink: 0 }} />
-                    {q.label}
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 18 }}>
+        {quads.map(q => {
+          const activeIdx = open[q.label] ?? null;
+          const activeItem = activeIdx !== null ? q.items[activeIdx] : null;
+          return (
+            <div key={q.label}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' as const, color: q.color }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: q.color, flexShrink: 0 }} />
+                {q.label}
+              </div>
+              <div style={{ fontSize: 11, color: T3, marginTop: 4, marginBottom: 10 }}>{q.sub}</div>
+              {q.items.length === 0 ? (
+                <div style={{ fontSize: 12, color: T3 }}>Nothing clear-cut here yet.</div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', gap: 7 }}>
+                    {Array.from({ length: 4 }).map((_, i) => {
+                      const has = i < q.items.length;
+                      const isActive = has && activeIdx === i;
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          disabled={!has}
+                          onClick={() => setOpen(o => ({ ...o, [q.label]: o[q.label] === i ? null : i }))}
+                          title={has ? q.items[i].strong : undefined}
+                          aria-expanded={isActive}
+                          style={{
+                            width: 28, height: 28, borderRadius: 6, flexShrink: 0, padding: 0,
+                            background: has ? q.color : '#fff',
+                            border: `1.5px solid ${has ? q.color : BORDER}`,
+                            opacity: has ? (activeIdx === null || isActive ? 1 : 0.4) : 1,
+                            cursor: has ? 'pointer' : 'default',
+                            boxShadow: isActive ? `0 0 0 3px ${q.color}2e` : 'none',
+                            transition: 'opacity .15s ease, box-shadow .15s ease',
+                          }}
+                        />
+                      );
+                    })}
                   </div>
-                  <div style={{ fontSize: 11, color: T3, marginTop: 4 }}>{q.sub}</div>
-                  {q.items.length === 0 ? (
-                    <div style={{ fontSize: 12, color: T3, marginTop: 10 }}>Nothing clear-cut here yet.</div>
-                  ) : (
-                    <ul style={{ margin: '10px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column' as const, gap: 9 }}>
-                      {q.items.map((it, i) => (
-                        <li key={i} style={{ fontSize: 12.5, color: T2, lineHeight: 1.5, paddingLeft: 13, position: 'relative' as const }}>
-                          <span style={{ position: 'absolute', left: 0, color: T3 }}>—</span>
-                          <strong style={{ color: T1, fontWeight: 700 }}>{it.strong}</strong> — {it.text}
-                        </li>
-                      ))}
-                    </ul>
+                  {activeItem && (
+                    <div style={{
+                      marginTop: 10, padding: '10px 12px', borderRadius: 10,
+                      background: `${q.color}0c`, border: `1.5px solid ${q.color}33`,
+                      fontSize: 12.5, color: T2, lineHeight: 1.5,
+                    }}>
+                      <strong style={{ color: T1, fontWeight: 700 }}>{activeItem.strong}</strong> — {activeItem.text}
+                    </div>
                   )}
-                </div>
-              ))}
+                </>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
