@@ -151,6 +151,337 @@ function JengaTower({ items, color, colorOf, iconOf, labelOf, isSelected, onTogg
   );
 }
 
+// ── Slider-style picker (Validate Step 1 "Goal Builder", 2026-09-05) ──────
+// Same drop-in prop shape as JengaTower (so it slots into the same call
+// sites) but rendered as a segmented slider bar instead of a stack of wood
+// blocks — filled up to whichever segment is selected, matching the visual
+// language PainGaugeStep already established for "pick a point on a scale."
+// Reused here because all 5 Goal Builder questions ARE points on a scale
+// (more conversations, higher %, stronger proof, narrower ICP, longer
+// deadline), unlike JengaTower's other use sites which are true multi-pick
+// lists — so JengaTower itself is untouched.
+function SliderTower({ items, color, iconOf, labelOf, isSelected, onToggle }: {
+  items: string[];
+  color?: string;
+  iconOf?: (item: string) => React.ReactNode;
+  labelOf?: (item: string) => React.ReactNode;
+  isSelected: (item: string) => boolean;
+  onToggle: (item: string) => void;
+}) {
+  const selectedIdx = items.findIndex(isSelected);
+  const c = color || '#8a5a2b';
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+        {items.map((item, i) => {
+          const on = selectedIdx >= 0 && i <= selectedIdx;
+          const active = i === selectedIdx;
+          return (
+            <button
+              key={item}
+              type="button"
+              onClick={() => onToggle(item)}
+              title={typeof labelOf?.(item) === 'string' ? (labelOf(item) as string) : item}
+              style={{
+                flex: 1, height: 36, border: 'none', borderRadius: 6, cursor: 'pointer', padding: 0,
+                background: on ? c : '#e5e5ea', transition: 'background .12s, transform .12s',
+                transform: active ? 'scaleY(1.18)' : 'none',
+                outline: active ? `2px solid ${c}` : 'none', outlineOffset: 2,
+              }}
+            />
+          );
+        })}
+      </div>
+      <div style={{ fontSize: 12, fontWeight: 700, color: selectedIdx >= 0 ? c : T3, minHeight: 16 }}>
+        {selectedIdx >= 0 ? (<>{iconOf?.(items[selectedIdx])} {labelOf ? labelOf(items[selectedIdx]) : items[selectedIdx]}</>) : 'Tap a segment to choose'}
+      </div>
+    </div>
+  );
+}
+
+// One Goal Builder question row: full picker while open, a compact one-line
+// echo (value + "↺ change") once answered — same progressive-reveal /
+// collapse-to-echo pattern as HoneScorecard, so only one question's full
+// picker is on screen at a time instead of all 5 at once.
+function GoalQuestionRow({ visible, open, accent, emoji, question, echoLabel, onReopen, children }: {
+  visible: boolean; open: boolean; accent: string; emoji: string; question: string;
+  echoLabel?: string; onReopen: () => void; children: React.ReactNode;
+}) {
+  if (!visible) return null;
+  if (!open) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>{emoji}</span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 10.5, color: T3, fontWeight: 600 }}>{question}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: accent, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>{echoLabel}</div>
+          </div>
+        </div>
+        <button onClick={onReopen} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit', flexShrink: 0 }}>↺ change</button>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 17, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.25 }}>{question}</div>
+          <div style={{ borderTop: `2px solid ${accent}`, marginTop: 3, maxWidth: 150 }} />
+        </div>
+        <span style={{ fontSize: 20 }}>{emoji}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// Validate Step 1's "Goal Builder" — 5 questions, one at a time. Each is a
+// point on a scale (more conversations / higher % / stronger proof /
+// narrower ICP / longer deadline), so each uses SliderTower instead of the
+// old always-all-visible JengaTower grid; answering one reveals the next
+// (same prevAnswered chain HoneScorecard uses), and a picked question
+// collapses to a one-line echo — reopen it any time via "↺ change".
+// A typed custom answer (GoalCustomInput) intentionally does NOT
+// auto-collapse its row (only a slider tap does) so the row doesn't
+// vanish mid-keystroke; the next question still reveals as soon as any
+// value — preset or typed — is present.
+function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: (k: string, v: string) => void }) {
+  const [reopenedKey, setReopenedKey] = useState<string | null>(null);
+
+  const rateOpts   = [{ v:'50', label:'50% or more' }, { v:'60', label:'60% or more' }, { v:'80', label:'80% or more' }, { v:'100', label:'All of them' }];
+  const signalOpts = [
+    { v:'none',      label:'None — pain confirms are enough' },
+    { v:'verbal-1',  label:"At least 1 says they'd pay" },
+    { v:'verbal-2',  label:"At least 2 say they'd pay" },
+    { v:'preorder',  label:'At least 1 pre-order or deposit' },
+    { v:'loi',       label:'At least 1 signed LOI or contract' },
+  ];
+  const timeOpts   = [{ v:'1w', label:'1 week' }, { v:'2w', label:'2 weeks' }, { v:'1m', label:'1 month' }, { v:'open', label:'No deadline' }];
+  const ICP_LABELS: Record<string, string> = {
+    '1': 'Targeting anyone in pain',
+    '2': 'Targeting a specific role or function',
+    '3': 'Targeting a specific company type',
+    '4': 'Targeting named individuals',
+  };
+
+  const convos  = get('valGoalConvos')  || '';
+  const rate    = get('valGoalRate')    || '';
+  const signal  = get('valGoalSignal')  || '';
+  const icpOn   = get('valGoalICP')     || '';
+  const time    = get('valGoalTime')    || '';
+
+  const writeSuccess = (c: string, r: string, s: string, icp: string, t: string) => {
+    if (!c && !r && !s) { set('valGoalSuccess', ''); return; }
+    const rLabel   = rateOpts.find(o => o.v === r)?.label || r || '';
+    const sigLabel = signalOpts.find(o => o.v === s)?.label || s || '';
+    const icpLabel = ICP_LABELS[icp] || icp || '';
+    const timeLabel = timeOpts.find(o => o.v === t)?.label || t || '';
+    const parts = [
+      c  ? `${c} conversations` : '',
+      r  ? `${rLabel} must confirm the pain` : '',
+      s && s !== 'none' ? sigLabel : '',
+      icp ? icpLabel : '',
+      t && t !== 'open' ? `Decide within ${timeLabel}` : '',
+    ].filter(Boolean);
+    set('valGoalSuccess', parts.join(' · '));
+  };
+
+  const summary = get('valGoalSuccess') || '';
+
+  // Q1
+  const Q1_OPTS = [
+    { v: '3',   emoji: '🤏', vibe: 'Gut check' },
+    { v: '5',   emoji: '🖐️', vibe: 'Early signal' },
+    { v: '7',   emoji: '🎯', vibe: 'Lucky 7' },
+    { v: '10',  emoji: '💪', vibe: 'Solid proof' },
+    { v: '15+', emoji: '🚀', vibe: 'All in' },
+  ];
+  const q1ByV = new Map(Q1_OPTS.map(o => [o.v, o]));
+  const q1Preset = Q1_OPTS.some(o => o.v === convos);
+
+  // Q2
+  const Q2_OPTS = [
+    { v: '50',  emoji: '🤷', vibe: 'Half' },
+    { v: '60',  emoji: '🙌', vibe: 'Most' },
+    { v: '80',  emoji: '🔥', vibe: 'Strong' },
+    { v: '100', emoji: '💯', vibe: 'All of em' },
+  ];
+  const q2Preset = rateOpts.some(o => o.v === rate);
+
+  // Q3
+  const Q3_OPTS = [
+    { v: 'none',     emoji: '🤝' },
+    { v: 'verbal-1', emoji: '🗣️' },
+    { v: 'verbal-2', emoji: '💬' },
+    { v: 'preorder', emoji: '💳' },
+    { v: 'loi',      emoji: '📝' },
+  ];
+  const q3Preset = signalOpts.some(o => o.v === signal);
+
+  // Q4
+  const Q4_OPTS = [
+    { val: '1', emoji: '🌊', vibe: 'Anyone in pain' },
+    { val: '2', emoji: '👥', vibe: 'A role or function' },
+    { val: '3', emoji: '🏢', vibe: 'A company type' },
+    { val: '4', emoji: '🎯', vibe: 'Named people' },
+  ];
+  const q4ByV = new Map(Q4_OPTS.map(o => [o.val, o]));
+  const q4Preset = ['1', '2', '3', '4'].includes(icpOn);
+
+  // Q5
+  const Q5_OPTS = [
+    { v: '1w',   emoji: '⚡' },
+    { v: '2w',   emoji: '🏃' },
+    { v: '1m',   emoji: '📅' },
+    { v: 'open', emoji: '♾️' },
+  ];
+  const q5Preset = timeOpts.some(o => o.v === time);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
+      <GoalQuestionRow
+        visible={true}
+        open={!convos || reopenedKey === 'q1' || !q1Preset}
+        accent="#2563eb" emoji="🗣️" question="How many real conversations count?"
+        echoLabel={q1Preset ? `${q1ByV.get(convos)?.emoji} ${convos} — ${q1ByV.get(convos)?.vibe}` : convos}
+        onReopen={() => setReopenedKey('q1')}
+      >
+        <SliderTower
+          items={Q1_OPTS.map(o => o.v)}
+          color="#2563eb"
+          labelOf={v => { const o = q1ByV.get(v)!; return `${v} — ${o.vibe}`; }}
+          iconOf={v => q1ByV.get(v)?.emoji}
+          isSelected={v => convos === v}
+          onToggle={v => { set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); setReopenedKey(null); }}
+        />
+        <div style={{ marginTop: 8 }}>
+          <GoalCustomInput
+            accent="#2563eb"
+            placeholder="or type your own…"
+            value={q1Preset ? '' : convos}
+            onChange={v => { set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); }}
+          />
+        </div>
+      </GoalQuestionRow>
+
+      <GoalQuestionRow
+        visible={!!convos}
+        open={!rate || reopenedKey === 'q2' || !q2Preset}
+        accent="#f59e0b" emoji="🎯" question="What % must feel the pain for it to be real?"
+        echoLabel={q2Preset ? `${Q2_OPTS.find(o => o.v === rate)?.emoji} ${rateOpts.find(ro => ro.v === rate)?.label}` : rate}
+        onReopen={() => setReopenedKey('q2')}
+      >
+        <SliderTower
+          items={Q2_OPTS.map(o => o.v)}
+          color="#d97706"
+          labelOf={v => rateOpts.find(ro => ro.v === v)?.label}
+          iconOf={v => Q2_OPTS.find(o => o.v === v)?.emoji}
+          isSelected={v => rate === v}
+          onToggle={v => { set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); setReopenedKey(null); }}
+        />
+        <div style={{ marginTop: 8 }}>
+          <GoalCustomInput
+            accent="#d97706"
+            placeholder="or type your own %…"
+            value={q2Preset ? '' : rate}
+            onChange={v => { set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); }}
+          />
+        </div>
+      </GoalQuestionRow>
+
+      <GoalQuestionRow
+        visible={!!rate}
+        open={!signal || reopenedKey === 'q3' || !q3Preset}
+        accent="#10b981" emoji="🔑" question="What's your proof this problem truly exists?"
+        echoLabel={q3Preset ? `${Q3_OPTS.find(o => o.v === signal)?.emoji} ${signalOpts.find(o => o.v === signal)?.label}` : signal}
+        onReopen={() => setReopenedKey('q3')}
+      >
+        <SliderTower
+          items={Q3_OPTS.map(o => o.v)}
+          color="#059669"
+          iconOf={v => Q3_OPTS.find(o => o.v === v)?.emoji}
+          labelOf={v => signalOpts.find(o => o.v === v)?.label}
+          isSelected={v => signal === v}
+          onToggle={v => { set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); setReopenedKey(null); }}
+        />
+        <div style={{ marginTop: 8 }}>
+          <GoalCustomInput
+            accent="#059669"
+            placeholder="or describe your own proof…"
+            value={q3Preset ? '' : signal}
+            onChange={v => { set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); }}
+          />
+        </div>
+      </GoalQuestionRow>
+
+      <GoalQuestionRow
+        visible={!!signal}
+        open={!icpOn || reopenedKey === 'q4' || !q4Preset}
+        accent="#7c3aed" emoji="🔍" question="Can you picture your customer right now?"
+        echoLabel={q4Preset ? `${q4ByV.get(icpOn)?.emoji} ${q4ByV.get(icpOn)?.vibe}` : icpOn}
+        onReopen={() => setReopenedKey('q4')}
+      >
+        <SliderTower
+          items={Q4_OPTS.map(o => o.val)}
+          color="#7c3aed"
+          labelOf={v => q4ByV.get(v)?.vibe}
+          iconOf={v => q4ByV.get(v)?.emoji}
+          isSelected={v => icpOn === v}
+          onToggle={v => { set('valGoalICP', v); writeSuccess(convos, rate, signal, v, time); setReopenedKey(null); }}
+        />
+        <div style={{ marginTop: 8 }}>
+          <GoalCustomInput
+            accent="#7c3aed"
+            placeholder="or describe your customer…"
+            value={q4Preset ? '' : icpOn}
+            onChange={v => { set('valGoalICP', v); writeSuccess(convos, rate, signal, v, time); }}
+          />
+        </div>
+      </GoalQuestionRow>
+
+      <GoalQuestionRow
+        visible={!!icpOn}
+        open={!time || reopenedKey === 'q5' || !q5Preset}
+        accent="#ef4444" emoji="⏱️" question="When will you stop validating and decide?"
+        echoLabel={q5Preset ? `${Q5_OPTS.find(o => o.v === time)?.emoji} ${timeOpts.find(o => o.v === time)?.label}` : time}
+        onReopen={() => setReopenedKey('q5')}
+      >
+        <SliderTower
+          items={Q5_OPTS.map(o => o.v)}
+          color="#dc2626"
+          iconOf={v => Q5_OPTS.find(o => o.v === v)?.emoji}
+          labelOf={v => timeOpts.find(o => o.v === v)?.label}
+          isSelected={v => time === v}
+          onToggle={v => { set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); setReopenedKey(null); }}
+        />
+        <div style={{ marginTop: 8 }}>
+          <GoalCustomInput
+            accent="#dc2626"
+            placeholder="or type your own timeframe…"
+            value={q5Preset ? '' : time}
+            onChange={v => { set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); }}
+          />
+        </div>
+      </GoalQuestionRow>
+
+      {!!time && (summary ? (
+        <div style={{ padding: '20px 24px 22px', borderRadius: 14, background: '#fff', border: '2px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 22 }}>🎉</span>
+            <span style={{ fontSize: 13, color: '#64748b', letterSpacing: '.06em', textTransform: 'uppercase' as const, fontFamily: "'Bebas Neue', 'Inter', sans-serif" }}>You win if…</span>
+          </div>
+          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 26, fontWeight: 600, color: '#000', lineHeight: 1.4 }}>{summary}</div>
+        </div>
+      ) : (
+        <div style={{ padding: '12px 16px', borderRadius: 10, background: '#fff', border: `1px dashed ${BORDER}` }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#555', textAlign: 'center' as const }}>Your winning condition will appear here as you fill in the options above ☝️</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const MULTI_SEP = '|||';
 const FIELD_SEP = '~~'; // internal field separator within one persona entry
 
@@ -14897,237 +15228,8 @@ export default function WorkPage() {
               </svg>
               <div style={{ position: 'relative', padding: '18px 18px 20px', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-                {/* Q1: Success bar builder */}
-                {(() => {
-                  const rateOpts   = [{ v:'50', label:'50% or more' }, { v:'60', label:'60% or more' }, { v:'80', label:'80% or more' }, { v:'100', label:'All of them' }];
-                  const signalOpts = [
-                    { v:'none',      label:'None — pain confirms are enough' },
-                    { v:'verbal-1',  label:"At least 1 says they'd pay" },
-                    { v:'verbal-2',  label:"At least 2 say they'd pay" },
-                    { v:'preorder',  label:'At least 1 pre-order or deposit' },
-                    { v:'loi',       label:'At least 1 signed LOI or contract' },
-                  ];
-                  const timeOpts   = [{ v:'1w', label:'1 week' }, { v:'2w', label:'2 weeks' }, { v:'1m', label:'1 month' }, { v:'open', label:'No deadline' }];
-
-                  const convos  = get('valGoalConvos')  || '';
-                  const rate    = get('valGoalRate')    || '';
-                  const signal  = get('valGoalSignal')  || '';
-                  const icpOn   = get('valGoalICP')     || '';
-                  const time    = get('valGoalTime')    || '';
-
-                  const ICP_LABELS: Record<string, string> = {
-                    '1': 'Targeting anyone in pain',
-                    '2': 'Targeting a specific role or function',
-                    '3': 'Targeting a specific company type',
-                    '4': 'Targeting named individuals',
-                  };
-                  const writeSuccess = (c: string, r: string, s: string, icp: string, t: string) => {
-                    if (!c && !r && !s) { set('valGoalSuccess', ''); return; }
-                    // Fall back to the raw value itself when it doesn't match a preset —
-                    // that's what makes a manually-typed answer show up in the summary too.
-                    const rLabel   = rateOpts.find(o => o.v === r)?.label || r || '';
-                    const sigLabel = signalOpts.find(o => o.v === s)?.label || s || '';
-                    const icpLabel = ICP_LABELS[icp] || icp || '';
-                    const timeLabel = timeOpts.find(o => o.v === t)?.label || t || '';
-                    const parts = [
-                      c  ? `${c} conversations` : '',
-                      r  ? `${rLabel} must confirm the pain` : '',
-                      s && s !== 'none' ? sigLabel : '',
-                      icp ? icpLabel : '',
-                      t && t !== 'open' ? `Decide within ${timeLabel}` : '',
-                    ].filter(Boolean);
-                    set('valGoalSuccess', parts.join(' · '));
-                  };
-
-                  // Marker-written question headline + hand-drawn underline — unchanged treatment, now a shared helper.
-                  const MarkerQuestion = ({ accent, emoji, children }: { accent: string; emoji: string; children: React.ReactNode }) => (
-                    <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div>
-                        <div style={{ fontSize: 17, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.25 }}>{children}</div>
-                        <div style={{ borderTop: `2px solid ${accent}`, marginTop: 3, maxWidth: 150 }} />
-                      </div>
-                      <span style={{ fontSize: 20 }}>{emoji}</span>
-                    </div>
-                  );
-
-                  const summary = get('valGoalSuccess') || '';
-
-                  return (
-                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', columnGap: 28, rowGap: 22 }}>
-
-                      {/* Q1 */}
-                      <div>
-                        <MarkerQuestion accent="#2563eb" emoji="🗣️">How many real conversations count?</MarkerQuestion>
-                        {(() => {
-                          const OPTS = [
-                            { v: '3',   emoji: '🤏', vibe: 'Gut check' },
-                            { v: '5',   emoji: '🖐️', vibe: 'Early signal' },
-                            { v: '7',   emoji: '🎯', vibe: 'Lucky 7' },
-                            { v: '10',  emoji: '💪', vibe: 'Solid proof' },
-                            { v: '15+', emoji: '🚀', vibe: 'All in' },
-                          ];
-                          const byV = new Map(OPTS.map(o => [o.v, o]));
-                          return (
-                            <JengaTower
-                              items={OPTS.map(o => o.v)}
-                              color="#2563eb"
-                              labelOf={v => { const o = byV.get(v)!; return `${o.emoji} ${o.v} — ${o.vibe}`; }}
-                              isSelected={v => convos === v}
-                              onToggle={v => { set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); }}
-                            />
-                          );
-                        })()}
-                        <div style={{ marginTop: 8 }}>
-                          <GoalCustomInput
-                            accent="#2563eb"
-                            placeholder="or type your own…"
-                            value={['3','5','7','10','15+'].includes(convos) ? '' : convos}
-                            onChange={v => { set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Q2 */}
-                      <div>
-                        <MarkerQuestion accent="#f59e0b" emoji="🎯">What % must feel the pain for it to be real?</MarkerQuestion>
-                        {(() => {
-                          const OPTS = [
-                            { v: '50',  emoji: '🤷', vibe: 'Half' },
-                            { v: '60',  emoji: '🙌', vibe: 'Most' },
-                            { v: '80',  emoji: '🔥', vibe: 'Strong' },
-                            { v: '100', emoji: '💯', vibe: 'All of em' },
-                          ];
-                          const byV = new Map(OPTS.map(o => [o.v, o]));
-                          return (
-                            <JengaTower
-                              items={OPTS.map(o => o.v)}
-                              color="#d97706"
-                              labelOf={v => { const o = byV.get(v)!; return `${o.emoji} ${rateOpts.find(ro => ro.v === v)?.label} — ${o.vibe}`; }}
-                              isSelected={v => rate === v}
-                              onToggle={v => { set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); }}
-                            />
-                          );
-                        })()}
-                        <div style={{ marginTop: 8 }}>
-                          <GoalCustomInput
-                            accent="#d97706"
-                            placeholder="or type your own %…"
-                            value={rateOpts.some(o => o.v === rate) ? '' : rate}
-                            onChange={v => { set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Q3 */}
-                      <div>
-                        <MarkerQuestion accent="#10b981" emoji="🔑">What's your proof this problem truly exists?</MarkerQuestion>
-                        {(() => {
-                          const OPTS = [
-                            { v: 'none',     emoji: '🤝' },
-                            { v: 'verbal-1', emoji: '🗣️' },
-                            { v: 'verbal-2', emoji: '💬' },
-                            { v: 'preorder', emoji: '💳' },
-                            { v: 'loi',      emoji: '📝' },
-                          ];
-                          return (
-                            <JengaTower
-                              items={OPTS.map(o => o.v)}
-                              color="#059669"
-                              iconOf={v => OPTS.find(o => o.v === v)?.emoji}
-                              labelOf={v => signalOpts.find(o => o.v === v)?.label}
-                              isSelected={v => signal === v}
-                              onToggle={v => { set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); }}
-                            />
-                          );
-                        })()}
-                        <div style={{ marginTop: 8 }}>
-                          <GoalCustomInput
-                            accent="#059669"
-                            placeholder="or describe your own proof…"
-                            value={signalOpts.some(o => o.v === signal) ? '' : signal}
-                            onChange={v => { set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Q4 */}
-                      <div>
-                        <MarkerQuestion accent="#8b5cf6" emoji="🔍">Can you picture your customer right now?</MarkerQuestion>
-                        {(() => {
-                          const OPTS = [
-                            { val: '1', emoji: '🌊', vibe: 'Anyone in pain' },
-                            { val: '2', emoji: '👥', vibe: 'A role or function' },
-                            { val: '3', emoji: '🏢', vibe: 'A company type' },
-                            { val: '4', emoji: '🎯', vibe: 'Named people' },
-                          ];
-                          const byV = new Map(OPTS.map(o => [o.val, o]));
-                          return (
-                            <JengaTower
-                              items={OPTS.map(o => o.val)}
-                              color="#7c3aed"
-                              labelOf={v => { const o = byV.get(v)!; return `${o.emoji} ${o.vibe}`; }}
-                              isSelected={v => icpOn === v}
-                              onToggle={v => { set('valGoalICP', v); writeSuccess(convos, rate, signal, v, time); }}
-                            />
-                          );
-                        })()}
-                        <div style={{ marginTop: 8 }}>
-                          <GoalCustomInput
-                            accent="#7c3aed"
-                            placeholder="or describe your customer…"
-                            value={['1','2','3','4'].includes(icpOn) ? '' : icpOn}
-                            onChange={v => { set('valGoalICP', v); writeSuccess(convos, rate, signal, v, time); }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Q5 */}
-                      <div>
-                        <MarkerQuestion accent="#ef4444" emoji="⏱️">When will you stop validating and decide?</MarkerQuestion>
-                        {(() => {
-                          const OPTS = [
-                            { v: '1w',   emoji: '⚡' },
-                            { v: '2w',   emoji: '🏃' },
-                            { v: '1m',   emoji: '📅' },
-                            { v: 'open', emoji: '♾️' },
-                          ];
-                          return (
-                            <JengaTower
-                              items={OPTS.map(o => o.v)}
-                              color="#dc2626"
-                              iconOf={v => OPTS.find(o => o.v === v)?.emoji}
-                              labelOf={v => timeOpts.find(o => o.v === v)?.label}
-                              isSelected={v => time === v}
-                              onToggle={v => { set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); }}
-                            />
-                          );
-                        })()}
-                        <div style={{ marginTop: 8 }}>
-                          <GoalCustomInput
-                            accent="#dc2626"
-                            placeholder="or type your own timeframe…"
-                            value={timeOpts.some(o => o.v === time) ? '' : time}
-                            onChange={v => { set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); }}
-                          />
-                        </div>
-                      </div>
-
-                      {summary ? (
-                        <div style={{ gridColumn: '1 / -1', padding: '20px 24px 22px', borderRadius: 14, background: '#fff', border: '2px solid #e2e8f0' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                            <span style={{ fontSize: 22 }}>🎉</span>
-                            <span style={{ fontSize: 13, color: '#64748b', letterSpacing: '.06em', textTransform: 'uppercase' as const, fontFamily: "'Bebas Neue', 'Inter', sans-serif" }}>You win if…</span>
-                          </div>
-                          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 26, fontWeight: 600, color: '#000', lineHeight: 1.4 }}>{summary}</div>
-                        </div>
-                      ) : (
-                        <div style={{ gridColumn: '1 / -1', padding: '12px 16px', borderRadius: 10, background: '#fff', border: `1px dashed ${BORDER}` }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: '#555', textAlign: 'center' as const }}>Your winning condition will appear here as you fill in the options above ☝️</div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
+                {/* Q1-Q5: one at a time, slider-style — see ValidationGoalBuilder */}
+                <ValidationGoalBuilder get={get} set={set} />
 
               </div>
             </div>
