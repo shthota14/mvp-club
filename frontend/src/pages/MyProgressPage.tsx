@@ -1508,13 +1508,27 @@ export default function MyProgressPage() {
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '20px 16px 60px' : '40px 40px 100px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 40 }}>
+      {/* Stacked on mobile instead of side-by-side: at phone widths the old
+          row (heading + pill button sharing one line via space-between) left
+          so little room for the text that "Welcome, Sam" and the subtitle
+          wrapped awkwardly. Column layout gives both their own full-width
+          line; the heading also drops the desktop clamp() (which barely
+          shrinks below ~28px) for a fixed, smaller mobile size, and the
+          button gets tighter padding to match. */}
+      <div style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' as const : 'row' as const,
+        alignItems: isMobile ? 'stretch' as const : 'flex-start' as const,
+        justifyContent: 'space-between',
+        gap: isMobile ? 16 : 0,
+        marginBottom: isMobile ? 24 : 40,
+      }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: '#b0b0b8', marginBottom: 8 }}>My Idea Vault</div>
-          <h1 style={{ fontSize: 'clamp(28px,4vw,40px)', fontWeight: 800, letterSpacing: -1.2, lineHeight: 1.1, color: '#1d1d1f', fontFamily: 'var(--font-display)', margin: '0 0 8px' }}>
+          <h1 style={{ fontSize: isMobile ? 24 : 'clamp(28px,4vw,40px)', fontWeight: 800, letterSpacing: -1.2, lineHeight: 1.1, color: '#1d1d1f', fontFamily: 'var(--font-display)', margin: '0 0 8px' }}>
             Welcome{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
           </h1>
-          <p style={{ fontSize: 14, color: '#6e6e73', margin: 0, fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>
+          <p style={{ fontSize: isMobile ? 13 : 14, color: '#6e6e73', margin: 0, fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>
             Your ideas, all in one place. Click any idea to open the work wizard.
           </p>
         </div>
@@ -1522,10 +1536,11 @@ export default function MyProgressPage() {
           onClick={() => setShowNewIdea(true)}
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
-            padding: '12px 22px', borderRadius: 999,
+            padding: isMobile ? '9px 16px' : '12px 22px', borderRadius: 999,
             background: '#1d1d1f', color: '#fff',
-            border: 'none', fontSize: 14, fontWeight: 700,
+            border: 'none', fontSize: isMobile ? 13 : 14, fontWeight: 700,
             cursor: 'pointer', flexShrink: 0,
+            alignSelf: isMobile ? 'flex-start' as const : undefined,
             boxShadow: '0 2px 8px rgba(0,0,0,.15)',
             transition: 'all .15s',
           }}

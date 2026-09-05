@@ -33,6 +33,16 @@ const navStyle = (isActive: boolean): React.CSSProperties => ({
   letterSpacing: '-0.01em',
 });
 
+// Smaller pill for the mobile-only secondary nav row below the header —
+// the desktop-sized navStyle() pills read as oversized once the header
+// itself got more compact.
+const navStyleMobile = (isActive: boolean): React.CSSProperties => ({
+  ...navStyle(isActive),
+  padding: '6px 14px',
+  fontSize: 12,
+  borderRadius: 16,
+});
+
 const BOTTOM_TABS = [
   { to: '/journey',    label: 'Journey',    icon: '🧭' },
   { to: '/community',  label: 'Community',  icon: '🏆' },
@@ -235,14 +245,14 @@ export default function AppShell() {
           padding: '8px 16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch',
         }}>
           {!user?.is_admin && (
-            <NavLink to="/community" style={({ isActive }) => navStyle(isActive)}>Community</NavLink>
+            <NavLink to="/community" style={({ isActive }) => navStyleMobile(isActive)}>Community</NavLink>
           )}
           {!user?.is_admin && (
-            <NavLink to="/progress" style={({ isActive }) => navStyle(isActive || location.pathname.startsWith('/work') || location.pathname === '/journey')}>My Idea Vault</NavLink>
+            <NavLink to="/progress" style={({ isActive }) => navStyleMobile(isActive || location.pathname.startsWith('/work') || location.pathname === '/journey')}>My Idea Vault</NavLink>
           )}
           {user?.is_admin && (
             <NavLink to="/admin" style={({ isActive }) => ({
-              ...navStyle(isActive),
+              ...navStyleMobile(isActive),
               background: isActive ? '#1e1b4b' : 'transparent',
               color: isActive ? '#818cf8' : '#6366f1',
             })}>🛡 Admin Panel</NavLink>
