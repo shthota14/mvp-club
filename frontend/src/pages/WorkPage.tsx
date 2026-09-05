@@ -13,7 +13,6 @@ import InterviewScriptCard from '@/components/InterviewScriptCard';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { deriveAssumptionVerdicts } from '@/utils/assumptionVerdicts';
 import { deriveVeraVerdicts } from '@/utils/veraVerdicts';
 
 // ── Design tokens ──────────────────────────────────────────────────────────
@@ -642,6 +641,27 @@ const parsePersonaText = (seg: string): string => seg.split(FIELD_SEP)[0];
 const parseWhoDisplay = (v: string): string =>
   v.split(MULTI_SEP).filter(Boolean).map(parsePersonaText).filter(t => t.trim().length > 2).join(' · ');
 
+// Auto-derived starter assumptions from the problem/customer already on file
+// by the time a founder reaches Validate. Used to live behind its own
+// dedicated "Name your assumptions" step (removed 2026-09-05 — it auto-saved
+// these same seeds on mount regardless of whether the founder touched
+// anything, so the step never actually required input). The assumptions
+// list itself still feeds real downstream consumers (interview-script
+// generation, the verdict-step advisor, the progress-page count), so this
+// keeps generating and saving them in the background — see the "vB" Nav's
+// onNext below — without a page of its own.
+const deriveSeedAssumptions = (problemSentence: string, whoExactly: string): { id: string; text: string }[] => {
+  const seeds: { id: string; text: string }[] = [];
+  const prob = problemSentence.split(MULTI_SEP).filter(Boolean)[0];
+  const probText = prob ? prob.replace(/___/g, '').replace(/struggle(s)? with /i, '').replace(/ because.*/, '').trim() : '';
+  const who = parseWhoDisplay(whoExactly);
+  if (probText) seeds.push({ id: '1', text: `${who || 'Our target customer'} experiences "${probText}" as a significant pain.` });
+  if (who) seeds.push({ id: '2', text: `${who} is the right customer to focus on.` });
+  seeds.push({ id: '3', text: 'People experiencing this problem are actively looking for a solution.' });
+  seeds.push({ id: '4', text: 'They would pay money to have this problem solved.' });
+  return seeds;
+};
+
 // Extract plain text from a severity problem entry ("text~~severity")
 const parseProblemText = (seg: string): string => seg.split(FIELD_SEP)[0];
 
@@ -705,7 +725,7 @@ type Mod = typeof MODULES[number];
 const META: Record<Mod, { icon: string; label: string; steps: number; desc: string }> = {
   idea:     { icon: '💡', label: 'Idea',     steps: 1, desc: 'Capture a problem worth solving.' },
   hone:     { icon: '🎯', label: 'Hone',     steps: 7, desc: 'Sharpen until it\'s specific and real.' },
-  validate: { icon: '🧪', label: 'Validate', steps: 10, desc: 'Test with people before you build.' },
+  validate: { icon: '🧪', label: 'Validate', steps: 9, desc: 'Test with people before you build.' },
   shape:    { icon: '🔨', label: 'Shape',    steps: 5, desc: 'Define the smallest possible MVP.' },
   done:     { icon: '🚀', label: 'Ship',     steps: 11, desc: 'Launch, learn, and iterate fast.' },
 };
@@ -726,7 +746,6 @@ const STEP_GOALS: Record<Mod, string[]> = {
   validate: [
     'Set a clear bar for what success looks like before you start.',
     'Decide what you\'re trying to prove and when you\'d stop.',
-    'State what you believe to be true before you test it.',
     'Get specific on who you\'re targeting before you reach out.',
     'Real names beat personas — round up the people you\'ll actually reach out to.',
     'Open your calendar and send requests so people can book time with you directly.',
@@ -760,7 +779,7 @@ const STEP_GOALS: Record<Mod, string[]> = {
 const STEP_TITLES: Record<Mod, string[]> = {
   idea:     ["What's your idea?"],
   hone:     ["Who do you think has this problem?", "What are the problems?", "What breaks if these problems are unresolved?", "What do you think people are doing to solve this?", "Are you set up to win?", "How strong is your idea?", "Where does your idea stand in the market?"],
-  validate: ["Set your success bar", "Decide what you'll prove", "Name your assumptions", "Choose who to talk to", "Build your script", "Add your contacts", "Interview Summary Dashboard", "Log your conversations", "Analyse what you found", "Make the call"],
+  validate: ["Set your success bar", "Decide what you'll prove", "Choose who to talk to", "Build your script", "Add your contacts", "Interview Summary Dashboard", "Log your conversations", "Analyse what you found", "Make the call"],
   shape:    ["What did you learn from users?", "What will you build?", "Shape your features", "How will you reach users and charge?", "Build your backlog"],
   done:     ["Build My MVP", "Choose how you want to build", "Map your user flows & screens", "Generate your UI prompts", "Your master build prompt", "Build your features", "Describe your next change", "Run your QA checkpoints", "Launch your MVP", "What did you build?", "Who are your first 5 users?"],
 };
@@ -776,7 +795,7 @@ const STAGE_TIME: Record<Mod, string> = {
 const STEP_ICONS: Record<Mod, string[]> = {
   idea:     ['🎯'],
   hone:     ['👥', '📝', '💪', '🔎', '🧠', '📊', '📈'],
-  validate: ['🎯', '📋', '💭', '👤', '📝', '🙋', '🗓️', '🎤', '📈', '✅'],
+  validate: ['🎯', '📋', '👤', '📝', '🙋', '🗓️', '🎤', '📈', '✅'],
   shape:    ['📖', '💡', '⚡', '💰', '🗂️'],
   done:     ['🧩', '🛠️', '🗺️', '📝', '🧙', '🧱', '💬', '🧪', '🚀', '🏗️', '🤝'],
 };
@@ -798,7 +817,6 @@ const STEP_CALLOUTS: Record<Mod, string[]> = {
   validate: [
     'Set the bar before you start — not after you already like the answer.',
     'Know your stop condition, or validation never ends.',
-    'Assumptions you don\'t name are assumptions you can\'t kill.',
     'Vague targeting means wasted conversations.',
     'Your opening question sets the tone for the whole conversation.',
     'A rough list you start beats a perfect one you don\'t.',
@@ -4019,259 +4037,6 @@ const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string;
   );
 });
 
-type Assumption2 = { id: string; text: string };
-
-// Auto-derived verdict badge shown per assumption — computed from real
-// interview evidence (see deriveAssumptionVerdicts), never picked manually.
-// 'none' below is a display-only bucket for "no evidence yet," distinct
-// from AssumptionVerdict['verdict']'s actual null.
-const ASM_VERDICT_STYLE: Record<'none' | 'confirmed' | 'busted' | 'mixed', { bg: string; color: string; icon: string; label: string }> = {
-  none:      { bg: '#f1f5f9', color: '#64748b', icon: '○', label: 'No evidence yet' },
-  confirmed: { bg: '#dcfce7', color: '#15803d', icon: '✓', label: 'Confirmed' },
-  busted:    { bg: '#fee2e2', color: '#b91c1c', icon: '✕', label: 'Busted' },
-  mixed:     { bg: '#fef3c7', color: '#92400e', icon: '◐', label: 'Mixed signal' },
-};
-
-type AssumptionsHandle = { flush: () => string; isDraftValid: () => boolean };
-
-// Mirrors PersonaPickerStep's flush()/isDraftValid() pattern: the "add your
-// own assumption" textarea holds local draft state, so without this a
-// typed-but-unsubmitted assumption would silently vanish if the founder hit
-// Back or jumped to another step via the sidebar before clicking "Add
-// assumption". flush() commits that draft (if any) and returns the freshly
-// serialized list so the caller can save it immediately, same as Hone step 1.
-//
-// Deliberately has NO way to manually set an assumption's status. Confirmed/
-// Busted/Mixed is entirely an OUTPUT of deriveAssumptionVerdicts, read off
-// real interview evidence (see frontend/src/utils/assumptionVerdicts.ts) —
-// letting a founder tap "Confirmed" before a single conversation happened
-// defeats the point of validating the belief in the first place.
-const AssumptionsStep = React.forwardRef<AssumptionsHandle, {
-  value: string;
-  onChange: (v: string) => void;
-  seedProblemSentence: string;
-  seedWhoExactly: string;
-  interviews: any[];
-}>(function AssumptionsStep({ value, onChange, seedProblemSentence, seedWhoExactly, interviews }, ref) {
-  const VC = STAGE_COLORS.validate;
-
-  const parseAssumptions2 = (): Assumption2[] => {
-    if (value) { try {
-      const parsed = JSON.parse(value);
-      // Legacy stored assumptions may still carry an old manual `status`
-      // field from before verdicts were auto-derived — harmless to ignore.
-      return parsed.map((a: any) => ({ id: a.id, text: a.text }));
-    } catch { /* fall through */ } }
-    const seeds: Assumption2[] = [];
-    const prob = seedProblemSentence.split(MULTI_SEP).filter(Boolean)[0];
-    const probText = prob ? prob.replace(/___/g, '').replace(/struggle(s)? with /i, '').replace(/ because.*/, '').trim() : '';
-    const who = parseWhoDisplay(seedWhoExactly);
-    if (probText) seeds.push({ id: '1', text: `${who || 'Our target customer'} experiences "${probText}" as a significant pain.` });
-    if (who) seeds.push({ id: '2', text: `${who} is the right customer to focus on.` });
-    seeds.push({ id: '3', text: 'People experiencing this problem are actively looking for a solution.' });
-    seeds.push({ id: '4', text: 'They would pay money to have this problem solved.' });
-    return seeds;
-  };
-
-  const asms2 = parseAssumptions2();
-  const verdicts = deriveAssumptionVerdicts(asms2.map(a => a.text), interviews);
-
-  const [asmOpen, setAsmOpen] = useState(false);
-  const [asmDraft, setAsmDraft] = useState('');
-
-  const saveAsms2 = (list: Assumption2[]) => onChange(JSON.stringify(list));
-
-  // Commits the in-progress draft (if any) into the list and returns the
-  // resulting serialized value. Safe to call even when there's no open
-  // draft — just returns the current list unchanged.
-  const commitDraft = (): Assumption2[] => {
-    if (asmOpen && asmDraft.trim()) {
-      const list = [...asms2, { id: Date.now().toString(36), text: asmDraft.trim() }];
-      saveAsms2(list);
-      setAsmDraft('');
-      setAsmOpen(false);
-      return list;
-    }
-    return asms2;
-  };
-
-  React.useImperativeHandle(ref, () => ({
-    isDraftValid: () => asmOpen && asmDraft.trim().length > 0,
-    flush: () => JSON.stringify(commitDraft()),
-  }));
-
-  // parseAssumptions2() falls back to seeded starter assumptions (derived
-  // from the problem/who-exactly already on file) whenever `value` is empty,
-  // and those seeds render as real-looking cards right away. But nothing
-  // actually saved them — onChange only ever fired on an explicit add/remove
-  // — so the "Next" button's own assumption count stayed at 0 and asked for
-  // "one more" even though several were already on screen. Save the seed
-  // once, on mount, so it's real the moment it's visible.
-  const seededOnce = React.useRef(false);
-  React.useEffect(() => {
-    if (seededOnce.current || value) return;
-    seededOnce.current = true;
-    saveAsms2(asms2);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <>
-      {/* Fun card header */}
-      <div style={{ border: `2px solid ${VC}25`, borderRadius: 14, overflow: 'hidden', marginBottom: 4 }}>
-        {/* Whiteboard question row */}
-        <div style={{ padding: '20px 20px 14px', borderBottom: `1px solid #f0f0f2`, background: '#f9f9f5', position: 'relative' }}>
-          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.06 }} preserveAspectRatio="none">
-            {[0,1,2,3,4,5,6,7,8,9,10].map(i => <line key={i} x1="0" y1={`${i*10}%`} x2="100%" y2={`${i*10}%`} stroke="#334155" strokeWidth="1" />)}
-          </svg>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-            <span style={{ fontSize: 20, lineHeight: 1.3 }}>🎲</span>
-            <div>
-              <div>
-                <div style={{ fontSize: 22, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
-                  What are you assuming?
-                </div>
-                <div style={{ borderTop: '2px solid #8b5cf6', marginTop: 4, maxWidth: 190 }} />
-              </div>
-              <div style={{ fontSize: 12, color: T3, marginTop: 5 }}>Add what you believe. Your conversations will confirm or kill each one — the status below updates itself once your interviews are analyzed.</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-
-          {/* Assumption cards — sticky-notes wall: each note's pastel
-              background is tied to its verdict bucket (reusing
-              ASM_VERDICT_STYLE's own bg color, so the color itself is
-              never the only signal — the badge/icon still carries the
-              same meaning), with a slight hand-placed rotation instead of
-              a plain stacked list. Larger, higher-contrast text than a
-              typical sticky note for legibility at a glance. */}
-          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 14 }}>
-            {(() => {
-              const rotations = [-2, 1.5, -1, 2];
-              return asms2.map((a, idx) => {
-                const v = verdicts[idx];
-                const bucket: 'none' | 'confirmed' | 'busted' | 'mixed' = v?.verdict || 'none';
-                const badge = ASM_VERDICT_STYLE[bucket];
-                const isBusted = bucket === 'busted';
-                const topQuotes = v ? [...v.positive, ...v.negative].slice(0, 3) : [];
-                return (
-                <div key={a.id} style={{
-                  flex: '1 1 240px', minWidth: 220, maxWidth: 320,
-                  background: badge.bg, borderRadius: 4, padding: '14px 16px 12px',
-                  boxShadow: '0 3px 8px rgba(0,0,0,.12)',
-                  transform: `rotate(${rotations[idx % rotations.length]}deg)`,
-                  opacity: isBusted ? 0.75 : 1,
-                  transition: 'opacity .15s, transform .15s',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                    <div style={{
-                      flex: 1,
-                      fontFamily: "'Playfair Display', Georgia, serif",
-                      fontStyle: 'italic' as const,
-                      fontSize: 17, fontWeight: 600, color: isBusted ? '#78716c' : '#1c1917',
-                      lineHeight: 1.4,
-                      textDecoration: isBusted ? 'line-through' : 'none',
-                    }}>{a.text}</div>
-                    {/* Remove-assumption control. Deliberately NOT the '✕' glyph —
-                        that's the Busted verdict icon (see ASM_VERDICT_STYLE
-                        above), and a delete button sitting right above a "No
-                        evidence yet" badge would visually read as if the
-                        assumption were already busted before any interview
-                        evidence existed. 🗑️ keeps "remove this card" clearly
-                        distinct from "here's the evidence verdict." Darkened
-                        from the original #ccc so it stays visible against the
-                        tinted note background. */}
-                    <button type="button" title="Remove this assumption" aria-label="Remove this assumption" onClick={() => saveAsms2(asms2.filter(x => x.id !== a.id))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#78716c', padding: '2px 4px', flexShrink: 0, lineHeight: 1, opacity: 0.7 }}>🗑️</button>
-                  </div>
-                  <div style={{ marginTop: 8 }}>
-                    {/* No badge at all while bucket === 'none' — a "No evidence
-                        yet" pill reads as a status the founder has to notice
-                        and dismiss for every assumption, on every card, before
-                        a single interview happens. Silence says the same thing
-                        with less noise; the italic placeholder below already
-                        covers it once there really are zero quotes. Badge sits
-                        on a solid white pill (rather than repeating badge.bg,
-                        which is now the note's own background) so it still
-                        reads clearly against the tinted note. */}
-                    {bucket !== 'none' && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '4px 12px', borderRadius: 20, fontSize: 11.5, fontWeight: 700, background: '#fff', color: badge.color }}>
-                        {badge.icon} {badge.label}
-                      </span>
-                    )}
-                    {topQuotes.length > 0 ? (
-                      <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        {topQuotes.map((q, qi) => (
-                          <div key={qi} style={{ fontSize: 11.5, fontStyle: 'italic', color: '#44403c', paddingLeft: 10, borderLeft: '2px solid rgba(0,0,0,.15)', lineHeight: 1.45 }}>
-                            "{q.quote}" — {q.intervieweeName}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ marginTop: 6, fontSize: 10.5, color: '#78716c', fontStyle: 'italic' }}>
-                        Updates automatically once your interviews are analyzed.
-                      </div>
-                    )}
-                  </div>
-                </div>
-                );
-              });
-            })()}
-          </div>
-
-            {/* Add custom — inline form */}
-            {!asmOpen ? (
-              <button onClick={() => setAsmOpen(true)}
-                style={{ alignSelf: 'flex-start', padding: '9px 18px', borderRadius: 8, border: `2px dashed ${BORDER2}`, background: 'transparent', color: T2, fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                + Add your own assumption
-              </button>
-            ) : (
-              <div style={{ border: `1.5px solid ${VC}40`, borderRadius: 10, padding: '12px 14px', background: `${VC}05` }}>
-                <textarea
-                  autoFocus
-                  placeholder="Describe your assumption…"
-                  value={asmDraft}
-                  onChange={e => setAsmDraft(e.target.value)}
-                  style={{ ...ta(58), marginBottom: 8 }}
-                />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => commitDraft()} style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: VC, color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    Add assumption
-                  </button>
-                  <button onClick={() => { setAsmDraft(''); setAsmOpen(false); }}
-                    style={{ padding: '7px 12px', borderRadius: 7, border: `1px solid ${BORDER}`, background: '#fff', color: T2, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-          {/* Summary */}
-          {asms2.length > 0 && (() => {
-            const counts: Record<'confirmed' | 'busted' | 'mixed' | 'none', number> = { confirmed: 0, busted: 0, mixed: 0, none: 0 };
-            verdicts.forEach(v => { counts[(v.verdict || 'none') as 'confirmed' | 'busted' | 'mixed' | 'none']++; });
-            return (
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' as const, padding: '10px 18px' }}>
-                {/* 'none' intentionally excluded — same reasoning as the
-                    per-card badge above: don't surface a "No evidence yet"
-                    count as if it were a real verdict. */}
-                {(['confirmed', 'busted', 'mixed'] as const).map(k => {
-                  if (!counts[k]) return null;
-                  const s = ASM_VERDICT_STYLE[k];
-                  return <div key={k} style={{ fontSize: 12, color: s.color, fontWeight: 600 }}>{s.icon} {counts[k]} {s.label}</div>;
-                })}
-              </div>
-            );
-          })()}
-
-        </div>
-      </div>
-    </>
-  );
-});
-
-// Simple controlled text input helper (avoids inline closure heap in loops)
 function InputField({ value, onChange, placeholder, style }: {
   value: string; onChange: (v: string) => void; placeholder: string;
   style: (focused: boolean) => React.CSSProperties;
@@ -13331,7 +13096,6 @@ export default function WorkPage() {
   // and the full-width panel below the question can share one open flag.
   const [problemCtaOpen, setProblemCtaOpen] = useState(false);
   const [copingCtaOpen, setCopingCtaOpen] = useState(false);
-  const assumptionsRef = useRef<AssumptionsHandle>(null);
   // Remembers the last step visited in each stage, so switching stages via the
   // sidebar (goMod) resumes where the founder left off instead of always
   // dropping back to step 1. Keyed off mod/step directly (not persisted to
@@ -13438,10 +13202,10 @@ export default function WorkPage() {
   // Yes      → advance the idea to Shape (persisted to backend) and celebrate.
   // Partially→ stay in Validate: raise the conversation target by 2, return to the log.
   // No       → pivot: carry learnings back to Hone (persisted) — a win, not a failure.
-  const VALIDATE_LOG_STEP = 9;   // validateSteps index of "Log your conversations"
-  const VALIDATE_VERDICT_STEP = 10; // validateSteps index of "What's your verdict?"
-  const VALIDATE_FIND_PEOPLE_STEP = 6; // validateSteps index of "Find the people you'll talk to" — StepBars shows this as "Step 6 of 11" (moved down one slot after "Build your interview script" was reordered ahead of it)
-  const VALIDATE_ANALYSE_STEP = 9; // validateSteps index of "Analyse what you found" — jumping straight to this step (e.g. from the sidebar's per-step list) must pass the same interview-count gate as clicking "Analyse what you found →", otherwise founders can bypass it entirely.
+  const VALIDATE_LOG_STEP = 8;   // validateSteps index of "Log your conversations" (shifted -1 on 2026-09-05 when the "Name your assumptions" step was removed)
+  const VALIDATE_VERDICT_STEP = 9; // validateSteps index of "What's your verdict?" (shifted -1, see above)
+  const VALIDATE_FIND_PEOPLE_STEP = 5; // validateSteps index of "Find the people you'll talk to" — StepBars shows this as "Step 6 of 11" (moved down one slot after "Build your interview script" was reordered ahead of it); shifted -1 again on 2026-09-05 when "Name your assumptions" was removed
+  const VALIDATE_ANALYSE_STEP = 8; // validateSteps index of "Analyse what you found" — jumping straight to this step (e.g. from the sidebar's per-step list) must pass the same interview-count gate as clicking "Analyse what you found →", otherwise founders can bypass it entirely. (shifted -1 on 2026-09-05, see above)
   const recordVerdict = async () => {
     const signal = get('validationSignal');
     await save('validate', {
@@ -15500,7 +15264,19 @@ export default function WorkPage() {
 
               {/* ── Nav ── */}
               <div style={{ padding: '14px 18px' }}>
-                <NavRow onBack={back} onNext={async () => { await save('validate', { valGoalProve: get('valGoalProve'), valGoalStop: get('valGoalStop') }); next(); }} nextLabel="State your assumptions →" disabled={!get('valGoalProve').trim() || !get('valGoalStop').trim()} disabledReason="Pick at least one thing to prove, and one stop rule." ideaId={activeIdea.id} />
+                <NavRow onBack={back} onNext={async () => {
+                  // Silently seed + save the starter assumptions here — this
+                  // used to be its own "Name your assumptions" step; removed
+                  // 2026-09-05 since it never actually required any input,
+                  // but the interview-script step and later verdict/progress
+                  // screens still read this field, so it still needs to exist.
+                  const updates: Record<string, string> = { valGoalProve: get('valGoalProve'), valGoalStop: get('valGoalStop') };
+                  if (!get('assumptions')) {
+                    updates.assumptions = JSON.stringify(deriveSeedAssumptions(get('problemSentence'), get('whoExactly')));
+                  }
+                  await save('validate', updates);
+                  next();
+                }} nextLabel="Choose who to talk to →" disabled={!get('valGoalProve').trim() || !get('valGoalStop').trim()} disabledReason="Pick at least one thing to prove, and one stop rule." ideaId={activeIdea.id} />
               </div>
 
             </div>
@@ -15509,47 +15285,10 @@ export default function WorkPage() {
       );
     })(),
 
-    // ── v3: Assumptions ────────────────────────────────────────────────
-    (() => {
-      const seedProblemSentence = get('problemSentence');
-      const seedWhoExactly = get('whoExactly');
-      return (
-        <div key="vC" style={col}>
-          <ModBadge mod="validate" /><StepBars mod="validate" step={2} />
-          <StepIntro mod="validate" step={2} />
-          <StepGoal text={STEP_GOALS.validate[2]} />
-
-          <AssumptionsStep
-            ref={assumptionsRef}
-            value={get('assumptions')}
-            onChange={v => set('assumptions', v)}
-            seedProblemSentence={seedProblemSentence}
-            seedWhoExactly={seedWhoExactly}
-            interviews={interviews}
-          />
-
-          <NavRow
-            onBack={() => { assumptionsRef.current?.flush(); back(); }}
-            onNext={async () => {
-              const flushed = assumptionsRef.current?.flush();
-              await save('validate', { assumptions: flushed || get('assumptions') });
-              next();
-            }}
-            nextLabel="Name who you'll speak to →"
-            disabled={
-              (() => { try { return (JSON.parse(get('assumptions') || '[]') as { text?: string }[]).filter(a => (a.text || '').trim()).length === 0; } catch { return true; } })()
-              && !assumptionsRef.current?.isDraftValid()
-            }
-            disabledReason="Add at least one assumption you're making before moving on."
-            ideaId={activeIdea.id} />
-        </div>
-      );
-    })(),
-
     // ── v0a: Who are you targeting? ───────────────────────────────────────
     <div key="v0a" style={col}>
-      <ModBadge mod="validate" /><StepBars mod="validate" step={3} />
-          <StepIntro mod="validate" step={3} />
+      <ModBadge mod="validate" /><StepBars mod="validate" step={2} />
+          <StepIntro mod="validate" step={2} />
       <ValidateHero step={1} />
 
       {/* Target customer — confirmed from Hone */}
@@ -15713,8 +15452,8 @@ export default function WorkPage() {
 
     // ── v2: Build your interview script ───────────────────────────────────
     <div key="v0b" style={col}>
-      <ModBadge mod="validate" /><StepBars mod="validate" step={4} />
-          <StepIntro mod="validate" step={4} />
+      <ModBadge mod="validate" /><StepBars mod="validate" step={3} />
+          <StepIntro mod="validate" step={3} />
       <div style={{ padding: '18px 20px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}14 0%, #f0f7ff 100%)`, borderRadius: 16, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4, boxShadow: `0 4px 16px ${STAGE_COLORS.validate}0d` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#fff', border: `1.5px solid ${STAGE_COLORS.validate}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0, boxShadow: `0 2px 6px ${STAGE_COLORS.validate}15` }}>📝</div>
@@ -15764,8 +15503,8 @@ export default function WorkPage() {
         // "Add your contacts", before the actual contact-adding UI.
         return (
           <div key="v0b" style={col}>
-            <ModBadge mod="validate" /><StepBars mod="validate" step={5} />
-            <StepIntro mod="validate" step={5} />
+            <ModBadge mod="validate" /><StepBars mod="validate" step={4} />
+            <StepIntro mod="validate" step={4} />
 
             <div style={{ minHeight: '50vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32, padding: '24px 16px', textAlign: 'center' as const }}>
 
@@ -15813,8 +15552,8 @@ export default function WorkPage() {
 
       return (
         <div key="v0b" style={col}>
-          <ModBadge mod="validate" /><StepBars mod="validate" step={5} />
-            <StepIntro mod="validate" step={5} />
+          <ModBadge mod="validate" /><StepBars mod="validate" step={4} />
+            <StepIntro mod="validate" step={4} />
 
           {/* Fun card header */}
           <div style={{ padding: '16px 18px 14px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}18 0%, #f0f7ff 100%)`, borderRadius: 14, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4 }}>
@@ -16148,8 +15887,8 @@ export default function WorkPage() {
 
       return (
         <div key="v0sched" style={col}>
-          <ModBadge mod="validate" /><StepBars mod="validate" step={6} />
-      <StepIntro mod="validate" step={6} />
+          <ModBadge mod="validate" /><StepBars mod="validate" step={5} />
+      <StepIntro mod="validate" step={5} />
 
           {/* Fun card header */}
           <div style={{ padding: '16px 18px 14px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}18 0%, #f0f7ff 100%)`, borderRadius: 14, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4 }}>
@@ -16548,7 +16287,7 @@ export default function WorkPage() {
     })(),
 
     <div key="v2b" style={col}>
-      <StepIntro mod="validate" step={7} />
+      <StepIntro mod="validate" step={6} />
       {(() => {
         const completed = interviews.filter(iv => iv.alignment_score).length;
         const confirmed = interviews.filter(iv => iv.alignment_score === 3).length;
@@ -16556,7 +16295,7 @@ export default function WorkPage() {
         return (
           <div style={{ padding: '12px 14px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}18 0%, #f0f7ff 100%)`, borderRadius: 14, border: `2px solid ${STAGE_COLORS.validate}25` }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: STAGE_COLORS.validate, letterSpacing: 0.6, textTransform: 'uppercase' as const }}>Step 8 of {META.validate.steps}</div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: STAGE_COLORS.validate, letterSpacing: 0.6, textTransform: 'uppercase' as const }}>Step 7 of {META.validate.steps}</div>
               {interviews.length > 0 && (
                 <div style={{ display: 'flex', gap: 8, fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>
                   <span style={{ color: '#1d1d1f' }}>{completed} Completed</span>
@@ -16984,8 +16723,8 @@ export default function WorkPage() {
 
     // ── v3: Analyse ──────────────────────────────────────────────────────
     <div key="v3" style={col}>
-      <ModBadge mod="validate" /><StepBars mod="validate" step={8} />
-      <StepIntro mod="validate" step={8} />
+      <ModBadge mod="validate" /><StepBars mod="validate" step={7} />
+      <StepIntro mod="validate" step={7} />
       <ValidateHero step={3} />
 
       {/* Fun card header */}
@@ -17706,8 +17445,8 @@ export default function WorkPage() {
 
     // ── v4: Decision & findings ──────────────────────────────────────────
     <div key="v4" style={col}>
-      <ModBadge mod="validate" /><StepBars mod="validate" step={9} />
-      <StepIntro mod="validate" step={9} />
+      <ModBadge mod="validate" /><StepBars mod="validate" step={8} />
+      <StepIntro mod="validate" step={8} />
       <ValidateHero step={4} />
 
       {/* Fun card header */}
