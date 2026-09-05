@@ -2207,11 +2207,18 @@ function CompetitorFeatureListSection({ snapshot, revealing }: { snapshot: Marke
   );
 }
 
-// ── Price / rating positioning plot ──────────────────────────────────────
+// ── Price / rating positioning ────────────────────────────────────────────
 // Only the two "at a glance" fields that are actually comparable across
-// competitors get plotted. Sage leaves price and rating blank whenever it
-// isn't confident, so this renders only when at least two competitors have
-// BOTH — below that a scatter is a single dot pretending to be a chart.
+// competitors get grouped here. Sage leaves price and rating blank whenever
+// it isn't confident, so this renders only when at least two competitors
+// have BOTH — below that a single data point has nothing to be grouped
+// against.
+//
+// Stacked quadrant panels instead of an x/y scatter (the scatter needed a
+// fixed-width SVG that forced horizontal scroll on any phone) — same
+// cheap/premium × loved/mixed split, split at the median price and rating
+// among the competitors Sage could place, just read top-to-bottom instead
+// of plotted on two axes.
 function MarketPositioningPlot({ snapshot }: { snapshot: MarketSnapshotData }) {
   const pts = snapshot.competitors
     .map((c, i) => ({
@@ -2220,54 +2227,58 @@ function MarketPositioningPlot({ snapshot }: { snapshot: MarketSnapshotData }) {
       rating: c.rating ? parseFloat(c.rating) : NaN,
       color: MARKET_SERIES_COLORS[i] || MARKET_SERIES_FALLBACK,
     }))
-    .filter(p => p.price !== null && isFinite(p.price) && isFinite(p.rating) && p.rating > 0);
+    .filter(p => p.price !== null && isFinite(p.price) && isFinite(p.rating) && p.rating > 0) as
+    { name: string; price: number; rating: number; color: string }[];
 
   if (pts.length < 2) return null;
 
-  const W = 560, H = 300, PAD = { t: 22, r: 20, b: 42, l: 46 };
-  const maxPrice = Math.max(...pts.map(p => p.price!)) * 1.18 || 1;
-  const minR = Math.min(3.5, ...pts.map(p => p.rating)) - 0.2;
-  const maxR = Math.max(5, ...pts.map(p => p.rating)) + 0.1;
-  const x = (v: number) => PAD.l + (v / maxPrice) * (W - PAD.l - PAD.r);
-  const y = (v: number) => H - PAD.b - ((v - minR) / (maxR - minR)) * (H - PAD.t - PAD.b);
+  const medPrice = [...pts].map(p => p.price).sort((a, b) => a - b)[Math.floor(pts.length / 2)];
+  const medRating = [...pts].map(p => p.rating).sort((a, b) => a - b)[Math.floor(pts.length / 2)];
 
-  const medPrice = [...pts].map(p => p.price!).sort((a, b) => a - b)[Math.floor(pts.length / 2)];
-  const medR = [...pts].map(p => p.rating).sort((a, b) => a - b)[Math.floor(pts.length / 2)];
+  const quads: { label: string; sub: string; items: typeof pts }[] = [
+    { label: 'Cheap & loved', sub: 'Lower price, higher rating — the toughest place to compete against', items: [] },
+    { label: 'Premium & loved', sub: 'Higher price, still rated well', items: [] },
+    { label: 'Cheap & mixed', sub: 'Lower price, room on quality', items: [] },
+    { label: 'Premium & mixed', sub: 'Higher price without the ratings to match — the softest target', items: [] },
+  ];
+  pts.forEach(p => {
+    const cheap = p.price < medPrice;
+    const loved = p.rating >= medRating;
+    quads[cheap ? (loved ? 0 : 2) : (loved ? 1 : 3)].items.push(p);
+  });
 
   return (
     <div style={{ marginTop: 16 }}>
       <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>Price vs. how much people like it</div>
       <div style={{ fontSize: 12, color: T3, marginBottom: 12 }}>
         Only competitors where Sage found both a price and a rating appear here ({pts.length} of {snapshot.competitors.length}).
-        Dividing lines sit at the median of those — the top-left corner is the hardest place to compete against.
+        Grouped by the median among them — ${medPrice.toFixed(0)}/mo and {medRating.toFixed(1)}★.
       </div>
-      <div style={{ overflowX: 'auto', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: 8 }}>
-        <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ minWidth: 460, display: 'block' }} role="img"
-          aria-label={`Price versus rating for ${pts.map(p => p.name).join(', ')}`}>
-          {/* median reference lines — solid hairlines */}
-          <line x1={x(medPrice)} y1={PAD.t} x2={x(medPrice)} y2={H - PAD.b} stroke={BORDER2} strokeWidth={1} />
-          <line x1={PAD.l} y1={y(medR)} x2={W - PAD.r} y2={y(medR)} stroke={BORDER2} strokeWidth={1} />
-          {/* axes */}
-          <line x1={PAD.l} y1={H - PAD.b} x2={W - PAD.r} y2={H - PAD.b} stroke={BORDER2} strokeWidth={1} />
-          <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={H - PAD.b} stroke={BORDER2} strokeWidth={1} />
-          <text x={PAD.l} y={H - 10} fontSize={10} fill={T3}>$0/mo</text>
-          <text x={W - PAD.r} y={H - 10} fontSize={10} fill={T3} textAnchor="end">${maxPrice.toFixed(0)}/mo</text>
-          <text x={8} y={PAD.t + 6} fontSize={10} fill={T3}>{maxR.toFixed(1)}★</text>
-          <text x={8} y={H - PAD.b} fontSize={10} fill={T3}>{minR.toFixed(1)}★</text>
-          <text x={PAD.l + 6} y={PAD.t + 6} fontSize={9} fill={T3} letterSpacing={0.5}>LOVED &amp; CHEAP</text>
-          <text x={W - PAD.r - 6} y={PAD.t + 6} fontSize={9} fill={T3} textAnchor="end" letterSpacing={0.5}>PREMIUM &amp; LOVED</text>
-          {pts.map((p, i) => (
-            <g key={i}>
-              {/* 2px surface ring so overlapping dots stay separable */}
-              <circle cx={x(p.price!)} cy={y(p.rating)} r={7} fill={p.color} stroke="#fff" strokeWidth={2} />
-              <text x={x(p.price!)} y={y(p.rating) - 12} fontSize={11} fontWeight={700} fill={T1} textAnchor="middle">{p.name}</text>
-            </g>
-          ))}
-        </svg>
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+        {quads.map(q => (
+          <div key={q.label} style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '10px 12px' }}>
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: T1 }}>{q.label}</div>
+            <div style={{ fontSize: 10.5, color: T3, marginBottom: 8 }}>{q.sub}</div>
+            {q.items.length === 0 ? (
+              <div style={{ fontSize: 11.5, color: T3 }}>None of your tracked competitors land here.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
+                {q.items.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                    <span style={{ fontWeight: 700, color: T1 }}>{p.name}</span>
+                    <span style={{ color: T3 }}>${p.price.toFixed(0)}/mo · {p.rating.toFixed(1)}★</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
 }
+
 
 // ── Derived SWOT ─────────────────────────────────────────────────────────
 // Nothing here is written copy: every line is computed from the snapshot the
@@ -2383,26 +2394,36 @@ function MarketSwotPanel({ snapshot, ideaName }: { snapshot: MarketSnapshotData;
         Worked out from the table above — your coverage against each competitor's, plus their prices and ratings.
         Nothing here is written by hand, so it changes whenever the snapshot does.
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
-        {quads.map(q => (
-          <div key={q.label} style={{ border: `1.5px solid ${BORDER}`, borderTop: `3px solid ${q.color}`, borderRadius: 12, padding: '12px 14px 14px', background: '#fcfcfd' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' as const, color: q.color }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: q.color, flexShrink: 0 }} />
-              {q.label}
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 14 }}>
+        {[
+          { title: 'About you', groups: [quads[0], quads[1]] },
+          { title: 'About the market', groups: [quads[2], quads[3]] },
+        ].map(section => (
+          <div key={section.title} style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '12px 14px 14px', background: '#fcfcfd' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .6, marginBottom: 12 }}>{section.title}</div>
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+              {section.groups.map(q => (
+                <div key={q.label}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' as const, color: q.color }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: q.color, flexShrink: 0 }} />
+                    {q.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: T3, marginTop: 4 }}>{q.sub}</div>
+                  {q.items.length === 0 ? (
+                    <div style={{ fontSize: 12, color: T3, marginTop: 10 }}>Nothing clear-cut here yet.</div>
+                  ) : (
+                    <ul style={{ margin: '10px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column' as const, gap: 9 }}>
+                      {q.items.map((it, i) => (
+                        <li key={i} style={{ fontSize: 12.5, color: T2, lineHeight: 1.5, paddingLeft: 13, position: 'relative' as const }}>
+                          <span style={{ position: 'absolute', left: 0, color: T3 }}>—</span>
+                          <strong style={{ color: T1, fontWeight: 700 }}>{it.strong}</strong> — {it.text}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
             </div>
-            <div style={{ fontSize: 11, color: T3, marginTop: 4 }}>{q.sub}</div>
-            {q.items.length === 0 ? (
-              <div style={{ fontSize: 12, color: T3, marginTop: 10 }}>Nothing clear-cut here yet.</div>
-            ) : (
-              <ul style={{ margin: '10px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column' as const, gap: 9 }}>
-                {q.items.map((it, i) => (
-                  <li key={i} style={{ fontSize: 12.5, color: T2, lineHeight: 1.5, paddingLeft: 13, position: 'relative' as const }}>
-                    <span style={{ position: 'absolute', left: 0, color: T3 }}>—</span>
-                    <strong style={{ color: T1, fontWeight: 700 }}>{it.strong}</strong> — {it.text}
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
         ))}
       </div>
