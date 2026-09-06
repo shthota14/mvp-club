@@ -9216,6 +9216,20 @@ function InterviewGuidePanel({ stored, onSave, genContext }: {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
+  // Picks up a guide that lands in `stored` after mount — specifically the
+  // background auto-generation kicked off from the previous step (2026-09-06):
+  // that call can still be in flight when this panel first mounts, so without
+  // this the founder would keep seeing the empty "Ask Sage" state even though
+  // the guide finished generating moments later. Never overwrites a guide
+  // already showing here (e.g. one the founder is mid-edit on).
+  useEffect(() => {
+    if (guide) return;
+    try {
+      const p = JSON.parse(stored || 'null');
+      if (p && Array.isArray(p.sections) && p.sections.length) setGuide(p as DiscoveryGuideData);
+    } catch { /* ignore */ }
+  }, [stored, guide]);
+
   const persist = (g: DiscoveryGuideData) => {
     setGuide(g);
     onSave(JSON.stringify({ mode: 'ai', ...g }));
@@ -15474,7 +15488,48 @@ export default function WorkPage() {
         </div>
       </div>
 
-      <NavRow onBack={back} onNext={() => next()} nextLabel="Build your interview script →" disabled={
+      <NavRow onBack={back} onNext={() => {
+        // Auto-generate Sage's interview guide one step ahead, if it isn't
+        // already there, so it's ready and waiting on "Build your interview
+        // script" instead of making the founder click "Ask Sage" and wait
+        // there (2026-09-06 user request). Fire-and-forget — never blocks
+        // navigation; InterviewGuidePanel's stored-prop sync effect picks up
+        // the result whenever it lands, whether that's before or after the
+        // founder arrives on that step.
+        if (!parseStoredScript(get('customInterviewQuestions')).ai) {
+          (async () => {
+            try {
+              const r = await validationApi.generateGuide({
+                ideaName: get('ideaName'),
+                oneLiner: get('oneLiner'),
+                whoExactly: parseWhoDisplay(get('whoExactly')),
+                problemSentence: parseProblemDisplay(get('problemSentence')),
+                painIfNothing: get('painIfNothing'),
+                frequency: get('frequency'),
+                solutionAlternatives: get('solutionAlternatives'),
+                whoPays: get('whoPays'),
+                founderStatement: get('founderStatement'),
+                icpJobs: [get('icpJobs'), get('icpJobs_custom')].filter(Boolean).join('|||').split('|||').filter(Boolean).join(', '),
+                icpFrustrations: [get('icpFrustrations'), get('icpFrustrations_custom')].filter(Boolean).join('|||').split('|||').filter(Boolean).join(', '),
+                icpAlternatives: [get('icpAlternatives'), get('icpAlternatives_custom')].filter(Boolean).join('|||').split('|||').filter(Boolean).join(', '),
+                assumptions: (() => {
+                  try {
+                    return (JSON.parse(get('assumptions') || '[]') as { text?: string }[])
+                      .map(a => (a.text || '').trim())
+                      .filter(Boolean);
+                  } catch { return []; }
+                })(),
+              });
+              const sections = Array.isArray(r.data?.sections) ? r.data.sections : [];
+              const fresh = parseStoredScript(get('customInterviewQuestions'));
+              if (sections.length && !fresh.ai) {
+                set('customInterviewQuestions', JSON.stringify({ v: 2, manual: fresh.manual, ai: { focus: r.data.focus, sections } }));
+              }
+            } catch { /* silent — founder can still "Ask Sage" manually on the next step */ }
+          })();
+        }
+        next();
+      }} nextLabel="Build your interview script →" disabled={
         !(get('icpJobs').split('|||').filter(Boolean).length || get('icpJobs_custom').trim()) ||
         !(get('icpFrustrations').split('|||').filter(Boolean).length || get('icpFrustrations_custom').trim()) ||
         !(get('icpAlternatives').split('|||').filter(Boolean).length || get('icpAlternatives_custom').trim())
