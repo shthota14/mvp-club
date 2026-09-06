@@ -1425,6 +1425,7 @@ function CollabCard({ collab, currentUserId, onExpressInterest, onEncourage }: {
 // ── Collabs Tab ───────────────────────────────────────────────────────────────
 
 function CollabsTab({ userId }: { userId?: string }) {
+  const isMobile = useIsMobile();
   const [collabs,        setCollabs]        = useState<CollabPost[]>([]);
   const [loading,        setLoading]        = useState(true);
   const [showPost,       setShowPost]       = useState(false);
@@ -1463,7 +1464,7 @@ function CollabsTab({ userId }: { userId?: string }) {
     .filter(c => stageFilter  === 'all' || decodeCollab(c.content)?.stage      === stageFilter);
 
   const chipBtn = (active: boolean, color?: string): React.CSSProperties => ({
-    padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+    padding: isMobile ? '5px 12px' : '6px 16px', borderRadius: 999, fontSize: isMobile ? 11 : 12, fontWeight: 600,
     whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
     border: `1.5px solid ${active ? (color ?? LIT.text) : LIT.border}`,
     background: active ? (color ?? LIT.text) : LIT.card,
@@ -1484,7 +1485,7 @@ function CollabsTab({ userId }: { userId?: string }) {
           <div style={{ fontSize: 11, fontWeight: 800, color: LIT.muted, letterSpacing: 1.3, textTransform: 'uppercase', marginBottom: 6, fontFamily: LIT.headFont }}>
             🤝 Collab Board
           </div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: LIT.text, letterSpacing: -0.5, fontFamily: LIT.headFont, marginBottom: 6 }}>
+          <div style={{ fontSize: isMobile ? 18 : 24, fontWeight: 700, color: LIT.text, letterSpacing: -0.5, fontFamily: LIT.headFont, marginBottom: 6 }}>
             Find your co-founder or collaborator.
           </div>
           <div style={{ fontSize: 14, color: LIT.secondary, fontFamily: LIT.bodyFont, maxWidth: 480, lineHeight: 1.6 }}>
@@ -1494,9 +1495,9 @@ function CollabsTab({ userId }: { userId?: string }) {
         <button
           onClick={() => setShowPost(true)}
           style={{
-            padding: '13px 26px', borderRadius: 999, border: 'none',
+            padding: isMobile ? '10px 18px' : '13px 26px', borderRadius: 999, border: 'none',
             background: LIT.accent,
-            color: '#fff', fontSize: 14, fontWeight: 700,
+            color: '#fff', fontSize: isMobile ? 12 : 14, fontWeight: 700,
             cursor: 'pointer', flexShrink: 0, fontFamily: LIT.headFont,
             boxShadow: LIT.shadow,
           }}
@@ -3703,6 +3704,7 @@ function PainPointCardLegend() {
 }
 
 function PainPointsTab({ onNavigate: _onNavigate }: { onNavigate: (path: string) => void }) {
+  const isMobile = useIsMobile();
   const [painPoints, setPainPoints] = useState<PainPoint[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [showLog,    setShowLog]    = useState(false);
@@ -3737,7 +3739,7 @@ function PainPointsTab({ onNavigate: _onNavigate }: { onNavigate: (path: string)
     : painPoints.filter(p => { const d = decodePP(p.content); return d?.impact === impactFilter; });
 
   const chipBtn = (active: boolean, color?: string): React.CSSProperties => ({
-    padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+    padding: isMobile ? '5px 12px' : '6px 16px', borderRadius: 999, fontSize: isMobile ? 11 : 12, fontWeight: 600,
     whiteSpace: 'nowrap' as const, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
     border: `1.5px solid ${active ? (color ?? LIT.text) : LIT.border}`,
     background: active ? (color ?? LIT.text) : LIT.card,
@@ -3758,7 +3760,7 @@ function PainPointsTab({ onNavigate: _onNavigate }: { onNavigate: (path: string)
           <div style={{ fontSize: 11, fontWeight: 800, color: LIT.accent, letterSpacing: 1.3, textTransform: 'uppercase' as const, marginBottom: 6, fontFamily: LIT.headFont }}>
             🎯 Community Pain Points
           </div>
-          <div style={{ fontSize: 24, fontWeight: 700, color: LIT.text, letterSpacing: -0.5, fontFamily: LIT.headFont, marginBottom: 6 }}>
+          <div style={{ fontSize: isMobile ? 18 : 24, fontWeight: 700, color: LIT.text, letterSpacing: -0.5, fontFamily: LIT.headFont, marginBottom: 6 }}>
             Real problems waiting for a founder.
           </div>
           <div style={{ fontSize: 14, color: LIT.secondary, maxWidth: 480, fontFamily: LIT.bodyFont }}>
@@ -3768,9 +3770,9 @@ function PainPointsTab({ onNavigate: _onNavigate }: { onNavigate: (path: string)
         <button
           onClick={() => setShowLog(true)}
           style={{
-            padding: '13px 26px', borderRadius: 999, border: 'none',
+            padding: isMobile ? '10px 18px' : '13px 26px', borderRadius: 999, border: 'none',
             background: LIT.accent,
-            color: '#fff', fontSize: 14, fontWeight: 700,
+            color: '#fff', fontSize: isMobile ? 12 : 14, fontWeight: 700,
             cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
             boxShadow: '0 4px 16px rgba(138,90,43,.25)',
           }}
@@ -4493,7 +4495,7 @@ export default function CommunityPage() {
   });
 
   const filterBtn = (active: boolean): React.CSSProperties => ({
-    padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+    padding: isMobile ? '5px 12px' : '6px 16px', borderRadius: 999, fontSize: isMobile ? 11 : 12, fontWeight: 600,
     whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0,
     border: `1.5px solid ${active ? LIT.accent : LIT.border}`,
     background: active ? LIT.accent : LIT.card,
@@ -4530,7 +4532,7 @@ export default function CommunityPage() {
               key={t.key}
               onClick={() => setTab(t.key)}
               style={{
-                padding: '8px 20px', borderRadius: 999, fontSize: 13, fontWeight: 700,
+                padding: isMobile ? '6px 12px' : '8px 20px', borderRadius: 999, fontSize: isMobile ? 11 : 13, fontWeight: 700,
                 cursor: 'pointer',
                 border: `1.5px solid ${tab === t.key ? TAB_ACTIVE_COLOR : LIT.border}`,
                 background: tab === t.key ? TAB_ACTIVE_COLOR : LIT.card,
@@ -4656,7 +4658,7 @@ export default function CommunityPage() {
           <div style={{ display: 'flex', gap: 6 }}>
             {SORT_OPTS.map(s => (
               <button key={s.value} onClick={() => setSortMode(s.value)} style={{
-                padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+                padding: isMobile ? '5px 10px' : '6px 14px', borderRadius: 999, fontSize: isMobile ? 11 : 12, fontWeight: 600,
                 whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
                 border: `1.5px solid ${sortMode === s.value ? LIT.accent : LIT.border}`,
                 background: sortMode === s.value ? LIT.accent : LIT.card,
@@ -4675,7 +4677,7 @@ export default function CommunityPage() {
             {VIEW_MODES.map(v => (
               <button key={v.value} title={v.label} onClick={() => setViewMode(v.value)} style={{
                 display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600,
+                padding: isMobile ? '6px 8px' : '6px 12px', borderRadius: 999, fontSize: isMobile ? 11 : 12, fontWeight: 600,
                 whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
                 border: `1.5px solid ${viewMode === v.value ? LIT.accent : LIT.border}`,
                 background: viewMode === v.value ? LIT.accent : LIT.card,
@@ -4713,7 +4715,7 @@ export default function CommunityPage() {
             {domainFilter !== 'all' ? 'Try a different domain or clear the filter.' : 'Be the first to post your idea and get community feedback.'}
           </div>
           {domainFilter !== 'all' && (
-            <button onClick={() => setDomainFilter('all')} style={{ marginTop: 16, background: LIT.cardTint, color: LIT.text, border: `1px solid ${LIT.border}`, borderRadius: 3, padding: '9px 18px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            <button onClick={() => setDomainFilter('all')} style={{ marginTop: 16, background: LIT.cardTint, color: LIT.text, border: `1px solid ${LIT.border}`, borderRadius: 3, padding: isMobile ? '7px 14px' : '9px 18px', fontSize: isMobile ? 11 : 12, fontWeight: 700, cursor: 'pointer' }}>
               Clear filter
             </button>
           )}
