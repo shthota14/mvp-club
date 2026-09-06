@@ -97,6 +97,26 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
+// ── Lightweight count for marketing/social-proof surfaces (landing page) ───
+// Deliberately a separate tiny query rather than having callers fetch the
+// full feed and use its length — the feed below is LIMIT/OFFSET paginated
+// (default 50), so `.length` on it is "how many of this page", never the
+// real total. Mirrors the feed query's WHERE clause exactly.
+router.get('/count', async (_req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT COUNT(*)::int AS count
+       FROM community_posts
+       WHERE post_type = 'pain_point'
+         AND moderation_status IN ('visible', 'approved')`
+    );
+    res.json({ count: result.rows[0]?.count ?? 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // ── Public feed — anyone can browse logged pain points, no account needed ──
 router.get('/', async (req: Request, res: Response) => {
   const { limit = '50', offset = '0' } = req.query;

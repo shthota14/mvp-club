@@ -4,6 +4,7 @@ import AuthModal from '@/components/Auth/AuthModal';
 import PayItForwardModal from '@/components/PayItForwardModal';
 import LogPainPointModal from '@/components/LogPainPointModal';
 import { trackPageView, trackClick } from '@/utils/analytics';
+import { publicApi } from '@/api/client';
 
 // Caveat (marker handwriting font) — same id/pattern as StageCompleteModal.tsx so it's loaded once app-wide
 if (typeof document !== 'undefined' && !document.getElementById('caveat-font')) {
@@ -36,6 +37,19 @@ export default function HeroPage() {
   }, [location.state]);
 
   useEffect(() => { trackPageView('/'); }, []);
+
+  // Live count for the "Log a pain point" promo section below — a real
+  // number, not a hardcoded one like the Community section's "247 active
+  // ideas" (there was no fetch-on-mount precedent on this page before this;
+  // silent-catch + cancelled-flag matches PublicPainPointsPage's own fetch).
+  const [painPointCount, setPainPointCount] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    publicApi.countPainPoints()
+      .then(res => { if (!cancelled) setPainPointCount(res.data.count ?? 0); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const stages = [
     { n: '01', label: 'Idea', desc: 'Capture a problem worth solving.', detail: 'Every great startup begins with a problem someone desperately needs solved. Not an app. Not a feature. A real, felt pain.', color: '#a78bfa' },
@@ -532,6 +546,47 @@ export default function HeroPage() {
             <span style={{ fontSize: 14, color: 'rgba(255,255,255,.3)' }}> — </span>
             <button onClick={() => { trackClick('/', 'ideas_join_all'); open('register'); }} style={{ background: 'none', border: 'none', fontSize: 14, fontWeight: 700, color: '#a78bfa', cursor: 'pointer', padding: 0 }}>
               Join to see them all →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Log a pain point (2026-09-05: promoted out of the buried nav
+           ghost-button + footer link into its own section — those two
+           links stay as quick secondary access points, but this is now the
+           real CTA for a visitor who isn't ready to sign up yet). Mirrors
+           the Community section's 2-col header + stat-box pattern above. ── */}
+      <section className="hp-section-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+          <div className="hp-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48, alignItems: 'end' }}>
+            <div>
+              <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: 2.5, color: 'rgba(255,255,255,.25)', textTransform: 'uppercase', marginBottom: 20 }}>Not ready to join yet?</p>
+              <h2 style={{ fontSize: 'clamp(30px,4vw,52px)', fontWeight: 700, letterSpacing: -1.8, lineHeight: 1.05, fontFamily: 'var(--font-display)', color: '#fff', margin: 0 }}>
+                Got a pain point?<br />Tell us — no signup.
+              </h2>
+            </div>
+            <div>
+              <p style={{ fontSize: 18, color: 'rgba(255,255,255,.5)', lineHeight: 1.8, marginBottom: 28, fontStyle: 'italic', fontFamily: 'var(--font-display)', letterSpacing: -0.3 }}>
+                Something broken, slow, or annoying you deal with all the time? Log it in a minute. It might already be someone's next idea.
+              </p>
+              <button onClick={() => { trackClick('/', 'painpoint_promo_log'); setShowLogPainPoint(true); }}
+                style={{ background: '#fff', color: '#080808', border: 'none', borderRadius: 999, padding: '13px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                😔 Log a pain point →
+              </button>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: 40, padding: '20px', borderRadius: 12, background: 'rgba(8,8,8,.6)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,.06)' }}>
+            {painPointCount !== null ? (
+              <>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,.55)' }}>{painPointCount.toLocaleString()} pain point{painPointCount === 1 ? '' : 's'}</span>
+                <span style={{ fontSize: 14, color: 'rgba(255,255,255,.3)' }}> logged by founders like you — </span>
+              </>
+            ) : (
+              <span style={{ fontSize: 14, color: 'rgba(255,255,255,.3)' }}>Founders like you are already logging pain points — </span>
+            )}
+            <button onClick={() => { trackClick('/', 'painpoint_promo_browse'); navigate('/pain-points'); }} style={{ background: 'none', border: 'none', fontSize: 14, fontWeight: 700, color: '#a78bfa', cursor: 'pointer', padding: 0 }}>
+              Browse them all →
             </button>
           </div>
         </div>

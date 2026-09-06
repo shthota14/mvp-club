@@ -446,6 +446,7 @@ export const donationsApi = {
 export const publicApi = {
   createPainPoint: (data: Record<string, unknown>) => api.post('/public/pain-points', data),
   listPainPoints: (limit?: number, offset?: number) => api.get('/public/pain-points', { params: { limit, offset } }),
+  countPainPoints: () => api.get('/public/pain-points/count'),
 };
 
 // First-party usage analytics ingestion — public, unauthenticated (the
