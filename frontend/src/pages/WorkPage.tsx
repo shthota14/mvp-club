@@ -213,7 +213,7 @@ function GoalQuestionRow({ visible, open, accent, emoji, question, echoLabel, on
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <span style={{ fontSize: 16, flexShrink: 0 }}>{emoji}</span>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 10.5, color: T3, fontWeight: 600 }}>{question}</div>
+            <div style={{ fontSize: 11.5, color: T1, fontWeight: 700 }}>{question}</div>
             <div style={{ fontSize: 13, fontWeight: 700, color: accent, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>{echoLabel}</div>
           </div>
         </div>
@@ -250,6 +250,41 @@ function GoalQuestionRow({ visible, open, accent, emoji, question, echoLabel, on
 // and collapsing the question before there was any chance to see what a
 // segment meant relative to the others) — tapping a segment now only
 // previews it; this button is the actual commit.
+// One WTP/ICP/Pain-confirm key-term sticky note in the Goal Builder header
+// row. Collapsed by default (just the icon + term, e.g. "💰 WTP") — tap to
+// expand and see the full definition. Previously always showed the full
+// definition, crowding the header before a founder has even looked at the
+// questions below (2026-09-06 user feedback: these boards should collapse
+// by default).
+function KeyTermCard({ term, name, icon, full, bg, color, rotate }: {
+  term: string; name: string; icon: string; full: string; bg: string; color: string; rotate: number;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => setOpen(o => !o)}
+      style={{
+        background: bg, borderRadius: 4, padding: open ? '10px 12px' : '8px 12px',
+        boxShadow: '0 3px 8px rgba(0,0,0,0.14)', transform: `rotate(${rotate}deg)`,
+        border: 'none', cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit',
+        width: '100%',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 700, fontSize: 17, color, lineHeight: 1.15 }}>{icon} {term}</div>
+        <span style={{ fontSize: 11, color, opacity: 0.6, flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
+      </div>
+      {open && (
+        <>
+          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: 12, fontStyle: 'italic', color, opacity: 0.85, marginTop: 3, marginBottom: 3, lineHeight: 1.2 }}>{name}</div>
+          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 500, fontSize: 13, lineHeight: 1.3, color: '#3f3f46' }}>{full}</div>
+        </>
+      )}
+    </button>
+  );
+}
+
 function ConfirmAnswerButton({ accent, disabled, onClick }: { accent: string; disabled: boolean; onClick: () => void }) {
   return (
     <button
@@ -15115,11 +15150,7 @@ export default function WorkPage() {
                 { term: 'ICP', name: 'Ideal Customer Profile', icon: '🎯', full: 'The specific person most likely to have the problem and pay to fix it.', bg: '#dbeafe', color: '#1e40af', rotate: 1 },
                 { term: 'Pain confirm', name: 'Real, unprompted pain', icon: '🔥', full: 'They describe the problem in their own words, unprompted, before you mention it.', bg: '#dcfce7', color: '#166534', rotate: -1 },
               ].map(({ term, name, icon, full, bg, color, rotate }) => (
-                <div key={term} style={{ background: bg, borderRadius: 4, padding: '10px 12px', boxShadow: '0 3px 8px rgba(0,0,0,0.14)', transform: `rotate(${rotate}deg)` }}>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 700, fontSize: 17, color, marginBottom: 1, lineHeight: 1.15 }}>{icon} {term}</div>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: 12, fontStyle: 'italic', color, opacity: 0.85, marginBottom: 3, lineHeight: 1.2 }}>{name}</div>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 500, fontSize: 13, lineHeight: 1.3, color: '#3f3f46' }}>{full}</div>
-                </div>
+                <KeyTermCard key={term} term={term} name={name} icon={icon} full={full} bg={bg} color={color} rotate={rotate} />
               ))}
             </div>
 
