@@ -3970,9 +3970,31 @@ function StartupNewsPillRow() {
   );
 }
 
+// ── Community Wins bookmarks — lightweight client-side "saved" state,
+// mirrors the loadRx/saveRx localStorage pattern already used for reactions.
+function loadWinBookmarks(): Record<string, boolean> {
+  try { return JSON.parse(localStorage.getItem('mvpclub_win_bookmarks') ?? '{}'); }
+  catch { return {}; }
+}
+function saveWinBookmarks(d: Record<string, boolean>) {
+  localStorage.setItem('mvpclub_win_bookmarks', JSON.stringify(d));
+}
+
 // ── Community Wins spotlight — top-engagement shipped ideas, reuses the
 // existing ideas list already loaded for the grid, no extra fetch. ─────────
-function CommunityWinsSpotlight({ ideas, rxStore, onNavigate }: { ideas: IdeaCard[]; rxStore: RxStore; onNavigate: (path: string) => void }) {
+function CommunityWinsSpotlight({ ideas, rxStore, onReact, onNavigate }: {
+  ideas: IdeaCard[]; rxStore: RxStore; onReact: (ideaId: string, key: RKey) => void; onNavigate: (path: string) => void;
+}) {
+  const [bookmarks, setBookmarks] = useState<Record<string, boolean>>(loadWinBookmarks);
+
+  const toggleBookmark = (id: string) => {
+    setBookmarks(prev => {
+      const next = { ...prev, [id]: !prev[id] };
+      saveWinBookmarks(next);
+      return next;
+    });
+  };
+
   const wins = ideas
     .filter(i => i.idea_status === 'done' || i.stage === 'done')
     .map(i => ({ idea: i, score: engagementScore(i, rxStore) }))
@@ -3981,30 +4003,92 @@ function CommunityWinsSpotlight({ ideas, rxStore, onNavigate }: { ideas: IdeaCar
 
   if (wins.length === 0) return null;
 
+  const SHIPPED_COLOR = '#059669';
+
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, letterSpacing: .5, fontFamily: LIT.headFont, marginBottom: 8 }}>
         🌟 Community wins
       </div>
       <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
-        {wins.map(({ idea, score }) => (
-          <button
-            key={idea.id}
-            onClick={() => onNavigate(`/community/${idea.id}`)}
-            style={{
-              flexShrink: 0, width: 220, textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit',
-              background: LIT.card, border: `1.5px solid ${LIT.border}`, borderRadius: LIT.radius,
-              padding: '14px 16px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#059669', background: '#f0fdf4', borderRadius: 999, padding: '2px 8px' }}>🚀 Shipped</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: LIT.muted }}>{score} pts</span>
+        {wins.map(({ idea, score }) => {
+          const rx = rxStore[idea.id] ?? { counts: {}, mine: null };
+          const upvoted = rx.mine === 'cheer';
+          const bookmarked = !!bookmarks[idea.id];
+          const domainGlyph = idea.business_domain
+            ? (DOMAIN_LABELS[idea.business_domain] ?? '🚀 ').split(' ')[0]
+            : '🚀';
+
+          return (
+            <div
+              key={idea.id}
+              onClick={() => onNavigate(`/community/${idea.id}`)}
+              style={{
+                flexShrink: 0, width: 232, height: 188, textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit',
+                background: LIT.card, border: `1.5px solid ${LIT.border}`, borderRadius: LIT.radius,
+                padding: '14px 16px', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' as const,
+              }}
+            >
+              {/* Top row: pseudo-thumbnail + shipped badge, bookmark toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                  <div style={{
+                    width: 26, height: 26, borderRadius: 6, flexShrink: 0,
+                    background: `linear-gradient(135deg, ${SHIPPED_COLOR}, ${SHIPPED_COLOR}90)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13,
+                  }}>
+                    {domainGlyph}
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: SHIPPED_COLOR, background: '#f0fdf4', borderRadius: 999, padding: '2px 8px', whiteSpace: 'nowrap' }}>Shipped</span>
+                </div>
+                <button
+                  onClick={e => { e.stopPropagation(); toggleBookmark(idea.id); }}
+                  title={bookmarked ? 'Remove bookmark' : 'Bookmark this'}
+                  style={{
+                    border: 'none', background: 'transparent', cursor: 'pointer', padding: 2,
+                    fontSize: 15, lineHeight: 1, color: bookmarked ? '#d97706' : LIT.muted, flexShrink: 0,
+                  }}
+                >
+                  {bookmarked ? '🔖' : '🏷️'}
+                </button>
+              </div>
+
+              {/* Title — clamped to 2 lines so card height stays fixed regardless of name length */}
+              <div style={{
+                fontSize: 14, fontWeight: 700, color: LIT.text, marginBottom: 8, fontFamily: LIT.headFont,
+                lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
+              }}>{idea.name}</div>
+
+              {/* Author row — avatar + name */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                <Avatar initials={idea.author_initials} color={SHIPPED_COLOR} size={18} />
+                <span style={{ fontSize: 11, color: LIT.secondary, fontFamily: LIT.bodyFont, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{idea.author_name}</span>
+              </div>
+
+              {/* Footer — pinned to card bottom: comment count + clickable upvote */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                paddingTop: 10, marginTop: 'auto', borderTop: `1px solid ${LIT.border}`,
+              }}>
+                <span style={{ fontSize: 11, color: LIT.muted, fontWeight: 600 }}>💬 {idea.post_count}</span>
+                <button
+                  onClick={e => { e.stopPropagation(); onReact(idea.id, 'cheer'); }}
+                  title={upvoted ? 'Remove cheer' : 'Cheer this win'}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontFamily: 'inherit',
+                    border: `1.5px solid ${upvoted ? LIT.accent : LIT.border}`,
+                    background: upvoted ? LIT.accent : LIT.cardTint,
+                    color: upvoted ? '#fff' : LIT.muted,
+                    borderRadius: 20, padding: '3px 9px', fontSize: 11, fontWeight: 800,
+                    transition: 'all .12s',
+                  }}
+                >
+                  <span style={{ fontSize: 9 }}>▲</span>{score} pts
+                </button>
+              </div>
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: LIT.text, marginBottom: 3, fontFamily: LIT.headFont }}>{idea.name}</div>
-            <div style={{ fontSize: 11, color: LIT.secondary, fontFamily: LIT.bodyFont }}>{idea.author_name}</div>
-          </button>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -4588,7 +4672,7 @@ export default function CommunityPage() {
       </div>
 
       {/* Community Wins — spotlight strip of top-engagement shipped ideas */}
-      {tab === 'ideas' && <CommunityWinsSpotlight ideas={ideas} rxStore={rxStore} onNavigate={navigate} />}
+      {tab === 'ideas' && <CommunityWinsSpotlight ideas={ideas} rxStore={rxStore} onReact={handleReact} onNavigate={navigate} />}
 
       {/* Early-Stage Funding News — compact pill-chip row, community home page only */}
       {tab === 'ideas' && <StartupNewsPillRow />}
