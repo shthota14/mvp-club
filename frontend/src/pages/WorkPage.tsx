@@ -4422,6 +4422,19 @@ const SEVERITY_CONFIG: Record<SeverityLevel, { icon: string; label: string; bg: 
   minor:    { icon: '😐', label: 'Minor',    bg: '#f9f9f9', border: '#e5e5ea', textColor: '#6e6e73' },
 };
 
+// Small corner badge showing a keyboard-shortcut number — sits on a button
+// that already has `position: relative`.
+function KeyBadge({ k }: { k: string }) {
+  return (
+    <span style={{
+      position: 'absolute', top: -6, right: -4, width: 15, height: 15, borderRadius: 4,
+      background: '#1a1a1a', color: '#fff', fontSize: 9, fontWeight: 800,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+      fontFamily: "'Inter', system-ui, sans-serif", boxShadow: '0 1px 3px rgba(0,0,0,.25)',
+    }}>{k}</span>
+  );
+}
+
 function serializeSeverityProblem(p: SeverityProblem): string {
   if (!p.text.trim()) return '';
   return p.severity ? [p.text.trim(), p.severity].join(FIELD_SEP) : p.text.trim();
@@ -4763,6 +4776,14 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
   // Grouped-by-severity declutter (Option 4, 2026-09-05 canvas): open/closed
   // state for the three collapsible Critical/Major/Minor sections below.
   const [openSeverityGroups, setOpenSeverityGroups] = useState<Record<SeverityLevel, boolean>>({ critical: false, major: false, minor: false });
+  // Card-stack (one at a time) vs. batch table (rate several without
+  // returning to a single-card view) for the suggestion queue below.
+  const [queueViewMode, setQueueViewMode] = useState<'stack' | 'table'>('stack');
+  // "Add your own" trigger that lives right on the active card, separate
+  // from the one at the bottom of the whole list (still needed for when
+  // there are no suggestions, or all of them are done).
+  const [stackCustomOpen, setStackCustomOpen] = useState(false);
+  const [stackCustomText, setStackCustomText] = useState('');
 
   // ── Severity nudge ────────────────────────────────────────────────────────
   // When the founder clicks a Next button that's blocked because a problem has
@@ -4910,6 +4931,19 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
   const currentSuggestion = remainingSuggestionsQueue[0] || null;
   const suggestionsReviewedCount = allSuggestionsFlat.length - remainingSuggestionsQueue.length;
 
+  useEffect(() => {
+    if (queueViewMode !== 'stack' || !currentSuggestion) return;
+    const handler = (e: KeyboardEvent) => {
+      const tag = (document.activeElement?.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+      if (e.key === '1') { e.preventDefault(); skipCurrentSuggestion(currentSuggestion.text); }
+      else if (e.key === '2') { e.preventDefault(); addSuggestionWithSeverity(currentSuggestion.text, 'minor'); }
+      else if (e.key === '3') { e.preventDefault(); addSuggestionWithSeverity(currentSuggestion.text, 'major'); }
+      else if (e.key === '4') { e.preventDefault(); addSuggestionWithSeverity(currentSuggestion.text, 'critical'); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [queueViewMode, currentSuggestion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleSuggestion = (text: string) => {
     const already = problems.findIndex(p => p.text.trim() === text);
@@ -4945,6 +4979,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
     }
     setProblems(next); emitList(next);
   };
+  const skipCurrentSuggestion = (text: string) => setSkippedSuggestions(prev => { const next = new Set(prev); next.add(text); return next; });
 
   const updateSeverity = (id: string, severity: SeverityLevel) => {
     // Pre-existing type gap fixed in passing: the '' branch of this ternary
@@ -4992,16 +5027,20 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
     setEditingId(null); setEditText('');
   };
 
-  const addCustom = () => {
-    if (!customText.trim()) return;
+  const addCustomText = (text: string) => {
+    const t = text.trim();
+    if (!t) return;
     const blankIdx = problems.findIndex(p => !p.text.trim());
     let next: SeverityProblem[];
     if (blankIdx !== -1) {
-      next = problems.map((p, i) => i === blankIdx ? { ...p, text: customText.trim() } : p);
+      next = problems.map((p, i) => i === blankIdx ? { ...p, text: t } : p);
     } else {
-      next = [...problems, { id: Date.now().toString(36), text: customText.trim(), severity: '' as const }];
+      next = [...problems, { id: Date.now().toString(36), text: t, severity: '' as const }];
     }
     setProblems(next); emitList(next);
+  };
+  const addCustom = () => {
+    addCustomText(customText);
     setCustomText('');
     setShowCustom(false);
   };
@@ -5198,49 +5237,156 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
         )}
         {displayGroups.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#b0b0b8', letterSpacing: '.06em' }}>
-              {Math.min(suggestionsReviewedCount + (currentSuggestion ? 1 : 0), allSuggestionsFlat.length)} of {allSuggestionsFlat.length} reviewed
-            </div>
-            {currentSuggestion ? (
-              <div style={{
-                background: '#fff', border: '1.5px solid #e5e5ea',
-                borderRadius: 14, padding: '24px 22px', boxShadow: '0 1px 2px rgba(0,0,0,.04)',
-                display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 420,
-              }}>
-                <div style={{
-                  alignSelf: 'flex-start', fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11,
-                  letterSpacing: '.08em', textTransform: 'uppercase' as const, color: currentSuggestion.color,
-                  border: `1.5px solid ${currentSuggestion.color}`, padding: '3px 10px', borderRadius: 999,
-                }}>
-                  {currentSuggestion.category}
+            {/* High-visibility progress bar (replaces the old faint "X of Y
+                reviewed" text) + a Cards/Table toggle. Table mode lets a
+                founder rate several suggestions in a row without returning
+                to a single-card view each time. */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' as const }}>
+              <div style={{ flex: 1, minWidth: 140 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#6e6e73', marginBottom: 4 }}>
+                  {queueViewMode === 'stack' && currentSuggestion
+                    ? `Card ${Math.min(suggestionsReviewedCount + 1, allSuggestionsFlat.length)} of ${allSuggestionsFlat.length}`
+                    : `${Math.min(suggestionsReviewedCount + (currentSuggestion ? 1 : 0), allSuggestionsFlat.length)} of ${allSuggestionsFlat.length} reviewed`}
                 </div>
-                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 18, lineHeight: 1.45, color: '#1d1d1f', fontWeight: 600 }}>
-                  {currentSuggestion.text}
+                <div style={{ height: 5, borderRadius: 999, background: '#eee', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 999, background: '#1a1a1a',
+                    width: `${allSuggestionsFlat.length ? (suggestionsReviewedCount / allSuggestionsFlat.length) * 100 : 0}%`,
+                    transition: 'width .25s ease',
+                  }} />
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button
-                    onClick={() => setSkippedSuggestions(prev => { const next = new Set(prev); next.add(currentSuggestion.text); return next; })}
-                    style={{
-                      flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
-                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
-                      border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontWeight: 700,
-                    }}
-                  >
-                    Skip
+              </div>
+              <div style={{ display: 'inline-flex', border: '1.5px solid #e5e5ea', borderRadius: 9, padding: 2, flexShrink: 0 }}>
+                {(['stack', 'table'] as const).map(m => (
+                  <button key={m} onClick={() => setQueueViewMode(m)} style={{
+                    padding: '5px 12px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                    fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit',
+                    background: queueViewMode === m ? '#1a1a1a' : 'transparent',
+                    color: queueViewMode === m ? '#fff' : '#6e6e73',
+                    transition: 'all .15s',
+                  }}>
+                    {m === 'stack' ? '🗂 Cards' : '📋 Table'}
                   </button>
-                  {(['minor', 'major', 'critical'] as SeverityLevel[]).map(lvl => (
+                ))}
+              </div>
+            </div>
+
+            {queueViewMode === 'table' ? (
+              /* ── Batch table view ── */
+              remainingSuggestionsQueue.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {remainingSuggestionsQueue.map(s => (
+                    <div key={s.text} style={{
+                      display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px',
+                      border: '1px solid #e5e5ea', borderRadius: 9, background: '#fff',
+                    }}>
+                      <span style={{
+                        flexShrink: 0, fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 9.5,
+                        letterSpacing: '.06em', textTransform: 'uppercase' as const, color: s.color,
+                        border: `1.5px solid ${s.color}`, padding: '2px 7px', borderRadius: 999,
+                      }}>
+                        {s.category}
+                      </span>
+                      <span style={{ flex: 1, fontFamily: "'Inter', system-ui, sans-serif", fontSize: 13.5, fontWeight: 500, color: '#1d1d1f', lineHeight: 1.4, minWidth: 0 }}>
+                        {s.text}
+                      </span>
+                      <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                        <button onClick={() => skipCurrentSuggestion(s.text)} title="Skip" style={{ padding: '5px 9px', borderRadius: 6, border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Skip</button>
+                        {(['minor', 'major', 'critical'] as SeverityLevel[]).map(lvl => (
+                          <button key={lvl} onClick={() => addSuggestionWithSeverity(s.text, lvl)} title={SEVERITY_CONFIG[lvl].label} style={{ padding: '5px 9px', borderRadius: 6, border: `1.5px solid ${SEVERITY_CONFIG[lvl].textColor}`, background: '#fff', color: SEVERITY_CONFIG[lvl].textColor, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                            {SEVERITY_CONFIG[lvl].icon}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#94a3b8', padding: '10px 2px' }}>
+                  <span>{skippedSuggestions.size > 0 ? `You've been through all ${allSuggestionsFlat.length} suggestions.` : `That's everything Sage suggested — nice work.`}</span>
+                  {skippedSuggestions.size > 0 && (
+                    <button onClick={() => setSkippedSuggestions(new Set())} style={{ fontSize: 12, fontWeight: 700, color: '#b45309', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                      ↺ review the {skippedSuggestions.size} you skipped
+                    </button>
+                  )}
+                </div>
+              )
+            ) : currentSuggestion ? (
+              <div style={{ position: 'relative' as const, maxWidth: 420 }}>
+                {/* Card-stack illusion — two faded, offset cards peeking out
+                    from behind the active one so this doesn't sit alone on
+                    an empty canvas. Purely decorative (no content), so
+                    there's nothing to keep in sync with the real queue. */}
+                {remainingSuggestionsQueue.length > 2 && (
+                  <div style={{ position: 'absolute', inset: 0, top: 12, transform: 'scale(.96) rotate(1deg)', background: '#fff', border: '1.5px solid #ececec', borderRadius: 14, zIndex: 0 }} />
+                )}
+                {remainingSuggestionsQueue.length > 1 && (
+                  <div style={{ position: 'absolute', inset: 0, top: 6, transform: 'scale(.98) rotate(-.6deg)', background: '#fff', border: '1.5px solid #e5e5ea', borderRadius: 14, zIndex: 1 }} />
+                )}
+                <div style={{
+                  position: 'relative' as const, zIndex: 2,
+                  background: '#fff', border: '1.5px solid #e5e5ea',
+                  borderRadius: 14, padding: '24px 22px', boxShadow: '0 4px 16px rgba(0,0,0,.06)',
+                  display: 'flex', flexDirection: 'column', gap: 14,
+                }}>
+                  <div style={{
+                    alignSelf: 'flex-start', fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11,
+                    letterSpacing: '.08em', textTransform: 'uppercase' as const, color: currentSuggestion.color,
+                    border: `1.5px solid ${currentSuggestion.color}`, padding: '3px 10px', borderRadius: 999,
+                  }}>
+                    {currentSuggestion.category}
+                  </div>
+                  <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 18, fontWeight: 500, lineHeight: 1.5, color: '#1d1d1f' }}>
+                    {currentSuggestion.text}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
                     <button
-                      key={lvl}
-                      onClick={() => addSuggestionWithSeverity(currentSuggestion.text, lvl)}
+                      onClick={() => skipCurrentSuggestion(currentSuggestion.text)}
                       style={{
-                        flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
+                        position: 'relative' as const, flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
                         fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
-                        border: `1.5px solid ${SEVERITY_CONFIG[lvl].textColor}`, background: '#fff', color: SEVERITY_CONFIG[lvl].textColor, fontWeight: 700,
+                        border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontWeight: 700,
                       }}
                     >
-                      {SEVERITY_CONFIG[lvl].label}
+                      <KeyBadge k="1" /> Skip
                     </button>
-                  ))}
+                    {(['minor', 'major', 'critical'] as SeverityLevel[]).map((lvl, i) => (
+                      <button
+                        key={lvl}
+                        onClick={() => addSuggestionWithSeverity(currentSuggestion.text, lvl)}
+                        style={{
+                          position: 'relative' as const, flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
+                          fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
+                          border: `1.5px solid ${SEVERITY_CONFIG[lvl].textColor}`, background: '#fff', color: SEVERITY_CONFIG[lvl].textColor, fontWeight: 700,
+                        }}
+                      >
+                        <KeyBadge k={String(i + 2)} /> {SEVERITY_CONFIG[lvl].label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Prominent custom-problem entry — right on the active
+                      card, so a founder can capture their own phrasing the
+                      moment it occurs to them instead of scrolling down to
+                      the fallback trigger at the bottom of the list. */}
+                  {stackCustomOpen ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <textarea
+                        rows={2} autoFocus value={stackCustomText}
+                        onChange={e => setStackCustomText(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addCustomText(stackCustomText); setStackCustomText(''); setStackCustomOpen(false); } if (e.key === 'Escape') setStackCustomOpen(false); }}
+                        placeholder="Describe the specific frustration your customer experiences…"
+                        style={{ width: '100%', boxSizing: 'border-box' as const, border: '1.5px solid #1a1a1a', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontFamily: 'inherit', color: USER_INPUT_COLOR, lineHeight: 1.5, resize: 'none' as const, outline: 'none' }}
+                      />
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => { addCustomText(stackCustomText); setStackCustomText(''); setStackCustomOpen(false); }} disabled={!stackCustomText.trim()} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: stackCustomText.trim() ? '#1a1a1a' : '#e5e5ea', color: stackCustomText.trim() ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: stackCustomText.trim() ? 'pointer' : 'default' }}>Add</button>
+                        <button onClick={() => setStackCustomOpen(false)} style={{ padding: '6px 12px', borderRadius: 7, border: '1.5px solid #e0e0e0', background: '#fff', color: '#888', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => setStackCustomOpen(true)} style={{ alignSelf: 'flex-start', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, fontSize: 12, fontWeight: 600, color: '#94a3b8', textDecoration: 'underline' }}>
+                      + describe a different problem instead
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -5291,14 +5437,24 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                   onClick={() => toggleSeverityGroup(lvl)}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
-                    borderRadius: 8, background: sc.bg, cursor: 'pointer', userSelect: 'none' as const,
+                    borderRadius: 8, background: sc.bg, border: `1.5px solid ${sc.border}`,
+                    cursor: 'pointer', userSelect: 'none' as const, transition: 'box-shadow .15s',
                   }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 0 0 2px ${sc.border}`; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; }}
                 >
-                  <span style={{ fontSize: 11, color: sc.textColor, width: 12, flexShrink: 0, textAlign: 'center' as const }}>{isOpen ? '▾' : '▸'}</span>
+                  <span style={{
+                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 10, color: '#fff', background: sc.textColor,
+                  }}>{isOpen ? '▾' : '▸'}</span>
                   <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.05em', color: sc.textColor, textTransform: 'uppercase' as const }}>
                     {sc.icon} {sc.label}
                   </span>
-                  <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: sc.textColor }}>{group.length}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: sc.textColor }}>{group.length}</span>
+                  {!isOpen && (
+                    <span style={{ marginLeft: 'auto', fontSize: 10.5, fontWeight: 600, color: sc.textColor, opacity: 0.65 }}>tap to review →</span>
+                  )}
                 </div>
                 {isOpen && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
