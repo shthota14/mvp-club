@@ -6705,9 +6705,12 @@ function PainGaugeStep({
 }
 
 // ── Problem Context Card (h3 reminder) ────────────────────────────────────
-function ProblemContextCard({ who, problems, pain }: { who: string; problems: string; pain: string[] }) {
+function ProblemContextCard({ who, problems, pain, problemCount }: { who: string; problems: string; pain: string[]; problemCount?: number }) {
   const [open, setOpen] = useState(false);
   if (!who && !problems) return null;
+  const summaryLabel = problemCount
+    ? `💭 Solving for ${problemCount} problem${problemCount !== 1 ? 's' : ''}${who ? ` in ${who}` : ''}`
+    : `💭 Remember — what you're solving`;
   return (
     <div style={{
       background: '#fefce8', border: '1.5px solid #fde047', borderRadius: 10,
@@ -6725,7 +6728,7 @@ function ProblemContextCard({ who, problems, pain }: { who: string; problems: st
         }}
       >
         <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.04em', textTransform: 'uppercase' as const, color: '#a16207' }}>
-          💭 Remember — what you're solving
+          {summaryLabel}
         </span>
         <span style={{ fontSize: 11, color: '#a16207', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
           {open ? 'collapse' : 'click to expand'}
@@ -6786,6 +6789,21 @@ const ALT_CATEGORY_LABELS: Record<string, string> = {
   'Nothing': '🚫 Nothing',
 };
 
+// Top-3 ranked-slot UI (replaces the old flat ★/× list) — only the #1 slot
+// feeds the hypothesis/Validate downstream, but showing real #2/#3 slots
+// makes the ranking intent visible at a glance instead of a single lonely
+// star among many identical rows.
+const RANK_SLOT_META: { label: string; icon: string }[] = [
+  { label: '#1 Primary', icon: '🏆' },
+  { label: '#2 Secondary', icon: '🥈' },
+  { label: '#3 Alternate', icon: '🥉' },
+];
+const rankArrowStyle = (disabled: boolean): React.CSSProperties => ({
+  width: 18, height: 13, border: 'none', background: 'transparent', padding: 0,
+  fontSize: 8, lineHeight: 1, color: disabled ? '#e5e5ea' : '#9a9aa0',
+  cursor: disabled ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+});
+
 // Persisted shape for the once-per-idea AI-generated alternative chip set,
 // stored via the genChipsValue/onGenChipsChange props (backed by the
 // ideasApi field 'solutionChipsGen') so a reload replays Sage's original
@@ -6817,6 +6835,7 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
   const [items, setItems] = useState<string[]>(() => toList(value));
   const [customText, setCustomText] = useState('');
   const [showCustom, setShowCustom] = useState(false);
+  const [showAllRanked, setShowAllRanked] = useState(false);
   useEffect(() => {
     if (value && items.length === 0) {
       const loaded = toList(value);
@@ -6864,6 +6883,15 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
   };
 
   const remove = (label: string) => commit(items.filter(i => i !== label));
+
+  const moveItem = (item: string, dir: -1 | 1) => {
+    const idx = items.indexOf(item);
+    const nextIdx = idx + dir;
+    if (idx === -1 || nextIdx < 0 || nextIdx >= items.length) return;
+    const next = items.slice();
+    [next[idx], next[nextIdx]] = [next[nextIdx], next[idx]];
+    commit(next);
+  };
 
   const c = STAGE_COLORS.hone;
 
@@ -7090,69 +7118,96 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
         </button>
       )}
 
-      {/* ── Selected + ranked list — whiteboard style ── */}
+      {/* ── Top 3 ranked slots + hypothesis — whiteboard style ── */}
       {/* Held back while Sage is still generating fresh suggestions above: even
           though this list is the founder's own prior picks (not AI output), showing
           a confident "Your hypothesis: ..." card while the loading indicator above
           still says "reading your problem..." reads as a contradiction. It reappears
           the instant loading finishes. */}
       {items.length > 0 && !pickerLoading && (
-        <div style={{ background: '#fafafa', border: '1.5px solid #e0e0e0', borderRadius: 10, padding: '10px 14px' }}>
-          {items.length >= 2 && (
-            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 12, color: '#9a9aa0', marginBottom: 6 }}>
-              Tap ★ next to the one you think is most common
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Top 3 ranked slots — replaces the flat ★/× list. ▲▼ reorder;
+              only #1 feeds the hypothesis/Validate downstream, but real
+              #2/#3 slots make the ranking visible at a glance. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: '#b0b0b8' }}>
+              Ranked — #1 becomes your hypothesis
             </div>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            {items.map((item, i) => {
-              const isPrimary = i === 0;
+            {RANK_SLOT_META.map((slot, i) => {
+              const item = items[i];
+              if (!item) {
+                return (
+                  <div key={i} style={{ border: '1.5px dashed #e0e0e0', borderRadius: 10, padding: '11px 14px', fontSize: 12.5, fontWeight: 600, color: '#c7c7cc' }}>
+                    {slot.icon} {slot.label} — empty
+                  </div>
+                );
+              }
+              const category = allAlternativesFlat.find(a => a.text === item)?.category || 'Custom';
               return (
-                <div
-                  key={item}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    padding: '8px 10px', borderRadius: 3,
-                    borderLeft: `4px solid ${isPrimary ? c : '#d8d8d8'}`,
-                    background: isPrimary ? `${c}0d` : '#fffdf8',
-                    transition: 'background .12s, border-color .12s',
-                  }}
-                >
-                  {/* Mark as most common — replaces full drag-to-reorder;
-                      only the #1 slot ever mattered downstream (it's what
-                      "Your hypothesis" below and Validate actually test),
-                      so picking it directly is a one-tap action instead of
-                      dragging every item into a full ranked order. */}
-                  {items.length >= 2 && (
-                    <button
-                      onClick={() => { if (!isPrimary) commit([item, ...items.filter(x => x !== item)]); }}
-                      title="Mark as most common"
-                      style={{
-                        width: 20, height: 20, border: 'none', background: 'transparent',
-                        cursor: isPrimary ? 'default' : 'pointer', fontSize: 15, lineHeight: 1,
-                        color: isPrimary ? c : '#d0d0d5', flexShrink: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-                      }}
-                    >
-                      {isPrimary ? '★' : '☆'}
-                    </button>
-                  )}
-
-                  {/* Label */}
-                  <span style={{ flex: 1, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: isPrimary ? '#1e293b' : '#555', fontWeight: isPrimary ? 600 : 500, lineHeight: 1.3 }}>{item}</span>
-
-                  {/* Remove */}
-                  <button
-                    onClick={() => remove(item)}
-                    style={{ width: 20, height: 20, border: 'none', borderRadius: 4, background: 'transparent', color: '#ccc', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}
-                  >×</button>
+                <div key={item} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  border: `1.5px solid ${i === 0 ? c : '#e5e5ea'}`, borderRadius: 10, padding: '10px 12px',
+                  background: i === 0 ? `${c}0d` : '#fff',
+                }}>
+                  <span style={{ fontSize: 17, flexShrink: 0 }}>{slot.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{
+                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 9.5, letterSpacing: '.05em',
+                      textTransform: 'uppercase' as const, color: c, border: `1px solid ${c}`,
+                      borderRadius: 999, padding: '1px 7px', marginRight: 7,
+                    }}>{category}</span>
+                    <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: i === 0 ? '#1e293b' : '#555', fontWeight: i === 0 ? 600 : 500 }}>{item}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
+                    <button onClick={() => moveItem(item, -1)} disabled={i === 0} title="Move up" style={rankArrowStyle(i === 0)}>▲</button>
+                    <button onClick={() => moveItem(item, 1)} disabled={i === items.length - 1} title="Move down" style={rankArrowStyle(i === items.length - 1)}>▼</button>
+                  </div>
+                  <button onClick={() => remove(item)} title="Remove" style={{ width: 20, height: 20, border: 'none', borderRadius: 4, background: 'transparent', color: '#ccc', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}>×</button>
                 </div>
               );
             })}
           </div>
+
+          {/* Hypothesis — moved right under the ranking so it updates live
+              without scrolling past everything else you've added. */}
           {items.length >= 2 && (
-            <div style={{ ...postcardStyle(1), marginTop: 12, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 700, color: '#065f46', padding: '11px 15px' }}>
+            <div style={{ ...postcardStyle(1), fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 700, color: '#065f46', padding: '11px 15px' }}>
               <PostcardStamp top={8} right={10} />
               <strong>Your hypothesis:</strong> Most people are solving this by <em>{items[0].charAt(0).toLowerCase() + items[0].slice(1)}</em>. You'll test this in Validate.
+            </div>
+          )}
+
+          {/* Everything beyond the top 3 — collapsed by default so a long
+              pick list doesn't turn back into a wall of rows. */}
+          {items.length > 3 && (
+            <div>
+              <button onClick={() => setShowAllRanked(o => !o)} style={{
+                fontSize: 12, fontWeight: 700, color: '#8e8e93', background: 'none', border: 'none',
+                cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4,
+              }}>
+                {showAllRanked ? 'Hide' : `+${items.length - 3} more pick${items.length - 3 !== 1 ? 's' : ''}`}
+                <span style={{ fontSize: 10, transition: 'transform .15s', display: 'inline-block', transform: showAllRanked ? 'rotate(180deg)' : 'none' }}>▾</span>
+              </button>
+              {showAllRanked && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 8 }}>
+                  {items.slice(3).map(item => {
+                    const category = allAlternativesFlat.find(a => a.text === item)?.category || 'Custom';
+                    return (
+                      <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, border: '1px solid #ececec', background: '#fafafa' }}>
+                        <span style={{
+                          fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 9.5, letterSpacing: '.05em',
+                          textTransform: 'uppercase' as const, color: '#8e8e93', border: '1px solid #d2d2d7',
+                          borderRadius: 999, padding: '1px 7px', flexShrink: 0,
+                        }}>{category}</span>
+                        <span style={{ flex: 1, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#555' }}>{item}</span>
+                        <button onClick={() => moveItem(item, -1)} title="Move up into ranked slots" style={rankArrowStyle(false)}>▲</button>
+                        <button onClick={() => remove(item)} title="Remove" style={{ width: 18, height: 18, border: 'none', background: 'transparent', color: '#ccc', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>×</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -15158,6 +15213,7 @@ export default function WorkPage() {
         who={parseWhoDisplay(get('whoExactly'))}
         problems={parseProblemDisplay(get('problemSentence'))}
         pain={(get('painIfNothing') || '').split('|').filter((s: string) => ['Lost revenue','Wasted time','Team burnout',"Can't scale",'Customer churn','Reputation damage','Falling behind','Morale drops','Constant firefighting','Debt builds up','Harder to fix later','Competitors pull ahead'].includes(s))}
+        problemCount={get('problemSentence').split(MULTI_SEP).filter(Boolean).length}
       />
 
       <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#475569', marginBottom: 10, lineHeight: 1.5 }}>
@@ -15191,7 +15247,9 @@ export default function WorkPage() {
         genChipsValue={get('solutionChipsGen')}
         onGenChipsChange={v => set('solutionChipsGen', v)}
       />
-      <NavRow onBack={back} onNext={async () => { await save('hone', { solutionAlternatives: get('solutionAlternatives') }); next(); }} nextLabel="Next →" disabled={!get('solutionAlternatives').split('|||').filter(Boolean).length} disabledReason="List at least one way people cope with this today." stageColor={STAGE_COLORS.idea} stepTitle="What do you think people are doing to solve this?" ideaId={activeIdea.id} />
+      <div style={{ position: 'sticky' as const, bottom: 0, background: '#fff', paddingTop: 12, marginTop: 4, borderTop: `1px solid ${BORDER}`, zIndex: 2 }}>
+        <NavRow onBack={back} onNext={async () => { await save('hone', { solutionAlternatives: get('solutionAlternatives') }); next(); }} nextLabel="Next →" disabled={!get('solutionAlternatives').split('|||').filter(Boolean).length} disabledReason="List at least one way people cope with this today." stageColor={STAGE_COLORS.idea} stepTitle="What do you think people are doing to solve this?" ideaId={activeIdea.id} />
+      </div>
     </div>,
     <div key="h-readiness" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={4} />
