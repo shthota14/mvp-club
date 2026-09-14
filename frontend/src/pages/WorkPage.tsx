@@ -7304,30 +7304,65 @@ function LinkedInHub({ eWho, eProblem, eWhat, ideaName, onBack }: { eWho: string
 // ── Hone Scorecard ─────────────────────────────────────────────────────────
 
 const SCORE_DIMS = [
-  { key: 's_specificity', label: 'Specific, identifiable customer' },
-  { key: 's_pain',        label: 'Clear, articulable pain' },
-  { key: 's_frequency',   label: 'Happens frequently' },
-  { key: 's_economic',    label: 'Economically expensive problem' },
-  { key: 's_workaround',  label: 'Existing (painful) workaround' },
-  { key: 's_seeking',     label: 'Customers actively seek solutions' },
-  { key: 's_buyer',       label: 'Clear buyer (who pays?)' },
-  { key: 's_measurable',  label: 'Measurable outcome if solved' },
+  { key: 's_specificity', label: 'Specific, identifiable customer',       desc: 'Could you name 10 real people who have this problem, right now?' },
+  { key: 's_pain',        label: 'Clear, articulable pain',               desc: "Could they describe this problem back to you in one sentence?" },
+  { key: 's_frequency',   label: 'Happens frequently',                    desc: 'Is this a daily annoyance, or something they hit once a year?' },
+  { key: 's_economic',    label: 'Economically expensive problem',        desc: 'Is it costing them real money, time, or missed revenue?' },
+  { key: 's_workaround',  label: 'Existing (painful) workaround',         desc: 'Are they already duct-taping together a fix today?' },
+  { key: 's_seeking',     label: 'Customers actively seek solutions',     desc: 'Are they Googling, asking around, or trying other tools for this?' },
+  { key: 's_buyer',       label: 'Clear buyer (who pays?)',               desc: 'Do you know exactly who signs off on paying for this?' },
+  { key: 's_measurable',  label: 'Measurable outcome if solved',          desc: "Could you prove, with a number, that this got better?" },
 ];
+
+// Shown under a dimension when it's scored 1 or 2 — a concrete nudge tied
+// to what that specific score means, not a generic "this is low" warning.
+const WEAK_SIGNAL_ADVICE: Record<string, string> = {
+  s_specificity: "Vague on who exactly? Narrow this down before Validate — a fuzzy customer makes every later step harder.",
+  s_pain:        "Not sure it's top-of-mind for them? Dig into this in your next few conversations before assuming it's real.",
+  s_frequency:   "Rare problems are hard to build a business on. Make sure frequency isn't secretly your biggest risk.",
+  s_economic:    "If it's not costing them real money or time, paying customers may be a stretch. Worth re-checking.",
+  s_workaround:  "No real workaround today can mean no real urgency yet — or a genuinely untapped problem. Find out which.",
+  s_seeking:     "If people aren't already looking for a fix, you may be early — or the pain isn't sharp enough yet.",
+  s_buyer:       "Unclear who actually pays is a common reason pitches stall. Pin this down early.",
+  s_measurable:  "If you can't measure the outcome, it'll be hard to prove your MVP worked. Think about what number would move.",
+};
 
 function HoneScorecard({ values, onChange }: { values: Record<string, string>; onChange: (k: string, v: string) => void }) {
   const total = SCORE_DIMS.reduce((s, d) => s + (parseInt(values[d.key] ?? '0') || 0), 0);
+  const pct = Math.round((total / 40) * 100);
   const c = STAGE_COLORS.hone;
-  const grade = total >= 32 ? { label: 'Strong — move to Validate.', bg: '#f0fdf4', bc: '#059669', tc: '#065f46' }
-    : total >= 20 ? { label: 'Needs refinement. Revisit Who + What.', bg: '#fffbeb', bc: '#d97706', tc: '#92400e' }
-    : { label: 'Likely vague — deepen your thinking.', bg: '#fef2f2', bc: '#dc2626', tc: '#991b1b' };
+  const grade = total >= 32 ? { label: 'Strong — move to Validate.', short: 'Strong',    bg: '#f0fdf4', bc: '#059669', tc: '#065f46' }
+    : total >= 20 ? { label: 'Needs refinement. Revisit Who + What.', short: 'Needs work', bg: '#fffbeb', bc: '#d97706', tc: '#92400e' }
+    : { label: 'Likely vague — deepen your thinking.', short: 'Weak', bg: '#fef2f2', bc: '#dc2626', tc: '#991b1b' };
   // Direction A: which already-answered dimension (if any) the user has
   // explicitly reopened via "change" to re-score. Separate from the values
   // themselves so reopening a row never clears its score — only one row is
   // ever reopened at a time, mirroring the mockup's "1 of 8" chat flow.
   const [reopenedKey, setReopenedKey] = useState<string | null>(null);
   return (
-    <div style={col}>
-      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 500, color: '#334155' }}>Score each dimension 0–5 based on what you know today.</div>
+    <div style={{ ...col, maxWidth: 800 }}>
+      {/* ── Strength Index gauge — sticky so it stays visible and updates
+          live while scrolling through all 8 dimensions, instead of a total
+          buried at the very bottom of the list. ── */}
+      <div style={{
+        position: 'sticky' as const, top: 0, zIndex: 3, background: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
+        paddingBottom: 12, marginBottom: 4, borderBottom: `1px solid ${BORDER}`,
+      }}>
+        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 500, color: '#334155' }}>Score each dimension 0–5 based on what you know today.</div>
+        <div key={total} style={{
+          display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-end', gap: 2, flexShrink: 0,
+          padding: '8px 16px', borderRadius: 14, background: grade.bg, border: `2px solid ${grade.bc}`,
+          animation: 'tickPop .4s ease',
+        }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: grade.tc, textTransform: 'uppercase' as const, letterSpacing: '.06em' }}>Strength Index</span>
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, fontWeight: 800, color: grade.bc }}>{pct}%</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: grade.tc }}>{grade.short}</span>
+          </span>
+        </div>
+      </div>
+
       {SCORE_DIMS.map((d, di) => {
         const cur = parseInt(values[d.key] ?? '0') || 0;
         // Direction A: dimensions reveal one at a time, mirroring the
@@ -7343,51 +7378,61 @@ function HoneScorecard({ values, onChange }: { values: Record<string, string>; o
         // The 0-5 picker stays open until answered, then collapses to a
         // compact echo badge — reopened only by tapping "change".
         const rowOpen = !answered || reopenedKey === d.key;
+        const isWeak = answered && cur <= 2;
         return (
-          <div key={d.key} style={{ display: prevAnswered ? 'flex' : 'none', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
-            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#1e293b', flex: 1 }}>{d.label}</div>
-            <div style={{ display: rowOpen ? 'flex' : 'none', gap: 4 }}>
-              {[0, 1, 2, 3, 4, 5].map(n => (
-                <button key={n} onClick={() => { onChange(d.key, String(n)); setReopenedKey(null); }} style={{
-                  width: 30, height: 30, borderRadius: '50%',
-                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15, cursor: 'pointer',
-                  border: `2px solid ${cur === n ? c : '#bbb'}`,
-                  background: cur === n ? c : '#fffdf8',
-                  color: cur === n ? '#fff' : '#555',
-                  transition: 'all .15s',
-                }}>{n}</button>
-              ))}
+          <div key={d.key} style={{
+            display: prevAnswered ? 'block' : 'none',
+            border: `1.5px solid ${isWeak ? '#fecaca' : '#e2e8f0'}`, borderRadius: 12,
+            padding: '14px 16px', background: '#fff',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
+              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#1e293b' }}>{d.label}</div>
+              <div style={{ display: !rowOpen ? 'flex' : 'none', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15,
+                  background: c, color: '#fff',
+                }}>{cur}</div>
+                <button
+                  onClick={() => setReopenedKey(d.key)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
+                >
+                  ↺ change
+                </button>
+              </div>
             </div>
-            <div style={{ display: !rowOpen ? 'flex' : 'none', alignItems: 'center', gap: 8 }}>
-              <div style={{
-                width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15,
-                background: c, color: '#fff',
-              }}>{cur}</div>
-              <button
-                onClick={() => setReopenedKey(d.key)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
-              >
-                ↺ change
-              </button>
+            <div style={{ fontSize: 12.5, color: '#8e8e93', marginBottom: 10 }}>{d.desc}</div>
+            <div style={{ display: rowOpen ? 'flex' : 'none', flexDirection: 'column' as const, gap: 6 }}>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {[0, 1, 2, 3, 4, 5].map(n => (
+                  <button key={n} onClick={() => { onChange(d.key, String(n)); setReopenedKey(null); }} style={{
+                    flex: 1, height: 38, borderRadius: 9,
+                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15, cursor: 'pointer',
+                    border: `2px solid ${cur === n ? c : '#d8d8d8'}`,
+                    background: cur === n ? c : '#fffdf8',
+                    color: cur === n ? '#fff' : '#555',
+                    transition: 'all .15s',
+                  }}>{n}</button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#b0b0b8' }}>
+                <span>0 = Not at all</span>
+                <span>5 = Completely</span>
+              </div>
             </div>
+            {isWeak && (
+              <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 13, flexShrink: 0 }}>💡</span>
+                <span style={{ fontSize: 12, color: '#991b1b', lineHeight: 1.45 }}>{WEAK_SIGNAL_ADVICE[d.key]}</span>
+              </div>
+            )}
           </div>
         );
       })}
-      <div style={{ ...postcardStyle(1), borderTop: `4px solid ${grade.bc}`, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <PostcardStamp />
-        <div>
-          <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.05em', textTransform: 'uppercase' as const, color: '#666', marginBottom: 4 }}>Total score</div>
-          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, color: grade.tc, fontWeight: 700 }}>{grade.label}</div>
-        </div>
-        {/* `key={total}` forces a remount on every score change, which is what
-            replays the `tickPop` animation (defined in the shared keyframes
-            block above but otherwise unused) — the one satisfying "point
-            scored" beat in what's meant to be a careful self-assessment step,
-            not a game. Deliberately not spread across every score button
-            below: one focal pop reads as feedback, forty small ones would
-            just feel busy. */}
-        <div key={total} style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 42, color: grade.bc, animation: 'tickPop .4s ease' }}>{total}<span style={{ fontSize: 16, fontWeight: 600, color: '#888', fontFamily: 'inherit' }}>/40</span></div>
+
+      <div style={{ borderRadius: 12, border: `1.5px solid ${grade.bc}40`, background: grade.bg, padding: '14px 18px' }}>
+        <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.05em', textTransform: 'uppercase' as const, color: grade.tc, marginBottom: 3 }}>Overall read</div>
+        <div style={{ fontSize: 15, color: grade.tc, fontWeight: 700 }}>{grade.label}</div>
       </div>
     </div>
   );
