@@ -14304,14 +14304,14 @@ export default function WorkPage() {
     // Explainer screens are intentionally dark/chalk so they read as distinct
     // from the white step screens that follow each intro.
     const WB_BG   = '#17160f';
-    const WB_TEXT = '#f4f1e6';
-    const WB_DIM  = '#b9b6a8';
+    const WB_TEXT = '#FFFFFF';
+    const WB_DIM  = '#F3F4F6';
     const WB_RULE = '#3a372a';
 
     return (
       <div key={`${mod}-intro`} style={{
         display: 'flex', flexDirection: 'column', gap: 0,
-        fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
+        fontFamily: "'Inter', system-ui, sans-serif",
         background: WB_BG,
         borderRadius: 16,
         overflow: 'hidden',
@@ -14347,7 +14347,7 @@ export default function WorkPage() {
           </div>
 
           {/* Title — big marker lettering */}
-          <h1 style={{ fontSize: 30, fontWeight: 700, color: WB_TEXT, margin: '0 0 3px', letterSpacing: '0.01em', lineHeight: 1.0 }}>
+          <h1 style={{ fontSize: 30, fontWeight: 700, color: WB_TEXT, margin: '0 0 3px', letterSpacing: '0.01em', lineHeight: 1.0, fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui" }}>
             {meta.label}
           </h1>
 
@@ -14388,11 +14388,17 @@ export default function WorkPage() {
             gap: 5, marginBottom: 10,
           }}>
             {titles.map((title, i) => (
-              <div key={i} style={{
-                border: `1.5px solid ${WB_RULE}`, borderRadius: 8,
-                padding: '6px 9px', display: 'flex', flexDirection: 'column', gap: 2,
-                minWidth: 0,
-              }}>
+              <div
+                key={i}
+                style={{
+                  border: '1px solid transparent', borderRadius: 8,
+                  padding: '6px 9px', display: 'flex', flexDirection: 'column', gap: 2,
+                  minWidth: 0, background: `${WB_RULE}66`,
+                  transition: 'background .15s, border-color .15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = `${color}22`; e.currentTarget.style.borderColor = `${color}80`; }}
+                onMouseLeave={e => { e.currentTarget.style.background = `${WB_RULE}66`; e.currentTarget.style.borderColor = 'transparent'; }}
+              >
                 <div style={{
                   width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
                   border: `2px solid ${color}`,
@@ -14421,54 +14427,14 @@ export default function WorkPage() {
               { label: 'Remember', text: STAGE_TIP[mod], italic: true },
             ].map(card => (
               <div key={card.label} style={{
-                border: `2px solid ${color}`,
+                borderLeft: `3px solid ${color}`,
                 borderRadius: 7, padding: '8px 11px',
-                background: `${color}06`,
+                background: `${color}0d`,
               }}>
                 <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '.1em', textTransform: 'uppercase' as const, marginBottom: 3 }}>{card.label}</div>
                 <div style={{ fontSize: 11.5, color: WB_TEXT, lineHeight: 1.4, fontStyle: card.italic ? 'italic' : 'normal' }}>{card.text}</div>
               </div>
             ))}
-          </div>
-
-          {/* Stage progress — marker track (condensed) */}
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' as const }}>
-            {MODULES.map((m, mi) => {
-              const isPast   = mi < modIndex;
-              const isActive = m === mod;
-              const mc       = STAGE_COLORS[m];
-              return (
-                <React.Fragment key={m}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: '50%',
-                      border: isActive ? `2.5px solid ${mc}` : isPast ? `2px solid ${mc}60` : `2px solid #3a372a`,
-                      background: isActive ? `${mc}18` : isPast ? `${mc}08` : '#1d1b13',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9,
-                    }}>
-                      {isPast
-                        ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L19 7" stroke={mc} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        : <span style={{ opacity: isActive ? 1 : 0.4 }}>{META[m].icon}</span>
-                      }
-                    </div>
-                    <div style={{ fontSize: 8, fontWeight: 600, color: isActive ? mc : '#8b8778', letterSpacing: '.04em', textTransform: 'uppercase' as const, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
-                      {META[m].label}
-                    </div>
-                  </div>
-                  {mi < MODULES.length - 1 && (
-                    <div style={{
-                      flex: 1, minWidth: 6, height: 2,
-                      background: mi < modIndex ? `${color}50` : '#3a372a',
-                      margin: '0 3px 12px', borderRadius: 2,
-                      // The Validate → Shape hop is the mandatory/optional fork —
-                      // dashed here (vs solid everywhere else) so the rail itself
-                      // signals that Shape & Ship are a choice, not the next required step.
-                      ...(m === 'validate' ? { background: 'transparent', borderTop: `2px dashed ${mi < modIndex ? `${color}70` : '#3a372a'}`, height: 0 } : {}),
-                    }} />
-                  )}
-                </React.Fragment>
-              );
-            })}
           </div>
 
           {/* The "Validation Workspace" live-progress dashboard (confidence
@@ -14503,7 +14469,7 @@ export default function WorkPage() {
                   background: 'transparent', color: WB_DIM,
                   border: `2px solid #4a4636`, borderRadius: 8,
                   fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                  fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
+                  fontFamily: 'inherit',
                   letterSpacing: '.04em',
                   flexShrink: 0,
                   transition: 'opacity .15s, border-color .15s, color .15s',
@@ -14521,7 +14487,7 @@ export default function WorkPage() {
                 background: color, color: '#fff',
                 border: 'none', borderRadius: 8,
                 fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui",
+                fontFamily: 'inherit',
                 letterSpacing: '.04em',
                 boxShadow: `0 4px 16px ${color}40`,
                 transition: 'opacity .15s, transform .15s',
