@@ -6411,6 +6411,23 @@ function PainGaugeStep({
     commit({ ...entry, consequences: next });
   };
 
+  const isLast = ratedProblems.length === 0 || activeIdx >= ratedProblems.length - 1;
+  const goNextProblem = () => { if (!isLast) setActiveIdx(i => Math.min(ratedProblems.length - 1, i + 1)); };
+
+  // Cmd/Ctrl+Enter advances to the next problem without hunting for a
+  // button — same shortcut-first spirit as the 1/2/3/4 severity keys in the
+  // problem-rating deck (queueViewMode stack) one step back.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); goNextProblem(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLast, ratedProblems.length]);
+
   const gauge = (() => {
     if (score >= 9) return { label: '🔥 Existential threat', color: '#dc2626', bg: '#fef2f2', ringColor: '#fecaca' };
     if (score >= 7) return { label: '😤 Serious problem',    color: '#ea580c', bg: '#fff7ed', ringColor: '#fed7aa' };
@@ -6450,33 +6467,64 @@ function PainGaugeStep({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-      {/* ── Active-problem pager — the missing context: which of the rated
-          problems these consequences apply to, and how many are left. ── */}
-      <div style={{ background: '#fff', border: `2px solid ${SEV_META[active.severity].color}30`, borderRadius: 14, padding: '14px 18px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8, flexWrap: 'wrap' as const }}>
-          <span style={{
-            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.06em',
-            textTransform: 'uppercase' as const, color: SEV_META[active.severity].color,
-            border: `1.5px solid ${SEV_META[active.severity].color}`, borderRadius: 999, padding: '2px 10px',
-          }}>
-            {SEV_META[active.severity].icon} {active.severity} problem · {activeIdx + 1} of {ratedProblems.length}
-          </span>
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>{doneCount} of {ratedProblems.length} defined</span>
-        </div>
-        <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.4, marginBottom: 10 }}>
-          "{active.text}"
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => setActiveIdx(i => Math.max(0, i - 1))} disabled={activeIdx === 0} style={{
-            padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e5ea', background: '#fff',
-            color: activeIdx === 0 ? '#ccc' : '#444', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
-            cursor: activeIdx === 0 ? 'default' : 'pointer',
-          }}>← Previous problem</button>
-          <button onClick={() => setActiveIdx(i => Math.min(ratedProblems.length - 1, i + 1))} disabled={activeIdx === ratedProblems.length - 1} style={{
-            padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e5ea', background: '#fff',
-            color: activeIdx === ratedProblems.length - 1 ? '#ccc' : '#444', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
-            cursor: activeIdx === ratedProblems.length - 1 ? 'default' : 'pointer',
-          }}>Next problem →</button>
+      {/* ── Sticky "evaluating problem" header — pinned to the top of this
+          scrollable panel while the gauge/consequences below scroll, so
+          which problem you're rating never falls out of view. Dot carousel
+          lets you jump straight to any problem instead of only stepping
+          one at a time. ── */}
+      <div style={{
+        position: 'sticky' as const, top: 0, zIndex: 3, background: '#fff',
+        paddingBottom: 12, marginBottom: 4, borderBottom: `1.5px solid ${BORDER}`,
+      }}>
+        <div style={{ background: '#fff', border: `2px solid ${SEV_META[active.severity].color}30`, borderRadius: 14, padding: '14px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8, flexWrap: 'wrap' as const }}>
+            <span style={{
+              fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.06em',
+              textTransform: 'uppercase' as const, color: SEV_META[active.severity].color,
+              border: `1.5px solid ${SEV_META[active.severity].color}`, borderRadius: 999, padding: '2px 10px',
+            }}>
+              {SEV_META[active.severity].icon} Evaluating problem {activeIdx + 1} of {ratedProblems.length}
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>{doneCount} of {ratedProblems.length} defined</span>
+          </div>
+          <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.4, marginBottom: 12 }}>
+            "{active.text}"
+          </div>
+
+          {/* Progress carousel — one dot per rated problem, click to jump straight there */}
+          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 12 }}>
+            {ratedProblems.map((p, i) => {
+              const isCurrent = i === activeIdx;
+              const isDone = !!map[p.text]?.frequency;
+              const col = SEV_META[p.severity].color;
+              return (
+                <button
+                  key={p.text + i}
+                  onClick={() => setActiveIdx(i)}
+                  title={`${i + 1}. ${p.text}`}
+                  style={{
+                    width: isCurrent ? 14 : 10, height: isCurrent ? 14 : 10, borderRadius: '50%',
+                    border: `2px solid ${col}`, background: isDone ? col : '#fff',
+                    padding: 0, cursor: 'pointer', flexShrink: 0, transition: 'all .12s',
+                    boxShadow: isCurrent ? `0 0 0 3px ${col}30` : 'none',
+                  }}
+                />
+              );
+            })}
+          </div>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setActiveIdx(i => Math.max(0, i - 1))} disabled={activeIdx === 0} style={{
+              padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e5ea', background: '#fff',
+              color: activeIdx === 0 ? '#ccc' : '#444', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+              cursor: activeIdx === 0 ? 'default' : 'pointer',
+            }}>← Previous problem</button>
+            <button onClick={goNextProblem} disabled={isLast} style={{
+              padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e5ea', background: '#fff',
+              color: isLast ? '#ccc' : '#444', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+              cursor: isLast ? 'default' : 'pointer',
+            }}>Next problem →</button>
+          </div>
         </div>
       </div>
 
@@ -6633,6 +6681,24 @@ function PainGaugeStep({
           </div>
         )}
       </div>
+
+      {/* ── Save & Next Problem — prominent primary CTA so a founder can tap
+          straight through 16-20 problems without hunting for the pager
+          buttons in the sticky header; Cmd/Ctrl+Enter does the same. ── */}
+      <button
+        onClick={goNextProblem}
+        disabled={isLast}
+        style={{
+          width: '100%', padding: '13px 20px', borderRadius: 12, border: 'none',
+          cursor: isLast ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          background: isLast ? '#e5e5ea' : gauge.color, color: isLast ? '#94a3b8' : '#fff',
+        }}
+      >
+        {isLast
+          ? `✓ All ${ratedProblems.length} problem${ratedProblems.length !== 1 ? 's' : ''} reviewed`
+          : (<>Save & Next Problem → <span style={{ fontSize: 11, fontWeight: 600, opacity: .7 }}>⌘⏎</span></>)}
+      </button>
       </div>
     </div>
   );
