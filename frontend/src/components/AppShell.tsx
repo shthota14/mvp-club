@@ -183,7 +183,7 @@ export default function AppShell() {
                   📖 How-to guides
                 </button>
                 <button
-                  onClick={() => { setHelpMenuOpen(false); setFeedbackOpen(true); }}
+                  onClick={() => { setHelpMenuOpen(false); setProfileOpen(false); setFeedbackOpen(true); }}
                   style={{ ...helpMenuItemStyle, borderTop: '1px solid #f0f0f5' }}
                 >
                   💬 Feedback
@@ -217,7 +217,7 @@ export default function AppShell() {
           </button>
 
           <button
-            onClick={() => setProfileOpen(true)}
+            onClick={() => { setFeedbackOpen(false); setProfileOpen(true); }}
             style={{
               width: 32, height: 32, borderRadius: '50%',
               background: '#1d1d1f', color: '#fff',

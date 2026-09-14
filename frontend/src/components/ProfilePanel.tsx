@@ -23,6 +23,16 @@ export default function ProfilePanel({ open, onClose }: Props) {
       .catch(() => {});
   }, [open]);
 
+  // Escape-to-close, matching FeedbackWidget's new behavior — the backdrop
+  // below already handles click-outside.
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const save = async () => {
     setSaving(true);
     await authApi.updateMe({ name, email_notifications: emailNotif });

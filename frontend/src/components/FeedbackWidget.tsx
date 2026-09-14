@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { feedbackApi } from '@/api/client';
 
@@ -49,6 +49,14 @@ export default function FeedbackWidget({ open, onOpenChange }: Props) {
     setTimeout(reset, 300);
   };
 
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const submit = async () => {
     if (!message.trim() || submitting) return;
     setSubmitting(true);
@@ -65,8 +73,19 @@ export default function FeedbackWidget({ open, onOpenChange }: Props) {
 
   const active = CATEGORIES.find(c => c.key === category)!;
 
+  const backdrop: React.CSSProperties = {
+    position: 'fixed', inset: 0, zIndex: 208,
+    background: 'rgba(0,0,0,0.3)', display: open ? 'block' : 'none',
+  };
+
   return (
     <>
+      {/* ── Backdrop — click outside (or press Escape) to dismiss, same
+          pattern as ProfilePanel. Previously there was no way to close this
+          panel except its own ✕ button, so it could linger open indefinitely
+          on top of whatever the founder was working on. ── */}
+      <div style={backdrop} onClick={close} />
+
       {/* ── Slide-in panel ── */}
       <div style={{
         position: 'fixed',
