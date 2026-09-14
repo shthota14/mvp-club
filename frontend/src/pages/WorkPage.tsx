@@ -2984,57 +2984,73 @@ function MarketPositioningPlot({ snapshot }: { snapshot: MarketSnapshotData }) {
 
   return (
     <div style={{ marginTop: 16 }}>
-      <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>Price vs. how much people like it</div>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: T1, marginBottom: 2 }}>Competitive positioning grid</div>
       <div style={{ fontSize: 12, color: T3, marginBottom: 12 }}>
         Only competitors where Sage found both a price and a rating appear here ({pts.length} of {snapshot.competitors.length}).
-        Grouped by the median among them — ${medPrice.toFixed(0)}/mo and {medRating.toFixed(1)}★. Tap a competitor for how they compare to the group.
+        Positioned against the median among them — ${medPrice.toFixed(0)}/mo and {medRating.toFixed(1)}★. Tap a name for how they compare to the group.
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
-        {quads.map(q => {
-          const activeIdx = open[q.label] ?? null;
-          const activeItem = activeIdx !== null ? q.items[activeIdx] : null;
-          return (
-            <div key={q.label} style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '10px 12px' }}>
-              <div style={{ fontSize: 11.5, fontWeight: 800, color: T1 }}>{q.label}</div>
-              <div style={{ fontSize: 10.5, color: T3, marginBottom: 8 }}>{q.sub}</div>
-              {q.items.length === 0 ? (
-                <div style={{ fontSize: 11.5, color: T3 }}>None of your tracked competitors land here.</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 3 }}>
-                  {q.items.map((p, i) => {
-                    const isActive = activeIdx === i;
-                    return (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setOpen(o => ({ ...o, [q.label]: o[q.label] === i ? null : i }))}
-                        aria-expanded={isActive}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, font: 'inherit', textAlign: 'left' as const,
-                          background: isActive ? `${p.color}14` : 'transparent', border: `1px solid ${isActive ? p.color : 'transparent'}`,
-                          borderRadius: 8, padding: '4px 6px', margin: '-4px -6px', cursor: 'pointer', width: 'calc(100% + 12px)',
-                        }}
-                      >
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
-                        <span style={{ fontWeight: 700, color: T1 }}>{p.name}</span>
-                        <span style={{ color: T3 }}>${p.price.toFixed(0)}/mo · {p.rating.toFixed(1)}★</span>
-                      </button>
-                    );
-                  })}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{
+          writingMode: 'vertical-rl' as const, transform: 'rotate(180deg)', flexShrink: 0,
+          fontSize: 10.5, fontWeight: 800, color: T3, textAlign: 'center' as const,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '2px 0',
+        }}>
+          <span>↑ Rated higher</span>
+          <span>Rated lower ↓</span>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            {quads.map(q => {
+              const activeIdx = open[q.label] ?? null;
+              const activeItem = activeIdx !== null ? q.items[activeIdx] : null;
+              return (
+                <div key={q.label} style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: T1 }}>{q.label}</div>
+                  <div style={{ fontSize: 10.5, color: T3, marginBottom: 8 }}>{q.sub}</div>
+                  {q.items.length === 0 ? (
+                    <div style={{ fontSize: 11.5, color: T3 }}>None of your tracked competitors land here.</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 3 }}>
+                      {q.items.map((p, i) => {
+                        const isActive = activeIdx === i;
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setOpen(o => ({ ...o, [q.label]: o[q.label] === i ? null : i }))}
+                            aria-expanded={isActive}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, font: 'inherit', textAlign: 'left' as const,
+                              background: isActive ? `${p.color}14` : 'transparent', border: `1px solid ${isActive ? p.color : 'transparent'}`,
+                              borderRadius: 8, padding: '4px 6px', margin: '-4px -6px', cursor: 'pointer', width: 'calc(100% + 12px)',
+                            }}
+                          >
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: p.color, flexShrink: 0 }} />
+                            <span style={{ fontWeight: 700, color: T1 }}>{p.name}</span>
+                            <span style={{ color: T3 }}>${p.price.toFixed(0)}/mo · {p.rating.toFixed(1)}★</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {activeItem && (
+                    <div style={{
+                      marginTop: 8, padding: '8px 10px', borderRadius: 8,
+                      background: `${activeItem.color}0c`, border: `1.5px solid ${activeItem.color}33`,
+                      fontSize: 11.5, color: T2, lineHeight: 1.5,
+                    }}>
+                      {pillStory(q.label, activeItem)}
+                    </div>
+                  )}
                 </div>
-              )}
-              {activeItem && (
-                <div style={{
-                  marginTop: 8, padding: '8px 10px', borderRadius: 8,
-                  background: `${activeItem.color}0c`, border: `1.5px solid ${activeItem.color}33`,
-                  fontSize: 11.5, color: T2, lineHeight: 1.5,
-                }}>
-                  {pillStory(q.label, activeItem)}
-                </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, fontWeight: 800, color: T3, marginTop: 6, padding: '0 4px' }}>
+            <span>← Cheaper</span>
+            <span>Pricier →</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -3536,8 +3552,8 @@ function MarketSnapshotPanel({
                       {ideaName?.trim() || 'Your idea'} vs. {rows.length} competitor{rows.length === 1 ? '' : 's'} Sage found — color intensity shows feature coverage at a glance.
                     </div>
                     <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 14px 12px', overflowX: 'auto' }}>
-                      <div style={{ minWidth: 96 + n * 30, display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: `minmax(96px,168px) repeat(${n}, minmax(24px,1fr))`, gap: 5, alignItems: 'end', marginBottom: 4 }}>
+                      <div style={{ minWidth: 96 + n * 44, display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: `minmax(96px,168px) repeat(${n}, minmax(24px, 44px))`, gap: 5, alignItems: 'end', marginBottom: 4 }}>
                           <span />
                           {snapshot.differentiators.map((d, i) => (
                             <div key={i} style={{
@@ -3547,7 +3563,7 @@ function MarketSnapshotPanel({
                           ))}
                         </div>
                         <div className={revealing ? 'msnap-tag-pop' : undefined}
-                          style={{ display: 'grid', gridTemplateColumns: `minmax(96px,168px) repeat(${n}, minmax(24px,1fr))`, gap: 5, alignItems: 'center', padding: '5px 0' }}>
+                          style={{ display: 'grid', gridTemplateColumns: `minmax(96px,168px) repeat(${n}, minmax(24px, 44px))`, gap: 5, alignItems: 'center', padding: '5px 0' }}>
                           <div style={{ borderLeft: `3px solid ${STAGE_COLORS.idea}`, paddingLeft: 8, minWidth: 0 }}>
                             <div style={{ fontWeight: 800, color: STAGE_COLORS.idea, fontSize: 11.5, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>
                               {ideaName?.trim() || 'Your idea'}
@@ -3568,7 +3584,7 @@ function MarketSnapshotPanel({
                           <div key={ci} className={revealing ? 'msnap-tag-pop' : undefined}
                             style={{
                               animationDelay: revealing ? `${0.2 + ci * 0.1}s` : undefined,
-                              display: 'grid', gridTemplateColumns: `minmax(96px,168px) repeat(${n}, minmax(24px,1fr))`,
+                              display: 'grid', gridTemplateColumns: `minmax(96px,168px) repeat(${n}, minmax(24px, 44px))`,
                               gap: 5, alignItems: 'center', padding: '5px 0', borderTop: `1px solid ${BORDER}`,
                             }}>
                             <div style={{ borderLeft: `3px solid ${c.color}`, paddingLeft: 8, minWidth: 0 }}>
@@ -3681,6 +3697,12 @@ function MarketSnapshotPanel({
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, marginBottom: 4 }}>Competitors</div>
+            {draft.competitors.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, fontSize: 9.5, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .3, padding: '0 2px 3px' }}>
+                <span style={{ width: 140, flexShrink: 0 }}>Competitor name</span>
+                <span style={{ flex: 1, minWidth: 120 }}>What they do</span>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {draft.competitors.map((c, i) => (
                 <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' as const }}>
@@ -15457,7 +15479,9 @@ export default function WorkPage() {
           />
         );
       })()}
-      <NavRow onBack={back} onNext={async () => { unlock('validate'); unlock('shape'); mark('hone'); next(); }} nextLabel="Continue →" disabled={!parseMarketSnapshot(get('marketSnapshot'))} disabledReason="Waiting on Sage's Market Snapshot (domain, TAM/SAM, competitors) — it unlocks automatically once that finishes generating." stageColor={STAGE_COLORS.hone} stepTitle="Where does your idea stand in the market?" ideaId={activeIdea.id} />
+      <div style={{ position: 'sticky' as const, bottom: 0, background: '#fff', paddingTop: 12, marginTop: 4, borderTop: `1px solid ${BORDER}`, zIndex: 2 }}>
+        <NavRow onBack={back} onNext={async () => { unlock('validate'); unlock('shape'); mark('hone'); next(); }} nextLabel="Continue →" disabled={!parseMarketSnapshot(get('marketSnapshot'))} disabledReason="Waiting on Sage's Market Snapshot (domain, TAM/SAM, competitors) — it unlocks automatically once that finishes generating." stageColor={STAGE_COLORS.hone} stepTitle="Where does your idea stand in the market?" ideaId={activeIdea.id} />
+      </div>
     </div>,
     <CompleteBadge key="h-done" mod="hone" onContinue={() => goMod('validate')} onBack={back} />,
   ];
