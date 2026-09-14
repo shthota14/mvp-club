@@ -94,6 +94,16 @@ const RAG_STYLE = {
   red:   { bg: '#fef2f2', color: '#dc2626', border: '#fca5a5', label: '🔴 Overdue' },
 };
 
+// Same "core stages count toward 100%, Shape/Ship are bonus" rule VaultCard
+// uses for its own progress bar — shared here so the sort dropdown ranks
+// ideas the same way their own card does.
+function getIdeaProgress(idea: Idea): number {
+  if (idea.idea_status === 'done') return 100;
+  const stageIdx = STAGE_ORDER.indexOf(idea.stage as Stage);
+  const CORE_STAGE_COUNT = 3;
+  return Math.round((Math.min(stageIdx + 1, CORE_STAGE_COUNT) / CORE_STAGE_COUNT) * 100);
+}
+
 function timeAgo(d: string) {
   const diff = Date.now() - new Date(d).getTime();
   const mins = Math.floor(diff / 60000);
@@ -962,7 +972,7 @@ function VaultCard({ idea, isActive, onClick, onStatusChange, onViewCanvas, onTi
 
   return (
     <div
-      style={{ position: 'relative' }}
+      style={{ position: 'relative', height: '100%' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); }}
     >
@@ -979,11 +989,14 @@ function VaultCard({ idea, isActive, onClick, onStatusChange, onViewCanvas, onTi
           transform: hovered ? 'translateY(-2px)' : 'none',
           opacity: isArchived ? .55 : 1,
           display: 'flex', flexDirection: 'column', gap: 16,
+          height: '100%', boxSizing: 'border-box' as const,
           userSelect: 'none',
         }}
       >
-        {/* Top row: stage + status */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Top row: stage + status grouped together at the left, so the
+            ··· menu owns the top-right corner instead of competing with a
+            second badge there */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
             background: isDone ? '#f0fdf4' : `${color}10`,
@@ -1075,24 +1088,30 @@ function VaultCard({ idea, isActive, onClick, onStatusChange, onViewCanvas, onTi
           </button>
         </div>
 
-        {/* Footer */}
+        {/* Footer — urgency collapses to a small dot by default so it
+            doesn't compete with the progress bar above, and expands to a
+            full label on hover; "Do the Work" reads as a live action even
+            unhovered instead of looking disabled */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {(() => {
               const rag = getRAG(idea);
               const rs  = RAG_STYLE[rag];
-              return (
-                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: rs.bg, color: rs.color, border: `1px solid ${rs.border}` }}>
+              return hovered ? (
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: rs.bg, color: rs.color, border: `1px solid ${rs.border}`, whiteSpace: 'nowrap' }}>
                   {rs.label}
                 </span>
+              ) : (
+                <span title={rs.label} style={{ width: 8, height: 8, borderRadius: '50%', background: rs.color, flexShrink: 0 }} />
               );
             })()}
             <span style={{ fontSize: 11, color: '#b0b0b8' }}>
               {timeAgo(idea.updated_at ?? idea.created_at)}
             </span>
           </div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: hovered ? '#1d1d1f' : '#d2d2d7', transition: 'color .15s' }}>
-            Do the Work →
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 700, color: hovered ? '#1d1d1f' : '#6e6e73', transition: 'all .15s' }}>
+            Do the Work
+            <span style={{ display: 'inline-block', transform: hovered ? 'translateX(2px)' : 'none', transition: 'transform .15s' }}>→</span>
           </div>
         </div>
       </div>
@@ -1281,10 +1300,10 @@ function AddCard({ onClick }: { onClick: () => void }) {
       style={{
         background: hovered ? '#f5f3ff' : '#fafafa',
         border: `2px dashed ${hovered ? '#7c3aed' : '#d2d2d7'}`,
-        borderRadius: 16, padding: '32px 24px',
+        borderRadius: 16, padding: '24px',
         cursor: 'pointer', transition: 'all .18s',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: 10, minHeight: 200, fontFamily: 'inherit',
+        gap: 10, height: '100%', minHeight: 200, boxSizing: 'border-box' as const, fontFamily: 'inherit',
       }}
     >
       <div style={{
@@ -1295,10 +1314,10 @@ function AddCard({ onClick }: { onClick: () => void }) {
       }}>
         {hovered ? '✨' : '+'}
       </div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: hovered ? '#7c3aed' : '#6e6e73', transition: 'color .18s' }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: hovered ? '#7c3aed' : '#48484a', transition: 'color .18s' }}>
         New idea
       </div>
-      <div style={{ fontSize: 12, color: '#b0b0b8', textAlign: 'center', lineHeight: 1.5 }}>
+      <div style={{ fontSize: 12, color: '#8e8e93', textAlign: 'center', lineHeight: 1.5 }}>
         Start with a name — that's all you need
       </div>
     </button>
@@ -1321,6 +1340,8 @@ export default function MyProgressPage() {
     return (['grid', 'list', 'kanban', 'spotlight', 'domain'] as const).includes(saved as VaultViewMode) ? (saved as VaultViewMode) : 'grid';
   });
   useEffect(() => { localStorage.setItem(VAULT_VIEW_STORAGE_KEY, viewMode); }, [viewMode]);
+  const [search, setSearch]           = useState('');
+  const [sortMode, setSortMode]       = useState<'updated' | 'completion'>('updated');
   const [timelineIdea, setTimelineIdea]   = useState<Idea | null>(null);
   const [wizardIdea,    setWizardIdea]    = useState<Idea | null>(null);
   const [roadmapIdea,   setRoadmapIdea]   = useState<Idea | null>(null);
@@ -1328,9 +1349,20 @@ export default function MyProgressPage() {
   const [founderProfile, setFounderProfile] = useState<FounderProfile | null>(null);
   const [ideaAnswers,   setIdeaAnswers]   = useState<IdeaAnswers | null>(null);
 
-  const active      = ideas.filter(i => i.idea_status === 'active');
-  const shipped     = ideas.filter(i => i.idea_status === 'done');
-  const archived    = ideas.filter(i => i.idea_status === 'archived');
+  // Search narrows by name; sort applies before the active/shipped/archived
+  // split so it's consistent across every view (grid groupings, list,
+  // kanban, spotlight, by-domain) rather than only the grid.
+  const searchedIdeas = search.trim()
+    ? ideas.filter(i => i.name.toLowerCase().includes(search.trim().toLowerCase()))
+    : ideas;
+  const sortedIdeas = [...searchedIdeas].sort((a, b) => {
+    if (sortMode === 'completion') return getIdeaProgress(b) - getIdeaProgress(a);
+    return new Date(b.updated_at ?? b.created_at).getTime() - new Date(a.updated_at ?? a.created_at).getTime();
+  });
+
+  const active      = sortedIdeas.filter(i => i.idea_status === 'active');
+  const shipped     = sortedIdeas.filter(i => i.idea_status === 'done');
+  const archived    = sortedIdeas.filter(i => i.idea_status === 'archived');
   const nonArchived = active.concat(shipped);
 
   const handleClick = async (idea: Idea) => {
@@ -1507,48 +1539,42 @@ export default function MyProgressPage() {
   return (
     <div style={{ maxWidth: 1280, margin: '0 auto', padding: isMobile ? '20px 16px 60px' : '40px 40px 100px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
 
-      {/* ── Header ── */}
-      {/* Stacked on mobile instead of side-by-side: at phone widths the old
-          row (heading + pill button sharing one line via space-between) left
-          so little room for the text that "Welcome, Sam" and the subtitle
-          wrapped awkwardly. Column layout gives both their own full-width
-          line; the heading also drops the desktop clamp() (which barely
-          shrinks below ~28px) for a fixed, smaller mobile size, and the
-          button gets tighter padding to match. */}
-      <div style={{
-        display: 'flex',
-        flexDirection: isMobile ? 'column' as const : 'row' as const,
-        alignItems: isMobile ? 'stretch' as const : 'flex-start' as const,
-        justifyContent: 'space-between',
-        gap: isMobile ? 16 : 0,
-        marginBottom: isMobile ? 24 : 40,
-      }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: '#b0b0b8', marginBottom: 8 }}>My Idea Vault</div>
-          <h1 style={{ fontSize: isMobile ? 24 : 'clamp(28px,4vw,40px)', fontWeight: 800, letterSpacing: -1.2, lineHeight: 1.1, color: '#1d1d1f', fontFamily: 'var(--font-display)', margin: '0 0 8px' }}>
+      {/* ── Header — "+ New idea" now sits directly beside the greeting
+          instead of floating on its own line, so the CTA reads as part of
+          the page title. Stacks on mobile like before. ── */}
+      <div style={{ marginBottom: isMobile ? 24 : 40 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: '#b0b0b8', marginBottom: 8 }}>My Idea Vault</div>
+        <div style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' as const : 'row' as const,
+          alignItems: isMobile ? 'stretch' as const : 'center' as const,
+          justifyContent: 'space-between',
+          gap: isMobile ? 12 : 16,
+        }}>
+          <h1 style={{ fontSize: isMobile ? 24 : 'clamp(28px,4vw,40px)', fontWeight: 800, letterSpacing: -1.2, lineHeight: 1.1, color: '#1d1d1f', fontFamily: 'var(--font-display)', margin: 0 }}>
             Welcome{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋
           </h1>
-          <p style={{ fontSize: isMobile ? 13 : 14, color: '#6e6e73', margin: 0, fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>
-            Your ideas, all in one place. Click any idea to open the work wizard.
-          </p>
+          <button
+            onClick={() => setShowNewIdea(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: isMobile ? '9px 16px' : '12px 22px', borderRadius: 999,
+              background: '#1d1d1f', color: '#fff',
+              border: 'none', fontSize: isMobile ? 13 : 14, fontWeight: 700,
+              cursor: 'pointer', flexShrink: 0,
+              alignSelf: isMobile ? 'flex-start' as const : undefined,
+              boxShadow: '0 2px 8px rgba(0,0,0,.15)',
+              transition: 'all .15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
+            onMouseLeave={e => (e.currentTarget.style.transform = 'none')}
+          >
+            + New idea
+          </button>
         </div>
-        <button
-          onClick={() => setShowNewIdea(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: isMobile ? '9px 16px' : '12px 22px', borderRadius: 999,
-            background: '#1d1d1f', color: '#fff',
-            border: 'none', fontSize: isMobile ? 13 : 14, fontWeight: 700,
-            cursor: 'pointer', flexShrink: 0,
-            alignSelf: isMobile ? 'flex-start' as const : undefined,
-            boxShadow: '0 2px 8px rgba(0,0,0,.15)',
-            transition: 'all .15s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-1px)')}
-          onMouseLeave={e => (e.currentTarget.style.transform = 'none')}
-        >
-          + New idea
-        </button>
+        <p style={{ fontSize: isMobile ? 13 : 14, color: '#6e6e73', margin: '8px 0 0', fontStyle: 'italic', fontFamily: 'var(--font-display)' }}>
+          Your ideas, all in one place. Click any idea to open the work wizard.
+        </p>
       </div>
 
       {/* ── Empty state ── */}
@@ -1568,26 +1594,61 @@ export default function MyProgressPage() {
         </div>
       )}
 
-      {/* ── View switcher — same five layouts as the Community tab ── */}
+      {/* ── View switcher — segmented-control style so the active view pops
+          against one shared track, plus a search box and sort dropdown once
+          there are enough ideas for either to matter. ── */}
       {ideas.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#b0b0b8', letterSpacing: .5, whiteSpace: 'nowrap' }}>View</span>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {VAULT_VIEW_MODES.map(v => (
-              <button key={v.value} title={v.label} onClick={() => setViewMode(v.value)} style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 600,
-                whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
-                border: `1.5px solid ${viewMode === v.value ? '#1d1d1f' : '#e5e5ea'}`,
-                background: viewMode === v.value ? '#1d1d1f' : '#fff',
-                color: viewMode === v.value ? '#fff' : '#6e6e73',
-                transition: 'all .15s',
-              }}>
-                <span>{v.icon}</span>
-                {!isMobile && <span>{v.label}</span>}
-              </button>
-            ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28, flexWrap: 'wrap' as const }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#b0b0b8', letterSpacing: .5, whiteSpace: 'nowrap' }}>View</span>
+            <div style={{ display: 'flex', gap: 2, padding: 3, borderRadius: 12, background: '#f5f5f7', border: '1px solid #e5e5ea' }}>
+              {VAULT_VIEW_MODES.map(v => (
+                <button key={v.value} title={v.label} onClick={() => setViewMode(v.value)} style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '6px 12px', borderRadius: 9, fontSize: 12, fontWeight: 600,
+                  whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
+                  border: 'none',
+                  background: viewMode === v.value ? '#fff' : 'transparent',
+                  color: viewMode === v.value ? '#1d1d1f' : '#6e6e73',
+                  boxShadow: viewMode === v.value ? '0 1px 3px rgba(0,0,0,.12)' : 'none',
+                  transition: 'all .15s',
+                }}>
+                  <span>{v.icon}</span>
+                  {!isMobile && <span>{v.label}</span>}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {ideas.length > 3 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: isMobile ? 0 : 'auto', width: isMobile ? '100%' : undefined }}>
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search ideas…"
+                style={{
+                  padding: '6px 12px', borderRadius: 999, border: '1.5px solid #e5e5ea',
+                  fontSize: 12, fontFamily: 'inherit', color: '#1d1d1f', background: '#fff',
+                  outline: 'none', width: isMobile ? '100%' : 170, transition: 'border-color .15s',
+                }}
+                onFocus={e => (e.currentTarget.style.borderColor = '#1d1d1f')}
+                onBlur={e => (e.currentTarget.style.borderColor = '#e5e5ea')}
+              />
+              <select
+                value={sortMode}
+                onChange={e => setSortMode(e.target.value as 'updated' | 'completion')}
+                style={{
+                  padding: '6px 10px', borderRadius: 999, border: '1.5px solid #e5e5ea',
+                  fontSize: 12, fontWeight: 600, fontFamily: 'inherit', color: '#6e6e73',
+                  background: '#fff', cursor: 'pointer', outline: 'none', flexShrink: 0,
+                }}
+              >
+                <option value="updated">Sort: Last updated</option>
+                <option value="completion">Sort: Completion %</option>
+              </select>
+            </div>
+          )}
         </div>
       )}
 
