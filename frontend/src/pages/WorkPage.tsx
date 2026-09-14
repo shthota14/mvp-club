@@ -951,7 +951,7 @@ const IdeaIdCtx = React.createContext<string>('');
 
 // ── Ask community button (self-contained, drop next to any field) ──────────
 
-function AskCommunityButton({ ask }: { ask: string }) {
+function AskCommunityButton({ ask, compact = false }: { ask: string; compact?: boolean }) {
   const ideaId = React.useContext(IdeaIdCtx);
   const [open, setOpen]         = useState(false);
   const [question, setQ]        = useState('');
@@ -1013,22 +1013,22 @@ function AskCommunityButton({ ask }: { ask: string }) {
 
   return (
     <>
-      <div style={{ position: 'relative', display: 'inline-flex', marginLeft: 'auto', flexShrink: 0 }}>
+      <div style={{ position: 'relative', display: 'inline-flex', marginLeft: compact ? 0 : 'auto', flexShrink: 0 }}>
         <button
           onClick={e => { e.preventDefault(); setOpen(true); setPosted(false); clearBadge(); }}
           title="Ask the community"
           style={{
-            background: replyCount > 0 ? '#eff6ff' : '#f0f4ff',
-            border: `1.5px solid ${replyCount > 0 ? '#2563eb60' : '#2563eb25'}`,
-            borderRadius: 8, padding: '3px 10px',
+            background: replyCount > 0 ? '#eff6ff' : compact ? 'transparent' : '#f0f4ff',
+            border: `1.5px solid ${replyCount > 0 ? '#2563eb60' : compact ? 'transparent' : '#2563eb25'}`,
+            borderRadius: compact ? 999 : 8, padding: compact && replyCount === 0 ? '3px 6px' : '3px 10px',
             fontSize: 11, fontWeight: 700, color: '#2563eb',
             cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
             transition: 'all .15s', whiteSpace: 'nowrap' as const,
           }}
           onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; e.currentTarget.style.borderColor = '#2563eb60'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = replyCount > 0 ? '#eff6ff' : '#f0f4ff'; e.currentTarget.style.borderColor = replyCount > 0 ? '#2563eb60' : '#2563eb25'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = replyCount > 0 ? '#eff6ff' : compact ? 'transparent' : '#f0f4ff'; e.currentTarget.style.borderColor = replyCount > 0 ? '#2563eb60' : compact ? 'transparent' : '#2563eb25'; }}
         >
-          💬 {replyCount > 0 ? `${replyCount} new repl${replyCount === 1 ? 'y' : 'ies'}` : 'Ask community'}
+          💬 {replyCount > 0 ? `${replyCount} new repl${replyCount === 1 ? 'y' : 'ies'}` : (compact ? null : 'Ask community')}
         </button>
         {replyCount > 0 && (
           <span style={{
@@ -1514,17 +1514,22 @@ function ConsequenceEntryCard({ entry, index, onRemove }: { entry: string; index
 function StepBars({ mod, step }: { mod: Mod; step: number }) {
   const c = STAGE_COLORS[mod];
   const total = META[mod].steps;
+  // Compressed 2026-09-14: the sidebar (desktop) already shows a "NOW" badge
+  // plus the full per-step list for the active stage, so the old version of
+  // this — a big standalone pill above a progress bar — was a second,
+  // competing step tracker repeating the same "step N of total" fact right
+  // above it. Slimmed to a thin bar with a small caption below, so it still
+  // orients founders on mobile (where there's no sidebar at all) without
+  // fighting the sidebar for attention on desktop.
   return (
-    <div style={{ marginBottom: 20 }}>
-      {/* Step pill — mirrors explainer's "STAGE N OF 5" but softer (outlined, not solid) */}
-      <div style={{ display: 'inline-flex', alignItems: 'center', background: `${c}10`, border: `1.5px solid ${c}35`, color: c, fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' as const, padding: '5px 14px', borderRadius: 999, marginBottom: 12 }}>
-        Step {step + 1} of {total}
-      </div>
-      {/* Progress bars */}
-      <div style={{ display: 'flex', gap: 5 }}>
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 4 }}>
         {Array.from({ length: total }).map((_, i) => (
           <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i < step ? c : i === step ? `${c}55` : BORDER, transition: 'background .3s' }} />
         ))}
+      </div>
+      <div style={{ marginTop: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase' as const, color: T3 }}>
+        Step {step + 1} of {total}
       </div>
     </div>
   );
@@ -1637,15 +1642,14 @@ function swooshUnderline(color: string, width = 160) {
 function StepGoal({ text }: { text: string }) {
   if (!text) return null;
   return (
-    <div style={{ position: 'relative', margin: '16px 0 0' }}>
-      <div style={{
-        margin: 0, fontFamily: 'var(--font-ui)', fontSize: 14.5, lineHeight: 1.6,
-        color: '#3c4654', background: '#eef4fb', borderRadius: 12, padding: '13px 16px',
-      }}>{text}</div>
-      <div style={{
-        position: 'absolute', top: -6, left: 20, width: 12, height: 12,
-        background: '#eef4fb', transform: 'rotate(45deg)',
-      }} />
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 10,
+      margin: '16px 0 0', fontFamily: 'var(--font-ui)', fontSize: 14.5, lineHeight: 1.6,
+      color: '#3c4654', background: '#eef4fb', borderLeft: '3px solid #4c8dd9',
+      borderRadius: 10, padding: '13px 16px',
+    }}>
+      <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>💡</span>
+      <span>{text}</span>
     </div>
   );
 }
@@ -14632,26 +14636,37 @@ export default function WorkPage() {
             padding: '20px 18px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 7,
             width: isMobileNow ? '100%' : 226, flexShrink: 0, boxSizing: 'border-box' as const,
           }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: STAGE_COLORS.hone, textTransform: 'uppercase' as const, letterSpacing: '.08em' }}>Your persona so far</div>
-            <UserAvatar size={50} />
-            {primaryLabel.role ? (
-              <>
-                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: 15, color: T1, textAlign: 'center' as const }}>{primaryLabel.role}</div>
-                {primaryLabel.detail && <div style={{ fontSize: 11.5, color: T2, textAlign: 'center' as const, lineHeight: 1.5 }}>{primaryLabel.detail}</div>}
-                {primaryPersonaList.length > 1 && <div style={{ fontSize: 10.5, color: T3 }}>+{primaryPersonaList.length - 1} more segment{primaryPersonaList.length > 2 ? 's' : ''}</div>}
-              </>
-            ) : (
-              <div style={{ fontSize: 12.5, color: T3, fontStyle: 'italic' as const, textAlign: 'center' as const }}>Describe who has this problem to see them here</div>
-            )}
+            {/* Dimmed while it's also visible in the working panel a few
+                inches to the left (personaPanel is currently showing) —
+                full weight once that panel's gone and this is the only
+                place the persona still shows. */}
+            <div style={{ opacity: showPersonaPanel ? 0.45 : 1, transition: 'opacity .2s', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 7, width: '100%' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: STAGE_COLORS.hone, textTransform: 'uppercase' as const, letterSpacing: '.08em' }}>Your persona so far</div>
+              <UserAvatar size={50} />
+              {primaryLabel.role ? (
+                <>
+                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: 15, color: T1, textAlign: 'center' as const }}>{primaryLabel.role}</div>
+                  {primaryLabel.detail && <div style={{ fontSize: 11.5, color: T2, textAlign: 'center' as const, lineHeight: 1.5 }}>{primaryLabel.detail}</div>}
+                  {primaryPersonaList.length > 1 && <div style={{ fontSize: 10.5, color: T3 }}>+{primaryPersonaList.length - 1} more segment{primaryPersonaList.length > 2 ? 's' : ''}</div>}
+                </>
+              ) : (
+                <div style={{ fontSize: 12.5, color: T3, fontStyle: 'italic' as const, textAlign: 'center' as const }}>Describe who has this problem to see them here</div>
+              )}
+            </div>
             <div style={{ borderTop: `1px solid ${BORDER}`, width: '100%', margin: '4px 0' }} />
-            <div style={{ fontSize: 10.5, color: T3, textTransform: 'uppercase' as const, letterSpacing: '.05em' }}>Pays</div>
-            {get('whoPays') ? (
-              <div style={{ fontSize: 13, fontWeight: 700, color: STAGE_COLORS.hone }}>
-                {get('whoPays') === 'Same person' ? '👤 Same person' : `🏢 ${get('whoPays') === 'Someone else' ? 'Someone else' : get('whoPays')}`}
-              </div>
-            ) : (
-              <div style={{ fontSize: 12.5, color: T3, fontStyle: 'italic' as const }}>not yet answered</div>
-            )}
+            {/* Same logic in reverse: full weight while the pays question is
+                the one not currently on screen (personaPanel showing), dimmed
+                once paysPanel's own selection cards make it redundant. */}
+            <div style={{ opacity: showPersonaPanel ? 1 : 0.45, transition: 'opacity .2s', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 4 }}>
+              <div style={{ fontSize: 10.5, color: T3, textTransform: 'uppercase' as const, letterSpacing: '.05em' }}>Pays</div>
+              {get('whoPays') ? (
+                <div style={{ fontSize: 13, fontWeight: 700, color: STAGE_COLORS.hone }}>
+                  {get('whoPays') === 'Same person' ? '👤 Same person' : `🏢 ${get('whoPays') === 'Someone else' ? 'Someone else' : get('whoPays')}`}
+                </div>
+              ) : (
+                <div style={{ fontSize: 12.5, color: T3, fontStyle: 'italic' as const }}>not yet answered</div>
+              )}
+            </div>
           </div>
         );
 
@@ -14685,28 +14700,31 @@ export default function WorkPage() {
           <div style={{ display: showPersonaPanel ? 'none' : 'flex', flexDirection: 'column' as const, gap: 14, flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
               <H accent={STAGE_COLORS.hone}>Who actually pays?</H>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <AskCommunityButton ask="Who pays for this?" />
-                {tracker}
+              {tracker}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: -6 }}>
+              <div style={{ fontSize: 13, color: T1 }}>
+                For: <b style={{ color: T1 }}>{primaryLabel.role || 'your persona'}</b>{' '}
+                <button onClick={() => setPersonaReopened(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, fontWeight: 700, color: STAGE_COLORS.hone, textDecoration: 'underline', fontFamily: 'inherit' }}>
+                  · edit
+                </button>
               </div>
+              <AskCommunityButton ask="Who pays for this?" compact />
             </div>
-            <div style={{ fontSize: 12.5, color: T2, marginTop: -6 }}>
-              For: <b style={{ color: T1 }}>{primaryLabel.role || 'your persona'}</b>{' '}
-              <button onClick={() => setPersonaReopened(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, fontWeight: 700, color: STAGE_COLORS.hone, textDecoration: 'underline', fontFamily: 'inherit' }}>
-                · edit
-              </button>
-            </div>
-            {/* Direction A: once answered, collapse the two cards into a dark
-                "echo" pill — same pattern as the Idea stage's spark-type picker
-                — instead of leaving both options sitting on screen next to the
-                one you picked. `display` toggle, not unmount, so nothing about
-                the free-text field below resets when you tap "change". */}
-            <div style={{ display: get('whoPays') ? 'none' : 'flex', gap: 10 }}>
+            {/* Option A: persistent side-by-side cards, always visible and
+                clickable — replaces the old "pick, then collapse into a
+                dark echo pill + change link" pattern (Direction A elsewhere
+                in this file). That collapsed state read as plain text
+                rather than an active control; a clearly-marked selected
+                card keeps the choice unambiguous without hiding the other
+                option. Clicking the selected card again clears it, same as
+                the old "change" link did. */}
+            <div style={{ display: 'flex', gap: 10 }}>
               {[
-                { val: 'Same person', label: 'Same person', icon: '👤', desc: 'The user pays directly' },
-                { val: 'Someone else', label: 'Someone else', icon: '🏢', desc: 'Manager, company, or procurement' },
+                { val: 'Same person', label: 'User is the Buyer', icon: '👤', desc: 'The person experiencing the pain pays directly (B2C, solopreneurs, dev tools).' },
+                { val: 'Someone else', label: 'User & Buyer are Different', icon: '🏢', desc: 'The end-user needs internal approval or budget to buy (B2B, enterprise, healthcare).' },
               ].map(opt => {
-                const on = get('whoPays') === opt.val || (opt.val === 'Someone else' && get('whoPays') && get('whoPays') !== 'Same person');
+                const on = get('whoPays') === opt.val || (opt.val === 'Someone else' && !!get('whoPays') && get('whoPays') !== 'Same person');
                 return (
                   <button key={opt.val} onClick={() => {
                     const newVal = on ? '' : opt.val;
@@ -14714,30 +14732,20 @@ export default function WorkPage() {
                     // Immediately persist button selection (don't rely solely on 1200ms debounce)
                     if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: newVal }).catch(() => {});
                   }}
-                    style={{ flex: 1, padding: '14px 12px', borderRadius: 12, border: `2px solid ${on ? STAGE_COLORS.hone : BORDER}`, background: on ? `${STAGE_COLORS.hone}08` : '#fff', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center' as const, transition: 'all .15s' }}>
+                    style={{ position: 'relative', flex: 1, padding: '14px 12px', borderRadius: 12, border: `2px solid ${on ? STAGE_COLORS.hone : BORDER}`, background: on ? `${STAGE_COLORS.hone}0d` : '#fff', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center' as const, transition: 'all .15s' }}>
+                    {on && (
+                      <span style={{
+                        position: 'absolute', top: 8, right: 8, width: 18, height: 18, borderRadius: '50%',
+                        background: STAGE_COLORS.hone, color: '#fff', fontSize: 11, fontWeight: 800,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+                      }}>✓</span>
+                    )}
                     <div style={{ fontSize: 22, marginBottom: 4 }}>{opt.icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: on ? 700 : 500, color: on ? STAGE_COLORS.hone : T1 }}>{opt.label}</div>
-                    <div style={{ fontSize: 11, color: T3, marginTop: 2 }}>{opt.desc}</div>
+                    <div style={{ fontSize: 13, fontWeight: on ? 700 : 600, color: on ? STAGE_COLORS.hone : T1 }}>{opt.label}</div>
+                    <div style={{ fontSize: 11, color: T3, marginTop: 2, lineHeight: 1.4 }}>{opt.desc}</div>
                   </button>
                 );
               })}
-            </div>
-            <div style={{ display: get('whoPays') ? 'flex' : 'none', alignItems: 'center', gap: 10 }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '4px 12px', borderRadius: 4,
-                background: STAGE_COLORS.hone, color: '#fff',
-                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 12,
-                letterSpacing: '.05em', textTransform: 'uppercase' as const,
-              }}>
-                {get('whoPays') === 'Same person' ? '👤 Same person' : `🏢 ${get('whoPays') === 'Someone else' ? 'Someone else' : get('whoPays')}`}
-              </div>
-              <button
-                onClick={() => { set('whoPays', ''); if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: '' }).catch(() => {}); }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
-              >
-                ↺ change
-              </button>
             </div>
             {(get('whoPays') === 'Someone else' || (get('whoPays') && get('whoPays') !== 'Same person')) && (
               <input style={inp} placeholder="Who exactly? e.g. Their manager, IT / procurement, the company…" value={get('whoPays') === 'Someone else' ? '' : get('whoPays')} onChange={e => set('whoPays', e.target.value)} />
@@ -14753,25 +14761,31 @@ export default function WorkPage() {
               {paysPanel}
               {!isMobileNow && previewCard}
             </div>
-            <NavRow
-              onBack={showPersonaPanel ? undefined : () => setPersonaReopened(true)}
-              onNext={async () => {
-                if (showPersonaPanel) {
+            {/* Pinned CTA — this step's two-column layout (plus the ID-card
+                preview) runs tall enough that Continue was landing below the
+                fold on smaller laptop screens; sticking it keeps the
+                primary action reachable without scrolling. */}
+            <div style={{ position: 'sticky' as const, bottom: 0, background: '#fff', paddingTop: 12, marginTop: 4, borderTop: `1px solid ${BORDER}`, zIndex: 2 }}>
+              <NavRow
+                onBack={showPersonaPanel ? undefined : () => setPersonaReopened(true)}
+                onNext={async () => {
+                  if (showPersonaPanel) {
+                    const flushed = personaPickerRef.current?.flush();
+                    if ((flushed || get('whoExactly')).split(MULTI_SEP).some(p => p.trim().length > 3) || draftValid) setPersonaReopened(false);
+                    return;
+                  }
                   const flushed = personaPickerRef.current?.flush();
-                  if ((flushed || get('whoExactly')).split(MULTI_SEP).some(p => p.trim().length > 3) || draftValid) setPersonaReopened(false);
-                  return;
-                }
-                const flushed = personaPickerRef.current?.flush();
-                await save('hone', { whoExactly: flushed || get('whoExactly'), whoPays: get('whoPays') });
-                next();
-              }}
-              nextLabel={showPersonaPanel ? 'Next: who pays →' : 'Continue →'}
-              disabled={showPersonaPanel ? (!hasPersona && !draftValid) : false}
-              disabledReason="Add at least one customer segment first."
-              stageColor={STAGE_COLORS.hone}
-              stepTitle={showPersonaPanel ? 'Who do you think has this problem?' : 'Who actually pays?'}
-              ideaId={activeIdea.id}
-            />
+                  await save('hone', { whoExactly: flushed || get('whoExactly'), whoPays: get('whoPays') });
+                  next();
+                }}
+                nextLabel={showPersonaPanel ? 'Next: who pays →' : 'Continue →'}
+                disabled={showPersonaPanel ? (!hasPersona && !draftValid) : false}
+                disabledReason="Add at least one customer segment first."
+                stageColor={STAGE_COLORS.hone}
+                stepTitle={showPersonaPanel ? 'Who do you think has this problem?' : 'Who actually pays?'}
+                ideaId={activeIdea.id}
+              />
+            </div>
           </>
         );
       })()}
