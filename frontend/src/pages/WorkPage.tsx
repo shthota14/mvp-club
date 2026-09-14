@@ -5944,27 +5944,27 @@ function FounderReadinessStep({
         />
         {/* Direction A: collapses to an echo pill once answered — same
             pattern as the who-pays / spark-type pickers. */}
-        <div style={{ display: (!timeValue || timeOpen) ? 'flex' : 'none', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: (!timeValue || timeOpen) ? 'grid' : 'none', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 10 }}>
           {TIME_OPTIONS.map((opt) => {
             const on = timeValue === opt.val;
             return (
               <button key={opt.val} onClick={() => { onTimeChange(on ? '' : opt.val); setTimeOpen(false); }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 14,
-                  padding: '13px 16px 13px 14px', cursor: 'pointer',
-                  fontFamily: 'inherit', textAlign: 'left' as const, width: '100%',
-                  border: 'none',
-                  borderLeft: `4px solid ${on ? honeColor : '#d8d8d8'}`,
-                  borderRadius: 3,
-                  background: on ? `${honeColor}0f` : '#fffdf8',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, textAlign: 'center' as const,
+                  padding: '14px 10px', cursor: 'pointer', fontFamily: 'inherit', position: 'relative' as const,
+                  border: `2px solid ${on ? honeColor : '#e0e0e0'}`,
+                  borderRadius: 14,
+                  background: on ? honeColor : '#fffdf8',
                   transition: 'all .15s',
                 }}>
-                <span style={{ fontSize: 22, flexShrink: 0 }}>{opt.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: on ? 700 : 600, color: on ? honeColor : '#1e293b' }}>{opt.label}</div>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#7a7a7a', marginTop: 1 }}>{opt.desc}</div>
-                </div>
-                {on && <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill={honeColor}/><path d="M7 12l4 4 6-7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                {on && (
+                  <span style={{ position: 'absolute' as const, top: 6, right: 6, width: 16, height: 16, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-11" stroke={honeColor} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </span>
+                )}
+                <span style={{ fontSize: 24 }}>{opt.icon}</span>
+                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.02em', fontWeight: 700, color: on ? '#fff' : '#1e293b' }}>{opt.label}</div>
+                <div style={{ fontSize: 11, color: on ? 'rgba(255,255,255,.85)' : '#8e8e93', lineHeight: 1.3 }}>{opt.desc}</div>
               </button>
             );
           })}
@@ -6009,12 +6009,13 @@ function FounderReadinessStep({
             return (
               <button key={chip.label} onClick={() => toggleSkill(chip.label)}
                 style={{
-                  padding: '7px 14px', cursor: 'pointer',
-                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.02em', fontWeight: on ? 700 : 500,
-                  border: `${on ? '2px' : '1.5px'} solid ${on ? honeColor : '#d8d8d8'}`,
-                  borderRadius: 4,
-                  background: on ? `${honeColor}12` : '#fffdf8',
-                  color: on ? honeColor : '#555',
+                  padding: '8px 15px', cursor: 'pointer',
+                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.02em', fontWeight: 700,
+                  border: `2px solid ${on ? honeColor : '#d8d8d8'}`,
+                  borderRadius: 999,
+                  background: on ? honeColor : '#fffdf8',
+                  color: on ? '#fff' : '#555',
+                  boxShadow: on ? `0 2px 8px ${honeColor}40` : 'none',
                   transition: 'all .15s',
                 }}>
                 {chip.icon} {on ? '✓ ' : ''}{chip.label}
@@ -6038,20 +6039,23 @@ function FounderReadinessStep({
               <button key={arch.val} onClick={() => toggleCofounder(arch.val)}
                 style={{
                   display: 'flex', alignItems: 'flex-start', gap: 10,
-                  padding: '12px 14px 12px 12px', cursor: 'pointer',
+                  padding: '14px 16px', cursor: 'pointer',
                   fontFamily: 'inherit', textAlign: 'left' as const,
-                  border: 'none',
-                  borderLeft: `4px solid ${on ? honeColor : '#d8d8d8'}`,
-                  borderRadius: 3,
-                  background: on ? `${honeColor}0f` : '#fffdf8',
+                  border: `2px solid ${on ? honeColor : '#e0e0e0'}`,
+                  borderRadius: 12,
+                  background: on ? `${honeColor}0f` : '#fff',
+                  boxShadow: on ? `0 2px 8px ${honeColor}22` : '0 1px 2px rgba(0,0,0,.03)',
                   transition: 'all .15s',
-                }}>
-                <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>{arch.icon}</span>
+                }}
+                onMouseEnter={e => { if (!on) { e.currentTarget.style.borderColor = `${honeColor}80`; e.currentTarget.style.background = '#fafafa'; } }}
+                onMouseLeave={e => { if (!on) { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.background = '#fff'; } }}
+              >
+                <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>{arch.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: on ? 700 : 600, color: on ? honeColor : '#1e293b', marginBottom: 1 }}>
+                  <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: on ? honeColor : '#1e293b', marginBottom: 2 }}>
                     {on ? '✓ ' : ''}{arch.label}
                   </div>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 13, color: '#7a7a7a' }}>{arch.desc}</div>
+                  <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12.5, color: '#8e8e93' }}>{arch.desc}</div>
                 </div>
               </button>
             );
@@ -6067,7 +6071,7 @@ function FounderReadinessStep({
           subtitle="Investors and customers ask this. Lived experience, domain knowledge, or unique access — what's your edge?"
         />
         <textarea
-          rows={3}
+          rows={4}
           value={founderFitValue}
           onChange={e => onFounderFitChange(e.target.value)}
           placeholder="e.g. I've worked in this industry for 8 years and hit this problem every single day. I know the buyers, the process, and why every existing tool fails…"
@@ -6081,6 +6085,9 @@ function FounderReadinessStep({
           onFocus={e => { e.currentTarget.style.borderColor = honeColor; }}
           onBlur={e => { e.currentTarget.style.borderColor = '#e0e0e0'; }}
         />
+        <div style={{ textAlign: 'right' as const, fontSize: 11, color: founderFitValue.length > 400 ? '#dc2626' : '#b0b0b8', marginTop: -4, marginBottom: 4 }}>
+          {founderFitValue.length} characters{founderFitValue.trim().length < 20 ? ' · a sentence or two is plenty' : ''}
+        </div>
         <SuggestionChips
           chips={FOUNDER_FIT_CHIPS}
           onSelect={v => {
@@ -6095,21 +6102,41 @@ function FounderReadinessStep({
       {/* ── Readiness summary — handwritten postcard style ── */}
       {(timeValue && selectedSkills.length > 0 && selectedCofounders.length > 0 && founderFitValue.trim()) && (
         <div style={{
-          ...postcardStyle(-1),
-          borderTop: `4px solid ${honeColor}`,
-          padding: '18px 22px',
-          fontFamily: "'Playfair Display', Georgia, serif",
-          fontStyle: 'italic',
+          background: '#fff', border: `1.5px solid ${honeColor}40`, borderTop: `4px solid ${honeColor}`,
+          borderRadius: 14, padding: '18px 20px',
         }}>
-          <PostcardStamp />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: honeColor }} />
-            <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: honeColor }}>Founder readiness snapshot</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 16 }}>🎖️</span>
+            <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: honeColor }}>Founder advantage card</span>
           </div>
-          <div style={{ fontSize: 19, lineHeight: 1.7, color: '#1a1a1a', fontWeight: 700, borderBottom: `3px solid ${honeColor}`, paddingBottom: 10, marginBottom: 12 }}>
-            Committing <span style={{ color: honeColor }}>{TIME_OPTIONS.find(t => t.val === timeValue)?.label ?? timeValue}</span>, bringing <span style={{ color: honeColor }}>{selectedSkills.slice(0, 2).join(' & ')}{selectedSkills.length > 2 ? ` +${selectedSkills.length - 2} more` : ''}</span>{selectedCofounders.length > 0 && <>, looking for <span style={{ color: honeColor }}>{selectedCofounders.map(v => COFOUNDER_ARCHETYPES.find(a => a.val === v)?.label ?? v).join(' + ')}</span></>}.
+          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginBottom: 14 }}>
+            <span style={{
+              fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700,
+              padding: '6px 12px', borderRadius: 999, background: honeColor, color: '#fff',
+            }}>
+              ⏰ Bandwidth: {TIME_OPTIONS.find(t => t.val === timeValue)?.label ?? timeValue}
+            </span>
+            <span style={{
+              fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700,
+              padding: '6px 12px', borderRadius: 999, background: honeColor, color: '#fff',
+            }}>
+              🧠 Skills: {selectedSkills.join(', ')}
+            </span>
+            {selectedCofounders.length > 0 && (
+              <span style={{
+                fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700,
+                padding: '6px 12px', borderRadius: 999, background: honeColor, color: '#fff',
+              }}>
+                🤝 Seeking: {selectedCofounders.map(v => COFOUNDER_ARCHETYPES.find(a => a.val === v)?.label ?? v).join(' + ')}
+              </span>
+            )}
           </div>
-          <div style={{ fontSize: 17, color: '#333', fontStyle: 'italic', fontWeight: 600, lineHeight: 1.6 }}>"{founderFitValue.trim()}"</div>
+          <div style={{
+            fontFamily: "'Inter', system-ui, sans-serif", fontSize: 14.5, color: '#1d1d1f', fontWeight: 500,
+            lineHeight: 1.6, borderTop: `1px solid ${honeColor}22`, paddingTop: 12,
+          }}>
+            <span style={{ fontWeight: 700, color: honeColor }}>Edge: </span>"{founderFitValue.trim()}"
+          </div>
         </div>
       )}
     </div>
