@@ -6292,12 +6292,51 @@ function FrequencyPicker({ value, onChange }: { value: string; onChange: (v: str
 
 // ── Pain Gauge (Hone step 3 — "Real pain or just friction?") ─────────────
 
+type ProblemConsequenceEntry = { frequency: string; pain: number; consequences: string[] };
+
+function parseProblemConsequences(raw: string): Record<string, ProblemConsequenceEntry> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch {}
+  return {};
+}
+
+const CONSEQUENCE_CHIP_META: { text: string; icon: string }[] = [
+  { text: 'Lost revenue', icon: '📉' },
+  { text: 'Wasted time', icon: '⏱️' },
+  { text: 'Team burnout', icon: '🔥' },
+  { text: "Can't scale", icon: '📈' },
+  { text: 'Customer churn', icon: '🚪' },
+  { text: 'Reputation damage', icon: '🏚️' },
+  { text: 'Falling behind', icon: '🐢' },
+  { text: 'Morale drops', icon: '😞' },
+  { text: 'Constant firefighting', icon: '🧯' },
+  { text: 'Debt builds up', icon: '🧱' },
+  { text: 'Harder to fix later', icon: '⛓️' },
+  { text: 'Competitors pull ahead', icon: '🏆' },
+];
+
+const FREQ_RANK: Record<string, number> = { Daily: 5, Weekly: 4, Monthly: 3, Quarterly: 2, Rarely: 1 };
+
+// Per-problem consequence gauge — redesigned 2026-09-14 from a single
+// idea-wide pain/frequency/consequence set into a pager over every problem
+// that made it through h1's severity gate ("Problem 3 of 16"), so a founder
+// defines the stakes for EACH rated problem instead of one blended answer.
+// `painIfNothing`/`frequency` stay updated as a rolled-up summary (worst
+// frequency seen + the union of every consequence picked anywhere) so the
+// rest of the app (ProblemContextCard, pitch summaries, Validate) keeps
+// reading a single value without any changes on its end.
 function PainGaugeStep({
-  freqValue, onFreqChange,
-  painValue, onPainChange,
+  problemSentence,
+  consequencesValue, onConsequencesChange,
+  onRollupChange,
 }: {
-  freqValue: string; onFreqChange: (v: string) => void;
-  painValue: string; onPainChange: (v: string) => void;
+  problemSentence: string;
+  consequencesValue: string;
+  onConsequencesChange: (v: string) => void;
+  onRollupChange: (frequency: string, painIfNothing: string) => void;
 }) {
   const SCORE_FROM_FREQ: Record<string, number> = { Daily: 9, Weekly: 7, Monthly: 5, Quarterly: 3, Rarely: 1 };
   const freqFromScore = (n: number) =>
@@ -6307,47 +6346,69 @@ function PainGaugeStep({
     Monthly: 'a few times a month', Quarterly: 'a few times a year', Rarely: 'occasionally',
   };
   const FREQ_LABELS = ['Rarely', 'Quarterly', 'Monthly', 'Weekly', 'Daily'] as const;
+  const SEV_META: Record<SeverityLevel, { icon: string; color: string }> = {
+    critical: { icon: '🔥', color: '#dc2626' }, major: { icon: '😤', color: '#ea580c' }, minor: { icon: '😐', color: '#6e6e73' },
+  };
 
-  const [score, setScore] = useState<number>(() => freqValue ? (SCORE_FROM_FREQ[freqValue] ?? 5) : 5);
-  const seededFreq = useRef(false);
-  // Direction A: once freqValue is set, the intensity card collapses into an
-  // echo pill (see below) — this tracks whether the user has explicitly
-  // reopened it via "change" to adjust their answer. Deliberately separate
-  // from `freqValue` itself: closing/reopening must never touch the actual
-  // answer, only which view is showing.
-  const [gaugeOpen, setGaugeOpen] = useState(false);
+  // Only the problems that cleared h1's severity gate, worst-first — same
+  // ordering convention severity groups use everywhere else in this file.
+  const ratedProblems = React.useMemo(() => {
+    const SEVERITY_ORDER: Record<string, number> = { critical: 0, major: 1, minor: 2 };
+    return problemSentence.split(MULTI_SEP).filter(Boolean)
+      .map(seg => { const [text, sev] = seg.split(FIELD_SEP); return { text: (text ?? '').trim(), severity: (sev ?? '') as SeverityLevel }; })
+      .filter(p => p.text && ['critical', 'major', 'minor'].includes(p.severity))
+      .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+  }, [problemSentence]);
 
+  const map = React.useMemo(() => parseProblemConsequences(consequencesValue), [consequencesValue]);
+  const doneCount = ratedProblems.filter(p => map[p.text]?.frequency).length;
+
+  const [activeIdx, setActiveIdx] = useState(0);
+  // Land on the first not-yet-answered problem on mount, instead of always
+  // starting back at the top of the list.
+  const seeded = useRef(false);
   useEffect(() => {
-    if (!seededFreq.current && freqValue) {
-      seededFreq.current = true;
-      setScore(SCORE_FROM_FREQ[freqValue] ?? 5);
-    }
-  }, [freqValue]);
+    if (seeded.current || ratedProblems.length === 0) return;
+    seeded.current = true;
+    const firstOpen = ratedProblems.findIndex(p => !map[p.text]?.frequency);
+    setActiveIdx(firstOpen === -1 ? 0 : firstOpen);
+  }, [ratedProblems, map]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const active = ratedProblems[Math.min(activeIdx, Math.max(ratedProblems.length - 1, 0))] || null;
+  const entry: ProblemConsequenceEntry = active ? (map[active.text] || { frequency: '', pain: 5, consequences: [] }) : { frequency: '', pain: 5, consequences: [] };
+
+  const commit = (next: ProblemConsequenceEntry) => {
+    if (!active) return;
+    const nextMap = { ...map, [active.text]: next };
+    onConsequencesChange(JSON.stringify(nextMap));
+    const allEntries = Object.values(nextMap);
+    const worstFreq = allEntries.reduce((best, e) => (FREQ_RANK[e.frequency] ?? 0) > (FREQ_RANK[best] ?? 0) ? e.frequency : best, '');
+    const unionConsequences = Array.from(new Set(allEntries.flatMap(e => e.consequences)));
+    onRollupChange(worstFreq, unionConsequences.join('|'));
+  };
+
+  const [score, setScore] = useState<number>(5);
+  const [gaugeOpen, setGaugeOpen] = useState(false);
+  useEffect(() => {
+    setScore(entry.frequency ? (SCORE_FROM_FREQ[entry.frequency] ?? entry.pain ?? 5) : (entry.pain || 5));
+    setGaugeOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.text]);
 
   const updateScore = (n: number) => {
     setScore(n);
-    onFreqChange(freqFromScore(n));
+    commit({ ...entry, pain: n, frequency: freqFromScore(n) });
     setGaugeOpen(false);
   };
-
   const updateFreqLabel = (f: string) => {
     const s = SCORE_FROM_FREQ[f] ?? 5;
     setScore(s);
-    onFreqChange(f);
+    commit({ ...entry, pain: s, frequency: f });
     setGaugeOpen(false);
   };
-
-  const CHIPS = [
-    'Lost revenue', 'Wasted time', 'Team burnout', "Can't scale",
-    'Customer churn', 'Reputation damage', 'Falling behind', 'Morale drops',
-    'Constant firefighting', 'Debt builds up', 'Harder to fix later', 'Competitors pull ahead',
-  ];
-
-  // Only keep values that exist in the current chip set — filters out legacy data from old ConsequenceBuilder
-  const selected = (painValue || '').split('|').filter(s => CHIPS.includes(s));
   const toggleChip = (chip: string) => {
-    const next = selected.includes(chip) ? selected.filter(s => s !== chip) : [...selected, chip];
-    onPainChange(next.join('|'));
+    const next = entry.consequences.includes(chip) ? entry.consequences.filter(c => c !== chip) : [...entry.consequences, chip];
+    commit({ ...entry, consequences: next });
   };
 
   const gauge = (() => {
@@ -6370,27 +6431,62 @@ function PainGaugeStep({
 
   const freq = freqFromScore(score);
   const adverb = FREQ_ADVERB[freq] ?? 'regularly';
-  const chipList = selected.length === 0
+  const chipList = entry.consequences.length === 0
     ? null
-    : selected.slice(0, 3).join(', ') + (selected.length > 3 ? `, +${selected.length - 3} more` : '');
+    : entry.consequences.slice(0, 3).join(', ') + (entry.consequences.length > 3 ? `, +${entry.consequences.length - 3} more` : '');
 
   const pitchSentence = chipList
-    ? `This hits them ${adverb}. Real costs: ${chipList}.${selected.length >= 2 ? " Left unfixed, it'll compound." : ''}`
+    ? `This hits them ${adverb}. Real costs: ${chipList}.${entry.consequences.length >= 2 ? " Left unfixed, it'll compound." : ''}`
     : `This hits them ${adverb}. Pick what it costs them below to complete your pitch.`;
+
+  if (!active) {
+    return (
+      <div style={{ padding: '20px 4px', fontSize: 13, color: '#94a3b8' }}>
+        Rate at least one problem's severity on the previous step first.
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
-      {/* ── Intensity gauge ──────────────────────────────────────────── */}
-      {/* Direction A: collapses to an echo pill once answered, same pattern
-          as the who-pays picker and the Idea-stage spark cards — "change"
-          reopens it without touching the underlying score/frequency. */}
-      <div style={{ display: (!freqValue || gaugeOpen) ? 'block' : 'none' }}>
+      {/* ── Active-problem pager — the missing context: which of the rated
+          problems these consequences apply to, and how many are left. ── */}
+      <div style={{ background: '#fff', border: `2px solid ${SEV_META[active.severity].color}30`, borderRadius: 14, padding: '14px 18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8, flexWrap: 'wrap' as const }}>
+          <span style={{
+            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.06em',
+            textTransform: 'uppercase' as const, color: SEV_META[active.severity].color,
+            border: `1.5px solid ${SEV_META[active.severity].color}`, borderRadius: 999, padding: '2px 10px',
+          }}>
+            {SEV_META[active.severity].icon} {active.severity} problem · {activeIdx + 1} of {ratedProblems.length}
+          </span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>{doneCount} of {ratedProblems.length} defined</span>
+        </div>
+        <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.4, marginBottom: 10 }}>
+          "{active.text}"
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setActiveIdx(i => Math.max(0, i - 1))} disabled={activeIdx === 0} style={{
+            padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e5ea', background: '#fff',
+            color: activeIdx === 0 ? '#ccc' : '#444', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+            cursor: activeIdx === 0 ? 'default' : 'pointer',
+          }}>← Previous problem</button>
+          <button onClick={() => setActiveIdx(i => Math.min(ratedProblems.length - 1, i + 1))} disabled={activeIdx === ratedProblems.length - 1} style={{
+            padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e5ea', background: '#fff',
+            color: activeIdx === ratedProblems.length - 1 ? '#ccc' : '#444', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+            cursor: activeIdx === ratedProblems.length - 1 ? 'default' : 'pointer',
+          }}>Next problem →</button>
+        </div>
+      </div>
+
+      {/* ── Intensity gauge (same behavior as before, now scoped to the
+          active problem instead of the whole idea) ── */}
+      <div style={{ display: (!entry.frequency || gaugeOpen) ? 'block' : 'none' }}>
       <div style={{
         background: gauge.bg, border: `2px solid ${gauge.ringColor}`,
         borderRadius: 16, padding: '20px 22px', transition: 'border-color .2s, background .2s',
       }}>
-        {/* Header row */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 700, color: T1, marginBottom: 3 }}>How painful is this problem?</div>
@@ -6403,8 +6499,6 @@ function PainGaugeStep({
             <div style={{ fontSize: 11, fontWeight: 700, color: gauge.color, marginTop: 3 }}>{gauge.label}</div>
           </div>
         </div>
-
-        {/* Segmented bar */}
         <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
           {Array.from({ length: 10 }, (_, i) => (
             <button
@@ -6421,15 +6515,11 @@ function PainGaugeStep({
             />
           ))}
         </div>
-
-        {/* Axis labels */}
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: T3, marginBottom: 16 }}>
           <span>Minor friction</span>
           <span>Real friction</span>
           <span>Existential threat</span>
         </div>
-
-        {/* Frequency quick-select */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
           <span style={{ fontSize: 12, color: T2, fontWeight: 500, flexShrink: 0 }}>Happens:</span>
           {FREQ_LABELS.map(f => {
@@ -6450,9 +6540,7 @@ function PainGaugeStep({
       </div>
       </div>
 
-      {/* Direction A: echo pill for the intensity gauge, shown once
-          answered and not currently reopened for editing. */}
-      <div style={{ display: (freqValue && !gaugeOpen) ? 'flex' : 'none', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: (entry.frequency && !gaugeOpen) ? 'flex' : 'none', alignItems: 'center', gap: 10 }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           padding: '4px 12px', borderRadius: 4,
@@ -6470,113 +6558,77 @@ function PainGaugeStep({
         </button>
       </div>
 
-      {/* Direction A: consequence chips + live pitch stay hidden until the
-          user has actually picked an intensity/frequency (freqValue set via
-          onFreqChange) — one question revealed at a time, matching the Idea
-          stage restructure. Uses `display` (not an unmount) so chip/pitch
-          state never resets while hidden. Gates on the `freqValue` prop,
-          not the local `score` state — `score` defaults to 5 even before
-          any real pick, so gating on it would reveal the next section
-          immediately; `freqValue` only becomes truthy once the user has
-          actually clicked something. */}
-      <div style={{ display: freqValue ? 'flex' : 'none', flexDirection: 'column' as const, gap: 18 }}>
-      {/* ── Consequence toggles — whiteboard style ──────────────────────── */}
+      <div style={{ display: entry.frequency ? 'flex' : 'none', flexDirection: 'column' as const, gap: 18 }}>
+      {/* ── Consequence grid — sentence case, icons, checkbox right next to
+          the label instead of a switch pushed to the far edge of the row ── */}
       <div style={{
-        border: `2px solid ${selected.length > 0 ? gauge.ringColor : BORDER}`,
+        border: `2px solid ${entry.consequences.length > 0 ? gauge.ringColor : BORDER}`,
         borderRadius: 16, padding: '18px 20px',
-        background: selected.length > 0 ? `${gauge.color}04` : '#fafafa',
+        background: entry.consequences.length > 0 ? `${gauge.color}04` : '#fafafa',
         transition: 'all .2s',
       }}>
-        <div style={{ marginBottom: 8 }}>
-          <div style={{
-            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
-            letterSpacing: '.05em', textTransform: 'uppercase' as const, color: STAGE_COLORS.hone,
-          }}>
-            What breaks if these problems are unresolved?
-          </div>
-          <div style={{ borderTop: `2px solid ${STAGE_COLORS.hone}`, marginTop: 3, maxWidth: 130 }} />
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f' }}>What breaks if this problem stays unresolved?</div>
+          <div style={{ fontSize: 12.5, color: '#6e6e73', marginTop: 2 }}>Select all that apply — precision makes the pitch.</div>
         </div>
-        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#475569', marginBottom: 14, lineHeight: 1.4 }}>
-          Select all that apply — precision makes the pitch. What do they actually lose?
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
-          {CHIPS.map((chip, i) => {
-            const on = selected.includes(chip);
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 8 }}>
+          {CONSEQUENCE_CHIP_META.map(({ text: chip, icon }) => {
+            const on = entry.consequences.includes(chip);
             return (
               <button key={chip} onClick={() => toggleChip(chip)} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
-                width: '100%', textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit',
-                background: 'none', border: 'none',
-                borderBottom: i < CHIPS.length - 1 ? `1px solid ${on ? `${gauge.color}22` : '#ececec'}` : 'none',
-                padding: '11px 2px', transition: 'all .12s',
+                display: 'flex', alignItems: 'center', gap: 9, textAlign: 'left' as const, cursor: 'pointer',
+                fontFamily: "'Inter', system-ui, sans-serif", padding: '10px 12px', borderRadius: 10,
+                border: `1.5px solid ${on ? gauge.color : '#e5e5ea'}`, background: on ? `${gauge.color}0d` : '#fff',
+                transition: 'all .12s',
               }}>
                 <span style={{
-                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14.5, letterSpacing: '.02em',
-                  fontWeight: on ? 700 : 500, color: on ? gauge.color : '#444', transition: 'color .12s',
-                }}>
-                  {chip}
-                </span>
-                <span style={{
-                  position: 'relative' as const, flexShrink: 0, width: 40, height: 22, borderRadius: 11,
-                  background: on ? gauge.color : '#dcdce0', transition: 'background .16s',
-                }}>
-                  <span style={{
-                    position: 'absolute' as const, top: 2, left: on ? 20 : 2, width: 18, height: 18,
-                    borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.25)',
-                    transition: 'left .16s',
-                  }} />
-                </span>
+                  flexShrink: 0, width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${on ? gauge.color : '#ccc'}`,
+                  background: on ? gauge.color : '#fff', color: '#fff', fontSize: 12, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{on ? '✓' : ''}</span>
+                <span style={{ fontSize: 13.5, fontWeight: on ? 700 : 500, color: on ? gauge.color : '#333' }}>{icon} {chip}</span>
               </button>
             );
           })}
         </div>
-        {selected.length > 0 && (
-          <div style={{ marginTop: 12, fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.04em', textTransform: 'uppercase' as const, fontWeight: 700, color: gauge.color }}>
-            {selected.length} cost{selected.length !== 1 ? 's' : ''} identified
+        {entry.consequences.length > 0 && (
+          <div style={{ marginTop: 12, fontSize: 12.5, fontWeight: 700, color: gauge.color }}>
+            {entry.consequences.length} cost{entry.consequences.length !== 1 ? 's' : ''} identified
           </div>
         )}
       </div>
 
-      {/* ── Live pitch sentence — handwritten postcard style ────────── */}
+      {/* ── Live pitch line — clean high-contrast card right below the
+          grid, replacing the low-contrast italic-serif peach box ── */}
       <div style={{
-        ...postcardStyle(-0.8),
-        borderTop: `4px solid ${gauge.color}`,
-        padding: '20px 24px 22px',
-        fontFamily: "'Playfair Display', Georgia, serif",
-        fontStyle: 'italic',
+        background: '#fff', border: `1.5px solid ${gauge.ringColor}`, borderTop: `4px solid ${gauge.color}`,
+        borderRadius: 14, padding: '18px 20px',
       }}>
-        <PostcardStamp />
-        {/* Label chip */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: gauge.color }} />
-          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' as const, color: '#aaa' }}>
-            ⚡ Your investor pitch line
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <span style={{ fontSize: 15 }}>⚡</span>
+          <span style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: gauge.color }}>
+            Your investor pitch line
           </span>
-          <span style={{ fontSize: 12, color: '#ccc', marginLeft: 2 }}>· updates live</span>
+          <span style={{ fontSize: 11, color: '#94a3b8' }}>· updates live</span>
         </div>
-
-        {/* Pitch text */}
         <div style={{
-          fontSize: 15.5, lineHeight: 1.55, color: '#1a1a1a', fontWeight: 600,
-          borderBottom: `2px solid ${gauge.color}`,
-          paddingBottom: 8, marginBottom: 12,
+          fontFamily: "'Inter', system-ui, sans-serif", fontSize: 15, fontWeight: 600, lineHeight: 1.5, color: '#1d1d1f',
+          borderBottom: `2px solid ${gauge.color}`, paddingBottom: 10, marginBottom: 12,
         }}>
           "{pitchSentence}"
         </div>
-
-        {/* Signal strength bar */}
         {chipList && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
-            <span style={{ fontSize: 14, color: '#aaa' }}>Signal strength:</span>
+            <span style={{ fontSize: 12.5, color: '#6e6e73' }}>Signal strength:</span>
             <div style={{ flex: 1, height: 5, borderRadius: 3, background: '#e5e5ea', maxWidth: 180, overflow: 'hidden' }}>
               <div style={{
                 height: '100%', borderRadius: 3, background: gauge.color,
-                width: `${Math.min(100, (score * 6) + (selected.length * 4))}%`,
+                width: `${Math.min(100, (score * 6) + (entry.consequences.length * 4))}%`,
                 transition: 'width .3s',
               }} />
             </div>
-            <span style={{ fontSize: 15, fontWeight: 700, color: gauge.color }}>
-              {score >= 7 && selected.length >= 2 ? 'Strong' : score >= 5 && selected.length >= 1 ? 'Moderate' : 'Weak'} case
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: gauge.color }}>
+              {score >= 7 && entry.consequences.length >= 2 ? 'Strong' : score >= 5 && entry.consequences.length >= 1 ? 'Moderate' : 'Weak'} case
             </span>
           </div>
         )}
@@ -7625,7 +7677,7 @@ const FIELD_STAGE_CANONICAL: Record<string, string> = {
   // Hone — marketSnapshot moved here 2026-08-24 (see FIELD_STAGE above).
   marketSnapshot: 'hone',
   whoExactly: 'hone', whoPays: 'hone', problemSentence: 'hone',
-  painIfNothing: 'hone', frequency: 'hone',
+  painIfNothing: 'hone', frequency: 'hone', problemConsequences: 'hone',
   workaround: 'hone', competitors: 'hone',
   pullSigns: 'hone', quantifiedValue: 'hone', solutionAlternatives: 'hone',
   s_specificity: 'hone', s_pain: 'hone', s_frequency: 'hone',
@@ -13336,7 +13388,7 @@ export default function WorkPage() {
     // the end of Hone; the field key and its data are unchanged.
     marketSnapshot: 'hone',
     whoExactly: 'hone', whoPays: 'hone', problemSentence: 'hone',
-    painIfNothing: 'hone', frequency: 'hone',
+    painIfNothing: 'hone', frequency: 'hone', problemConsequences: 'hone',
     workaround: 'hone', competitors: 'hone',
     pullSigns: 'hone', quantifiedValue: 'hone', solutionAlternatives: 'hone',
     problemChipsGen: 'hone', solutionChipsGen: 'hone',
@@ -15019,11 +15071,13 @@ export default function WorkPage() {
       <BMCLabel blocks={['Value Proposition']} />
       <H accent={STAGE_COLORS.hone}>What breaks if these problems are unresolved?</H>
       <PainGaugeStep
-        freqValue={get('frequency')} onFreqChange={v => set('frequency', v)}
-        painValue={get('painIfNothing')} onPainChange={v => set('painIfNothing', v)}
+        problemSentence={get('problemSentence')}
+        consequencesValue={get('problemConsequences')}
+        onConsequencesChange={v => set('problemConsequences', v)}
+        onRollupChange={(freq, pain) => { set('frequency', freq); set('painIfNothing', pain); }}
       />
 
-      <NavRow onBack={back} onNext={async () => { await save('hone', { painIfNothing: get('painIfNothing'), frequency: get('frequency') }); next(); }} nextLabel="Next →" disabled={!get('frequency')} disabledReason="Pick how often this problem happens." stageColor={STAGE_COLORS.idea} stepTitle="What breaks if these problems are unresolved?" ideaId={activeIdea.id} />
+      <NavRow onBack={back} onNext={async () => { await save('hone', { painIfNothing: get('painIfNothing'), frequency: get('frequency'), problemConsequences: get('problemConsequences') }); next(); }} nextLabel="Next →" disabled={!get('frequency')} disabledReason="Define the stakes for at least one problem to continue." stageColor={STAGE_COLORS.idea} stepTitle="What breaks if these problems are unresolved?" ideaId={activeIdea.id} />
     </div>,
     <div key="h3" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={3} />
