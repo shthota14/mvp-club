@@ -66,6 +66,8 @@ export const validationApi = {
     api.post('/validation/idea/react', data),
   assembleOneLiner: (data: { building: string; audience: string; struggle: string; outcome: string }) =>
     api.post('/validation/idea/assemble-one-liner', data),
+  suggestOneLinerField: (data: { key: 'b' | 'f' | 'w' | 'o'; question: string; answer: string }) =>
+    api.post('/validation/idea/suggest-field', data),
   // Idea Step 1 — AI-drafted domain + rough TAM/SAM + short competitor list,
   // once the one-liner is complete. See the caveat comment above
   // generateMarketSnapshot in the backend before changing this — the model

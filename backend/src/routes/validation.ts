@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { query } from '../db';
 import { requireAuth } from '../middleware/auth';
 import { sendMeetingRequestEmail, defaultMeetingRequestMessage } from '../utils/mailer';
-import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn, generateProblemChips, ProblemChipsContext, generateAlternativeChips, AlternativeChipsContext, generateStepInterviewTurn, StepInterviewContext, StepInterviewTurn, generateBusinessModelCanvas, BusinessModelCanvasContext } from '../utils/aiQuestionCheck';
+import { checkQuestion, generateInterviewScript, generateDiscoveryGuide, generateQuestionChips, reactToIdeaAnswer, assembleOneLinerSentence, suggestOneLinerField, generateMvpHypotheses, generateFeatureSuggestions, checkFeatureEvidence, FeatureEvidenceContext, generateDistributionSuggestions, generatePricingSuggestions, checkPricingEvidence, PricingContext, generateBuildSpec, BuildSpecContext, recommendBuildPath, BuildPathContext, generateFlowsAndScreens, FlowScreenContext, generateUIPrompt, UIPromptContext, generateFeatureBuildCard, FeatureBuildCardContext, generateChangeCodingPrompt, ChangeCoachContext, generateMarketSnapshot, MarketSnapshotContext, generateProblemInterviewTurn, ProblemInterviewContext, ProblemInterviewTurn, generateProblemChips, ProblemChipsContext, generateAlternativeChips, AlternativeChipsContext, generateStepInterviewTurn, StepInterviewContext, StepInterviewTurn, generateBusinessModelCanvas, BusinessModelCanvasContext } from '../utils/aiQuestionCheck';
 
 const router = Router();
 
@@ -491,6 +491,26 @@ router.post('/idea/assemble-one-liner', async (req: Request, res: Response) => {
     res.json(result);
   } catch (err: any) {
     console.error('[validation] idea/assemble-one-liner', err?.response?.data || err);
+    res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
+  }
+});
+
+// POST /idea/suggest-field — Idea Step 1's Structured Canvas, one Mad-Libs
+// blank at a time: judges whether a single answer is too broad/vague and,
+// only if so, proposes a concrete rewrite the founder can apply with one
+// click. Stateless, same pattern as idea/react and idea/assemble-one-liner
+// above — called on demand (not on every keystroke), when the founder asks
+// for feedback on a field they've just filled in.
+router.post('/idea/suggest-field', async (req: Request, res: Response) => {
+  const { key, question, answer } = req.body;
+  if (!['b', 'f', 'w', 'o'].includes(key) || typeof question !== 'string' || !question.trim() || typeof answer !== 'string' || !answer.trim()) {
+    return res.status(400).json({ error: 'key (one of b/f/w/o), question, and answer are required' });
+  }
+  try {
+    const result = await suggestOneLinerField(key, question.trim(), answer.trim());
+    res.json(result);
+  } catch (err: any) {
+    console.error('[validation] idea/suggest-field', err?.response?.data || err);
     res.status(502).json({ error: err?.message || 'Could not reach the AI right now — please try again.' });
   }
 });

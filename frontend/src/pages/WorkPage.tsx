@@ -2097,13 +2097,14 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
       background: '#fffdfa', border: '1px solid #e8e3d3',
       borderTop: `4px solid ${STAGE_COLORS.idea}`, borderRadius: 10,
       padding: '14px 18px 14px',
+      fontFamily: "'Inter', system-ui, sans-serif",
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <AgentAvatar size={16} />
           <span style={{
-            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12,
-            letterSpacing: '.14em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea,
+            fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12, fontWeight: 600,
+            letterSpacing: '.08em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea,
           }}>
             Idea Desk · By Sage
           </span>
@@ -2112,7 +2113,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
           onClick={restart}
           style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            fontSize: 11, fontWeight: 700, letterSpacing: '.02em', fontFamily: "'Inter', system-ui, sans-serif",
+            fontSize: 11, fontWeight: 600, letterSpacing: '.02em', fontFamily: "'Inter', system-ui, sans-serif",
             color: confirmingRestart ? '#dc2626' : T3,
           }}
         >
@@ -2124,12 +2125,11 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
           const isLast = i === turns.length - 1;
 
           if (t.role === 'agent' && t.kind === 'react') {
-            // Editor's-note caption reacting to the pull-quote above it —
-            // small italic serif instead of a chat bubble.
+            // Small caption reacting to the answer above it.
             return (
               <div key={i} style={{
-                fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
-                fontWeight: 600, fontSize: 13, lineHeight: 1.4, color: STAGE_COLORS.idea, opacity: 0.85,
+                fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 500,
+                fontSize: 13, lineHeight: 1.4, color: STAGE_COLORS.idea, opacity: 0.85,
               }}>
                 — {t.text}
               </div>
@@ -2137,46 +2137,45 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
           }
 
           if (t.role === 'agent') {
-            // 'ask' turn. The live (last) question runs as the full cover
-            // headline; every earlier question collapses to a small kicker
-            // line sitting above the pull-quote that answered it.
+            // 'ask' turn. The live (last) question runs as the full headline;
+            // every earlier question collapses to a small label sitting
+            // above the answer that resolved it.
             if (isLast) {
               return (
                 <div key={i}>
                   <div style={{
-                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11,
-                    letterSpacing: '.14em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea, marginBottom: 4,
+                    fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11, fontWeight: 600,
+                    letterSpacing: '.1em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea, marginBottom: 4,
                   }}>
                     Question {stepIndex + 1} of {ONE_LINER_QUESTIONS.length}
                   </div>
                   <div style={{
-                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 27, lineHeight: 0.98,
-                    letterSpacing: '.005em', textTransform: 'uppercase' as const, color: T1,
+                    fontFamily: "'Inter', system-ui, sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 1.2,
+                    letterSpacing: '-0.01em', color: T1,
                   }}>
                     {/* Only the CURRENT question (last turn) types itself out —
                         every earlier ask in the history renders instantly. */}
                     <TypewriterAsk text={t.text} />
                   </div>
-                  <div style={{ borderTop: `3px solid ${T1}`, marginTop: 8 }} />
+                  <div style={{ borderTop: `2px solid ${BORDER}`, marginTop: 8 }} />
                 </div>
               );
             }
             return (
               <div key={i} style={{
-                fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 10.5,
-                letterSpacing: '.1em', textTransform: 'uppercase' as const, color: T3,
+                fontFamily: "'Inter', system-ui, sans-serif", fontSize: 10.5, fontWeight: 600,
+                letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3,
               }}>
                 {t.text}
               </div>
             );
           }
 
-          // User answer — a serif pull-quote instead of an echo pill, so a
-          // finished exchange reads like a quoted line in the feature.
+          // User answer — a quoted line with a left accent bar.
           return (
             <div key={i} style={{ borderLeft: `3px solid ${STAGE_COLORS.idea}`, paddingLeft: 10 }}>
               <div style={{
-                fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
+                fontFamily: "'Inter', system-ui, sans-serif",
                 fontWeight: 600, fontSize: 15, lineHeight: 1.35, color: T1,
               }}>
                 "{t.text}"
@@ -2186,18 +2185,18 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
         })}
         {reacting && (
           <div style={{
-            fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
+            fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 500,
             fontSize: 13, color: STAGE_COLORS.idea, opacity: 0.6,
           }}>
-            — gathering a quote…
+            — thinking…
           </div>
         )}
         {smoothing && (
           <div style={{
-            fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
+            fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 500,
             fontSize: 13, color: STAGE_COLORS.idea, opacity: 0.6,
           }}>
-            ✨ — polishing the headline…
+            ✨ — polishing your one-liner…
           </div>
         )}
         <div ref={bottomRef} />
@@ -2209,7 +2208,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
             style={{
               ...inp, flex: 1, background: 'transparent',
               border: 'none', borderBottom: `1.5px solid ${BORDER}`, borderRadius: 0,
-              padding: '6px 2px', fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15,
+              padding: '6px 2px', fontFamily: "'Inter', system-ui, sans-serif", fontSize: 15,
             }}
             value={draft}
             placeholder={activeQ ? activeQ.placeholder : ''}
@@ -2223,8 +2222,8 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
             style={{
               padding: '8px 16px', borderRadius: 4, border: 'none',
               background: STAGE_COLORS.idea, color: '#fff',
-              fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 13,
-              letterSpacing: '.08em', textTransform: 'uppercase' as const,
+              fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: 13,
+              letterSpacing: '.04em', textTransform: 'uppercase' as const,
               cursor: reacting || !draft.trim() ? 'not-allowed' : 'pointer',
               opacity: reacting || !draft.trim() ? 0.5 : 1,
               flexShrink: 0,
@@ -2371,36 +2370,169 @@ function PrivacySettingsModal({ value, onChange, hasContent, onClose }: {
 }
 
 // ── One-liner preview card (Idea Step 1) ─────────────────────────────────────
-// The whiteboard-marker "Your one-liner" card shown under the chat. Reads
-// the assembled sentence out of `value` and, when it matches the standard
-// "I'm building X for Y who Z so they can W" template, underlines each part
-// like a fill-in-the-blank. Editable: clicking Edit swaps to a plain textarea
-// so a founder can hand-tune the wording without re-running the whole chat.
-function OneLinerPreviewCard({ value, onChange, publicOn, onTogglePublic }: { value: string; onChange: (v: string) => void; publicOn: boolean; onTogglePublic: () => void }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value);
+// ── One-liner Structured Canvas — Mad-Libs fields ──────────────────────────
+// A direct, form-style counterpart to the chat on the left: the same 5
+// answers (product name + the 4 one-liner blanks), each in its own labeled
+// box instead of buried in a conversation transcript. Editing a box here
+// just re-assembles the same `oneLiner` sentence IdeaOneLinerChat writes to
+// (via assembleOneLinerFromParts, the exact function the chat itself uses),
+// so the chat, this form, and the preview below all stay in sync through
+// that one shared string — no separate state to keep consistent.
+const ONE_LINER_CANVAS_FIELDS: { key: OneLinerFieldKey; label: string; placeholder: string }[] = [
+  { key: 'ideaName', label: 'Product name', placeholder: 'e.g. MVP Club' },
+  { key: 'b', label: "What you're building", placeholder: 'a mobile app, a marketplace, a tool…' },
+  { key: 'f', label: 'Target audience', placeholder: 'busy first-time founders' },
+  { key: 'w', label: 'Core problem', placeholder: "not knowing if their idea's any good" },
+  { key: 'o', label: 'Key outcome', placeholder: 'decide to build, pivot, or drop it' },
+];
 
-  const startEdit = () => { setDraft(value); setEditing(true); };
-  const saveEdit = () => { onChange(draft.trim()); setEditing(false); };
-  const cancelEdit = () => { setEditing(false); };
+function OneLinerFieldsForm({ ideaName, onIdeaNameChange, oneLiner, onOneLinerChange }: {
+  ideaName: string;
+  onIdeaNameChange: (v: string) => void;
+  oneLiner: string;
+  onOneLinerChange: (v: string) => void;
+}) {
+  const m = oneLiner.match(/I'?m building (.+?) for (.+?) who (.+?) so they can (.+?)\.?$/i);
+  const parts: Record<'b' | 'f' | 'w' | 'o', string> = {
+    b: m?.[1] && m[1] !== '___' ? m[1] : '',
+    f: m?.[2] && m[2] !== '___' ? m[2] : '',
+    w: m?.[3] && m[3] !== '___' ? m[3] : '',
+    o: m?.[4] && m[4] !== '___' ? m[4] : '',
+  };
+
+  const setPart = (key: 'b' | 'f' | 'w' | 'o', v: string) => {
+    const next = { ...parts, [key]: v };
+    onOneLinerChange(assembleOneLinerFromParts(next.b, next.f, next.w, next.o));
+  };
+
+  // Per-field AI suggestion — fetched on demand (a small "✨" button beside
+  // each filled blank), never on every keystroke.
+  const [suggestState, setSuggestState] = useState<Record<string, { loading: boolean; note?: string; suggestion?: string | null; checked?: boolean }>>({});
+
+  const checkField = async (key: 'b' | 'f' | 'w' | 'o') => {
+    const answer = parts[key].trim();
+    if (!answer) return;
+    const question = ONE_LINER_QUESTIONS.find(q => q.key === key)!.ask;
+    setSuggestState(prev => ({ ...prev, [key]: { loading: true } }));
+    try {
+      const res = await validationApi.suggestOneLinerField({ key, question, answer });
+      const needsRefinement = res.data?.needsRefinement === true;
+      setSuggestState(prev => ({
+        ...prev,
+        [key]: {
+          loading: false, checked: true,
+          note: needsRefinement ? res.data?.note : undefined,
+          suggestion: needsRefinement ? res.data?.suggestion : null,
+        },
+      }));
+    } catch {
+      setSuggestState(prev => ({ ...prev, [key]: { loading: false, checked: true } }));
+    }
+  };
+
+  const applySuggestion = (key: 'b' | 'f' | 'w' | 'o') => {
+    const s = suggestState[key];
+    if (!s?.suggestion) return;
+    setPart(key, s.suggestion);
+    setSuggestState(prev => ({ ...prev, [key]: { loading: false, checked: true, note: undefined, suggestion: null } }));
+  };
+
+  const fieldStyle: React.CSSProperties = {
+    width: '100%', padding: '10px 12px',
+    border: `1px solid ${BORDER}`, borderRadius: 8,
+    fontSize: 14, outline: 'none', background: '#fff',
+    color: T1, boxSizing: 'border-box' as const, lineHeight: 1.5,
+    fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 400,
+    transition: 'border-color .15s, box-shadow .15s',
+  };
+
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 14,
+      background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12,
+      padding: '18px 20px', fontFamily: "'Inter', system-ui, sans-serif",
+    }}>
+      <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3 }}>
+        Structured canvas
+      </div>
+      {ONE_LINER_CANVAS_FIELDS.map(f => {
+        const isName = f.key === 'ideaName';
+        const val = isName ? ideaName : parts[f.key as 'b' | 'f' | 'w' | 'o'];
+        const s = !isName ? suggestState[f.key] : undefined;
+        return (
+          <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: T2, letterSpacing: '.03em' }}>
+              [ {f.label} ]
+            </label>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input
+                value={val}
+                placeholder={f.placeholder}
+                onChange={e => isName ? onIdeaNameChange(e.target.value) : setPart(f.key as 'b' | 'f' | 'w' | 'o', e.target.value)}
+                style={fieldStyle}
+                onFocus={e => { e.currentTarget.style.borderColor = STAGE_COLORS.idea; e.currentTarget.style.boxShadow = `0 0 0 3px ${STAGE_COLORS.idea}1a`; }}
+                onBlur={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.boxShadow = 'none'; }}
+              />
+              {!isName && val.trim().length > 2 && (
+                <button
+                  onClick={() => checkField(f.key as 'b' | 'f' | 'w' | 'o')}
+                  disabled={s?.loading}
+                  title="Ask Sage to sharpen this"
+                  style={{
+                    flexShrink: 0, border: `1px solid ${BORDER}`, background: '#fff', borderRadius: 8,
+                    padding: '9px 10px', fontSize: 12, cursor: s?.loading ? 'default' : 'pointer',
+                    color: T2, fontFamily: "'Inter', system-ui, sans-serif",
+                  }}
+                >
+                  {s?.loading ? '…' : '✨'}
+                </button>
+              )}
+            </div>
+            {s?.note && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const,
+                background: '#fef9e7', border: '1px solid #fde68a', borderRadius: 8,
+                padding: '6px 10px', fontSize: 12, color: '#92400e',
+              }}>
+                <span>{s.note}</span>
+                <button
+                  onClick={() => applySuggestion(f.key as 'b' | 'f' | 'w' | 'o')}
+                  style={{
+                    border: 'none', borderRadius: 999, padding: '3px 10px', cursor: 'pointer',
+                    background: STAGE_COLORS.idea, color: '#fff', fontSize: 11, fontWeight: 700,
+                    fontFamily: "'Inter', system-ui, sans-serif",
+                  }}
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+            {s?.checked && !s?.note && !s?.loading && (
+              <div style={{ fontSize: 11, color: '#059669', fontWeight: 600 }}>✓ Looks specific</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// The high-contrast "live assembly preview" shown in the Structured Canvas,
+// below the Mad-Libs fields above. Read-only — editing happens in the
+// fields; this just reflects `value` with each blank highlighted the
+// moment it's filled in, so what's about to be saved is never ambiguous.
+function OneLinerPreviewCard({ value, publicOn, onTogglePublic }: { value: string; publicOn: boolean; onTogglePublic: () => void }) {
+  const accent = STAGE_COLORS.idea;
 
   const m = value.match(/I'?m building (.+?) for (.+?) who (.+?) so they can (.+?)\.?$/i);
   const pb = m?.[1] ?? ''; const pf = m?.[2] ?? ''; const pw = m?.[3] ?? ''; const po = m?.[4] ?? '';
   const filled = (v: string) => v && !v.includes('___');
-  // Bright whiteboard-marker blue for the underlines/ink; the card itself
-  // now sits on a green background per request, kept independent of the pen color.
-  const penColor = '#0ea5e9';
 
-  // Highlighter sweep: fires once, the moment all four blanks go from
-  // "some still empty" to "fully filled in" — not on every render while
-  // already complete (e.g. while the founder keeps typing elsewhere).
-  // NOTE: these hooks must stay ABOVE the `if (!value.trim())` early return
-  // below — React requires every hook to run on every render of a given
-  // component instance, in the same order. Placing them after a conditional
-  // return meant they were skipped entirely while value was still empty and
-  // then suddenly called once it wasn't, which is a Rules-of-Hooks
-  // violation: React throws ("change in the order of Hooks") and unmounts
-  // the whole tree, which is what showed up as the page going blank.
+  // Highlight sweep: fires once, the moment all four blanks go from "some
+  // still empty" to "fully filled in" — not on every render while already
+  // complete. NOTE: these hooks must stay ABOVE the `if (!value.trim())`
+  // early return below — React requires every hook to run on every render
+  // of a given component instance, in the same order.
   const allFilled = !!(filled(pb) && filled(pf) && filled(pw) && filled(po));
   const wasAllFilledRef = useRef(false);
   const [justCompleted, setJustCompleted] = useState(false);
@@ -2414,103 +2546,55 @@ function OneLinerPreviewCard({ value, onChange, publicOn, onTogglePublic }: { va
     wasAllFilledRef.current = allFilled;
   }, [allFilled]);
 
-  if (!value.trim() && !editing) return null;
+  if (!value.trim()) return null;
 
   return (
     <div style={{
-      ...postcardStyle(-1),
-      background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-      border: '1px solid #86efac',
-      borderTop: `4px solid ${penColor}`,
-      padding: '20px 24px 24px',
-      fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
+      background: '#fff', border: `1px solid ${BORDER}`, borderTop: `3px solid ${accent}`,
+      borderRadius: 12, padding: '18px 20px', fontFamily: "'Inter', system-ui, sans-serif",
     }}>
-      <PostcardStamp />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: penColor }} />
-          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' as const, color: '#aaa' }}>
-            Your one-liner
-          </span>
-        </div>
-        {!editing && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <PublicToggle on={publicOn} onToggle={onTogglePublic} label="Your one-liner" />
-            <button
-              onClick={startEdit}
-              style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11, fontWeight: 700, color: '#15803d', background: '#fff', border: '1.5px solid #86efac', borderRadius: 8, padding: '4px 10px', cursor: 'pointer' }}
-            >
-              ✏️ Edit
-            </button>
-          </div>
-        )}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3 }}>
+          Live preview
+        </span>
+        <PublicToggle on={publicOn} onToggle={onTogglePublic} label="Your one-liner" />
       </div>
 
-      {editing ? (
-        <div>
-          <textarea
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            rows={3}
-            autoFocus
-            style={{
-              width: '100%', boxSizing: 'border-box' as const,
-              fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
-              fontSize: 20, lineHeight: 1.5, color: '#0a0a0a',
-              border: '1.5px solid #86efac', borderRadius: 8, padding: '10px 12px',
-              resize: 'vertical' as const, background: '#fff',
-            }}
-          />
-          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <button
-              onClick={saveEdit}
-              style={{ fontFamily: "'Inter', system-ui, sans-serif", padding: '6px 14px', borderRadius: 8, border: 'none', background: '#16a34a', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-            >
-              Save
-            </button>
-            <button
-              onClick={cancelEdit}
-              style={{ fontFamily: "'Inter', system-ui, sans-serif", padding: '6px 14px', borderRadius: 8, border: '1.5px solid #86efac', background: '#fff', color: '#166534', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      ) : m ? (
-        <div style={{ position: 'relative' as const, fontSize: 22, lineHeight: 1.7, color: '#0a0a0a' }}>
-          {/* Highlighter sweep — fires once, the moment the last blank gets
+      {m ? (
+        <div style={{ position: 'relative' as const, fontSize: 17, lineHeight: 1.7, color: T1, fontWeight: 500 }}>
+          {/* Highlight sweep — fires once, the moment the last blank gets
               filled in, celebrating the fully-assembled one-liner. */}
           {justCompleted && (
             <div style={{
               position: 'absolute', left: 0, right: 0, bottom: 2, height: '0.85em',
-              background: '#fde047', opacity: 0.55, borderRadius: 2, zIndex: -1,
+              background: `${accent}22`, borderRadius: 2, zIndex: -1,
               animation: 'highlighterSweep 1.1s ease-out forwards',
             }} />
           )}
           <span>I'm building </span>
           <span style={{
-            color: filled(pb) ? penColor : '#ccc', fontWeight: 700, fontSize: 24,
-            borderBottom: filled(pb) ? `3px solid ${penColor}` : '2px dashed #ddd', paddingBottom: 1,
-          }}>{pb || 'what you\'re building'}</span>
+            color: filled(pb) ? accent : T3, fontWeight: 700,
+            borderBottom: filled(pb) ? `2px solid ${accent}` : `2px dashed ${BORDER}`, paddingBottom: 1,
+          }}>{pb || "what you're building"}</span>
           <span> for </span>
           <span style={{
-            color: filled(pf) ? penColor : '#ccc', fontWeight: 700, fontSize: 24,
-            borderBottom: filled(pf) ? `3px solid ${penColor}` : '2px dashed #ddd', paddingBottom: 1,
-          }}>{pf || 'who it\'s for'}</span>
+            color: filled(pf) ? accent : T3, fontWeight: 700,
+            borderBottom: filled(pf) ? `2px solid ${accent}` : `2px dashed ${BORDER}`, paddingBottom: 1,
+          }}>{pf || "who it's for"}</span>
           <span> who </span>
           <span style={{
-            color: filled(pw) ? penColor : '#ccc', fontWeight: 700, fontSize: 24,
-            borderBottom: filled(pw) ? `3px solid ${penColor}` : '2px dashed #ddd', paddingBottom: 1,
+            color: filled(pw) ? accent : T3, fontWeight: 700,
+            borderBottom: filled(pw) ? `2px solid ${accent}` : `2px dashed ${BORDER}`, paddingBottom: 1,
           }}>{pw || 'their struggle'}</span>
           <span> so they can </span>
           <span style={{
-            color: filled(po) ? penColor : '#999', fontWeight: 800, fontSize: 28,
-            borderBottom: filled(po) ? `3px solid ${penColor}` : '2px dashed #ddd', paddingBottom: 1,
+            color: filled(po) ? accent : T3, fontWeight: 800,
+            borderBottom: filled(po) ? `2px solid ${accent}` : `2px dashed ${BORDER}`, paddingBottom: 1,
           }}>{po || 'what happens next'}</span>
           <span>.</span>
         </div>
       ) : (
-        <div style={{ fontSize: 22, lineHeight: 1.7, color: '#0a0a0a' }}>{value}</div>
+        <div style={{ fontSize: 17, lineHeight: 1.7, color: T1, fontWeight: 500 }}>{value}</div>
       )}
     </div>
   );
@@ -2547,39 +2631,50 @@ function OneLinerQualityMeter({ value }: { value: string }) {
   const started = Object.values(parts).some(v => v && !v.includes('___'));
   if (!started) return null;
 
-  const penColor = '#0ea5e9';
+  const accent = STAGE_COLORS.idea;
   const rows = ONE_LINER_PILLARS.map(p => ({ ...p, text: parts[p.key], score: oneLinerPillarScore(parts[p.key]) }));
   const overall = Math.round(rows.reduce((s, p) => s + p.score, 0) / rows.length);
   const weakest = [...rows].filter(p => p.text && !p.text.includes('___')).sort((a, b) => a.score - b.score)[0];
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-      border: '1px solid #93c5fd', borderTop: `4px solid ${penColor}`,
-      borderRadius: 12, padding: '16px 20px 18px', fontFamily: "'Inter', system-ui, sans-serif",
+      display: 'flex', flexDirection: 'column', gap: 8,
+      background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12,
+      padding: '14px 18px', fontFamily: "'Inter', system-ui, sans-serif",
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase' as const, color: '#93a5c4' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3 }}>
           One-liner clarity
         </span>
-        <span style={{ fontSize: 18, fontWeight: 800, color: penColor }}>{overall}<span style={{ fontSize: 12, fontWeight: 700, color: '#93c5fd' }}>/100</span></span>
+        <span style={{
+          fontSize: 12, fontWeight: 700,
+          color: overall >= 70 ? '#059669' : overall >= 40 ? '#d97706' : '#dc2626',
+          background: overall >= 70 ? '#f0fdf4' : overall >= 40 ? '#fffbeb' : '#fef2f2',
+          borderRadius: 999, padding: '2px 10px',
+        }}>
+          {overall}/100
+        </span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
         {rows.map(p => {
           const has = !!p.text && !p.text.includes('___');
+          const good = has && p.score >= 60;
           return (
-            <div key={p.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 132, fontSize: 11, fontWeight: 700, color: '#1e40af', flexShrink: 0, whiteSpace: 'nowrap' as const }}>{p.label}</div>
-              <div style={{ flex: 1, height: 8, borderRadius: 4, background: '#bfdbfe', overflow: 'hidden' }}>
-                <div style={{ width: `${p.score}%`, height: '100%', borderRadius: 4, background: has ? penColor : 'transparent', transition: 'width .3s ease' }} />
-              </div>
-            </div>
+            <span key={p.key} title={p.label} style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              fontSize: 11, fontWeight: 600, color: good ? '#059669' : has ? '#d97706' : T3,
+              background: good ? '#f0fdf4' : has ? '#fffbeb' : '#f5f5f7',
+              border: `1px solid ${good ? '#bbf7d0' : has ? '#fde68a' : BORDER}`,
+              borderRadius: 999, padding: '3px 9px',
+            }}>
+              {good ? '✓' : has ? '•' : '○'} {p.label}
+            </span>
           );
         })}
       </div>
       {weakest && weakest.score < 60 && (
-        <div style={{ fontSize: 11, color: '#1e40af', marginTop: 10, lineHeight: 1.5 }}>
-          💡 &ldquo;{weakest.label}&rdquo; is thin — a few more specific words there usually sharpens the whole line.
+        <div style={{ fontSize: 11, color: accent, lineHeight: 1.5 }}>
+          💡 "{weakest.label}" is thin — a few more specific words there usually sharpens the whole line.
         </div>
       )}
     </div>
@@ -14453,37 +14548,55 @@ export default function WorkPage() {
           <StepGoal text={STEP_GOALS.idea[0]} />
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <IdeaOneLinerChat
-          initialName={get('ideaName') || activeIdea.name}
-          initialOneLiner={get('oneLiner')}
-          userName={(user?.name || '').trim().split(' ')[0] || 'there'}
-          onChange={f => { set('ideaName', f.ideaName); set('oneLiner', f.oneLiner); }}
-        />
+      {/* Split-pane workspace: a persistent AI chat (left) alongside a
+          structured canvas (right) that fills in as the chat progresses —
+          replaces the old single stacked column, where the chat, the
+          preview, and the clarity meter all fought for the same narrow lane.
+          Stacks to one column on mobile. */}
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 20, alignItems: 'flex-start' }}>
+        <div style={{ flex: isMobile ? undefined : '0 0 40%', width: isMobile ? '100%' : undefined, minWidth: 0 }}>
+          <IdeaOneLinerChat
+            initialName={get('ideaName') || activeIdea.name}
+            initialOneLiner={get('oneLiner')}
+            userName={(user?.name || '').trim().split(' ')[0] || 'there'}
+            onChange={f => { set('ideaName', f.ideaName); set('oneLiner', f.oneLiner); }}
+          />
+        </div>
+        <div style={{ flex: isMobile ? undefined : '0 0 60%', width: isMobile ? '100%' : undefined, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {(() => {
+            const publicSections = parsePublicSections(get('publicSections'));
+            const setPublicSection = (key: keyof PublicSections, on: boolean) =>
+              set('publicSections', JSON.stringify({ ...publicSections, [key]: on }));
+            return (
+              <>
+                <OneLinerFieldsForm
+                  ideaName={get('ideaName') || activeIdea.name}
+                  onIdeaNameChange={v => set('ideaName', v)}
+                  oneLiner={get('oneLiner')}
+                  onOneLinerChange={v => set('oneLiner', v)}
+                />
+                <OneLinerPreviewCard
+                  value={get('oneLiner')}
+                  publicOn={!!publicSections.oneLiner}
+                  onTogglePublic={() => setPublicSection('oneLiner', !publicSections.oneLiner)}
+                />
+                <OneLinerQualityMeter value={get('oneLiner')} />
+              </>
+            );
+          })()}
+        </div>
       </div>
-      {/* Whiteboard marker preview — full width below the builder */}
-      {(() => {
-        const publicSections = parsePublicSections(get('publicSections'));
-        const setPublicSection = (key: keyof PublicSections, on: boolean) =>
-          set('publicSections', JSON.stringify({ ...publicSections, [key]: on }));
-        return (
-          <>
-            <OneLinerPreviewCard
-              value={get('oneLiner')}
-              onChange={v => set('oneLiner', v)}
-              publicOn={!!publicSections.oneLiner}
-              onTogglePublic={() => setPublicSection('oneLiner', !publicSections.oneLiner)}
-            />
-            <OneLinerQualityMeter value={get('oneLiner')} />
-          </>
-        );
-      })()}
       {/* "What's motivating you to build this?" (the Spark Builder step)
           removed 2026-09-05 per user request — Idea is now a single step,
           so this step's own Next now does what the removed step's Next used
           to do (unlock Hone, mark Idea complete) instead of advancing to a
           second Idea step. */}
-      <NavRow onNext={async () => { await save('idea', { ideaName: get('ideaName') || activeIdea.name, oneLiner: get('oneLiner') }); unlock('hone'); mark('idea'); next(); }} nextLabel="Complete Idea →" disabled={!get('oneLiner').trim() || get('oneLiner').includes('___')} disabledReason="Finish your one-liner — every blank needs a real answer." stageColor={STAGE_COLORS.idea} stepTitle="What's your idea?" ideaId={activeIdea.id} />
+      {/* Pinned primary CTA — sticks to the bottom of the viewport while
+          scrolling this step, so "Complete Idea" always stays in view
+          instead of trailing off the end of a long right-hand canvas. */}
+      <div style={{ position: 'sticky' as const, bottom: 0, background: '#fff', paddingTop: 12, marginTop: 4, borderTop: `1px solid ${BORDER}`, zIndex: 2 }}>
+        <NavRow onNext={async () => { await save('idea', { ideaName: get('ideaName') || activeIdea.name, oneLiner: get('oneLiner') }); unlock('hone'); mark('idea'); next(); }} nextLabel="Complete Idea →" disabled={!get('oneLiner').trim() || get('oneLiner').includes('___')} disabledReason="Finish your one-liner — every blank needs a real answer." stageColor={STAGE_COLORS.idea} stepTitle="What's your idea?" ideaId={activeIdea.id} />
+      </div>
     </div>,
     <CompleteBadge key="i-done" mod="idea" onContinue={() => goMod('hone')} onBack={back} />,
   ];

@@ -396,6 +396,126 @@ export async function assembleOneLinerSentence(building: string, audience: strin
 }
 
 // ─────────────────────────────────────────────────────────────────────────
+// Suggest a sharper rewrite of a single one-liner blank (Idea Step 1's
+// "Structured Canvas" Mad-Libs fields). Judges ONE answer at a time for
+// being too broad/generic to be useful, and — only when it is — proposes a
+// single concrete rewrite of just that phrase, grounded strictly in what
+// the founder already said. Powers the canvas's inline "Apply suggestion"
+// pill: the frontend shows `note` next to the field and, if the founder
+// clicks Apply, replaces just that field with `suggestion`.
+
+export interface OneLinerFieldSuggestionResult {
+  needsRefinement: boolean;
+  note: string;
+  suggestion: string | null;
+}
+
+const ONE_LINER_FIELD_LABELS: Record<'b' | 'f' | 'w' | 'o', string> = {
+  b: 'what they are building',
+  f: 'their target audience (who it is for)',
+  w: 'the struggle/problem that audience has',
+  o: 'the outcome/result that audience gets',
+};
+
+function oneLinerFieldSuggestSystemPrompt(fieldLabel: string): string {
+  return `A founder is filling in one blank of a fixed one-liner template: "I'm building <what> for <who> who <struggle> so they can <outcome>." You are reviewing ONLY the blank for ${fieldLabel}.
+
+Judge only whether this one answer is too broad, generic, or vague to be a useful, specific one-liner — not whether it's grammatically perfect or long enough. This app wants short phrases, so brevity is fine; vagueness is not (e.g. "people", "everyone", "businesses" as a target audience is too broad; "a small business owner who's slow to invoice clients" is specific enough).
+
+If the answer is already reasonably specific, respond with needsRefinement: false, an empty note, and a null suggestion.
+
+If it's too broad or vague, respond with needsRefinement: true, a short warm note framed as an offer to help (under 16 words, e.g. "Your target audience is a bit broad. Want me to help narrow it down?"), and ONE concrete, more specific rewrite of just this phrase — grounded only in what they already said, never inventing new facts, businesses, or numbers they didn't mention.
+
+Respond with ONLY a JSON object, no other text, in this exact shape:
+{"needsRefinement": true or false, "note": "<short warm note, or empty string if needsRefinement is false>", "suggestion": "<a more specific rewrite of just this phrase, or null if needsRefinement is false>"}`;
+}
+
+function parseOneLinerFieldSuggestionJson(text: string): OneLinerFieldSuggestionResult {
+  let parsed: any;
+  try {
+    const cleaned = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Could not parse the AI response — please try again.');
+  }
+
+  return {
+    needsRefinement: parsed.needsRefinement === true,
+    note: typeof parsed.note === 'string' ? parsed.note.trim() : '',
+    suggestion: typeof parsed.suggestion === 'string' && parsed.suggestion.trim() ? parsed.suggestion.trim() : null,
+  };
+}
+
+// Ollama path — the original, always-available implementation.
+async function suggestOneLinerFieldOllama(fieldKey: 'b' | 'f' | 'w' | 'o', question: string, answer: string): Promise<OneLinerFieldSuggestionResult> {
+  const systemPrompt = oneLinerFieldSuggestSystemPrompt(ONE_LINER_FIELD_LABELS[fieldKey]);
+  const userContent = `Question asked: "${question}"\nFounder's answer for this blank: "${answer}"`;
+
+  let res;
+  try {
+    res = await axios.post(
+      `${OLLAMA_URL}/api/chat`,
+      {
+        model: OLLAMA_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userContent },
+        ],
+        stream: false,
+        format: 'json',
+        options: { temperature: 0.4 },
+      },
+      { timeout: 90000 }
+    );
+  } catch (err: any) {
+    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+      throw new Error('Could not reach the local AI model — make sure the ollama service is running and has finished pulling its model (first start can take a few minutes).');
+    }
+    throw err;
+  }
+
+  const text: string = res.data?.message?.content || '';
+  return parseOneLinerFieldSuggestionJson(text);
+}
+
+// Claude path — opt-in via the same ANTHROPIC_API_KEY used elsewhere in
+// this file, cheap/fast tier: judging one short phrase against a fixed
+// specificity bar, grounded only in what the founder already typed.
+async function suggestOneLinerFieldClaude(fieldKey: 'b' | 'f' | 'w' | 'o', question: string, answer: string): Promise<OneLinerFieldSuggestionResult> {
+  const systemPrompt = oneLinerFieldSuggestSystemPrompt(ONE_LINER_FIELD_LABELS[fieldKey]);
+  const userContent = `Question asked: "${question}"\nFounder's answer for this blank: "${answer}"`;
+
+  const message = await anthropicClient!.messages.create({
+    model: ANTHROPIC_MODEL_CHEAP,
+    max_tokens: 300,
+    temperature: 0.4,
+    system: systemPrompt,
+    messages: [{ role: 'user', content: userContent }],
+  });
+
+  const textBlocks = message.content.filter((b: any) => b.type === 'text') as { type: 'text'; text: string }[];
+  const text = textBlocks.length ? textBlocks[textBlocks.length - 1].text : '';
+  if (!text.trim()) {
+    throw new Error('Claude did not return a usable answer — please try again.');
+  }
+  return parseOneLinerFieldSuggestionJson(text);
+}
+
+export async function suggestOneLinerField(fieldKey: 'b' | 'f' | 'w' | 'o', question: string, answer: string): Promise<OneLinerFieldSuggestionResult> {
+  if (anthropicClient) {
+    try {
+      return await suggestOneLinerFieldClaude(fieldKey, question, answer);
+    } catch (err: any) {
+      // Fall back to the free local model rather than failing the feature
+      // outright — an expired/invalid key, a rate limit, or a transient
+      // Anthropic outage shouldn't take one-liner field suggestions down entirely.
+      console.error('[one-liner-suggest-field] Claude path failed, falling back to Ollama:', err?.message || err);
+    }
+  }
+  return suggestOneLinerFieldOllama(fieldKey, question, answer);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 // Auto-generate a full interview script from whatever the founder has
 // already captured earlier in Hone/Validate (problem statement, target
 // persona, hypotheses/assumptions, ICP jobs/frustrations/alternatives, and
