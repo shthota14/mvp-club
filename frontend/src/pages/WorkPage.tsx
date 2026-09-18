@@ -15119,6 +15119,7 @@ export default function WorkPage() {
           </div>
         );
 
+        const questSelected = get('whoPays') === 'Same person' || (!!get('whoPays') && get('whoPays') !== 'Same person');
         const paysPanel = (
           <div style={{ display: showPersonaPanel ? 'none' : 'flex', flexDirection: 'column' as const, gap: 14, flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
@@ -15134,41 +15135,95 @@ export default function WorkPage() {
               </div>
               <AskCommunityButton ask="Who pays for this?" compact />
             </div>
-            {/* Option A: persistent side-by-side cards, always visible and
-                clickable — replaces the old "pick, then collapse into a
-                dark echo pill + change link" pattern (Direction A elsewhere
-                in this file). That collapsed state read as plain text
-                rather than an active control; a clearly-marked selected
-                card keeps the choice unambiguous without hiding the other
-                option. Clicking the selected card again clears it, same as
-                the old "change" link did. */}
-            <div style={{ display: 'flex', gap: 10 }}>
-              {[
-                { val: 'Same person', label: 'User is the Buyer', icon: '👤', desc: 'The person experiencing the pain pays directly (B2C, solopreneurs, dev tools).' },
-                { val: 'Someone else', label: 'User & Buyer are Different', icon: '🏢', desc: 'The end-user needs internal approval or budget to buy (B2B, enterprise, healthcare).' },
-              ].map(opt => {
-                const on = get('whoPays') === opt.val || (opt.val === 'Someone else' && !!get('whoPays') && get('whoPays') !== 'Same person');
-                return (
-                  <button key={opt.val} onClick={() => {
-                    const newVal = on ? '' : opt.val;
-                    set('whoPays', newVal);
-                    // Immediately persist button selection (don't rely solely on 1200ms debounce)
-                    if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: newVal }).catch(() => {});
-                  }}
-                    style={{ position: 'relative', flex: 1, padding: '14px 12px', borderRadius: 12, border: `2px solid ${on ? STAGE_COLORS.hone : BORDER}`, background: on ? `${STAGE_COLORS.hone}0d` : '#fff', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center' as const, transition: 'all .15s' }}>
-                    {on && (
-                      <span style={{
-                        position: 'absolute', top: 8, right: 8, width: 18, height: 18, borderRadius: '50%',
-                        background: STAGE_COLORS.hone, color: '#fff', fontSize: 11, fontWeight: 800,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-                      }}>✓</span>
-                    )}
-                    <div style={{ fontSize: 22, marginBottom: 4 }}>{opt.icon}</div>
-                    <div style={{ fontSize: 13, fontWeight: on ? 700 : 600, color: on ? STAGE_COLORS.hone : T1 }}>{opt.label}</div>
-                    <div style={{ fontSize: 11, color: T3, marginTop: 2, lineHeight: 1.4 }}>{opt.desc}</div>
-                  </button>
-                );
-              })}
+            {/* Gamified "Persona Quest" card — a self-contained dark panel
+                just for this one sub-question, per an explicit ask to match
+                a reference mockup even though nothing else in the app looks
+                like this yet. Same underlying whoPays state/persistence as
+                before (Option A: persistent, clickable, re-clickable to
+                clear) — only the visual treatment and the added feedback
+                (tag/bonus text, "unlocked" confirmation strip) are new. */}
+            <div style={{
+              position: 'relative', borderRadius: 20, overflow: 'hidden',
+              background: 'linear-gradient(160deg, #1b1330 0%, #241a42 55%, #1a1330 100%)',
+              border: '1px solid #3d2e66', boxShadow: '0 20px 50px -20px #0006, inset 0 1px 0 #ffffff10',
+              padding: isMobileNow ? '18px 16px 20px' : '22px 24px 24px',
+            }}>
+              <style>{`
+                @keyframes questCardPop { 0% { opacity: 0; transform: translateY(6px) scale(.97); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+                @keyframes questBadgePop { 0% { opacity: 0; transform: scale(.5) rotate(-8deg); } 60% { opacity: 1; transform: scale(1.12) rotate(3deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
+                .quest-card { animation: questCardPop .35s ease-out; }
+                .quest-pop { animation: questBadgePop .4s ease-out; }
+              `}</style>
+              <div style={{ position: 'absolute', top: -60, right: -40, width: 180, height: 180, borderRadius: '50%', background: '#7c3aed', opacity: .18, filter: 'blur(50px)', pointerEvents: 'none' as const }} />
+              <div style={{ position: 'absolute', bottom: -60, left: -30, width: 160, height: 160, borderRadius: '50%', background: STAGE_COLORS.hone, opacity: .16, filter: 'blur(50px)', pointerEvents: 'none' as const }} />
+
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 10, flexWrap: 'wrap' as const }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>🎮</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#c4b5fd' }}>Persona Quest · Choose your archetype</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#fbbf24', background: '#3d2e0f', border: '1px solid #7c5a12', borderRadius: 999, padding: '4px 10px' }}>
+                  ⚡ +100 XP on select
+                </div>
+              </div>
+
+              <div style={{ position: 'relative', display: 'flex', gap: 12, flexDirection: isMobileNow ? 'column' as const : 'row' as const }}>
+                {[
+                  { val: 'Same person', label: 'User is the Buyer', icon: '👤', tag: 'Direct Monetization', bonus: 'Fastest validation cycle. Shortest sales path.', desc: 'The person experiencing the pain pays directly (B2C, solopreneurs, dev tools).' },
+                  { val: 'Someone else', label: 'User & Buyer are Different', icon: '🏢', tag: 'High ACV Potential', bonus: 'Higher contract value. Requires budget-holder sign-off.', desc: 'The end-user needs internal approval or budget to buy (B2B, enterprise, healthcare).' },
+                ].map(opt => {
+                  const on = get('whoPays') === opt.val || (opt.val === 'Someone else' && !!get('whoPays') && get('whoPays') !== 'Same person');
+                  return (
+                    <button key={opt.val} className="quest-card" onClick={() => {
+                      const newVal = on ? '' : opt.val;
+                      set('whoPays', newVal);
+                      // Immediately persist button selection (don't rely solely on 1200ms debounce)
+                      if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: newVal }).catch(() => {});
+                    }}
+                      style={{
+                        position: 'relative', flex: 1, textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit',
+                        borderRadius: 16, padding: '18px 16px',
+                        border: on ? '1.5px solid #a78bfa' : '1.5px solid #3d2e66',
+                        background: on ? 'linear-gradient(160deg, #3b2a66, #2a1f52)' : 'linear-gradient(160deg, #241c3d, #1d1733)',
+                        boxShadow: on ? '0 0 0 1px #a78bfa55, 0 10px 30px -10px #7c3aed80' : 'none',
+                        transition: 'all .2s',
+                      }}>
+                      {on && (
+                        <span className="quest-pop" style={{
+                          position: 'absolute', top: 10, right: 10, fontSize: 10, fontWeight: 800, color: '#1b1330',
+                          background: '#a78bfa', borderRadius: 999, padding: '3px 8px',
+                        }}>✓ SELECTED</span>
+                      )}
+                      <div style={{ fontSize: 26, marginBottom: 8 }}>{opt.icon}</div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 3 }}>{opt.label}</div>
+                      <div style={{ fontSize: 11.5, color: '#b8adda', lineHeight: 1.45, marginBottom: 10 }}>{opt.desc}</div>
+                      <span style={{ display: 'inline-block', fontSize: 9.5, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase' as const, color: '#c4b5fd', background: '#ffffff14', border: '1px solid #ffffff20', borderRadius: 999, padding: '3px 9px', marginBottom: 6 }}>{opt.tag}</span>
+                      <div style={{ fontSize: 11, color: '#8b7fb3', lineHeight: 1.4, fontStyle: 'italic' as const }}>{opt.bonus}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {questSelected && (
+                <div className="quest-pop" style={{
+                  position: 'relative', marginTop: 14, borderRadius: 12, padding: '12px 14px',
+                  background: '#1b1330', border: '1px solid #4c3a80',
+                  display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const,
+                }}>
+                  <span style={{ fontSize: 16 }}>🎯</span>
+                  <div style={{ flex: 1, minWidth: 160 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#fff' }}>Persona card unlocked</div>
+                    <div style={{ fontSize: 11, color: '#a99fc9', marginTop: 1 }}>
+                      {get('whoPays') === 'Same person'
+                        ? 'Direct-pay path — expect a shorter sales cycle and faster validation loops.'
+                        : 'Budget-holder path — plan for a longer cycle, but a bigger deal once it lands.'}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: '#34d399', background: '#0f2e22', border: '1px solid #1c5a41', borderRadius: 999, padding: '4px 10px', whiteSpace: 'nowrap' as const }}>
+                    {get('whoPays') === 'Same person' ? '⚡ High Validation Speed' : '💼 Higher Deal Size'}
+                  </span>
+                </div>
+              )}
             </div>
             {(get('whoPays') === 'Someone else' || (get('whoPays') && get('whoPays') !== 'Same person')) && (
               <input style={inp} placeholder="Who exactly? e.g. Their manager, IT / procurement, the company…" value={get('whoPays') === 'Someone else' ? '' : get('whoPays')} onChange={e => set('whoPays', e.target.value)} />
