@@ -1563,20 +1563,6 @@ function AgentAvatar({ size = 40 }: { size?: number }) {
   );
 }
 
-// Small fixed icon for the founder's own side of the Idea-stage agent chat —
-// simple flat silhouette in the app's user-input blue, paired with
-// AgentAvatar above. Pure/presentational, safe at module scope.
-function UserAvatar({ size = 40 }: { size?: number }) {
-  return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: '#eaf1ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <svg width={size * 0.6} height={size * 0.6} viewBox="0 0 96 96">
-        <circle cx="48" cy="36" r="16" fill="#2563eb" />
-        <path d="M20 82 Q20 56 48 56 Q76 56 76 82Z" fill="#2563eb" />
-      </svg>
-    </div>
-  );
-}
-
 // Shared "handwritten postcard" treatment (Hone Step 1 UI/UX pick — option
 // 28 "Handwritten Postcard") applied to the one summary card in each Hone
 // step where an answer crystallizes into a finished artifact: cream
@@ -15055,41 +15041,65 @@ export default function WorkPage() {
 
         const previewCard = (
           <div style={{
-            background: '#f8faff', border: '1px solid #dbe6fb', borderRadius: 16,
-            padding: '20px 18px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 7,
-            width: isMobileNow ? '100%' : 226, flexShrink: 0, boxSizing: 'border-box' as const,
+            background: '#1E1B2E', border: '1px solid #7C3AED55', borderRadius: 20,
+            padding: '22px 18px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10,
+            width: isMobileNow ? '100%' : 236, flexShrink: 0, boxSizing: 'border-box' as const,
+            boxShadow: '0 20px 50px -24px #0008, inset 0 1px 0 #ffffff08',
           }}>
+            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' as const, color: '#a78bfa' }}>
+              🎯 Target archetype{primaryLabel.role && get('whoPays') ? ' unlocked' : ''}
+            </div>
             {/* Dimmed while it's also visible in the working panel a few
                 inches to the left (personaPanel is currently showing) —
                 full weight once that panel's gone and this is the only
                 place the persona still shows. */}
-            <div style={{ opacity: showPersonaPanel ? 0.45 : 1, transition: 'opacity .2s', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 7, width: '100%' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: STAGE_COLORS.hone, textTransform: 'uppercase' as const, letterSpacing: '.08em' }}>Your persona so far</div>
-              <UserAvatar size={50} />
+            <div style={{ opacity: showPersonaPanel ? 0.45 : 1, transition: 'opacity .2s', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 8, width: '100%' }}>
+              <div style={{ position: 'relative', width: 84, height: 84 }}>
+                <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'linear-gradient(135deg, #7c3aed, #2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 3px #1E1B2E, 0 0 0 4px #7c3aed55' }}>
+                  <div style={{ width: 74, height: 74, borderRadius: '50%', background: '#241a3d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34 }}>
+                    {get('whoPays') === 'Same person' ? '🧑' : get('whoPays') ? '🧑‍💼' : '🙂'}
+                  </div>
+                </div>
+                {!!get('whoPays') && (
+                  <span style={{ position: 'absolute', bottom: -2, right: -2, width: 26, height: 26, borderRadius: '50%', background: get('whoPays') === 'Same person' ? '#059669' : '#d97706', border: '2px solid #1E1B2E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
+                    {get('whoPays') === 'Same person' ? '👤' : '🏢'}
+                  </span>
+                )}
+              </div>
               {primaryLabel.role ? (
                 <>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: 15, color: T1, textAlign: 'center' as const }}>{primaryLabel.role}</div>
-                  {primaryLabel.detail && <div style={{ fontSize: 11.5, color: T2, textAlign: 'center' as const, lineHeight: 1.5 }}>{primaryLabel.detail}</div>}
-                  {primaryPersonaList.length > 1 && <div style={{ fontSize: 10.5, color: T3 }}>+{primaryPersonaList.length - 1} more segment{primaryPersonaList.length > 2 ? 's' : ''}</div>}
+                  <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 800, fontSize: 16, color: '#fff', textAlign: 'center' as const }}>{primaryLabel.role}</div>
+                  {primaryLabel.detail && <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11.5, color: '#a99fc9', fontStyle: 'italic' as const, textAlign: 'center' as const, lineHeight: 1.5 }}>{primaryLabel.detail}</div>}
+                  {primaryPersonaList.length > 1 && <div style={{ fontSize: 10.5, color: '#8b7fb3' }}>+{primaryPersonaList.length - 1} more segment{primaryPersonaList.length > 2 ? 's' : ''}</div>}
                 </>
               ) : (
-                <div style={{ fontSize: 12.5, color: T3, fontStyle: 'italic' as const, textAlign: 'center' as const }}>Describe who has this problem to see them here</div>
+                <div style={{ fontSize: 12.5, color: '#8b7fb3', fontStyle: 'italic' as const, textAlign: 'center' as const }}>Describe who has this problem to see them here</div>
               )}
             </div>
-            <div style={{ borderTop: `1px solid ${BORDER}`, width: '100%', margin: '4px 0' }} />
+            <div style={{ borderTop: '1px solid #ffffff14', width: '100%', margin: '2px 0' }} />
             {/* Same logic in reverse: full weight while the pays question is
                 the one not currently on screen (personaPanel showing), dimmed
                 once paysPanel's own selection cards make it redundant. */}
-            <div style={{ opacity: showPersonaPanel ? 1 : 0.45, transition: 'opacity .2s', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 4 }}>
-              <div style={{ fontSize: 10.5, color: T3, textTransform: 'uppercase' as const, letterSpacing: '.05em' }}>Pays</div>
-              {get('whoPays') ? (
-                <div style={{ fontSize: 13, fontWeight: 700, color: STAGE_COLORS.hone }}>
-                  {get('whoPays') === 'Same person' ? '👤 Same person' : `🏢 ${get('whoPays') === 'Someone else' ? 'Someone else' : get('whoPays')}`}
-                </div>
-              ) : (
-                <div style={{ fontSize: 12.5, color: T3, fontStyle: 'italic' as const }}>not yet answered</div>
-              )}
+            <div style={{ opacity: showPersonaPanel ? 1 : 0.45, transition: 'opacity .2s', display: 'flex', flexDirection: 'column' as const, gap: 6, width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: '#ffffff0a', border: '1px solid #ffffff14', borderRadius: 9, padding: '6px 10px' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#a99fc9', textTransform: 'uppercase' as const, letterSpacing: '.04em' }}>💳 Payer</span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff' }}>
+                  {get('whoPays') ? (get('whoPays') === 'Same person' ? 'Direct / solo' : get('whoPays') === 'Someone else' ? 'Budget holder' : get('whoPays')) : '—'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: '#ffffff0a', border: '1px solid #ffffff14', borderRadius: 9, padding: '6px 10px' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#a99fc9', textTransform: 'uppercase' as const, letterSpacing: '.04em' }}>⚡ Speed</span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: get('whoPays') === 'Same person' ? '#34d399' : get('whoPays') ? '#fbbf24' : '#8b7fb3' }}>
+                  {get('whoPays') === 'Same person' ? 'Fast' : get('whoPays') ? 'Moderate' : 'not yet answered'}
+                </span>
+              </div>
             </div>
+            {!!get('whoPays') && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%', marginTop: 2 }}>
+                <span style={{ fontSize: 10, fontWeight: 800, color: '#fbbf24', background: '#3d2e0f', border: '1px solid #7c5a12', borderRadius: 999, padding: '3px 9px' }}>⚡ +100 XP</span>
+                <button onClick={() => setPersonaReopened(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 10.5, fontWeight: 700, color: '#c4b5fd', fontFamily: 'inherit' }}>✏️ Edit</button>
+              </div>
+            )}
           </div>
         );
 
