@@ -6037,7 +6037,11 @@ function FounderReadinessStep({
     onCofounderChange(next.join('|'));
   };
 
-  const honeColor = STAGE_COLORS.hone;
+  // 2026-09-19: purple, not Hone's nominal stage blue -- matches the accent
+  // every other interior Hone element (Steps 1-3) already settled on. The
+  // page's own <H> heading stays STAGE_COLORS.hone at its call site --
+  // that's the app-wide stage-branding convention, unrelated to this.
+  const honeColor = '#7c3aed';
 
   const Section = ({ icon, title, subtitle }: { icon: string; title: string; subtitle?: string }) => (
     <div style={{ marginBottom: 14 }}>
@@ -7127,7 +7131,10 @@ const WEAK_SIGNAL_ADVICE: Record<string, string> = {
 function HoneScorecard({ values, onChange }: { values: Record<string, string>; onChange: (k: string, v: string) => void }) {
   const total = SCORE_DIMS.reduce((s, d) => s + (parseInt(values[d.key] ?? '0') || 0), 0);
   const pct = Math.round((total / 40) * 100);
-  const c = STAGE_COLORS.hone;
+  // 2026-09-19: purple, not Hone's nominal stage blue -- same accent as
+  // Steps 1-3's interior elements. Grade colors (green/amber/red) are
+  // semantic (Strong/Needs work/Weak), not the accent, and stay as-is.
+  const c = '#7c3aed';
   const grade = total >= 32 ? { label: 'Strong — move to Validate.', short: 'Strong',    bg: '#f0fdf4', bc: '#059669', tc: '#065f46' }
     : total >= 20 ? { label: 'Needs refinement. Revisit Who + What.', short: 'Needs work', bg: '#fffbeb', bc: '#d97706', tc: '#92400e' }
     : { label: 'Likely vague — deepen your thinking.', short: 'Weak', bg: '#fef2f2', bc: '#dc2626', tc: '#991b1b' };
