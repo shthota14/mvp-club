@@ -6569,9 +6569,9 @@ function PainGaugeStep({
               textTransform: 'uppercase' as const, color: SEV_META[active.severity].color,
               border: `1.5px solid ${SEV_META[active.severity].color}`, borderRadius: 999, padding: '2px 10px',
             }}>
-              {SEV_META[active.severity].icon} Evaluating problem {activeIdx + 1} of {ratedProblems.length}
+              {SEV_META[active.severity].icon} Problem {activeIdx + 1} of {ratedProblems.length}
             </span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>{doneCount} of {ratedProblems.length} defined</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>{doneCount} defined</span>
           </div>
           <div style={{ fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.4, marginBottom: 12 }}>
             "{active.text}"
