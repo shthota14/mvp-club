@@ -1330,18 +1330,13 @@ function Callout({ type = 'example', tag, children }: { type?: 'example' | 'warn
 
 // ── BMC block label ────────────────────────────────────────────────────────
 
-function BMCLabel({ blocks }: { blocks: string[] }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 10, flexWrap: 'wrap' as const }}>
-      <span style={{ fontSize: 10, fontStyle: 'italic', color: '#c8c8d0' }}>fills BMC →</span>
-      {blocks.map(b => (
-        <span key={b} style={{
-          fontSize: 10, fontStyle: 'italic',
-          color: '#c0b8e8', padding: '0 2px',
-        }}>{b}</span>
-      ))}
-    </div>
-  );
+// 2026-09-19: retired to a no-op, same treatment as StepQuestionBar's
+// dropped "fills BMC" line -- same internal canvas-mapping metadata, just a
+// second component doing the same job at 4 different call sites. Kept as a
+// real component (not deleted at its call sites) so this is restorable in
+// one place if that turns out wrong.
+function BMCLabel(_: { blocks: string[] }) {
+  return null;
 }
 
 // ── Suggestion chips (tap to fill) ────────────────────────────────────────
