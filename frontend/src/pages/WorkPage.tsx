@@ -5204,42 +5204,58 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
       )}
 
       {/* ── Suggestion chips — one at a time, swipe-style queue, AI-tailored once ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{
+          position: 'relative' as const, borderRadius: 20, overflow: 'hidden',
+          background: 'linear-gradient(160deg, #1b1330 0%, #241a42 55%, #1a1330 100%)',
+          border: '1px solid #3d2e66', boxShadow: '0 20px 50px -20px #0006, inset 0 1px 0 #ffffff10',
+          padding: '20px 20px 22px', display: 'flex', flexDirection: 'column' as const, gap: 18,
+        }}>
+          <div style={{ position: 'absolute' as const, top: -60, right: -40, width: 180, height: 180, borderRadius: '50%', background: '#7c3aed', opacity: .18, filter: 'blur(50px)', pointerEvents: 'none' as const }} />
+          <div style={{ position: 'absolute' as const, bottom: -60, left: -30, width: 160, height: 160, borderRadius: '50%', background: STAGE_COLORS.hone, opacity: .16, filter: 'blur(50px)', pointerEvents: 'none' as const }} />
+          <div style={{ position: 'relative' as const, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 15 }}>🎮</span>
+              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#c4b5fd' }}>Problem Quest · Rate what's broken</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#fbbf24', background: '#3d2e0f', border: '1px solid #7c5a12', borderRadius: 999, padding: '4px 10px' }}>
+              ⚡ +10–50 XP per problem
+            </div>
+          </div>
         {displayGroups.length > 0 && (
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' as const }}>
-              <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#1e293b' }}>
+              <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#e9e4fb' }}>
                 Select everything that applies to your customer:
               </div>
-              <button onClick={retryProblemChips} style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+              <button onClick={retryProblemChips} style={{ fontSize: 11, fontWeight: 600, color: '#8b7fb3', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
                 ask Sage again
               </button>
             </div>
-            <div style={{ borderTop: '2px solid #1e293b', marginTop: 3, maxWidth: 130 }} />
+            <div style={{ borderTop: '2px solid #4c3a80', marginTop: 3, maxWidth: 130 }} />
           </div>
         )}
         {genState.loading && displayGroups.length === 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '20px 4px' }}>
             <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 14 }}>
-              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#b45309', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '0s' }} />
-              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#b45309', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.15s' }} />
-              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#b45309', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.3s' }} />
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#fbbf24', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '0s' }} />
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#fbbf24', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.15s' }} />
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#fbbf24', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.3s' }} />
             </div>
-            <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#92400e', fontWeight: 600 }}>
+            <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#e9e4fb', fontWeight: 600 }}>
               Sage is reading your idea and coming up with relevant problems…
             </span>
           </div>
         )}
         {!genState.loading && genState.error && displayGroups.length === 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#94a3b8' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#8b7fb3' }}>
             <span>Sage couldn't come up with suggestions just now.</span>
-            <button onClick={retryProblemChips} style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+            <button onClick={retryProblemChips} style={{ fontSize: 12, fontWeight: 700, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
               Try again
             </button>
           </div>
         )}
         {!genState.loading && !genState.error && displayGroups.length === 0 && (
-          <div style={{ fontSize: 13, color: '#94a3b8' }}>
+          <div style={{ fontSize: 13, color: '#8b7fb3' }}>
             Add your one-liner on the Idea step and Sage will suggest problems tailored to it.
           </div>
         )}
@@ -5251,26 +5267,26 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                 to a single-card view each time. */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' as const }}>
               <div style={{ flex: 1, minWidth: 140 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#6e6e73', marginBottom: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#8b7fb3', marginBottom: 4 }}>
                   {queueViewMode === 'stack' && currentSuggestion
                     ? `Card ${Math.min(suggestionsReviewedCount + 1, allSuggestionsFlat.length)} of ${allSuggestionsFlat.length}`
                     : `${Math.min(suggestionsReviewedCount + (currentSuggestion ? 1 : 0), allSuggestionsFlat.length)} of ${allSuggestionsFlat.length} reviewed`}
                 </div>
-                <div style={{ height: 5, borderRadius: 999, background: '#eee', overflow: 'hidden' }}>
+                <div style={{ height: 5, borderRadius: 999, background: '#ffffff14', overflow: 'hidden' }}>
                   <div style={{
-                    height: '100%', borderRadius: 999, background: '#1a1a1a',
+                    height: '100%', borderRadius: 999, background: 'linear-gradient(90deg,#7c3aed,#a78bfa)',
                     width: `${allSuggestionsFlat.length ? (suggestionsReviewedCount / allSuggestionsFlat.length) * 100 : 0}%`,
                     transition: 'width .25s ease',
                   }} />
                 </div>
               </div>
-              <div style={{ display: 'inline-flex', border: '1.5px solid #e5e5ea', borderRadius: 9, padding: 2, flexShrink: 0 }}>
+              <div style={{ display: 'inline-flex', border: '1.5px solid #3d2e66', borderRadius: 9, padding: 2, flexShrink: 0 }}>
                 {(['stack', 'table'] as const).map(m => (
                   <button key={m} onClick={() => setQueueViewMode(m)} style={{
                     padding: '5px 12px', borderRadius: 7, border: 'none', cursor: 'pointer',
                     fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit',
-                    background: queueViewMode === m ? '#1a1a1a' : 'transparent',
-                    color: queueViewMode === m ? '#fff' : '#6e6e73',
+                    background: queueViewMode === m ? '#7c3aed' : 'transparent',
+                    color: queueViewMode === m ? '#fff' : '#8b7fb3',
                     transition: 'all .15s',
                   }}>
                     {m === 'stack' ? '🗂 Cards' : '📋 Table'}
@@ -5286,7 +5302,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                   {remainingSuggestionsQueue.map(s => (
                     <div key={s.text} style={{
                       display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px',
-                      border: '1px solid #e5e5ea', borderRadius: 9, background: '#fff',
+                      border: '1px solid #3d2e66', borderRadius: 9, background: 'linear-gradient(160deg, #241c3d, #1d1733)',
                     }}>
                       <span style={{
                         flexShrink: 0, fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 9.5,
@@ -5295,25 +5311,25 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                       }}>
                         {s.category}
                       </span>
-                      <span style={{ flex: 1, fontFamily: "'Inter', system-ui, sans-serif", fontSize: 13.5, fontWeight: 500, color: '#1d1d1f', lineHeight: 1.4, minWidth: 0 }}>
+                      <span style={{ flex: 1, fontFamily: "'Inter', system-ui, sans-serif", fontSize: 13.5, fontWeight: 500, color: '#fff', lineHeight: 1.4, minWidth: 0 }}>
                         {s.text}
                       </span>
                       <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                        <button onClick={() => skipCurrentSuggestion(s.text)} title="Skip" style={{ padding: '5px 9px', borderRadius: 6, border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Skip</button>
                         {(['minor', 'major', 'critical'] as SeverityLevel[]).map(lvl => (
-                          <button key={lvl} onClick={() => addSuggestionWithSeverity(s.text, lvl)} title={SEVERITY_CONFIG[lvl].label} style={{ padding: '5px 9px', borderRadius: 6, border: `1.5px solid ${SEVERITY_CONFIG[lvl].textColor}`, background: '#fff', color: SEVERITY_CONFIG[lvl].textColor, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                          <button key={lvl} onClick={() => addSuggestionWithSeverity(s.text, lvl)} title={SEVERITY_CONFIG[lvl].label} style={{ padding: '5px 9px', borderRadius: 6, border: `1.5px solid ${SEVERITY_CONFIG[lvl].textColor}`, background: 'transparent', color: SEVERITY_CONFIG[lvl].textColor, fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                             {SEVERITY_CONFIG[lvl].icon}
                           </button>
                         ))}
+                        <button onClick={() => skipCurrentSuggestion(s.text)} title="Skip" style={{ padding: '5px 9px', borderRadius: 6, border: '1.5px solid #3d2e66', background: 'transparent', color: '#b8adda', fontFamily: 'inherit', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Skip</button>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#94a3b8', padding: '10px 2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#8b7fb3', padding: '10px 2px' }}>
                   <span>{skippedSuggestions.size > 0 ? `You've been through all ${allSuggestionsFlat.length} suggestions.` : `That's everything Sage suggested — nice work.`}</span>
                   {skippedSuggestions.size > 0 && (
-                    <button onClick={() => setSkippedSuggestions(new Set())} style={{ fontSize: 12, fontWeight: 700, color: '#b45309', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                    <button onClick={() => setSkippedSuggestions(new Set())} style={{ fontSize: 12, fontWeight: 700, color: '#fbbf24', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
                       ↺ review the {skippedSuggestions.size} you skipped
                     </button>
                   )}
@@ -5326,15 +5342,15 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                     an empty canvas. Purely decorative (no content), so
                     there's nothing to keep in sync with the real queue. */}
                 {remainingSuggestionsQueue.length > 2 && (
-                  <div style={{ position: 'absolute', inset: 0, top: 12, transform: 'scale(.96) rotate(1deg)', background: '#fff', border: '1.5px solid #ececec', borderRadius: 14, zIndex: 0 }} />
+                  <div style={{ position: 'absolute', inset: 0, top: 12, transform: 'scale(.96) rotate(1deg)', background: '#1d1733', border: '1.5px solid #3d2e66', borderRadius: 14, zIndex: 0 }} />
                 )}
                 {remainingSuggestionsQueue.length > 1 && (
-                  <div style={{ position: 'absolute', inset: 0, top: 6, transform: 'scale(.98) rotate(-.6deg)', background: '#fff', border: '1.5px solid #e5e5ea', borderRadius: 14, zIndex: 1 }} />
+                  <div style={{ position: 'absolute', inset: 0, top: 6, transform: 'scale(.98) rotate(-.6deg)', background: '#241c3d', border: '1.5px solid #3d2e66', borderRadius: 14, zIndex: 1 }} />
                 )}
                 <div style={{
                   position: 'relative' as const, zIndex: 2,
-                  background: '#fff', border: '1.5px solid #e5e5ea',
-                  borderRadius: 14, padding: '24px 22px', boxShadow: '0 4px 16px rgba(0,0,0,.06)',
+                  background: 'linear-gradient(160deg, #241c3d, #1d1733)', border: '1.5px solid #3d2e66',
+                  borderRadius: 14, padding: '24px 22px', boxShadow: '0 20px 40px -20px #0008',
                   display: 'flex', flexDirection: 'column', gap: 14,
                 }}>
                   <div style={{
@@ -5344,20 +5360,10 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                   }}>
                     {currentSuggestion.category}
                   </div>
-                  <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 18, fontWeight: 500, lineHeight: 1.5, color: '#1d1d1f' }}>
+                  <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 18, fontWeight: 500, lineHeight: 1.5, color: '#fff' }}>
                     {currentSuggestion.text}
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
-                    <button
-                      onClick={() => skipCurrentSuggestion(currentSuggestion.text)}
-                      style={{
-                        position: 'relative' as const, flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
-                        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
-                        border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontWeight: 700,
-                      }}
-                    >
-                      <KeyBadge k="1" /> Skip
-                    </button>
                     {(['minor', 'major', 'critical'] as SeverityLevel[]).map((lvl, i) => (
                       <button
                         key={lvl}
@@ -5365,12 +5371,22 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                         style={{
                           position: 'relative' as const, flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
                           fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
-                          border: `1.5px solid ${SEVERITY_CONFIG[lvl].textColor}`, background: '#fff', color: SEVERITY_CONFIG[lvl].textColor, fontWeight: 700,
+                          border: `1.5px solid ${SEVERITY_CONFIG[lvl].textColor}`, background: 'transparent', color: SEVERITY_CONFIG[lvl].textColor, fontWeight: 700,
                         }}
                       >
                         <KeyBadge k={String(i + 2)} /> {SEVERITY_CONFIG[lvl].label}
                       </button>
                     ))}
+                    <button
+                      onClick={() => skipCurrentSuggestion(currentSuggestion.text)}
+                      style={{
+                        position: 'relative' as const, flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
+                        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
+                        border: '1.5px solid #3d2e66', background: 'transparent', color: '#b8adda', fontWeight: 700,
+                      }}
+                    >
+                      <KeyBadge k="1" /> Skip
+                    </button>
                   </div>
                   {/* Prominent custom-problem entry — right on the active
                       card, so a founder can capture their own phrasing the
@@ -5383,25 +5399,25 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                         onChange={e => setStackCustomText(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addCustomText(stackCustomText); setStackCustomText(''); setStackCustomOpen(false); } if (e.key === 'Escape') setStackCustomOpen(false); }}
                         placeholder="Describe the specific frustration your customer experiences…"
-                        style={{ width: '100%', boxSizing: 'border-box' as const, border: '1.5px solid #1a1a1a', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontFamily: 'inherit', color: USER_INPUT_COLOR, lineHeight: 1.5, resize: 'none' as const, outline: 'none' }}
+                        style={{ width: '100%', boxSizing: 'border-box' as const, border: '1.5px solid #4c3a80', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontFamily: 'inherit', color: '#fff', background: '#1b1330', lineHeight: 1.5, resize: 'none' as const, outline: 'none' }}
                       />
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <button onClick={() => { addCustomText(stackCustomText); setStackCustomText(''); setStackCustomOpen(false); }} disabled={!stackCustomText.trim()} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: stackCustomText.trim() ? '#1a1a1a' : '#e5e5ea', color: stackCustomText.trim() ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: stackCustomText.trim() ? 'pointer' : 'default' }}>Add</button>
-                        <button onClick={() => setStackCustomOpen(false)} style={{ padding: '6px 12px', borderRadius: 7, border: '1.5px solid #e0e0e0', background: '#fff', color: '#888', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                        <button onClick={() => { addCustomText(stackCustomText); setStackCustomText(''); setStackCustomOpen(false); }} disabled={!stackCustomText.trim()} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: stackCustomText.trim() ? '#7c3aed' : '#ffffff14', color: stackCustomText.trim() ? '#fff' : '#6d6390', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: stackCustomText.trim() ? 'pointer' : 'default' }}>Add</button>
+                        <button onClick={() => setStackCustomOpen(false)} style={{ padding: '6px 12px', borderRadius: 7, border: '1.5px solid #3d2e66', background: 'transparent', color: '#8b7fb3', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
                       </div>
                     </div>
                   ) : (
-                    <button onClick={() => setStackCustomOpen(true)} style={{ alignSelf: 'flex-start', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, fontSize: 12, fontWeight: 600, color: '#94a3b8', textDecoration: 'underline' }}>
+                    <button onClick={() => setStackCustomOpen(true)} style={{ alignSelf: 'flex-start', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, fontSize: 12, fontWeight: 600, color: '#8b7fb3', textDecoration: 'underline' }}>
                       + describe a different problem instead
                     </button>
                   )}
                 </div>
               </div>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#94a3b8', padding: '10px 2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#8b7fb3', padding: '10px 2px' }}>
                 <span>{skippedSuggestions.size > 0 ? `You've been through all ${allSuggestionsFlat.length} suggestions.` : `That's everything Sage suggested — nice work.`}</span>
                 {skippedSuggestions.size > 0 && (
-                  <button onClick={() => setSkippedSuggestions(new Set())} style={{ fontSize: 12, fontWeight: 700, color: '#b45309', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                  <button onClick={() => setSkippedSuggestions(new Set())} style={{ fontSize: 12, fontWeight: 700, color: '#fbbf24', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
                     ↺ review the {skippedSuggestions.size} you skipped
                   </button>
                 )}
