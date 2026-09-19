@@ -5257,9 +5257,22 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
               <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#e9e4fb' }}>
                 Select everything that applies to your customer:
               </div>
-              <button onClick={retryProblemChips} style={{ fontSize: 11, fontWeight: 600, color: '#8b7fb3', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
-                ask Sage again
+              <button
+                onClick={retryProblemChips}
+                disabled={genState.loading}
+                style={{
+                  fontSize: 11, fontWeight: 600, color: genState.loading ? '#5c5480' : '#8b7fb3',
+                  background: 'none', border: 'none', cursor: genState.loading ? 'default' : 'pointer',
+                  textDecoration: 'underline', padding: 0, fontFamily: 'inherit',
+                }}
+              >
+                {genState.loading ? 'asking Sage…' : 'ask Sage again'}
               </button>
+              {!genState.loading && genState.error && (
+                <span style={{ fontSize: 11, fontWeight: 600, color: '#f87171' }}>
+                  Sage didn't have anything new — try again in a moment.
+                </span>
+              )}
             </div>
             <div style={{ borderTop: '2px solid #4c3a80', marginTop: 3, maxWidth: 130 }} />
           </div>
