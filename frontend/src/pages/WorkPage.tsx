@@ -4989,6 +4989,21 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
   };
   const skipCurrentSuggestion = (text: string) => setSkippedSuggestions(prev => { const next = new Set(prev); next.add(text); return next; });
 
+  // Clears every rated problem and every skip so the Problem Quest queue can
+  // be worked through again from scratch. Guarded by a confirm() since it's
+  // destructive and there's no undo -- matches the existing pattern used for
+  // clearing the saved audience elsewhere in this file.
+  const resetProblemQuest = () => {
+    if (!window.confirm("Restart this step? This clears every problem you've rated and any suggestions you skipped — you can go through them all again.")) return;
+    setSkippedSuggestions(new Set());
+    setStackCustomOpen(false);
+    setStackCustomText('');
+    setQueueViewMode('stack');
+    const blank: SeverityProblem[] = [{ id: Date.now().toString(36), text: '', severity: '' as const }];
+    setProblems(blank);
+    emitList(blank);
+  };
+
   const updateSeverity = (id: string, severity: SeverityLevel) => {
     // Pre-existing type gap fixed in passing: the '' branch of this ternary
     // was inferred as plain string, not the '' | SeverityLevel union
@@ -5217,8 +5232,23 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
               <span style={{ fontSize: 15 }}>🎮</span>
               <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#c4b5fd' }}>Problem Quest · Rate what's broken</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#fbbf24', background: '#3d2e0f', border: '1px solid #7c5a12', borderRadius: 999, padding: '4px 10px' }}>
-              ⚡ +10–50 XP per problem
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {(problems.some(p => p.text.trim()) || skippedSuggestions.size > 0) && (
+                <button
+                  onClick={resetProblemQuest}
+                  title="Clear everything and start this step over"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700,
+                    color: '#a99fc9', background: 'transparent', border: '1px solid #3d2e66',
+                    borderRadius: 999, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  ↻ Restart
+                </button>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#fbbf24', background: '#3d2e0f', border: '1px solid #7c5a12', borderRadius: 999, padding: '4px 10px' }}>
+                ⚡ +10–50 XP per problem
+              </div>
             </div>
           </div>
         {displayGroups.length > 0 && (
