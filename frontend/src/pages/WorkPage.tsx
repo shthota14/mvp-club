@@ -5376,7 +5376,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                 </div>
               )
             ) : currentSuggestion ? (
-              <div style={{ position: 'relative' as const, maxWidth: 420 }}>
+              <div style={{ position: 'relative' as const, width: '100%' }}>
                 {/* Card-stack illusion — two faded, offset cards peeking out
                     from behind the active one so this doesn't sit alone on
                     an empty canvas. Purely decorative (no content), so
