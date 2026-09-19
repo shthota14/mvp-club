@@ -759,7 +759,7 @@ type Mod = typeof MODULES[number];
 
 const META: Record<Mod, { icon: string; label: string; steps: number; desc: string }> = {
   idea:     { icon: '💡', label: 'Idea',     steps: 1, desc: 'Capture a problem worth solving.' },
-  hone:     { icon: '🎯', label: 'Hone',     steps: 7, desc: 'Sharpen until it\'s specific and real.' },
+  hone:     { icon: '🎯', label: 'Hone',     steps: 6, desc: 'Sharpen until it\'s specific and real.' },
   validate: { icon: '🧪', label: 'Validate', steps: 9, desc: 'Test with people before you build.' },
   shape:    { icon: '🔨', label: 'Shape',    steps: 5, desc: 'Define the smallest possible MVP.' },
   done:     { icon: '🚀', label: 'Ship',     steps: 11, desc: 'Launch, learn, and iterate fast.' },
@@ -772,7 +772,6 @@ const STEP_GOALS: Record<Mod, string[]> = {
   hone: [
     'Reject "everyone." The more specific you are, the better. Remember — at this stage you\'re making an assumption. That\'s okay.',
     'Force the problem into one sentence. No vague language.',
-    'Distinguish a real problem from a minor inconvenience.',
     'Your best guess — not facts yet. Validate will test it.',
     'Most startups fail not because the idea was bad — but because the team wasn\'t ready. Be honest here.',
     'Score 0–5 on each dimension. 20+ unlocks Validate.',
@@ -813,7 +812,7 @@ const STEP_GOALS: Record<Mod, string[]> = {
 
 const STEP_TITLES: Record<Mod, string[]> = {
   idea:     ["What's your idea?"],
-  hone:     ["Who do you think has this problem?", "What are the problems?", "What breaks if these problems are unresolved?", "What do you think people are doing to solve this?", "Are you set up to win?", "How strong is your idea?", "Where does your idea stand in the market?"],
+  hone:     ["Who do you think has this problem?", "What are the problems?", "What do you think people are doing to solve this?", "Are you set up to win?", "How strong is your idea?", "Where does your idea stand in the market?"],
   validate: ["Set your success bar", "Decide what you'll prove", "Choose who to talk to", "Build your script", "Add your contacts", "Interview Summary Dashboard", "Log your conversations", "Analyse what you found", "Make the call"],
   shape:    ["What did you learn from users?", "What will you build?", "Shape your features", "How will you reach users and charge?", "Build your backlog"],
   done:     ["Build My MVP", "Choose how you want to build", "Map your user flows & screens", "Generate your UI prompts", "Your master build prompt", "Build your features", "Describe your next change", "Run your QA checkpoints", "Launch your MVP", "What did you build?", "Who are your first 5 users?"],
@@ -829,7 +828,7 @@ const STAGE_TIME: Record<Mod, string> = {
 
 const STEP_ICONS: Record<Mod, string[]> = {
   idea:     ['🎯'],
-  hone:     ['👥', '📝', '💪', '🔎', '🧠', '📊', '📈'],
+  hone:     ['👥', '📝', '🔎', '🧠', '📊', '📈'],
   validate: ['🎯', '📋', '👤', '📝', '🙋', '🗓️', '🎤', '📈', '✅'],
   shape:    ['📖', '💡', '⚡', '💰', '🗂️'],
   done:     ['🧩', '🛠️', '🗺️', '📝', '🧙', '🧱', '💬', '🧪', '🚀', '🏗️', '🤝'],
@@ -843,7 +842,6 @@ const STEP_CALLOUTS: Record<Mod, string[]> = {
   hone:     [
     'Reject "everyone." The more specific, the better.',
     'One sentence. No jargon, no vague language.',
-    'Real problems hurt. Friction is just annoying.',
     'Write down your assumption now — so you know what to test.',
     'Honest self-assessment here could save you months of wasted effort.',
     'Score 20+ to unlock the next stage.',
@@ -4768,7 +4766,7 @@ function parseStoredProblemChips(raw?: string): StoredProblemChips | null {
   return null;
 }
 
-const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; onChange: (v: string) => void; oneLiner?: string; segment?: { role: string; detail: string }; genChipsValue?: string; onGenChipsChange?: (v: string) => void }>(function ProblemBuilder({ value, onChange, oneLiner, segment, genChipsValue, onGenChipsChange }, ref) {
+const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; onChange: (v: string) => void; oneLiner?: string; segment?: { role: string; detail: string }; genChipsValue?: string; onGenChipsChange?: (v: string) => void; consequencesValue?: string; onConsequencesChange?: (v: string) => void; onRollupChange?: (frequency: string, painIfNothing: string) => void }>(function ProblemBuilder({ value, onChange, oneLiner, segment, genChipsValue, onGenChipsChange, consequencesValue, onConsequencesChange, onRollupChange }, ref) {
   const [problems, setProblems] = useState<SeverityProblem[]>(() => initSeverityProblems(value));
   const [customText, setCustomText] = useState('');
   const [showCustom, setShowCustom] = useState(false);
@@ -4786,6 +4784,37 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
   // there are no suggestions, or all of them are done).
   const [stackCustomOpen, setStackCustomOpen] = useState(false);
   const [stackCustomText, setStackCustomText] = useState('');
+
+  // ── Per-problem consequence capture (frequency + cost tags) ──────────────
+  // Folded in 2026-09-19 from what used to be its own separate step
+  // ("What breaks if these problems are unresolved?") -- severity already
+  // captures how bad a problem is, so the only genuinely new information
+  // that step added was how OFTEN it happens and WHAT it costs. Both now
+  // live right on each problem's row, once its severity is set, instead of
+  // a second page. `painIfNothing`/`frequency` stay updated as a rolled-up
+  // summary (worst frequency seen + the union of every consequence picked
+  // anywhere) so the rest of the app (ProblemContextCard, pitch summaries,
+  // Validate) keeps reading a single value without any changes on its end.
+  const consequenceMap = React.useMemo(() => parseProblemConsequences(consequencesValue || ''), [consequencesValue]);
+  const [consequenceOpenId, setConsequenceOpenId] = useState<string | null>(null);
+
+  const commitConsequence = (text: string, next: ProblemConsequenceEntry) => {
+    const nextMap = { ...consequenceMap, [text]: next };
+    onConsequencesChange?.(JSON.stringify(nextMap));
+    const allEntries = Object.values(nextMap);
+    const worstFreq = allEntries.reduce((best, e) => (FREQ_RANK[e.frequency] ?? 0) > (FREQ_RANK[best] ?? 0) ? e.frequency : best, '');
+    const unionConsequences = Array.from(new Set(allEntries.flatMap(e => e.consequences)));
+    onRollupChange?.(worstFreq, unionConsequences.join('|'));
+  };
+  const updateConsequenceFreq = (text: string, freq: string) => {
+    const cur = consequenceMap[text] || { frequency: '', pain: 5, consequences: [] };
+    commitConsequence(text, { ...cur, frequency: cur.frequency === freq ? '' : freq, pain: FREQ_TO_PAIN_SCORE[freq] ?? cur.pain });
+  };
+  const toggleConsequenceChip = (text: string, chip: string) => {
+    const cur = consequenceMap[text] || { frequency: '', pain: 5, consequences: [] };
+    const nextChips = cur.consequences.includes(chip) ? cur.consequences.filter(c => c !== chip) : [...cur.consequences, chip];
+    commitConsequence(text, { ...cur, consequences: nextChips });
+  };
 
   // ── Severity nudge ────────────────────────────────────────────────────────
   // When the founder clicks a Next button that's blocked because a problem has
@@ -5164,6 +5193,46 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                         ↺ change
                       </button>
                     </div>
+                    {/* ── Frequency + cost tags — folded in 2026-09-19 from the
+                        old standalone "What breaks if these problems are
+                        unresolved?" step. Only shown once severity is set;
+                        both are optional, same as that step's consequence
+                        chips always were. ── */}
+                    {p.severity && (
+                      <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
+                          <span style={{ fontSize: 10.5, fontWeight: 700, color: T3, flexShrink: 0 }}>Happens:</span>
+                          {FREQ_LABELS.map(f => {
+                            const on = consequenceMap[p.text]?.frequency === f;
+                            return (
+                              <button key={f} onClick={() => updateConsequenceFreq(p.text, f)} style={{
+                                padding: '3px 10px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: on ? 800 : 600,
+                                border: on ? '2px solid #7c3aed' : '1.5px solid #e5e5ea', background: on ? '#f5f3ff' : '#fff', color: on ? '#6d28d9' : '#b0b0b8',
+                              }}>{f}</button>
+                            );
+                          })}
+                        </div>
+                        {consequenceOpenId === p.id ? (
+                          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 5 }}>
+                            {CONSEQUENCE_CHIP_META.map(c => {
+                              const on = (consequenceMap[p.text]?.consequences || []).includes(c.text);
+                              return (
+                                <button key={c.text} onClick={() => toggleConsequenceChip(p.text, c.text)} style={{
+                                  padding: '3px 10px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: on ? 800 : 600,
+                                  border: on ? '2px solid #7c3aed' : '1.5px solid #e5e5ea', background: on ? '#f5f3ff' : '#fff', color: on ? '#6d28d9' : '#b0b0b8',
+                                }}>{c.icon} {c.text}</button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <button onClick={() => setConsequenceOpenId(p.id)} style={{ alignSelf: 'flex-start', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: T3, padding: 0, fontFamily: 'inherit', textDecoration: 'underline' }}>
+                            {(consequenceMap[p.text]?.consequences || []).length > 0
+                              ? `${consequenceMap[p.text].consequences.length} cost${consequenceMap[p.text].consequences.length > 1 ? 's' : ''} tagged — edit`
+                              : '+ what does this cost you?'}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -6400,390 +6469,8 @@ const CONSEQUENCE_CHIP_META: { text: string; icon: string }[] = [
 ];
 
 const FREQ_RANK: Record<string, number> = { Daily: 5, Weekly: 4, Monthly: 3, Quarterly: 2, Rarely: 1 };
-
-// Per-problem consequence gauge — redesigned 2026-09-14 from a single
-// idea-wide pain/frequency/consequence set into a pager over every problem
-// that made it through h1's severity gate ("Problem 3 of 16"), so a founder
-// defines the stakes for EACH rated problem instead of one blended answer.
-// `painIfNothing`/`frequency` stay updated as a rolled-up summary (worst
-// frequency seen + the union of every consequence picked anywhere) so the
-// rest of the app (ProblemContextCard, pitch summaries, Validate) keeps
-// reading a single value without any changes on its end.
-function PainGaugeStep({
-  problemSentence,
-  consequencesValue, onConsequencesChange,
-  onRollupChange,
-}: {
-  problemSentence: string;
-  consequencesValue: string;
-  onConsequencesChange: (v: string) => void;
-  onRollupChange: (frequency: string, painIfNothing: string) => void;
-}) {
-  const SCORE_FROM_FREQ: Record<string, number> = { Daily: 9, Weekly: 7, Monthly: 5, Quarterly: 3, Rarely: 1 };
-  const freqFromScore = (n: number) =>
-    n >= 9 ? 'Daily' : n >= 7 ? 'Weekly' : n >= 5 ? 'Monthly' : n >= 3 ? 'Quarterly' : 'Rarely';
-  const FREQ_ADVERB: Record<string, string> = {
-    Daily: 'every single day', Weekly: 'multiple times a week',
-    Monthly: 'a few times a month', Quarterly: 'a few times a year', Rarely: 'occasionally',
-  };
-  const FREQ_LABELS = ['Rarely', 'Quarterly', 'Monthly', 'Weekly', 'Daily'] as const;
-  const SEV_META: Record<SeverityLevel, { icon: string; color: string }> = {
-    critical: { icon: '🔥', color: '#dc2626' }, major: { icon: '😤', color: '#ea580c' }, minor: { icon: '😐', color: '#6e6e73' },
-  };
-
-  // Only the problems that cleared h1's severity gate, worst-first — same
-  // ordering convention severity groups use everywhere else in this file.
-  const ratedProblems = React.useMemo(() => {
-    const SEVERITY_ORDER: Record<string, number> = { critical: 0, major: 1, minor: 2 };
-    return problemSentence.split(MULTI_SEP).filter(Boolean)
-      .map(seg => { const [text, sev] = seg.split(FIELD_SEP); return { text: (text ?? '').trim(), severity: (sev ?? '') as SeverityLevel }; })
-      .filter(p => p.text && ['critical', 'major', 'minor'].includes(p.severity))
-      .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
-  }, [problemSentence]);
-
-  const map = React.useMemo(() => parseProblemConsequences(consequencesValue), [consequencesValue]);
-  const doneCount = ratedProblems.filter(p => map[p.text]?.frequency).length;
-
-  const [activeIdx, setActiveIdx] = useState(0);
-  // Land on the first not-yet-answered problem on mount, instead of always
-  // starting back at the top of the list.
-  const seeded = useRef(false);
-  useEffect(() => {
-    if (seeded.current || ratedProblems.length === 0) return;
-    seeded.current = true;
-    const firstOpen = ratedProblems.findIndex(p => !map[p.text]?.frequency);
-    setActiveIdx(firstOpen === -1 ? 0 : firstOpen);
-  }, [ratedProblems, map]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const active = ratedProblems[Math.min(activeIdx, Math.max(ratedProblems.length - 1, 0))] || null;
-  const entry: ProblemConsequenceEntry = active ? (map[active.text] || { frequency: '', pain: 5, consequences: [] }) : { frequency: '', pain: 5, consequences: [] };
-
-  const commit = (next: ProblemConsequenceEntry) => {
-    if (!active) return;
-    const nextMap = { ...map, [active.text]: next };
-    onConsequencesChange(JSON.stringify(nextMap));
-    const allEntries = Object.values(nextMap);
-    const worstFreq = allEntries.reduce((best, e) => (FREQ_RANK[e.frequency] ?? 0) > (FREQ_RANK[best] ?? 0) ? e.frequency : best, '');
-    const unionConsequences = Array.from(new Set(allEntries.flatMap(e => e.consequences)));
-    onRollupChange(worstFreq, unionConsequences.join('|'));
-  };
-
-  const [score, setScore] = useState<number>(5);
-  const [gaugeOpen, setGaugeOpen] = useState(false);
-  useEffect(() => {
-    setScore(entry.frequency ? (SCORE_FROM_FREQ[entry.frequency] ?? entry.pain ?? 5) : (entry.pain || 5));
-    setGaugeOpen(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active?.text]);
-
-  const updateScore = (n: number) => {
-    setScore(n);
-    commit({ ...entry, pain: n, frequency: freqFromScore(n) });
-    setGaugeOpen(false);
-  };
-  const updateFreqLabel = (f: string) => {
-    const s = SCORE_FROM_FREQ[f] ?? 5;
-    setScore(s);
-    commit({ ...entry, pain: s, frequency: f });
-    setGaugeOpen(false);
-  };
-  const toggleChip = (chip: string) => {
-    const next = entry.consequences.includes(chip) ? entry.consequences.filter(c => c !== chip) : [...entry.consequences, chip];
-    commit({ ...entry, consequences: next });
-  };
-
-  const isLast = ratedProblems.length === 0 || activeIdx >= ratedProblems.length - 1;
-  const goNextProblem = () => { if (!isLast) setActiveIdx(i => Math.min(ratedProblems.length - 1, i + 1)); };
-
-  // Cmd/Ctrl+Enter advances to the next problem without hunting for a
-  // button — same shortcut-first spirit as the 1/2/3/4 severity keys in the
-  // problem-rating deck (queueViewMode stack) one step back.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); goNextProblem(); }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLast, ratedProblems.length]);
-
-  const gauge = (() => {
-    if (score >= 9) return { label: '🔥 Existential threat', color: '#dc2626', bg: '#fef2f2', ringColor: '#fecaca' };
-    if (score >= 7) return { label: '😤 Serious problem',    color: '#ea580c', bg: '#fff7ed', ringColor: '#fed7aa' };
-    if (score >= 5) return { label: '⚠️ Real friction',     color: '#d97706', bg: '#fffbeb', ringColor: '#fde68a' };
-    if (score >= 3) return { label: '😐 Noticeable issue',  color: '#8e8e93', bg: '#f5f5f7', ringColor: '#d2d2d7' };
-    return              { label: '💤 Minor annoyance',      color: '#b0b0b8', bg: '#f5f5f7', ringColor: '#e5e5ea' };
-  })();
-
-  const segmentBg = (i: number): string => {
-    const v = i + 1;
-    if (v > score) return '#e5e5ea';
-    if (v >= 9) return '#dc2626';
-    if (v >= 7) return '#f97316';
-    if (v >= 5) return '#facc15';
-    if (v >= 3) return '#a3a3a3';
-    return '#d4d4d8';
-  };
-
-  const freq = freqFromScore(score);
-  const adverb = FREQ_ADVERB[freq] ?? 'regularly';
-  const chipList = entry.consequences.length === 0
-    ? null
-    : entry.consequences.slice(0, 3).join(', ') + (entry.consequences.length > 3 ? `, +${entry.consequences.length - 3} more` : '');
-
-  const pitchSentence = chipList
-    ? `This hits them ${adverb}. Real costs: ${chipList}.${entry.consequences.length >= 2 ? " Left unfixed, it'll compound." : ''}`
-    : `This hits them ${adverb}. Pick what it costs them below to complete your pitch.`;
-
-  if (!active) {
-    return (
-      <div style={{ padding: '20px 4px', fontSize: 13, color: '#94a3b8' }}>
-        Rate at least one problem's severity on the previous step first.
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-
-      {/* ── Sticky "evaluating problem" header — pinned to the top of this
-          scrollable panel while the gauge/consequences below scroll, so
-          which problem you're rating never falls out of view. Dot carousel
-          lets you jump straight to any problem instead of only stepping
-          one at a time. ── */}
-      <div style={{
-        position: 'sticky' as const, top: 0, zIndex: 3, background: '#fff',
-        paddingBottom: 12, marginBottom: 4, borderBottom: `1.5px solid ${BORDER}`,
-      }}>
-        <div style={{ background: '#fff', border: `2px solid ${SEV_META[active.severity].color}30`, borderRadius: 14, padding: '14px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8, flexWrap: 'wrap' as const }}>
-            <span style={{
-              fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.06em',
-              textTransform: 'uppercase' as const, color: SEV_META[active.severity].color,
-              border: `1.5px solid ${SEV_META[active.severity].color}`, borderRadius: 999, padding: '2px 10px',
-            }}>
-              {SEV_META[active.severity].icon} Problem {activeIdx + 1} of {ratedProblems.length}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>{doneCount} defined</span>
-          </div>
-          <div style={{ fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.4, marginBottom: 12 }}>
-            "{active.text}"
-          </div>
-
-          {/* Progress carousel — one dot per rated problem, click to jump straight there */}
-          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 12 }}>
-            {ratedProblems.map((p, i) => {
-              const isCurrent = i === activeIdx;
-              const isDone = !!map[p.text]?.frequency;
-              const col = SEV_META[p.severity].color;
-              return (
-                <button
-                  key={p.text + i}
-                  onClick={() => setActiveIdx(i)}
-                  title={`${i + 1}. ${p.text}`}
-                  style={{
-                    width: isCurrent ? 14 : 10, height: isCurrent ? 14 : 10, borderRadius: '50%',
-                    border: `2px solid ${col}`, background: isDone ? col : '#fff',
-                    padding: 0, cursor: 'pointer', flexShrink: 0, transition: 'all .12s',
-                    boxShadow: isCurrent ? `0 0 0 3px ${col}30` : 'none',
-                  }}
-                />
-              );
-            })}
-          </div>
-
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => setActiveIdx(i => Math.max(0, i - 1))} disabled={activeIdx === 0} style={{
-              padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e5ea', background: '#fff',
-              color: activeIdx === 0 ? '#ccc' : '#444', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
-              cursor: activeIdx === 0 ? 'default' : 'pointer',
-            }}>← Previous problem</button>
-            <button onClick={goNextProblem} disabled={isLast} style={{
-              padding: '6px 14px', borderRadius: 8, border: '1.5px solid #e5e5ea', background: '#fff',
-              color: isLast ? '#ccc' : '#444', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
-              cursor: isLast ? 'default' : 'pointer',
-            }}>Next problem →</button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Intensity gauge (same behavior as before, now scoped to the
-          active problem instead of the whole idea) ── */}
-      <div style={{ display: (!entry.frequency || gaugeOpen) ? 'block' : 'none' }}>
-      <div style={{
-        background: gauge.bg, border: `2px solid ${gauge.ringColor}`,
-        borderRadius: 16, padding: '20px 22px', transition: 'border-color .2s, background .2s',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: T1, marginBottom: 3 }}>How painful is this problem?</div>
-            <div style={{ fontSize: 11, color: T3, lineHeight: 1.5 }}>Drag across segments — from background annoyance to make-or-break crisis.</div>
-          </div>
-          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 16 }}>
-            <div style={{ fontSize: 30, fontWeight: 800, color: gauge.color, lineHeight: 1 }}>
-              {score}<span style={{ fontSize: 14, fontWeight: 500, color: T3 }}>/10</span>
-            </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: gauge.color, marginTop: 3 }}>{gauge.label}</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-          {Array.from({ length: 10 }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => updateScore(i + 1)}
-              style={{
-                flex: 1, height: 36, border: 'none', borderRadius: 6, cursor: 'pointer',
-                background: segmentBg(i), transition: 'background .1s',
-                transform: score === i + 1 ? 'scaleY(1.18)' : 'none',
-                outline: score === i + 1 ? `2px solid ${gauge.color}` : 'none',
-                outlineOffset: 2,
-              }}
-              title={`${i + 1}/10`}
-            />
-          ))}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: T3, marginBottom: 16 }}>
-          <span>Minor friction</span>
-          <span>Real friction</span>
-          <span>Existential threat</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 12, color: T2, fontWeight: 500, flexShrink: 0 }}>Happens:</span>
-          {FREQ_LABELS.map(f => {
-            const isOn = freq === f;
-            return (
-              <button key={f} onClick={() => updateFreqLabel(f)} style={{
-                padding: '4px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
-                fontSize: 12, fontWeight: isOn ? 700 : 500, transition: 'all .12s',
-                border: `1.5px solid ${isOn ? gauge.color : BORDER2}`,
-                background: isOn ? `${gauge.color}15` : 'transparent',
-                color: isOn ? gauge.color : T2,
-              }}>
-                {f}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      </div>
-
-      <div style={{ display: (entry.frequency && !gaugeOpen) ? 'flex' : 'none', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 6,
-          padding: '4px 12px', borderRadius: 4,
-          background: gauge.color, color: '#fff',
-          fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 12,
-          letterSpacing: '.05em', textTransform: 'uppercase' as const,
-        }}>
-          {gauge.label} · {score}/10 · {freq}
-        </div>
-        <button
-          onClick={() => setGaugeOpen(true)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
-        >
-          ↺ change
-        </button>
-      </div>
-
-      <div style={{ display: entry.frequency ? 'flex' : 'none', flexDirection: 'column' as const, gap: 18 }}>
-      {/* ── Consequence grid — sentence case, icons, checkbox right next to
-          the label instead of a switch pushed to the far edge of the row ── */}
-      <div style={{
-        border: `2px solid ${entry.consequences.length > 0 ? gauge.ringColor : BORDER}`,
-        borderRadius: 16, padding: '18px 20px',
-        background: entry.consequences.length > 0 ? `${gauge.color}04` : '#fafafa',
-        transition: 'all .2s',
-      }}>
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f' }}>What breaks if this problem stays unresolved?</div>
-          <div style={{ fontSize: 12.5, color: '#6e6e73', marginTop: 2 }}>Select all that apply — precision makes the pitch.</div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 8 }}>
-          {CONSEQUENCE_CHIP_META.map(({ text: chip, icon }) => {
-            const on = entry.consequences.includes(chip);
-            return (
-              <button key={chip} onClick={() => toggleChip(chip)} style={{
-                display: 'flex', alignItems: 'center', gap: 9, textAlign: 'left' as const, cursor: 'pointer',
-                fontFamily: 'inherit', padding: '10px 12px', borderRadius: 10,
-                border: `1.5px solid ${on ? gauge.color : '#e5e5ea'}`, background: on ? `${gauge.color}0d` : '#fff',
-                transition: 'all .12s',
-              }}>
-                <span style={{
-                  flexShrink: 0, width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${on ? gauge.color : '#ccc'}`,
-                  background: on ? gauge.color : '#fff', color: '#fff', fontSize: 12, fontWeight: 800,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>{on ? '✓' : ''}</span>
-                <span style={{ fontSize: 13.5, fontWeight: on ? 700 : 500, color: on ? gauge.color : '#333' }}>{icon} {chip}</span>
-              </button>
-            );
-          })}
-        </div>
-        {entry.consequences.length > 0 && (
-          <div style={{ marginTop: 12, fontSize: 12.5, fontWeight: 700, color: gauge.color }}>
-            {entry.consequences.length} cost{entry.consequences.length !== 1 ? 's' : ''} identified
-          </div>
-        )}
-      </div>
-
-      {/* ── Live pitch line — clean high-contrast card right below the
-          grid, replacing the low-contrast italic-serif peach box ── */}
-      <div style={{
-        background: '#fff', border: `1.5px solid ${gauge.ringColor}`, borderTop: `4px solid ${gauge.color}`,
-        borderRadius: 14, padding: '18px 20px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <span style={{ fontSize: 15 }}>⚡</span>
-          <span style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: gauge.color }}>
-            Your investor pitch line
-          </span>
-          <span style={{ fontSize: 11, color: '#94a3b8' }}>· updates live</span>
-        </div>
-        <div style={{
-          fontFamily: 'inherit', fontSize: 15, fontWeight: 600, lineHeight: 1.5, color: '#1d1d1f',
-          borderBottom: `2px solid ${gauge.color}`, paddingBottom: 10, marginBottom: 12,
-        }}>
-          "{pitchSentence}"
-        </div>
-        {chipList && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
-            <span style={{ fontSize: 12.5, color: '#6e6e73' }}>Signal strength:</span>
-            <div style={{ flex: 1, height: 5, borderRadius: 3, background: '#e5e5ea', maxWidth: 180, overflow: 'hidden' }}>
-              <div style={{
-                height: '100%', borderRadius: 3, background: gauge.color,
-                width: `${Math.min(100, (score * 6) + (entry.consequences.length * 4))}%`,
-                transition: 'width .3s',
-              }} />
-            </div>
-            <span style={{ fontSize: 13.5, fontWeight: 700, color: gauge.color }}>
-              {score >= 7 && entry.consequences.length >= 2 ? 'Strong' : score >= 5 && entry.consequences.length >= 1 ? 'Moderate' : 'Weak'} case
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Save & Next Problem — prominent primary CTA so a founder can tap
-          straight through 16-20 problems without hunting for the pager
-          buttons in the sticky header; Cmd/Ctrl+Enter does the same. ── */}
-      <button
-        onClick={goNextProblem}
-        disabled={isLast}
-        style={{
-          width: '100%', padding: '13px 20px', borderRadius: 12, border: 'none',
-          cursor: isLast ? 'default' : 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          background: isLast ? '#e5e5ea' : gauge.color, color: isLast ? '#94a3b8' : '#fff',
-        }}
-      >
-        {isLast
-          ? `✓ All ${ratedProblems.length} problem${ratedProblems.length !== 1 ? 's' : ''} reviewed`
-          : (<>Save & Next Problem → <span style={{ fontSize: 11, fontWeight: 600, opacity: .7 }}>⌘⏎</span></>)}
-      </button>
-      </div>
-    </div>
-  );
-}
+const FREQ_LABELS = ['Rarely', 'Quarterly', 'Monthly', 'Weekly', 'Daily'] as const;
+const FREQ_TO_PAIN_SCORE: Record<string, number> = { Daily: 9, Weekly: 7, Monthly: 5, Quarterly: 3, Rarely: 1 };
 
 // ── Problem Context Card (h3 reminder) ────────────────────────────────────
 function ProblemContextCard({ who, problems, pain, problemCount }: { who: string; problems: string; pain: string[]; problemCount?: number }) {
@@ -15347,6 +15034,9 @@ export default function WorkPage() {
         segment={personaSegmentLabel(ensurePrimary(initPersonas(get('whoExactly'))).find(p => p.primary) || null)}
         genChipsValue={get('problemChipsGen')}
         onGenChipsChange={v => set('problemChipsGen', v)}
+        consequencesValue={get('problemConsequences')}
+        onConsequencesChange={v => set('problemConsequences', v)}
+        onRollupChange={(freq, pain) => { set('frequency', freq); set('painIfNothing', pain); }}
       />
       {(() => {
         const raw        = get('problemSentence');
@@ -15355,7 +15045,7 @@ export default function WorkPage() {
         const [showSeverityGate, setShowSeverityGate] = React.useState(false);
 
         const goNext = async (finalRaw: string) => {
-          await save('hone', { problemSentence: finalRaw });
+          await save('hone', { problemSentence: finalRaw, problemConsequences: get('problemConsequences'), frequency: get('frequency'), painIfNothing: get('painIfNothing') });
           next();
         };
 
@@ -15391,23 +15081,9 @@ export default function WorkPage() {
         );
       })()}
     </div>,
-    <div key="h2" style={col}>
+    <div key="h3" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={2} />
       <StepGoal text={STEP_GOALS.hone[2]} />
-      <BMCLabel blocks={['Value Proposition']} />
-      <H accent={STAGE_COLORS.hone}>What breaks if these problems are unresolved?</H>
-      <PainGaugeStep
-        problemSentence={get('problemSentence')}
-        consequencesValue={get('problemConsequences')}
-        onConsequencesChange={v => set('problemConsequences', v)}
-        onRollupChange={(freq, pain) => { set('frequency', freq); set('painIfNothing', pain); }}
-      />
-
-      <NavRow onBack={back} onNext={async () => { await save('hone', { painIfNothing: get('painIfNothing'), frequency: get('frequency'), problemConsequences: get('problemConsequences') }); next(); }} nextLabel="Next →" disabled={!get('frequency')} disabledReason="Define the stakes for at least one problem to continue." stageColor={STAGE_COLORS.idea} stepTitle="What breaks if these problems are unresolved?" ideaId={activeIdea.id} />
-    </div>,
-    <div key="h3" style={col}>
-      <ModBadge mod="hone" /><StepBars mod="hone" step={3} />
-      <StepGoal text={STEP_GOALS.hone[3]} />
       <StepQuestionBar blocks={['Customer Relationships', 'Revenue Streams']}>
         {!copingCtaOpen && <SageCtaLink onClick={() => setCopingCtaOpen(true)} />}
       </StepQuestionBar>
@@ -15457,8 +15133,8 @@ export default function WorkPage() {
       </div>
     </div>,
     <div key="h-readiness" style={col}>
-      <ModBadge mod="hone" /><StepBars mod="hone" step={4} />
-      <StepGoal text={STEP_GOALS.hone[4]} />
+      <ModBadge mod="hone" /><StepBars mod="hone" step={3} />
+      <StepGoal text={STEP_GOALS.hone[3]} />
       <BMCLabel blocks={['Founder Readiness']} />
       <H accent={STAGE_COLORS.hone}>Are you set up to win?</H>
       <FounderReadinessStep
@@ -15481,7 +15157,7 @@ export default function WorkPage() {
       } stageColor={STAGE_COLORS.hone} stepTitle="Are you set up to win?" ideaId={activeIdea.id} />
     </div>,
     <div key="h4" style={col}>
-      <ModBadge mod="hone" /><StepBars mod="hone" step={5} />
+      <ModBadge mod="hone" /><StepBars mod="hone" step={4} />
       <StepGoal text={STEP_GOALS.hone[5]} />
       <BMCLabel blocks={['Key Metrics']} />
       <H accent={STAGE_COLORS.hone}>How strong is your idea?</H>
@@ -15544,12 +15220,12 @@ export default function WorkPage() {
       )}
     </div>,
     <div key="h-market" style={col}>
-      <div><ModBadge mod="hone" /><StepBars mod="hone" step={6} /></div>
+      <div><ModBadge mod="hone" /><StepBars mod="hone" step={5} /></div>
       <div>
         <H accent={STAGE_COLORS.hone}>Where does your idea stand in the market?</H>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <AgentAvatar size={36} />
-          <StepGoal text={STEP_GOALS.hone[6]} />
+          <StepGoal text={STEP_GOALS.hone[5]} />
         </div>
       </div>
       {/* Sage Market Snapshot — moved here 2026-08-24 to close out Hone as a
