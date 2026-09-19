@@ -1836,7 +1836,7 @@ function CompleteBadge({ mod, onContinue, onBack }: { mod: Mod; onContinue: () =
   return (
     <div style={{ textAlign: 'center', padding: '52px 0' }}>
       <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-      <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.5, marginBottom: 8, fontFamily: 'Georgia, serif', color: T1 }}>{META[mod].label} complete!</div>
+      <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.5, marginBottom: 8, fontFamily: "'Playfair Display', Georgia, serif", color: T1 }}>{META[mod].label} complete!</div>
       <div style={{ fontSize: 15, color: '#3a3a3c', marginBottom: 32, lineHeight: 1.6 }}>Move to the next stage when you're ready.</div>
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
         {onBack && (
@@ -2087,13 +2087,13 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
       background: '#fffdfa', border: '1px solid #e8e3d3',
       borderTop: `4px solid ${STAGE_COLORS.idea}`, borderRadius: 10,
       padding: '14px 18px 14px',
-      fontFamily: "'Inter', system-ui, sans-serif",
+      fontFamily: 'inherit',
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <AgentAvatar size={16} />
           <span style={{
-            fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12, fontWeight: 600,
+            fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
             letterSpacing: '.08em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea,
           }}>
             Idea Desk · By Sage
@@ -2103,7 +2103,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
           onClick={restart}
           style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            fontSize: 11, fontWeight: 600, letterSpacing: '.02em', fontFamily: "'Inter', system-ui, sans-serif",
+            fontSize: 11, fontWeight: 600, letterSpacing: '.02em', fontFamily: 'inherit',
             color: confirmingRestart ? '#dc2626' : T3,
           }}
         >
@@ -2118,7 +2118,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
             // Small caption reacting to the answer above it.
             return (
               <div key={i} style={{
-                fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 500,
+                fontFamily: 'inherit', fontWeight: 500,
                 fontSize: 13, lineHeight: 1.4, color: STAGE_COLORS.idea, opacity: 0.85,
               }}>
                 — {t.text}
@@ -2134,13 +2134,13 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
               return (
                 <div key={i}>
                   <div style={{
-                    fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11, fontWeight: 600,
+                    fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
                     letterSpacing: '.1em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea, marginBottom: 4,
                   }}>
                     Question {stepIndex + 1} of {ONE_LINER_QUESTIONS.length}
                   </div>
                   <div style={{
-                    fontFamily: "'Inter', system-ui, sans-serif", fontSize: 22, fontWeight: 700, lineHeight: 1.2,
+                    fontFamily: 'inherit', fontSize: 22, fontWeight: 700, lineHeight: 1.2,
                     letterSpacing: '-0.01em', color: T1,
                   }}>
                     {/* Only the CURRENT question (last turn) types itself out —
@@ -2153,7 +2153,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
             }
             return (
               <div key={i} style={{
-                fontFamily: "'Inter', system-ui, sans-serif", fontSize: 10.5, fontWeight: 600,
+                fontFamily: 'inherit', fontSize: 10.5, fontWeight: 600,
                 letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3,
               }}>
                 {t.text}
@@ -2165,7 +2165,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
           return (
             <div key={i} style={{ borderLeft: `3px solid ${STAGE_COLORS.idea}`, paddingLeft: 10 }}>
               <div style={{
-                fontFamily: "'Inter', system-ui, sans-serif",
+                fontFamily: 'inherit',
                 fontWeight: 600, fontSize: 15, lineHeight: 1.35, color: T1,
               }}>
                 "{t.text}"
@@ -2175,7 +2175,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
         })}
         {reacting && (
           <div style={{
-            fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 500,
+            fontFamily: 'inherit', fontWeight: 500,
             fontSize: 13, color: STAGE_COLORS.idea, opacity: 0.6,
           }}>
             — thinking…
@@ -2183,7 +2183,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
         )}
         {smoothing && (
           <div style={{
-            fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 500,
+            fontFamily: 'inherit', fontWeight: 500,
             fontSize: 13, color: STAGE_COLORS.idea, opacity: 0.6,
           }}>
             ✨ — polishing your one-liner…
@@ -2198,7 +2198,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
             style={{
               ...inp, flex: 1, background: 'transparent',
               border: 'none', borderBottom: `1.5px solid ${BORDER}`, borderRadius: 0,
-              padding: '6px 2px', fontFamily: "'Inter', system-ui, sans-serif", fontSize: 15,
+              padding: '6px 2px', fontFamily: 'inherit', fontSize: 15,
             }}
             value={draft}
             placeholder={activeQ ? activeQ.placeholder : ''}
@@ -2212,7 +2212,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
             style={{
               padding: '8px 16px', borderRadius: 4, border: 'none',
               background: STAGE_COLORS.idea, color: '#fff',
-              fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 700, fontSize: 13,
+              fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
               letterSpacing: '.04em', textTransform: 'uppercase' as const,
               cursor: reacting || !draft.trim() ? 'not-allowed' : 'pointer',
               opacity: reacting || !draft.trim() ? 0.5 : 1,
@@ -2254,7 +2254,7 @@ function PublicToggle({ on, onToggle, label }: { on: boolean; onToggle: () => vo
       title={on ? `${label || 'This section'} is visible on your public Community page` : `${label || 'This section'} is private — only you can see it`}
       style={{
         display: 'flex', alignItems: 'center', gap: 6,
-        fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11, fontWeight: 700,
+        fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
         color: on ? '#15803d' : '#9ca3af', background: on ? '#f0fdf4' : '#f9fafb',
         border: `1.5px solid ${on ? '#86efac' : '#e5e7eb'}`, borderRadius: 20,
         padding: '3px 10px 3px 4px', cursor: 'pointer',
@@ -2432,7 +2432,7 @@ function OneLinerFieldsForm({ ideaName, onIdeaNameChange, oneLiner, onOneLinerCh
     border: `1px solid ${BORDER}`, borderRadius: 8,
     fontSize: 14, outline: 'none', background: '#fff',
     color: T1, boxSizing: 'border-box' as const, lineHeight: 1.5,
-    fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 400,
+    fontFamily: 'inherit', fontWeight: 400,
     transition: 'border-color .15s, box-shadow .15s',
   };
 
@@ -2440,7 +2440,7 @@ function OneLinerFieldsForm({ ideaName, onIdeaNameChange, oneLiner, onOneLinerCh
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 14,
       background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12,
-      padding: '18px 20px', fontFamily: "'Inter', system-ui, sans-serif",
+      padding: '18px 20px', fontFamily: 'inherit',
     }}>
       <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3 }}>
         Structured canvas
@@ -2471,7 +2471,7 @@ function OneLinerFieldsForm({ ideaName, onIdeaNameChange, oneLiner, onOneLinerCh
                   style={{
                     flexShrink: 0, border: `1px solid ${BORDER}`, background: '#fff', borderRadius: 8,
                     padding: '9px 10px', fontSize: 12, cursor: s?.loading ? 'default' : 'pointer',
-                    color: T2, fontFamily: "'Inter', system-ui, sans-serif",
+                    color: T2, fontFamily: 'inherit',
                   }}
                 >
                   {s?.loading ? '…' : '✨'}
@@ -2490,7 +2490,7 @@ function OneLinerFieldsForm({ ideaName, onIdeaNameChange, oneLiner, onOneLinerCh
                   style={{
                     border: 'none', borderRadius: 999, padding: '3px 10px', cursor: 'pointer',
                     background: STAGE_COLORS.idea, color: '#fff', fontSize: 11, fontWeight: 700,
-                    fontFamily: "'Inter', system-ui, sans-serif",
+                    fontFamily: 'inherit',
                   }}
                 >
                   Apply
@@ -2541,7 +2541,7 @@ function OneLinerPreviewCard({ value, publicOn, onTogglePublic }: { value: strin
   return (
     <div style={{
       background: '#fff', border: `1px solid ${BORDER}`, borderTop: `3px solid ${accent}`,
-      borderRadius: 12, padding: '18px 20px', fontFamily: "'Inter', system-ui, sans-serif",
+      borderRadius: 12, padding: '18px 20px', fontFamily: 'inherit',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3 }}>
@@ -2630,7 +2630,7 @@ function OneLinerQualityMeter({ value }: { value: string }) {
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 8,
       background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12,
-      padding: '14px 18px', fontFamily: "'Inter', system-ui, sans-serif",
+      padding: '14px 18px', fontFamily: 'inherit',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3 }}>
@@ -3158,7 +3158,7 @@ function MarketSwotPanel({ snapshot, ideaName }: { snapshot: MarketSnapshotData;
           const activeItem = activeIdx !== null ? q.items[activeIdx] : null;
           return (
             <div key={q.label}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' as const, color: q.color }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 10, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' as const, color: q.color }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: q.color, flexShrink: 0 }} />
                 {q.label}
               </div>
@@ -3394,14 +3394,14 @@ function MarketSnapshotPanel({
               </div>
             </div>
             {retryAttempt === 0 ? (
-              <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 11, color: '#93e5ab', lineHeight: 1.75, overflow: 'hidden' }}>
+              <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 11, color: '#93e5ab', lineHeight: 1.75, overflow: 'hidden' }}>
                 <div className="msnap-line">$ analyzing your idea<span style={{ opacity: .6 }}>…</span></div>
                 <div className="msnap-line">→ reading domain signals<span style={{ opacity: .6 }}>…</span></div>
                 <div className="msnap-line">→ sizing TAM / SAM<span style={{ opacity: .6 }}>…</span></div>
                 <div className="msnap-line">→ checking competitors <span className="msnap-cursor" style={{ display: 'inline-block', width: 6, height: 11, background: '#93e5ab', verticalAlign: 'middle' }} /></div>
               </div>
             ) : (
-              <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 11, color: '#fcd34d', lineHeight: 1.75, overflow: 'hidden' }}>
+              <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 11, color: '#fcd34d', lineHeight: 1.75, overflow: 'hidden' }}>
                 <div className="msnap-line">⚠ that attempt took too long<span style={{ opacity: .6 }}>…</span></div>
                 <div className="msnap-line">↻ retrying automatically (attempt {retryAttempt} of {MAX_AUTO_RETRIES})<span style={{ opacity: .6 }}>…</span></div>
                 <div className="msnap-line" style={{ color: '#93e5ab' }}>Hang tight — the local model can be slow, this can take a minute<span className="msnap-cursor" style={{ display: 'inline-block', width: 6, height: 11, background: '#93e5ab', verticalAlign: 'middle', marginLeft: 4 }} /></div>
@@ -3437,7 +3437,7 @@ function MarketSnapshotPanel({
               separately-styled nested boxes. */}
           <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
             <div style={{ padding: '16px 18px 14px' }}>
-              <div style={{ fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 10, fontWeight: 700, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Total addressable market</div>
+              <div style={{ fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 10, fontWeight: 700, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Total addressable market</div>
               <div style={{ fontSize: 26, fontWeight: 800, color: T1, letterSpacing: -.3 }}>{snapshot.tam.value || '—'}</div>
               <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.6, marginTop: 4, maxWidth: '62ch' }}>{snapshot.tam.basis}</div>
 {(() => {
@@ -3475,7 +3475,7 @@ function MarketSnapshotPanel({
               })()}
             </div>
             <div style={{ padding: '12px 18px 16px', borderTop: `1px solid ${BORDER}`, background: `linear-gradient(135deg, ${STAGE_COLORS.idea}08, #eda10008)` }}>
-              <div style={{ fontFamily: "'SFMono-Regular', Consolas, monospace", fontSize: 9.5, fontWeight: 700, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Why this SAM</div>
+              <div style={{ fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 9.5, fontWeight: 700, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Why this SAM</div>
               <div style={{ fontSize: 12, color: T2, lineHeight: 1.6, marginTop: 3 }}>{snapshot.sam.basis}</div>
             </div>
           </div>
@@ -4262,7 +4262,7 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
                 width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none',
                 borderBottom: `2.5px solid ${focused === 'role' ? accent : role.trim() ? accent + '60' : '#d2d2d7'}`,
                 outline: 'none', padding: '6px 2px 10px', fontSize: 19, fontWeight: 700,
-                color: USER_INPUT_COLOR, fontFamily: 'Georgia, serif', letterSpacing: -.3,
+                color: USER_INPUT_COLOR, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: -.3,
                 transition: 'border-color .2s', caretColor: accent,
               }}
             />
@@ -4320,7 +4320,7 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
                 width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none',
                 borderBottom: `2.5px solid ${focused === 'context' ? accent : context.trim() ? accent + '60' : '#d2d2d7'}`,
                 outline: 'none', padding: '6px 2px 10px', fontSize: 19, fontWeight: 700,
-                color: USER_INPUT_COLOR, fontFamily: 'Georgia, serif', letterSpacing: -.3,
+                color: USER_INPUT_COLOR, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: -.3,
                 transition: 'border-color .2s', caretColor: accent,
               }}
             />
@@ -4355,7 +4355,7 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
                   width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none',
                   borderBottom: `2.5px solid ${focused === 'pays' ? accent : whoPaysValue.trim() ? accent + '60' : '#d2d2d7'}`,
                   outline: 'none', padding: '6px 2px 10px', fontSize: 17, fontWeight: 600,
-                  color: USER_INPUT_COLOR, fontFamily: 'Georgia, serif', letterSpacing: -.3,
+                  color: USER_INPUT_COLOR, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: -.3,
                   transition: 'border-color .2s', caretColor: accent,
                 }}
               />
@@ -4375,7 +4375,7 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
           <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: allFilled ? accent : '#b0b0b8', marginBottom: 8 }}>
             {allFilled ? '🎯 Your audience' : 'Preview (keep filling…)'}
           </div>
-          <div style={{ fontSize: 15, lineHeight: 1.7, fontFamily: 'Georgia, serif', color: '#1d1d1f' }}>
+          <div style={{ fontSize: 15, lineHeight: 1.7, fontFamily: "'Playfair Display', Georgia, serif", color: '#1d1d1f' }}>
             <span style={{ color: role.trim() ? accent : '#b0b0b8', fontWeight: 700 }}>{role.trim() || '___'}</span>
             {size && (
               <>{' '}<span style={{ color: accent, fontWeight: 700 }}>({AUDIENCE_TYPES.find(s => s.key === size)?.label})</span></>
@@ -4438,7 +4438,7 @@ function KeyBadge({ k }: { k: string }) {
       position: 'absolute', top: -6, right: -4, width: 15, height: 15, borderRadius: 4,
       background: '#1a1a1a', color: '#fff', fontSize: 9, fontWeight: 800,
       display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-      fontFamily: "'Inter', system-ui, sans-serif", boxShadow: '0 1px 3px rgba(0,0,0,.25)',
+      fontFamily: 'inherit', boxShadow: '0 1px 3px rgba(0,0,0,.25)',
     }}>{k}</span>
   );
 }
@@ -4704,7 +4704,7 @@ function PainPointCard({
                       width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none',
                       borderBottom: `2.5px solid ${focused === slot.key ? accent : entry[slot.key].trim() ? accent + '50' : '#d2d2d7'}`,
                       outline: 'none', padding: '6px 2px 8px', fontSize: 16, fontWeight: 700,
-                      color: USER_INPUT_COLOR, fontFamily: 'Georgia, serif', letterSpacing: -.3,
+                      color: USER_INPUT_COLOR, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: -.3,
                       transition: 'border-color .2s', caretColor: accent,
                     }}
                   />
@@ -4725,7 +4725,7 @@ function PainPointCard({
               <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: complete ? accent : '#b0b0b8', marginBottom: 6 }}>
                 {complete ? '🎯 Statement' : 'Preview…'}
               </div>
-              <div style={{ fontSize: 14, lineHeight: 1.7, fontFamily: 'Georgia, serif', color: '#1d1d1f' }}>
+              <div style={{ fontSize: 14, lineHeight: 1.7, fontFamily: "'Playfair Display', Georgia, serif", color: '#1d1d1f' }}>
                 <span style={{ color: entry.who.trim() ? accent : '#b0b0b8', fontWeight: 700 }}>{entry.who.trim() || '___'}</span>
                 {' '}struggle with{' '}
                 <span style={{ color: entry.prob.trim() ? accent : '#b0b0b8', fontWeight: 700 }}>{entry.prob.trim() || '___'}</span>
@@ -5311,7 +5311,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                       }}>
                         {s.category}
                       </span>
-                      <span style={{ flex: 1, fontFamily: "'Inter', system-ui, sans-serif", fontSize: 13.5, fontWeight: 500, color: '#fff', lineHeight: 1.4, minWidth: 0 }}>
+                      <span style={{ flex: 1, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 500, color: '#fff', lineHeight: 1.4, minWidth: 0 }}>
                         {s.text}
                       </span>
                       <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
@@ -5360,7 +5360,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                   }}>
                     {currentSuggestion.category}
                   </div>
-                  <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 18, fontWeight: 500, lineHeight: 1.5, color: '#fff' }}>
+                  <div style={{ fontFamily: 'inherit', fontSize: 18, fontWeight: 500, lineHeight: 1.5, color: '#fff' }}>
                     {currentSuggestion.text}
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -6076,10 +6076,10 @@ function FounderReadinessStep({
               >
                 <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>{arch.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 15, fontWeight: 700, color: on ? honeColor : '#1e293b', marginBottom: 2 }}>
+                  <div style={{ fontFamily: 'inherit', fontSize: 15, fontWeight: 700, color: on ? honeColor : '#1e293b', marginBottom: 2 }}>
                     {on ? '✓ ' : ''}{arch.label}
                   </div>
-                  <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12.5, color: '#8e8e93' }}>{arch.desc}</div>
+                  <div style={{ fontFamily: 'inherit', fontSize: 12.5, color: '#8e8e93' }}>{arch.desc}</div>
                 </div>
               </button>
             );
@@ -6135,20 +6135,20 @@ function FounderReadinessStep({
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginBottom: 14 }}>
             <span style={{
-              fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700,
+              fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700,
               padding: '6px 12px', borderRadius: 999, background: honeColor, color: '#fff',
             }}>
               ⏰ Bandwidth: {TIME_OPTIONS.find(t => t.val === timeValue)?.label ?? timeValue}
             </span>
             <span style={{
-              fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700,
+              fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700,
               padding: '6px 12px', borderRadius: 999, background: honeColor, color: '#fff',
             }}>
               🧠 Skills: {selectedSkills.join(', ')}
             </span>
             {selectedCofounders.length > 0 && (
               <span style={{
-                fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12.5, fontWeight: 700,
+                fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700,
                 padding: '6px 12px', borderRadius: 999, background: honeColor, color: '#fff',
               }}>
                 🤝 Seeking: {selectedCofounders.map(v => COFOUNDER_ARCHETYPES.find(a => a.val === v)?.label ?? v).join(' + ')}
@@ -6156,7 +6156,7 @@ function FounderReadinessStep({
             )}
           </div>
           <div style={{
-            fontFamily: "'Inter', system-ui, sans-serif", fontSize: 14.5, color: '#1d1d1f', fontWeight: 500,
+            fontFamily: 'inherit', fontSize: 14.5, color: '#1d1d1f', fontWeight: 500,
             lineHeight: 1.6, borderTop: `1px solid ${honeColor}22`, paddingTop: 12,
           }}>
             <span style={{ fontWeight: 700, color: honeColor }}>Edge: </span>"{founderFitValue.trim()}"
@@ -6538,7 +6538,7 @@ function PainGaugeStep({
             </span>
             <span style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8' }}>{doneCount} of {ratedProblems.length} defined</span>
           </div>
-          <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 16, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.4, marginBottom: 12 }}>
+          <div style={{ fontFamily: 'inherit', fontSize: 16, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.4, marginBottom: 12 }}>
             "{active.text}"
           </div>
 
@@ -6676,7 +6676,7 @@ function PainGaugeStep({
             return (
               <button key={chip} onClick={() => toggleChip(chip)} style={{
                 display: 'flex', alignItems: 'center', gap: 9, textAlign: 'left' as const, cursor: 'pointer',
-                fontFamily: "'Inter', system-ui, sans-serif", padding: '10px 12px', borderRadius: 10,
+                fontFamily: 'inherit', padding: '10px 12px', borderRadius: 10,
                 border: `1.5px solid ${on ? gauge.color : '#e5e5ea'}`, background: on ? `${gauge.color}0d` : '#fff',
                 transition: 'all .12s',
               }}>
@@ -6711,7 +6711,7 @@ function PainGaugeStep({
           <span style={{ fontSize: 11, color: '#94a3b8' }}>· updates live</span>
         </div>
         <div style={{
-          fontFamily: "'Inter', system-ui, sans-serif", fontSize: 15, fontWeight: 600, lineHeight: 1.5, color: '#1d1d1f',
+          fontFamily: 'inherit', fontSize: 15, fontWeight: 600, lineHeight: 1.5, color: '#1d1d1f',
           borderBottom: `2px solid ${gauge.color}`, paddingBottom: 10, marginBottom: 12,
         }}>
           "{pitchSentence}"
@@ -7656,7 +7656,7 @@ function ValidationLearningsBuilder({ value, onChange }: { value: string; onChan
             Best quote from a conversation
           </div>
           <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', top: 14, left: 14, fontSize: 24, color: '#e5e5ea', fontFamily: 'Georgia, serif', lineHeight: 1 }}>"</span>
+            <span style={{ position: 'absolute', top: 14, left: 14, fontSize: 24, color: '#e5e5ea', fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1 }}>"</span>
             <textarea
               value={quote}
               onChange={e => setQuote(e.target.value)}
@@ -7667,7 +7667,7 @@ function ValidationLearningsBuilder({ value, onChange }: { value: string; onChan
                 width: '100%', boxSizing: 'border-box', padding: '12px 14px 12px 34px',
                 border: `2px solid ${focused === 'quote' ? ACC : BORDER}`,
                 borderRadius: 10, fontSize: 14, outline: 'none', resize: 'vertical' as const,
-                lineHeight: 1.65, fontFamily: 'Georgia, serif', fontStyle: 'italic', color: USER_INPUT_COLOR,
+                lineHeight: 1.65, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', color: USER_INPUT_COLOR,
                 minHeight: 80, background: '#fff', transition: 'border-color .18s',
               }}
             />
@@ -11152,7 +11152,7 @@ function ScreenPromptCard({ screen, prompt, onGenerate, onEdit, loading, error, 
       {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', marginTop: 10 }}>⚠️ {error}</div>}
       {prompt && (
         <>
-          <textarea value={prompt} onChange={e => onEdit(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 200, marginTop: 10, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: "'SF Mono', Menlo, Consolas, monospace", fontSize: 11.5, color: '#1d1d1f', lineHeight: 1.6, resize: 'vertical' as const }} />
+          <textarea value={prompt} onChange={e => onEdit(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 200, marginTop: 10, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 11.5, color: '#1d1d1f', lineHeight: 1.6, resize: 'vertical' as const }} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
             <button onClick={doCopy} style={{ padding: '7px 14px', borderRadius: 999, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               {copiedPulse ? '✓ Copied' : '📋 Copy prompt'}
@@ -11292,7 +11292,7 @@ function MasterPromptOutput({ prompt, buildTool, color }: { prompt: string; buil
 
   return (
     <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px', background: '#fff' }}>
-      <textarea readOnly value={prompt} style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 280, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: "'SF Mono', Menlo, Consolas, monospace", fontSize: 11.5, color: '#1d1d1f', lineHeight: 1.6, resize: 'vertical' as const, background: '#fafafa' }} />
+      <textarea readOnly value={prompt} style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 280, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 11.5, color: '#1d1d1f', lineHeight: 1.6, resize: 'vertical' as const, background: '#fafafa' }} />
       <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' as const, alignItems: 'center' }}>
         <button onClick={doCopy} style={{ padding: '8px 16px', borderRadius: 999, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
           {copiedPulse ? '✓ Copied' : '📋 Copy prompt'}
@@ -12281,9 +12281,9 @@ function InterviewTimelinePanel({ stored, onSave }: { stored: string; onSave: (j
                       onChange={e => updateText(i, e.target.value)}
                       placeholder="Type this question…"
                       rows={2}
-                      style={{ width: '100%', border: 'none', outline: 'none', resize: 'none' as const, fontSize: 16.5, fontWeight: 700, fontFamily: "'Inter', -apple-system, 'Segoe UI', sans-serif", color: T1, background: 'transparent', lineHeight: 1.35 }}
+                      style={{ width: '100%', border: 'none', outline: 'none', resize: 'none' as const, fontSize: 16.5, fontWeight: 700, fontFamily: 'inherit', color: T1, background: 'transparent', lineHeight: 1.35 }}
                     />
-                    {it.purpose && <div style={{ fontSize: 12, fontFamily: "'Inter', -apple-system, 'Segoe UI', sans-serif", fontWeight: 500, color: c.tx, marginTop: 2 }}>💡 {it.purpose}</div>}
+                    {it.purpose && <div style={{ fontSize: 12, fontFamily: 'inherit', fontWeight: 500, color: c.tx, marginTop: 2 }}>💡 {it.purpose}</div>}
                   </div>
                   <div
                     onMouseDown={e => setResizing({ idx: i, startY: e.clientY, startMinutes: it.minutes })}
@@ -12316,8 +12316,8 @@ function InterviewTimelinePanel({ stored, onSave }: { stored: string; onSave: (j
                     <span style={{ fontSize: 10.5, fontWeight: 700, color: '#1d4ed8', marginLeft: 'auto' }}>~{MANUAL_DEFAULT_MINUTES} min</span>
                   </div>
                   <div style={{ padding: '0 12px 8px', flex: 1 }}>
-                    <div style={{ fontSize: 16.5, fontWeight: 700, fontFamily: "'Inter', -apple-system, 'Segoe UI', sans-serif", color: T1, lineHeight: 1.35 }}>{q.q}</div>
-                    {q.hint && <div style={{ fontSize: 12, fontFamily: "'Inter', -apple-system, 'Segoe UI', sans-serif", fontWeight: 500, color: '#1d4ed8', marginTop: 2 }}>💡 {q.hint}</div>}
+                    <div style={{ fontSize: 16.5, fontWeight: 700, fontFamily: 'inherit', color: T1, lineHeight: 1.35 }}>{q.q}</div>
+                    {q.hint && <div style={{ fontSize: 12, fontFamily: 'inherit', fontWeight: 500, color: '#1d4ed8', marginTop: 2 }}>💡 {q.hint}</div>}
                   </div>
                 </div>
               </div>
@@ -13096,7 +13096,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, padding: '5px 8px', borderRadius: 7, background: 'rgba(255,255,255,.7)', border: `1px solid ${ac}20` }}>
                       <span style={{ fontSize: 11, flexShrink: 0, marginTop: 1 }}>💡</span>
-                      <span style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontSize: 9.5, fontWeight: 500, color: '#8a8a90', lineHeight: 1.35, fontStyle: 'normal' as const }}>{q.hint}</span>
+                      <span style={{ fontFamily: 'inherit', fontSize: 9.5, fontWeight: 500, color: '#8a8a90', lineHeight: 1.35, fontStyle: 'normal' as const }}>{q.hint}</span>
                     </div>
                   </div>
 
@@ -13150,7 +13150,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                       Their words (optional)
                     </div>
                     <div style={{ position: 'relative' as const }}>
-                      <span style={{ position: 'absolute' as const, top: 5, left: 10, fontSize: 20, color: `${ac}40`, fontFamily: 'Georgia, serif', lineHeight: 1 }}>"</span>
+                      <span style={{ position: 'absolute' as const, top: 5, left: 10, fontSize: 20, color: `${ac}40`, fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1 }}>"</span>
                       <textarea
                         value={ans.quote}
                         onChange={e => setQuote(qi, e.target.value)}
@@ -14041,7 +14041,7 @@ export default function WorkPage() {
   if (!activeIdea) return (
     <div style={{ maxWidth: 640, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>💡</div>
-      <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6, fontFamily: 'Georgia, serif', color: T1 }}>No active idea</div>
+      <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6, fontFamily: "'Playfair Display', Georgia, serif", color: T1 }}>No active idea</div>
       <div style={{ fontSize: 14, color: T2, marginBottom: 24 }}>Go to My Idea Vault to create or select an idea first.</div>
       <button onClick={() => navigate('/progress')} style={{ background: '#1d1d1f', color: '#fff', border: 'none', borderRadius: 999, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
         ← Go to My Idea Vault
@@ -14740,7 +14740,7 @@ export default function WorkPage() {
     return (
       <div key={`${mod}-intro`} style={{
         display: 'flex', flexDirection: 'column', gap: 0,
-        fontFamily: "'Inter', system-ui, sans-serif",
+        fontFamily: 'inherit',
         background: WB_BG,
         borderRadius: 16,
         overflow: 'hidden',
@@ -14776,7 +14776,7 @@ export default function WorkPage() {
           </div>
 
           {/* Title — big marker lettering */}
-          <h1 style={{ fontSize: 30, fontWeight: 700, color: WB_TEXT, margin: '0 0 3px', letterSpacing: '0.01em', lineHeight: 1.0, fontFamily: "'Walter Turncoat', 'Comic Sans MS', cursive, system-ui" }}>
+          <h1 style={{ fontSize: 30, fontWeight: 700, color: WB_TEXT, margin: '0 0 3px', letterSpacing: '0.01em', lineHeight: 1.0, fontFamily: "'Kalam', cursive" }}>
             {meta.label}
           </h1>
 
@@ -15084,8 +15084,8 @@ export default function WorkPage() {
               </div>
               {primaryLabel.role ? (
                 <>
-                  <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 800, fontSize: 16, color: '#fff', textAlign: 'center' as const }}>{primaryLabel.role}</div>
-                  {primaryLabel.detail && <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11.5, color: '#a99fc9', fontStyle: 'italic' as const, textAlign: 'center' as const, lineHeight: 1.5 }}>{primaryLabel.detail}</div>}
+                  <div style={{ fontFamily: 'inherit', fontWeight: 800, fontSize: 16, color: '#fff', textAlign: 'center' as const }}>{primaryLabel.role}</div>
+                  {primaryLabel.detail && <div style={{ fontFamily: 'inherit', fontSize: 11.5, color: '#a99fc9', fontStyle: 'italic' as const, textAlign: 'center' as const, lineHeight: 1.5 }}>{primaryLabel.detail}</div>}
                   {primaryPersonaList.length > 1 && <div style={{ fontSize: 10.5, color: '#8b7fb3' }}>+{primaryPersonaList.length - 1} more segment{primaryPersonaList.length > 2 ? 's' : ''}</div>}
                 </>
               ) : (
@@ -16222,7 +16222,7 @@ export default function WorkPage() {
               </svg>
 
               {/* Big quote — each coloured part on its own line */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 20, fontWeight: 800, fontStyle: 'italic', lineHeight: 1.35, fontFamily: 'Georgia, "Times New Roman", serif', letterSpacing: -0.2, maxWidth: 560 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 20, fontWeight: 800, fontStyle: 'italic', lineHeight: 1.35, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: -0.2, maxWidth: 560 }}>
                 <div><span style={{ color: '#4f46e5' }}>"You don't need a product to validate.</span> <span style={{ color: STAGE_COLORS.validate }}>You need a conversation.</span></div>
                 <div style={{ color: '#0f172a' }}>Get out of your comfort zone — reach out to real people who you think feel this pain.</div>
                 <div style={{ color: '#dc2626' }}>Everything else is guesswork."</div>
@@ -18580,7 +18580,7 @@ export default function WorkPage() {
               const report = generateReport();
               return (
                 <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <pre style={{ background: '#f8fafc', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px', fontSize: 12, lineHeight: 1.7, color: T1, whiteSpace: 'pre-wrap' as const, fontFamily: 'ui-monospace, monospace', overflowX: 'auto' as const, margin: 0, maxHeight: 400, overflowY: 'auto' as const }}>
+                  <pre style={{ background: '#f8fafc', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px', fontSize: 12, lineHeight: 1.7, color: T1, whiteSpace: 'pre-wrap' as const, fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", overflowX: 'auto' as const, margin: 0, maxHeight: 400, overflowY: 'auto' as const }}>
                     {report}
                   </pre>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -20396,8 +20396,8 @@ export default function WorkPage() {
     </div>,
     <div key="launch" style={{ textAlign: 'center', padding: '48px 24px' }}>
       <div style={{ fontSize: 56, marginBottom: 16 }}>🚀</div>
-      <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -1, marginBottom: 8, fontFamily: 'Georgia, serif', color: T1 }}>You shipped an MVP.</div>
-      <div style={{ fontSize: 15, color: T2, lineHeight: 1.7, maxWidth: 360, margin: '0 auto 32px', fontStyle: 'italic', fontFamily: 'Georgia, serif' }}>From idea to launch — that's what MVP Club is for.</div>
+      <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -1, marginBottom: 8, fontFamily: "'Playfair Display', Georgia, serif", color: T1 }}>You shipped an MVP.</div>
+      <div style={{ fontSize: 15, color: T2, lineHeight: 1.7, maxWidth: 360, margin: '0 auto 32px', fontStyle: 'italic', fontFamily: "'Playfair Display', Georgia, serif" }}>From idea to launch — that's what MVP Club is for.</div>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
         <button onClick={() => window.location.href = '/community'} style={{ padding: '12px 28px', borderRadius: 999, border: 'none', background: '#1d1d1f', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Share in Community →</button>
         <button onClick={() => { setMod('idea'); setStep(0); }} style={{ padding: '12px 28px', borderRadius: 999, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Start another idea</button>
@@ -20452,7 +20452,7 @@ export default function WorkPage() {
 
   return (
     <>
-      <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)', background: '#f5f5f7', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)', background: '#f5f5f7', fontFamily: 'inherit' }}>
 
         {/* Col 1 — Stage nav sidebar (desktop only) */}
         {!isMobile && <Sidebar />}
