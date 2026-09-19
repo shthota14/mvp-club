@@ -6661,7 +6661,10 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
     commit(next);
   };
 
-  const c = STAGE_COLORS.hone;
+  // 2026-09-19: purple, not Hone's nominal stage blue -- matches the accent
+  // Steps 1 & 2 both already settled on (see ProblemBuilder's white-panel
+  // redesign and the persona ID-card/quest-card treatment on Step 1).
+  const c = '#7c3aed';
 
   // ── AI-tailored suggestion chips, generated once via Sage and persisted ──
   // Same pattern as ProblemBuilder above: Sage is asked exactly once per
@@ -6771,6 +6774,19 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
         @keyframes sageDotBounce { 0%, 80%, 100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-7px); opacity: 1; } }
       `}</style>
 
+      {/* ── Coping Quest panel — same white panel + purple accent + dark
+          card-stack language as Step 2's Problem Quest, folded in
+          2026-09-19 so this step no longer looks like an older,
+          unmigrated design next to its neighbors. ── */}
+      <div style={{
+        position: 'relative' as const, borderRadius: 20, overflow: 'hidden',
+        background: '#ffffff', border: '1px solid #ece6fb', boxShadow: '0 10px 30px -16px rgba(76,49,140,.18)',
+        padding: '20px 20px 22px', display: 'flex', flexDirection: 'column' as const, gap: 16,
+      }}>
+        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#6d28d9' }}>
+          Coping Quest · How are they solving this today?
+        </span>
+
       {/* ── Chip grid by category — whiteboard style, AI-tailored once ── */}
       {genState.loading && displayGroups.length === 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '20px 4px' }}>
@@ -6779,75 +6795,114 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
             <span style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.15s' }} />
             <span style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.3s' }} />
           </div>
-          <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#475569', fontWeight: 600 }}>
+          <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#4b3d73', fontWeight: 600 }}>
             Sage is reading your problem and coming up with how people cope today…
           </span>
         </div>
       )}
       {!genState.loading && genState.error && displayGroups.length === 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#94a3b8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#7c6a9e' }}>
           <span>Sage couldn't come up with suggestions just now.</span>
-          <button onClick={retryAltChips} style={{ fontSize: 12, fontWeight: 700, color: c, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+          <button onClick={retryAltChips} style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
             Try again
           </button>
         </div>
       )}
       {!genState.loading && !genState.error && displayGroups.length === 0 && (
-        <div style={{ fontSize: 13, color: '#94a3b8' }}>
+        <div style={{ fontSize: 13, color: '#7c6a9e' }}>
           Add your problem statement in the step before this one and Sage will suggest how people cope today.
         </div>
       )}
-      {!genState.loading && displayGroups.length > 0 && (
-        <button onClick={retryAltChips} style={{ alignSelf: 'flex-start' as const, fontSize: 11, fontWeight: 600, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
-          ask Sage again
-        </button>
+      {displayGroups.length > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' as const }}>
+            <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 16, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#2e1f52' }}>
+              Rank how people cope today
+            </div>
+            <button
+              onClick={retryAltChips}
+              disabled={genState.loading}
+              style={{
+                fontSize: 11, fontWeight: 600, color: genState.loading ? '#c3b8db' : '#7c6a9e',
+                background: 'none', border: 'none', cursor: genState.loading ? 'default' : 'pointer',
+                textDecoration: 'underline', padding: 0, fontFamily: 'inherit',
+              }}
+            >
+              {genState.loading ? 'asking Sage…' : 'ask Sage again'}
+            </button>
+          </div>
+          <div style={{ borderTop: '2px solid #7c3aed', marginTop: 3, maxWidth: 120 }} />
+        </div>
       )}
       {displayGroups.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#b0b0b8', letterSpacing: '.06em' }}>
-            {Math.min(alternativesReviewedCount + (currentAlternative ? 1 : 0), allAlternativesFlat.length)} of {allAlternativesFlat.length} reviewed
+          <div style={{ flex: 1, minWidth: 140 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#7c6a9e', marginBottom: 4 }}>
+              {currentAlternative
+                ? `Card ${Math.min(alternativesReviewedCount + 1, allAlternativesFlat.length)} of ${allAlternativesFlat.length}`
+                : `${Math.min(alternativesReviewedCount, allAlternativesFlat.length)} of ${allAlternativesFlat.length} reviewed`}
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: '#ece6fb', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: 999, background: 'linear-gradient(90deg,#7c3aed,#a78bfa)',
+                width: `${allAlternativesFlat.length ? (alternativesReviewedCount / allAlternativesFlat.length) * 100 : 0}%`,
+                transition: 'width .25s ease',
+              }} />
+            </div>
           </div>
           {currentAlternative ? (
-            <div style={{
-              background: '#fff', border: '1.5px solid #e5e5ea',
-              borderRadius: 14, padding: '24px 22px', boxShadow: '0 1px 2px rgba(0,0,0,.04)',
-              display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 420,
-            }}>
+            <div style={{ position: 'relative' as const, width: '100%' }}>
+              {/* Card-stack illusion — two faded, offset cards peeking out
+                  from behind the active one. Same treatment as Step 2's
+                  queue; purely decorative, nothing to keep in sync. */}
+              {remainingAlternativesQueue.length > 2 && (
+                <div style={{ position: 'absolute', inset: 0, top: 12, transform: 'scale(.96) rotate(1deg)', background: '#291f47', border: '1.5px solid #3a2d63', borderRadius: 14, zIndex: 0 }} />
+              )}
+              {remainingAlternativesQueue.length > 1 && (
+                <div style={{ position: 'absolute', inset: 0, top: 6, transform: 'scale(.98) rotate(-.6deg)', background: '#302553', border: '1.5px solid #43356f', borderRadius: 14, zIndex: 1 }} />
+              )}
               <div style={{
-                alignSelf: 'flex-start', fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11,
-                letterSpacing: '.08em', textTransform: 'uppercase' as const, color: c,
-                border: `1.5px solid ${c}`, padding: '3px 10px', borderRadius: 999,
+                position: 'relative' as const, zIndex: 2,
+                background: 'linear-gradient(160deg, #2f2354, #221a3d)', border: '1.5px solid #4c3f80',
+                borderRadius: 14, padding: '24px 22px', boxShadow: '0 16px 32px -14px rgba(43,25,82,.5)',
+                display: 'flex', flexDirection: 'column', gap: 14,
               }}>
-                {currentAlternative.category}
-              </div>
-              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 18, lineHeight: 1.45, color: '#1d1d1f', fontWeight: 600 }}>
-                {currentAlternative.text}
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onClick={() => setSkippedAlternatives(prev => { const next = new Set(prev); next.add(currentAlternative.text); return next; })}
-                  style={{
-                    flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
-                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
-                    border: '1.5px solid #d2d2d7', background: 'transparent', color: '#6e6e73', fontWeight: 700,
-                  }}
-                >
-                  Skip
-                </button>
-                <button
-                  onClick={() => toggle(currentAlternative.text)}
-                  style={{
-                    flex: 2, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
-                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
-                    border: `1.5px solid ${c}`, background: '#fff', color: c, fontWeight: 700,
-                  }}
-                >
-                  + Add
-                </button>
+                <div style={{
+                  alignSelf: 'flex-start', fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11,
+                  letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#c4b5fd',
+                  border: '1.5px solid #c4b5fd', padding: '3px 10px', borderRadius: 999,
+                }}>
+                  {currentAlternative.category}
+                </div>
+                <div style={{ fontFamily: 'inherit', fontSize: 18, fontWeight: 500, lineHeight: 1.5, color: '#fff' }}>
+                  {currentAlternative.text}
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    onClick={() => setSkippedAlternatives(prev => { const next = new Set(prev); next.add(currentAlternative.text); return next; })}
+                    style={{
+                      flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
+                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
+                      border: '1.5px solid #4c3f80', background: 'transparent', color: '#b0a4d6', fontWeight: 700,
+                    }}
+                  >
+                    Skip
+                  </button>
+                  <button
+                    onClick={() => toggle(currentAlternative.text)}
+                    style={{
+                      flex: 2, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
+                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
+                      border: '1.5px solid #a78bfa', background: '#a78bfa14', color: '#c4b5fd', fontWeight: 700,
+                    }}
+                  >
+                    + Add
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#94a3b8', padding: '10px 2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#7c6a9e', padding: '10px 2px' }}>
               <span>{skippedAlternatives.size > 0 ? `You've been through all ${allAlternativesFlat.length} suggestions.` : `That's everything Sage suggested — nice work.`}</span>
               {skippedAlternatives.size > 0 && (
                 <button onClick={() => setSkippedAlternatives(new Set())} style={{ fontSize: 12, fontWeight: 700, color: '#b45309', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
@@ -6858,6 +6913,7 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
           )}
         </div>
       )}
+      </div>
 
       {/* ── Custom entry ── */}
       {showCustom ? (
