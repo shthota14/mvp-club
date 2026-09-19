@@ -1522,26 +1522,26 @@ function StepBars({ mod, step }: { mod: Mod; step: number }) {
   // orients founders on mobile (where there's no sidebar at all) without
   // fighting the sidebar for attention on desktop.
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', gap: 4 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+      <div style={{ display: 'flex', gap: 4, flex: 1 }}>
         {Array.from({ length: total }).map((_, i) => (
           <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i < step ? c : i === step ? `${c}55` : BORDER, transition: 'background .3s' }} />
         ))}
       </div>
-      <div style={{ marginTop: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase' as const, color: T3 }}>
-        Step {step + 1} of {total}
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.03em', color: T3, flexShrink: 0 }}>
+        {step + 1}/{total}
       </div>
     </div>
   );
 }
 
-function ModBadge({ mod }: { mod: Mod }) {
-  const c = STAGE_COLORS[mod];
-  return (
-    <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' as const, background: `${c}10`, border: `1px solid ${c}25`, color: c, marginBottom: 8 }}>
-      {META[mod].icon} {META[mod].label}
-    </span>
-  );
+// 2026-09-19: retired to a no-op -- the stage name it showed ("HONE") is
+// already highlighted in the top nav tabs above this panel, and repeated a
+// third time by StepBars' own step count right below it. Kept as a real
+// component (not deleted at its 33 call sites) so this is restorable in one
+// place if that turns out wrong.
+function ModBadge(_: { mod: Mod }) {
+  return null;
 }
 
 // Small fixed persona icon for the agent's prompts — Bauhaus-geometric
@@ -1629,12 +1629,11 @@ function StepGoal({ text }: { text: string }) {
   if (!text) return null;
   return (
     <div style={{
-      display: 'flex', alignItems: 'flex-start', gap: 10,
-      margin: '16px 0 0', fontFamily: 'var(--font-ui)', fontSize: 14.5, lineHeight: 1.6,
-      color: '#3c4654', background: '#eef4fb', borderLeft: '3px solid #4c8dd9',
-      borderRadius: 10, padding: '13px 16px',
+      display: 'flex', alignItems: 'flex-start', gap: 7,
+      margin: '8px 0 0', fontFamily: 'var(--font-ui)', fontSize: 13, fontStyle: 'italic' as const, lineHeight: 1.5,
+      color: T2,
     }}>
-      <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>💡</span>
+      <span style={{ fontSize: 13, flexShrink: 0 }}>💡</span>
       <span>{text}</span>
     </div>
   );
@@ -5732,18 +5731,14 @@ function SageProblemInterview({
 // from the question below by a hairline rule (2026-09-04 UI/UX pick, "Split
 // Header Bar"). Replaces the old pattern of BMCLabel, then a wavy-underlined
 // question, then a big standalone Sage pill card stacked beneath it.
-function StepQuestionBar({ blocks, children }: { blocks: string[]; children?: React.ReactNode }) {
+// 2026-09-19: dropped the "fills BMC → <block>" mapping -- internal
+// canvas-mapping metadata, the lowest-value line in the step header.
+// `blocks` stays in the signature (unused) rather than touching either of
+// this component's 2 call sites, so it's restorable in one place.
+function StepQuestionBar({ blocks: _blocks, children }: { blocks: string[]; children?: React.ReactNode }) {
+  if (!children) return null;
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-      paddingBottom: 10, borderBottom: `1px solid ${BORDER}`, marginBottom: 14, flexWrap: 'wrap' as const,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' as const }}>
-        <span style={{ fontSize: 10, fontStyle: 'italic', color: '#c8c8d0' }}>fills BMC →</span>
-        {blocks.map(b => (
-          <span key={b} style={{ fontSize: 10, fontStyle: 'italic', color: '#c0b8e8', padding: '0 2px' }}>{b}</span>
-        ))}
-      </div>
+    <div style={{ marginTop: 6 }}>
       {children}
     </div>
   );
