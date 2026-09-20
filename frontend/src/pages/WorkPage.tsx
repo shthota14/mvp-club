@@ -2104,12 +2104,13 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
       padding: '14px 18px 14px',
       fontFamily: 'inherit',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '4px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <AgentAvatar size={16} />
           <span style={{
             fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
             letterSpacing: '.08em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea,
+            whiteSpace: 'nowrap' as const,
           }}>
             Idea Desk · By Sage
           </span>
@@ -2119,7 +2120,7 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
           style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: 0,
             fontSize: 11, fontWeight: 600, letterSpacing: '.02em', fontFamily: 'inherit',
-            color: confirmingRestart ? '#dc2626' : T3,
+            color: confirmingRestart ? '#dc2626' : T3, flexShrink: 0, whiteSpace: 'nowrap' as const,
           }}
         >
           ↺ {confirmingRestart ? 'Click again to restart' : 'Restart this step'}
@@ -13031,6 +13032,10 @@ export default function WorkPage() {
   const { activeIdea, user, setActiveIdea } = useApp();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  // 2026-09-20: wider breakpoint for Idea Step 1's chat/canvas split only --
+  // see the note above that split's JSX for why 768 (the app-wide isMobile
+  // breakpoint) left a squeezed, illegible tablet-width row layout.
+  const isIdeaSplitStacked = useIsMobile(900);
   const [mod, setMod]   = useState<Mod>('idea');
   const [step, setStep] = useState(0);
   const prevStepRef = React.useRef(0); // last-seen step, for direction-aware transitions
@@ -14636,9 +14641,12 @@ export default function WorkPage() {
           structured canvas (right) that fills in as the chat progresses —
           replaces the old single stacked column, where the chat, the
           preview, and the clarity meter all fought for the same narrow lane.
-          Stacks to one column on mobile. */}
-      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' as const : 'row' as const, gap: 20, alignItems: 'flex-start' }}>
-        <div style={{ flex: isMobile ? undefined : '0 0 40%', width: isMobile ? '100%' : undefined, minWidth: 0 }}>
+          Stacks to one column below 900px (isIdeaSplitStacked), not the
+          app-wide 768px isMobile breakpoint -- a 40% column is too narrow
+          for the chat's own header row anywhere in the 768-900px tablet
+          range, so this split stacks earlier than the rest of the app. */}
+      <div style={{ display: 'flex', flexDirection: isIdeaSplitStacked ? 'column' as const : 'row' as const, gap: 20, alignItems: 'flex-start' }}>
+        <div style={{ flex: isIdeaSplitStacked ? undefined : '0 0 40%', width: isIdeaSplitStacked ? '100%' : undefined, minWidth: 0 }}>
           <IdeaOneLinerChat
             initialName={get('ideaName') || activeIdea.name}
             initialOneLiner={get('oneLiner')}
@@ -14646,7 +14654,7 @@ export default function WorkPage() {
             onChange={f => { set('ideaName', f.ideaName); set('oneLiner', f.oneLiner); }}
           />
         </div>
-        <div style={{ flex: isMobile ? undefined : '0 0 60%', width: isMobile ? '100%' : undefined, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ flex: isIdeaSplitStacked ? undefined : '0 0 60%', width: isIdeaSplitStacked ? '100%' : undefined, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
           {(() => {
             const publicSections = parsePublicSections(get('publicSections'));
             const setPublicSection = (key: keyof PublicSections, on: boolean) =>
