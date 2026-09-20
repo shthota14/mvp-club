@@ -2262,7 +2262,11 @@ function parsePublicSections(raw: string): PublicSections {
   } catch { return {}; }
 }
 
-function PublicToggle({ on, onToggle, label }: { on: boolean; onToggle: () => void; label?: string }) {
+function PublicToggle({ on, onToggle, label, dark }: { on: boolean; onToggle: () => void; label?: string; dark?: boolean }) {
+  // 2026-09-20: optional dark variant for use on a dark card background
+  // (Idea Step 1's "Unlocked Idea Statement" card) -- the other 3 call
+  // sites (privacy modal x2, Hone Market Snapshot) all sit on white and
+  // keep the original light styling untouched (dark defaults to false).
   return (
     <button
       onClick={onToggle}
@@ -2270,15 +2274,16 @@ function PublicToggle({ on, onToggle, label }: { on: boolean; onToggle: () => vo
       style={{
         display: 'flex', alignItems: 'center', gap: 6,
         fontFamily: 'inherit', fontSize: 11, fontWeight: 700,
-        color: on ? '#15803d' : '#9ca3af', background: on ? '#f0fdf4' : '#f9fafb',
-        border: `1.5px solid ${on ? '#86efac' : '#e5e7eb'}`, borderRadius: 20,
+        color: dark ? (on ? '#4ade80' : '#c4b5fd') : (on ? '#15803d' : '#9ca3af'),
+        background: dark ? (on ? '#14532d55' : '#ffffff0f') : (on ? '#f0fdf4' : '#f9fafb'),
+        border: `1.5px solid ${dark ? (on ? '#22c55e88' : '#4c3f80') : (on ? '#86efac' : '#e5e7eb')}`, borderRadius: 20,
         padding: '3px 10px 3px 4px', cursor: 'pointer',
       }}
     >
-      <span style={{ position: 'relative', width: 22, height: 13, borderRadius: 20, background: on ? '#22c55e' : '#d1d5db', transition: 'background .15s', flexShrink: 0 }}>
-        <span style={{ position: 'absolute', top: 1.5, left: on ? 10 : 1.5, width: 10, height: 10, borderRadius: '50%', background: '#fff', transition: 'left .15s', boxShadow: '0 1px 2px rgba(0,0,0,.25)' }} />
+      <span style={{ position: 'relative', width: 22, height: 13, borderRadius: 20, background: on ? '#22c55e' : (dark ? '#4c3f80' : '#d1d5db'), transition: 'background .15s', flexShrink: 0 }}>
+        <span style={{ position: 'absolute', top: 1.5, left: on ? 10 : 1.5, width: 10, height: 10, borderRadius: '50%', background: dark && !on ? '#c4b5fd' : '#fff', transition: 'left .15s', boxShadow: '0 1px 2px rgba(0,0,0,.25)' }} />
       </span>
-      {on ? '🌐 Public' : 'Private'}
+      {on ? '🌐 Public' : (dark ? '🔒 Private' : 'Private')}
     </button>
   );
 }
@@ -2553,53 +2558,66 @@ function OneLinerPreviewCard({ value, publicOn, onTogglePublic }: { value: strin
 
   if (!value.trim()) return null;
 
+  // 2026-09-20: "unlocked artifact" treatment, not a form-preview card --
+  // dark gradient chrome (same card language as Hone's redesigned queue
+  // steps), an XP-badge-style eyebrow (matching Hone's "⚡ +10–50 XP" chip),
+  // and the quote set in italic serif with real quotation marks. The live
+  // per-blank highlighting is unchanged -- it's functional feedback (what's
+  // filled vs. still blank), not decoration, so it stays, just recolored to
+  // read against a dark ground.
   return (
     <div style={{
-      background: '#fff', border: `1px solid ${BORDER}`, borderTop: `3px solid ${accent}`,
-      borderRadius: 12, padding: '18px 20px', fontFamily: 'inherit',
+      position: 'relative' as const, overflow: 'hidden',
+      background: 'linear-gradient(160deg, #2f2354, #221a3d)', border: '1.5px solid #4c3f80',
+      borderRadius: 14, padding: '20px 20px 22px', fontFamily: 'inherit',
+      boxShadow: '0 16px 32px -14px rgba(43,25,82,.5)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3 }}>
-          Live preview
+      <div style={{
+        position: 'absolute' as const, inset: 0, pointerEvents: 'none' as const,
+        background: `radial-gradient(120% 80% at 0% 0%, ${accent}22, transparent 60%)`,
+      }} />
+      <div style={{ position: 'relative' as const, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const, marginBottom: 14 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Bebas Neue', sans-serif", fontSize: 13, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: '#fbbf24' }}>
+          ⚡ Unlocked Idea Statement
         </span>
-        <PublicToggle on={publicOn} onToggle={onTogglePublic} label="Your one-liner" />
+        <PublicToggle on={publicOn} onToggle={onTogglePublic} label="Your one-liner" dark />
       </div>
 
       {m ? (
-        <div style={{ position: 'relative' as const, fontSize: 17, lineHeight: 1.7, color: T1, fontWeight: 500 }}>
+        <div style={{ position: 'relative' as const, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 17, lineHeight: 1.7, color: '#fff', fontWeight: 500 }}>
           {/* Highlight sweep — fires once, the moment the last blank gets
               filled in, celebrating the fully-assembled one-liner. */}
           {justCompleted && (
             <div style={{
               position: 'absolute', left: 0, right: 0, bottom: 2, height: '0.85em',
-              background: `${accent}22`, borderRadius: 2, zIndex: -1,
+              background: `${accent}33`, borderRadius: 2, zIndex: -1,
               animation: 'highlighterSweep 1.1s ease-out forwards',
             }} />
           )}
-          <span>I'm building </span>
+          <span>&ldquo;I'm building </span>
           <span style={{
-            color: filled(pb) ? accent : T3, fontWeight: 700,
-            borderBottom: filled(pb) ? `2px solid ${accent}` : `2px dashed ${BORDER}`, paddingBottom: 1,
+            fontStyle: 'normal' as const, color: filled(pb) ? '#c4b5fd' : '#9c8fc4', fontWeight: 700,
+            borderBottom: filled(pb) ? '2px solid #a78bfa' : '2px dashed #4c3f80', paddingBottom: 1,
           }}>{pb || "what you're building"}</span>
           <span> for </span>
           <span style={{
-            color: filled(pf) ? accent : T3, fontWeight: 700,
-            borderBottom: filled(pf) ? `2px solid ${accent}` : `2px dashed ${BORDER}`, paddingBottom: 1,
+            fontStyle: 'normal' as const, color: filled(pf) ? '#c4b5fd' : '#9c8fc4', fontWeight: 700,
+            borderBottom: filled(pf) ? '2px solid #a78bfa' : '2px dashed #4c3f80', paddingBottom: 1,
           }}>{pf || "who it's for"}</span>
           <span> who </span>
           <span style={{
-            color: filled(pw) ? accent : T3, fontWeight: 700,
-            borderBottom: filled(pw) ? `2px solid ${accent}` : `2px dashed ${BORDER}`, paddingBottom: 1,
+            fontStyle: 'normal' as const, color: filled(pw) ? '#c4b5fd' : '#9c8fc4', fontWeight: 700,
+            borderBottom: filled(pw) ? '2px solid #a78bfa' : '2px dashed #4c3f80', paddingBottom: 1,
           }}>{pw || 'their struggle'}</span>
           <span> so they can </span>
           <span style={{
-            color: filled(po) ? accent : T3, fontWeight: 800,
-            borderBottom: filled(po) ? `2px solid ${accent}` : `2px dashed ${BORDER}`, paddingBottom: 1,
+            fontStyle: 'normal' as const, color: filled(po) ? '#c4b5fd' : '#9c8fc4', fontWeight: 800,
+            borderBottom: filled(po) ? '2px solid #a78bfa' : '2px dashed #4c3f80', paddingBottom: 1,
           }}>{po || 'what happens next'}</span>
-          <span>.</span>
+          <span>.&rdquo;</span>
         </div>
       ) : (
-        <div style={{ fontSize: 17, lineHeight: 1.7, color: T1, fontWeight: 500 }}>{value}</div>
+        <div style={{ position: 'relative' as const, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 17, lineHeight: 1.7, color: '#fff', fontWeight: 500 }}>&ldquo;{value}&rdquo;</div>
       )}
     </div>
   );
