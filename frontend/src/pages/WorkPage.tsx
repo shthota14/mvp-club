@@ -1337,6 +1337,29 @@ function BMCLabel(_: { blocks: string[] }) {
   return null;
 }
 
+// 2026-09-19: whole-stage restart control, shown at the top of every Hone
+// step so it's reachable no matter where the user currently is. Mirrors
+// the existing per-step "↻ Restart" button's styling (Problem Quest, Step
+// 2) but clears ALL of Hone's data and returns to Step 1, not just one
+// step's.
+function HoneRestartControl({ onRestart }: { onRestart: () => void }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <button
+        onClick={onRestart}
+        title="Clear all Hone data and start this stage over from Step 1"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700,
+          color: '#7c6a9e', background: 'transparent', border: '1px solid #ece6fb',
+          borderRadius: 999, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit',
+        }}
+      >
+        ↻ Restart Hone
+      </button>
+    </div>
+  );
+}
+
 // ── Suggestion chips (tap to fill) ────────────────────────────────────────
 
 function SuggestionChips({ chips, onSelect, accent = '#7c3aed' }: {
@@ -13449,6 +13472,21 @@ export default function WorkPage() {
   // and the full-width panel below the question can share one open flag.
   const [problemCtaOpen, setProblemCtaOpen] = useState(false);
   const [copingCtaOpen, setCopingCtaOpen] = useState(false);
+  const [honeResetNonce, setHoneResetNonce] = useState(0);
+  const resetHoneStage = () => {
+    if (!window.confirm("Restart Hone? This clears every answer in this stage -- persona, problem, coping methods, founder readiness, score, and market snapshot -- and sends you back to Step 1. This can't be undone.")) return;
+    save('hone', {
+      whoExactly: '', whoPays: '',
+      problemSentence: '', problemConsequences: '', frequency: '', painIfNothing: '',
+      workaround: '', competitors: '', pullSigns: '', quantifiedValue: '',
+      solutionAlternatives: '', problemChipsGen: '', solutionChipsGen: '',
+      s_specificity: '', s_pain: '', s_frequency: '', s_economic: '', s_workaround: '', s_seeking: '', s_buyer: '', s_measurable: '',
+      founderStatement: '', founderTime: '', founderSkills: '', founderCofounder: '', founderFit: '',
+      honeScore: '', marketSnapshot: '',
+    });
+    setHoneResetNonce(n => n + 1);
+    setStep(0);
+  };
   // Remembers the last step visited in each stage, so switching stages via the
   // sidebar (goMod) resumes where the founder left off instead of always
   // dropping back to step 1. Keyed off mod/step directly (not persisted to
@@ -14779,6 +14817,7 @@ export default function WorkPage() {
   const honeSteps: JSX.Element[] = [stageIntro('hone'),
     <div key="h0" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={0} />
+      <HoneRestartControl onRestart={resetHoneStage} />
       {/* ── Pivot carry-over: learnings brought back from Validate ── */}
       {get('pivotLearnings') && (
         <div style={{ background: '#f0fdf4', border: '2px solid #34c759', borderRadius: 12, padding: '14px 16px' }}>
@@ -14921,7 +14960,7 @@ export default function WorkPage() {
                 onClose={() => setPersonaCtaOpen(false)}
               />
             )}
-            <PersonaPickerStep ref={personaPickerRef} value={get('whoExactly')} onChange={v => set('whoExactly', v)} oneLiner={get('oneLiner')} />
+            <PersonaPickerStep key={honeResetNonce} ref={personaPickerRef} value={get('whoExactly')} onChange={v => set('whoExactly', v)} oneLiner={get('oneLiner')} />
           </div>
         );
 
@@ -15076,6 +15115,7 @@ export default function WorkPage() {
     </div>,
     <div key="h1" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={1} />
+      <HoneRestartControl onRestart={resetHoneStage} />
       <StepGoal text={STEP_GOALS.hone[1]} />
       <StepQuestionBar blocks={['Value Proposition']}>
         {!problemCtaOpen && <SageCtaLink onClick={() => setProblemCtaOpen(true)} />}
@@ -15090,6 +15130,7 @@ export default function WorkPage() {
         />
       )}
       <ProblemBuilder
+        key={honeResetNonce}
         ref={problemBuilderRef}
         value={get('problemSentence')}
         onChange={v => set('problemSentence', v)}
@@ -15146,6 +15187,7 @@ export default function WorkPage() {
     </div>,
     <div key="h3" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={2} />
+      <HoneRestartControl onRestart={resetHoneStage} />
       <StepGoal text={STEP_GOALS.hone[2]} />
       <StepQuestionBar blocks={['Customer Relationships', 'Revenue Streams']}>
         {!copingCtaOpen && <SageCtaLink onClick={() => setCopingCtaOpen(true)} />}
@@ -15182,6 +15224,7 @@ export default function WorkPage() {
         />
       )}
       <AlternativeRankingStep
+        key={honeResetNonce}
         ref={alternativeRankingRef}
         value={get('solutionAlternatives')}
         onChange={v => set('solutionAlternatives', v)}
@@ -15197,6 +15240,7 @@ export default function WorkPage() {
     </div>,
     <div key="h-readiness" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={3} />
+      <HoneRestartControl onRestart={resetHoneStage} />
       <StepGoal text={STEP_GOALS.hone[3]} />
       <BMCLabel blocks={['Founder Readiness']} />
       <H accent={STAGE_COLORS.hone}>Are you set up to win?</H>
@@ -15221,7 +15265,8 @@ export default function WorkPage() {
     </div>,
     <div key="h4" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={4} />
-      <StepGoal text={STEP_GOALS.hone[5]} />
+      <HoneRestartControl onRestart={resetHoneStage} />
+      <StepGoal text={STEP_GOALS.hone[4]} />
       <BMCLabel blocks={['Key Metrics']} />
       <H accent={STAGE_COLORS.hone}>How strong is your idea?</H>
       <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 500, color: '#334155', marginTop: -14, marginBottom: 18 }}>Rate each 0–5. You need 20+ to move forward.</div>
@@ -15284,6 +15329,7 @@ export default function WorkPage() {
     </div>,
     <div key="h-market" style={col}>
       <div><ModBadge mod="hone" /><StepBars mod="hone" step={5} /></div>
+      <HoneRestartControl onRestart={resetHoneStage} />
       <div>
         <H accent={STAGE_COLORS.hone}>Where does your idea stand in the market?</H>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -15302,6 +15348,7 @@ export default function WorkPage() {
           set('publicSections', JSON.stringify({ ...publicSections, [key]: on }));
         return (
           <MarketSnapshotPanel
+            key={honeResetNonce}
             ideaId={activeIdea.id}
             ideaName={get('ideaName') || activeIdea.name}
             oneLiner={get('oneLiner')}
