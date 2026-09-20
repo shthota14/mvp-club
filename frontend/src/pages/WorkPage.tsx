@@ -2380,157 +2380,10 @@ function PrivacySettingsModal({ value, onChange, hasContent, onClose }: {
 }
 
 // ── One-liner preview card (Idea Step 1) ─────────────────────────────────────
-// ── One-liner Structured Canvas — Mad-Libs fields ──────────────────────────
-// A direct, form-style counterpart to the chat on the left: the same 5
-// answers (product name + the 4 one-liner blanks), each in its own labeled
-// box instead of buried in a conversation transcript. Editing a box here
-// just re-assembles the same `oneLiner` sentence IdeaOneLinerChat writes to
-// (via assembleOneLinerFromParts, the exact function the chat itself uses),
-// so the chat, this form, and the preview below all stay in sync through
-// that one shared string — no separate state to keep consistent.
-const ONE_LINER_CANVAS_FIELDS: { key: OneLinerFieldKey; label: string; placeholder: string }[] = [
-  { key: 'ideaName', label: 'Product name', placeholder: 'e.g. MVP Club' },
-  { key: 'b', label: "What you're building", placeholder: 'a mobile app, a marketplace, a tool…' },
-  { key: 'f', label: 'Target audience', placeholder: 'busy first-time founders' },
-  { key: 'w', label: 'Core problem', placeholder: "not knowing if their idea's any good" },
-  { key: 'o', label: 'Key outcome', placeholder: 'decide to build, pivot, or drop it' },
-];
-
-function OneLinerFieldsForm({ ideaName, onIdeaNameChange, oneLiner, onOneLinerChange }: {
-  ideaName: string;
-  onIdeaNameChange: (v: string) => void;
-  oneLiner: string;
-  onOneLinerChange: (v: string) => void;
-}) {
-  const m = oneLiner.match(/I'?m building (.+?) for (.+?) who (.+?) so they can (.+?)\.?$/i);
-  const parts: Record<'b' | 'f' | 'w' | 'o', string> = {
-    b: m?.[1] && m[1] !== '___' ? m[1] : '',
-    f: m?.[2] && m[2] !== '___' ? m[2] : '',
-    w: m?.[3] && m[3] !== '___' ? m[3] : '',
-    o: m?.[4] && m[4] !== '___' ? m[4] : '',
-  };
-
-  const setPart = (key: 'b' | 'f' | 'w' | 'o', v: string) => {
-    const next = { ...parts, [key]: v };
-    onOneLinerChange(assembleOneLinerFromParts(next.b, next.f, next.w, next.o));
-  };
-
-  // Per-field AI suggestion — fetched on demand (a small "✨" button beside
-  // each filled blank), never on every keystroke.
-  const [suggestState, setSuggestState] = useState<Record<string, { loading: boolean; note?: string; suggestion?: string | null; checked?: boolean }>>({});
-
-  const checkField = async (key: 'b' | 'f' | 'w' | 'o') => {
-    const answer = parts[key].trim();
-    if (!answer) return;
-    const question = ONE_LINER_QUESTIONS.find(q => q.key === key)!.ask;
-    setSuggestState(prev => ({ ...prev, [key]: { loading: true } }));
-    try {
-      const res = await validationApi.suggestOneLinerField({ key, question, answer });
-      const needsRefinement = res.data?.needsRefinement === true;
-      setSuggestState(prev => ({
-        ...prev,
-        [key]: {
-          loading: false, checked: true,
-          note: needsRefinement ? res.data?.note : undefined,
-          suggestion: needsRefinement ? res.data?.suggestion : null,
-        },
-      }));
-    } catch {
-      setSuggestState(prev => ({ ...prev, [key]: { loading: false, checked: true } }));
-    }
-  };
-
-  const applySuggestion = (key: 'b' | 'f' | 'w' | 'o') => {
-    const s = suggestState[key];
-    if (!s?.suggestion) return;
-    setPart(key, s.suggestion);
-    setSuggestState(prev => ({ ...prev, [key]: { loading: false, checked: true, note: undefined, suggestion: null } }));
-  };
-
-  const fieldStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 12px',
-    border: `1px solid ${BORDER}`, borderRadius: 8,
-    fontSize: 14, outline: 'none', background: '#fff',
-    color: T1, boxSizing: 'border-box' as const, lineHeight: 1.5,
-    fontFamily: 'inherit', fontWeight: 400,
-    transition: 'border-color .15s, box-shadow .15s',
-  };
-
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', gap: 14,
-      background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12,
-      padding: '18px 20px', fontFamily: 'inherit',
-    }}>
-      <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3 }}>
-        Structured canvas
-      </div>
-      {ONE_LINER_CANVAS_FIELDS.map(f => {
-        const isName = f.key === 'ideaName';
-        const val = isName ? ideaName : parts[f.key as 'b' | 'f' | 'w' | 'o'];
-        const s = !isName ? suggestState[f.key] : undefined;
-        return (
-          <div key={f.key} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: T2, letterSpacing: '.03em' }}>
-              [ {f.label} ]
-            </label>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <input
-                value={val}
-                placeholder={f.placeholder}
-                onChange={e => isName ? onIdeaNameChange(e.target.value) : setPart(f.key as 'b' | 'f' | 'w' | 'o', e.target.value)}
-                style={fieldStyle}
-                onFocus={e => { e.currentTarget.style.borderColor = STAGE_COLORS.idea; e.currentTarget.style.boxShadow = `0 0 0 3px ${STAGE_COLORS.idea}1a`; }}
-                onBlur={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.boxShadow = 'none'; }}
-              />
-              {!isName && val.trim().length > 2 && (
-                <button
-                  onClick={() => checkField(f.key as 'b' | 'f' | 'w' | 'o')}
-                  disabled={s?.loading}
-                  title="Ask Sage to sharpen this"
-                  style={{
-                    flexShrink: 0, border: `1px solid ${BORDER}`, background: '#fff', borderRadius: 8,
-                    padding: '9px 10px', fontSize: 12, cursor: s?.loading ? 'default' : 'pointer',
-                    color: T2, fontFamily: 'inherit',
-                  }}
-                >
-                  {s?.loading ? '…' : '✨'}
-                </button>
-              )}
-            </div>
-            {s?.note && (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const,
-                background: '#fef9e7', border: '1px solid #fde68a', borderRadius: 8,
-                padding: '6px 10px', fontSize: 12, color: '#92400e',
-              }}>
-                <span>{s.note}</span>
-                <button
-                  onClick={() => applySuggestion(f.key as 'b' | 'f' | 'w' | 'o')}
-                  style={{
-                    border: 'none', borderRadius: 999, padding: '3px 10px', cursor: 'pointer',
-                    background: STAGE_COLORS.idea, color: '#fff', fontSize: 11, fontWeight: 700,
-                    fontFamily: 'inherit',
-                  }}
-                >
-                  Apply
-                </button>
-              </div>
-            )}
-            {s?.checked && !s?.note && !s?.loading && (
-              <div style={{ fontSize: 11, color: '#059669', fontWeight: 600 }}>✓ Looks specific</div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// The high-contrast "live assembly preview" shown in the Structured Canvas,
-// below the Mad-Libs fields above. Read-only — editing happens in the
-// fields; this just reflects `value` with each blank highlighted the
-// moment it's filled in, so what's about to be saved is never ambiguous.
+// The high-contrast "live assembly preview" of the one-liner IdeaOneLinerChat
+// is assembling. Read-only — editing happens in the chat; this just
+// reflects `value` with each blank highlighted the moment it's filled in,
+// so what's about to be saved is never ambiguous.
 function OneLinerPreviewCard({ value, publicOn, onTogglePublic }: { value: string; publicOn: boolean; onTogglePublic: () => void }) {
   const accent = STAGE_COLORS.idea;
 
@@ -14800,12 +14653,6 @@ export default function WorkPage() {
               set('publicSections', JSON.stringify({ ...publicSections, [key]: on }));
             return (
               <>
-                <OneLinerFieldsForm
-                  ideaName={get('ideaName') || activeIdea.name}
-                  onIdeaNameChange={v => set('ideaName', v)}
-                  oneLiner={get('oneLiner')}
-                  onOneLinerChange={v => set('oneLiner', v)}
-                />
                 <OneLinerPreviewCard
                   value={get('oneLiner')}
                   publicOn={!!publicSections.oneLiner}
