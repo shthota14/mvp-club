@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { communityApi, publicApi } from '@/api/client';
-import { LIT } from '@/styles/communityTheme';
 
 // ── Shared pain-point types + encode/decode ─────────────────────────────────
 // Extracted out of CommunityPage.tsx so the same modal can be used both by
@@ -33,6 +32,8 @@ export interface PainPointData {
   frequency: string;
   impact: 'low' | 'medium' | 'high';
   domain: string;
+  // Added with the 2026-10 redesign — absent on older posts.
+  category?: string;
 }
 
 export function encodePP(data: PainPointData): string {
@@ -51,63 +52,89 @@ export const IMPACT_COLORS: Record<string, { color: string; bg: string; border: 
   low:    { color: '#059669', bg: '#f0fdf4', border: '#86efac', label: '💡 Low impact' },
 };
 
-export const FREQ_OPTS = ['Multiple times a day', 'Daily', 'Weekly', 'Monthly', 'Occasionally'];
+export const FREQ_OPTS = ['Multiple times a day', 'Daily', 'Weekly', 'Monthly', 'Occasionally', 'Rarely'];
 export const IMPACT_OPTS = [
   { v: 'high',   label: '🔥 High — blocking or costly' },
   { v: 'medium', label: '⚡ Medium — annoying but managed' },
   { v: 'low',    label: '💡 Low — nice to fix' },
 ] as const;
 
-const CARD_RADIUS = 22;
-const FIELD_RADIUS = 12;
+// ── Redesign (2026-10, option "01 Bento Grid") ──────────────────────────────
+// Every field is its own tile in a two-column grid: a dark title tile, a
+// white pain tile, yellow "who" and blue "industry" tiles, a white frequency
+// tile, coral/amber/green severity tiles and a black submit tile. Earlier
+// versions are kept in "Claude outputs/" (picture1 / picture2).
 
-// Small MVP Club brand mark (same sun-and-rays motif as the hero nav logo,
-// recolored for this card's light "editorial paper" theme) — reused in both
-// the form header and the success header so the modal reads as MVP Club
-// branded wherever it's opened from, including standalone on /pain-points
-// where it's often the very first thing a visitor sees.
-// Clickable — doubles as a "go to mvpclub.io" link, since this modal is
-// often the very first (and sometimes only) thing a visitor sees, e.g.
-// landing straight into it from a shared /pain-points link.
-function BrandMark({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Go to MVP Club home"
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}
-    >
-      <svg width="26" height="26" viewBox="0 0 36 36" fill="none">
-        {Array.from({ length: 8 }, (_, i) => {
-          const a = (i * 45 * Math.PI) / 180;
-          return (
-            <line key={i}
-              x1={18 + 10 * Math.cos(a)} y1={18 + 10 * Math.sin(a)}
-              x2={18 + 15 * Math.cos(a)} y2={18 + 15 * Math.sin(a)}
-              stroke={LIT.accent} strokeWidth="2.2" strokeLinecap="round" />
-          );
-        })}
-        <circle cx="18" cy="18" r="6.5" fill={LIT.accent} />
-      </svg>
-      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2.5, color: LIT.accent, textTransform: 'uppercase' as const, fontFamily: LIT.bodyFont }}>
-        MVP Club
-      </span>
-    </button>
-  );
+const B = {
+  paper: '#f2f0eb',
+  ink: '#1a1a1a',
+  white: '#ffffff',
+  field: '#f6f5f1',
+  yellow: '#ffd84d',
+  blue: '#c8e6ff',
+  coral: '#ff6b5b',
+  amber: '#ffe3b3',
+  mint: '#d4f5d0',
+  muted: '#6b6b66',
+  line: '#dddbd3',
+};
+const FONT = "'Bricolage Grotesque', system-ui, sans-serif";
+
+const INDUSTRIES = [
+  'SaaS / B2B software', 'E-commerce & retail', 'Fintech', 'Healthcare', 'Education',
+  'Real estate & property', 'Food & hospitality', 'Logistics & supply chain', 'Marketing & media',
+  'HR & recruiting', 'Legal', 'Travel', 'Climate & energy', 'AI / developer tools',
+  'Consumer & lifestyle', 'Other',
+];
+const FREQ_CHOICES = FREQ_OPTS.filter(f => f !== 'Rarely');
+const FREQ_SHORT: Record<string, string> = { 'Multiple times a day': 'Many times a day' };
+const DESC_MAX = 500;
+
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap');
+.lpb-overlay{position:fixed;inset:0;background:rgba(26,26,26,.55);z-index:300;backdrop-filter:blur(4px)}
+.lpb-card{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:94%;max-width:600px;max-height:94vh;overflow-y:auto;background:${B.paper};border-radius:30px;padding:14px;box-shadow:0 40px 100px rgba(0,0,0,.35);z-index:301;font-family:${FONT};color:${B.ink}}
+.lpb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.lpb-tile{border-radius:22px;padding:20px;min-width:0}
+.lpb-span{grid-column:span 2}
+.lpb-label{display:block;font-size:13px;font-weight:800;margin-bottom:8px}
+.lpb-input{display:block;width:100%;box-sizing:border-box;border:2px solid transparent;border-radius:12px;padding:12px;font:inherit;font-size:14px;color:${B.ink};outline:none;transition:border-color .12s, box-shadow .12s}
+.lpb-input:focus{border-color:${B.ink}}
+textarea.lpb-input{resize:none;line-height:1.55;background:${B.field}}
+.lpb-on-white{background:${B.field}}
+.lpb-on-color{background:rgba(255,255,255,.65)}
+.lpb-chip{border:2px solid ${B.line};background:#fff;border-radius:999px;padding:9px 14px;font:inherit;font-size:13px;font-weight:600;color:${B.ink};cursor:pointer;transition:all .12s}
+.lpb-chip:hover{border-color:${B.ink}}
+.lpb-chip.sel{background:${B.ink};border-color:${B.ink};color:#fff}
+.lpb-sev{border:none;text-align:left;font:inherit;color:${B.ink};cursor:pointer;transition:all .12s}
+.lpb-sev .t{font-weight:800}
+.lpb-sev .s{font-size:12px;opacity:.85;margin-top:2px}
+.lpb-sev.sel{box-shadow:inset 0 0 0 3px ${B.ink}}
+.lpb-sev.dim{opacity:.7}
+.lpb-high{border-radius:22px;padding:22px;background:${B.coral};color:${B.ink};display:flex;flex-direction:column;justify-content:flex-end;min-height:130px}
+.lpb-high .t{font-size:26px}
+.lpb-stack{display:grid;grid-template-rows:repeat(2,1fr);gap:12px}
+.lpb-mini{border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;justify-content:center}
+.lpb-mini .t{font-size:17px}
+.lpb-select{appearance:none;-webkit-appearance:none;cursor:pointer;padding-right:36px;background:rgba(255,255,255,.65) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231a1a1a' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center}
+.lpb-submit{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;box-sizing:border-box;border:none;border-radius:22px;padding:20px 22px;background:${B.ink};color:#fff;font:inherit;text-align:left;cursor:pointer;transition:transform .1s, opacity .12s}
+.lpb-submit:hover:not(:disabled){transform:translateY(-1px)}
+.lpb-submit:disabled{opacity:.5;cursor:not-allowed}
+.lpb-close{position:absolute;top:22px;right:22px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.14);border:none;border-radius:50%;font-size:14px;color:#fff;cursor:pointer}
+@media (max-width:560px){
+  .lpb-card{width:100%;max-width:none;height:100%;max-height:100vh;top:0;left:0;transform:none;border-radius:0;padding:10px}
+  .lpb-tile{padding:16px;border-radius:20px}
+  .lpb-high{min-height:120px}
 }
-
-// ── Log Pain Point Modal ──────────────────────────────────────────────────────
+`;
 
 interface Props {
   onClose: () => void;
   onLogged: (pp: PainPoint) => void;
-  // "member": existing behavior — posts as the logged-in user, auto-closes
-  //   shortly after success.
+  // "member": posts as the logged-in user, auto-closes shortly after success.
   // "public": no account required. Adds an optional email field, submits to
-  //   the unauthenticated endpoint, and — since this is meant to be a soft,
-  //   non-blocking invitation rather than a signup wall — stays open after
-  //   success with an optional "create a free account" CTA the visitor can
-  //   ignore and just close instead.
+  //   the unauthenticated endpoint, and stays open after success with an
+  //   optional "create a free account" CTA the visitor can ignore.
   mode?: 'member' | 'public';
 }
 
@@ -116,7 +143,7 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
   const [description, setDescription] = useState('');
   const [audience,    setAudience]    = useState('');
   const [frequency,   setFrequency]   = useState('');
-  const [impact,      setImpact]      = useState<'low' | 'medium' | 'high'>('medium');
+  const [impact,      setImpact]      = useState<'low' | 'medium' | 'high' | ''>('');
   const [domain,      setDomain]      = useState('');
   const [email,       setEmail]       = useState('');
   const [posting,     setPosting]     = useState(false);
@@ -124,10 +151,17 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
   const [held,        setHeld]        = useState(false);
   const [error,       setError]       = useState('');
 
-  const valid = description.trim().length >= 10 && audience.trim().length >= 3 && frequency;
+  const valid = description.trim().length >= 10 && audience.trim().length >= 3 && !!frequency && !!impact;
+
+  const missing = [
+    description.trim().length < 10 && 'the pain (10+ characters)',
+    audience.trim().length < 3 && 'who has it',
+    !frequency && 'how often',
+    !impact && 'how painful',
+  ].filter(Boolean) as string[];
 
   const handle = async () => {
-    if (!valid) return;
+    if (!valid || !impact) return;
     setPosting(true);
     setError('');
     try {
@@ -146,9 +180,6 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
           encourage_count: 0, pursue_count: 0, comment_count: 0, user_reacted: null,
           is_guest: true,
         };
-        // Public mode doesn't auto-close — the success state below carries
-        // the optional register invitation, and the visitor decides when
-        // they're done rather than being timed out of it.
         if (!isHeld) onLogged(pp);
       } else {
         const content = encodePP(data);
@@ -163,210 +194,160 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
     finally { setPosting(false); }
   };
 
+  const sevClass = (v: string) => `lpb-sev${impact === v ? ' sel' : impact ? ' dim' : ''}`;
+
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 300, backdropFilter: 'blur(4px)' }} />
-      <div style={{
-        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-        width: '94%', maxWidth: 560, maxHeight: '92vh', overflowY: 'auto',
-        background: LIT.card, borderRadius: CARD_RADIUS,
-        boxShadow: '0 40px 100px rgba(70,50,15,.24)', zIndex: 301,
-      }}>
-        {/* Branded header band */}
-        <div style={{
-          position: 'relative' as const, textAlign: 'center' as const,
-          padding: '26px 28px 20px', background: LIT.accentSoft,
-          borderBottom: `1px solid ${LIT.accentSoftBorder}`,
-          borderRadius: `${CARD_RADIUS}px ${CARD_RADIUS}px 0 0`,
-        }}>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            style={{
-              position: 'absolute' as const, top: 14, right: 14,
-              width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(255,255,255,.6)', border: 'none', borderRadius: '50%',
-              fontSize: 14, color: LIT.secondary, cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >✕</button>
-          <BrandMark onClick={() => { onClose(); navigate('/'); }} />
-        </div>
-
-        <div style={{ padding: '26px 28px 28px' }}>
-          {posted ? (
-            <div style={{ textAlign: 'center', padding: '20px 0 0' }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>{held ? '🕓' : '🎯'}</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: LIT.text, fontFamily: LIT.headFont }}>
-                {held ? "Pain point received" : "Pain point logged!"}
+      <style>{CSS}</style>
+      <div className="lpb-overlay" onClick={onClose} />
+      <div className="lpb-card" role="dialog" aria-modal="true" aria-label="Log a pain point">
+        {posted ? (
+          <div className="lpb-grid">
+            <div className="lpb-tile lpb-span" style={{ background: B.ink, color: '#fff', position: 'relative' }}>
+              <button className="lpb-close" onClick={onClose} aria-label="Close">✕</button>
+              <div style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', opacity: .6 }}>MVP Club · Pain points</div>
+              <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: -1, margin: '8px 0 6px' }}>
+                {held ? 'Pain point received' : 'Pain point logged!'}
               </div>
-              <div style={{ fontSize: 14, color: LIT.secondary, marginTop: 6, fontFamily: LIT.bodyFont }}>
+              <div style={{ fontSize: 14, opacity: .8, lineHeight: 1.5 }}>
                 {held
                   ? "It's in review before it goes public — thanks for your patience."
-                  : "Other founders can now discover and pursue it."}
+                  : 'Founders can now discover it — and maybe build the fix.'}
               </div>
-
-              {mode === 'public' && (
-                <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${LIT.border}` }}>
-                  <div style={{ fontSize: 13.5, color: LIT.secondary, marginBottom: 14, fontFamily: LIT.bodyFont, lineHeight: 1.5 }}>
-                    Want to see what founders are building on pain points like this — or come back and build on your own?
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' as const }}>
-                    <button
-                      onClick={() => navigate('/', { state: { openRegister: true } })}
-                      style={{
-                        padding: '11px 20px', borderRadius: FIELD_RADIUS, border: 'none',
-                        background: LIT.accent, color: '#fff', fontSize: 13.5, fontWeight: 700,
-                        cursor: 'pointer', fontFamily: 'inherit',
-                      }}
-                    >
-                      Create a free account →
-                    </button>
-                    <button onClick={onClose} style={{
-                      padding: '11px 20px', borderRadius: FIELD_RADIUS,
-                      border: `1.5px solid ${LIT.border}`, background: LIT.card,
-                      color: LIT.secondary, fontSize: 13.5, fontWeight: 600,
-                      cursor: 'pointer', fontFamily: 'inherit',
-                    }}>
-                      No thanks, I'm done
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
-          ) : (
-            <>
-              <div style={{ fontSize: 23, fontWeight: 800, letterSpacing: -0.5, marginBottom: 6, color: LIT.text, fontFamily: LIT.headFont, textAlign: 'center' as const }}>
-                🎯 Log a pain point
+            <div className="lpb-tile" style={{ background: B.yellow }}>
+              <div style={{ fontSize: 40 }}>🚀</div>
+              <div style={{ fontWeight: 800, marginTop: 6 }}>Thanks for contributing</div>
+            </div>
+            <div className="lpb-tile" style={{ background: B.blue }}>
+              <div style={{ fontSize: 13, lineHeight: 1.5 }}>Your pain point could be someone else's next big idea.</div>
+            </div>
+            {mode === 'public' && (
+              <div className="lpb-tile lpb-span" style={{ background: B.white }}>
+                <div style={{ fontSize: 14, color: B.muted, marginBottom: 14, lineHeight: 1.5 }}>
+                  Want to see what founders are building on pain points like this — or come back and build on your own?
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button className="lpb-chip sel" style={{ padding: '12px 20px' }}
+                    onClick={() => navigate('/', { state: { openRegister: true } })}>
+                    Create a free account →
+                  </button>
+                  <button className="lpb-chip" style={{ padding: '12px 20px' }} onClick={onClose}>No thanks, I'm done</button>
+                </div>
               </div>
-              <div style={{ fontSize: 14, color: LIT.secondary, marginBottom: 26, fontFamily: LIT.bodyFont, textAlign: 'center' as const, lineHeight: 1.55 }}>
-                {mode === 'public'
-                  ? "Describe a real problem you've seen. No account needed — other founders can pick it up and build a solution."
-                  : "Describe a real problem you've seen. Other founders can pick it up and build a solution."}
+            )}
+          </div>
+        ) : (
+          <div className="lpb-grid">
+            {/* Title tile */}
+            <div className="lpb-tile lpb-span" style={{ background: B.ink, color: '#fff', padding: 26, position: 'relative' }}>
+              <button className="lpb-close" onClick={onClose} aria-label="Close">✕</button>
+              <div style={{ fontSize: 12, letterSpacing: 2, textTransform: 'uppercase', opacity: .6 }}>MVP Club · Pain points</div>
+              <h2 style={{ margin: '8px 0 6px', fontSize: 38, fontWeight: 800, letterSpacing: -1, lineHeight: 1.05 }}>Log a pain point</h2>
+              <p style={{ margin: 0, fontSize: 14, opacity: .75, lineHeight: 1.5, maxWidth: 440 }}>
+                Describe a real problem you've seen.{mode === 'public' && ' No account needed.'} Other founders can pick it up and build a solution.
+              </p>
+            </div>
+
+            {/* Pain */}
+            <div className="lpb-tile lpb-span" style={{ background: B.white }}>
+              <label className="lpb-label" htmlFor="lpb-pain">What's the pain? <span style={{ color: '#e03131' }}>*</span></label>
+              <div style={{ position: 'relative' }}>
+                <textarea
+                  id="lpb-pain"
+                  className="lpb-input lpb-on-white"
+                  rows={3}
+                  maxLength={DESC_MAX}
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="e.g. As a Shopify store owner, I struggle to sync inventory across sales channels. It leads to overselling and unhappy customers."
+                />
+                <span style={{ position: 'absolute', right: 12, bottom: 8, fontSize: 12, color: B.muted }}>{description.length}/{DESC_MAX}</span>
               </div>
+            </div>
 
-              {/* Description */}
-              <label style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, display: 'block', marginBottom: 6, fontFamily: LIT.headFont }}>
-                What's the pain? <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <textarea
-                autoFocus
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                placeholder="e.g. Freelancers spend 3+ hours a week chasing overdue invoices with no visibility into when they'll get paid."
-                rows={3}
-                style={{ width: '100%', padding: '11px 13px', borderRadius: FIELD_RADIUS, border: `1.5px solid ${LIT.border}`, fontSize: 14, lineHeight: 1.65, resize: 'vertical' as const, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: 18, color: LIT.text }}
-                onFocus={e => (e.target.style.borderColor = LIT.accent)}
-                onBlur={e => (e.target.style.borderColor = LIT.border)}
-              />
-
-              {/* Who */}
-              <label style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, display: 'block', marginBottom: 6, fontFamily: LIT.headFont }}>
-                Who experiences this? <span style={{ color: '#dc2626' }}>*</span>
-              </label>
+            {/* Who */}
+            <div className="lpb-tile" style={{ background: B.yellow }}>
+              <label className="lpb-label" htmlFor="lpb-who">Who has it? <span style={{ color: '#c92a2a' }}>*</span></label>
               <input
+                id="lpb-who"
+                className="lpb-input lpb-on-color"
+                maxLength={200}
                 value={audience}
                 onChange={e => setAudience(e.target.value)}
-                placeholder="e.g. Freelancers, small agencies, consultants"
-                style={{ width: '100%', padding: '11px 13px', borderRadius: FIELD_RADIUS, border: `1.5px solid ${LIT.border}`, fontSize: 14, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: 18, color: LIT.text }}
-                onFocus={e => (e.target.style.borderColor = LIT.accent)}
-                onBlur={e => (e.target.style.borderColor = LIT.border)}
+                placeholder="e.g. Small online retailers"
               />
+            </div>
 
-              {/* Frequency */}
-              <label style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, display: 'block', marginBottom: 8, fontFamily: LIT.headFont }}>
-                How often does it happen? <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 18 }}>
-                {FREQ_OPTS.map(f => (
-                  <button key={f} onClick={() => setFrequency(f)} style={{
-                    padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 600,
-                    cursor: 'pointer', fontFamily: 'inherit', transition: 'all .12s',
-                    border: `1.5px solid ${frequency === f ? LIT.accent : LIT.border}`,
-                    background: frequency === f ? LIT.accentSoft : LIT.card,
-                    color: frequency === f ? LIT.accent : LIT.secondary,
-                  }}>{f}</button>
-                ))}
-              </div>
-
-              {/* Impact */}
-              <label style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, display: 'block', marginBottom: 8, fontFamily: LIT.headFont }}>
-                How painful is it?
-              </label>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-                {IMPACT_OPTS.map(o => {
-                  const ic = IMPACT_COLORS[o.v];
-                  const sel = impact === o.v;
-                  return (
-                    <button key={o.v} onClick={() => setImpact(o.v)} style={{
-                      flex: 1, padding: '10px 6px', borderRadius: FIELD_RADIUS, fontSize: 11, fontWeight: 700,
-                      cursor: 'pointer', fontFamily: 'inherit', transition: 'all .12s', textAlign: 'center' as const,
-                      border: `2px solid ${sel ? ic.color : LIT.border}`,
-                      background: sel ? ic.bg : LIT.cardTint,
-                      color: sel ? ic.color : LIT.muted,
-                    }}>{o.label}</button>
-                  );
-                })}
-              </div>
-
-              {/* Domain (optional) */}
-              <label style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, display: 'block', marginBottom: 6, fontFamily: LIT.headFont }}>
-                Industry / domain <span style={{ color: LIT.muted, fontWeight: 400 }}>(optional)</span>
-              </label>
-              <input
+            {/* Industry */}
+            <div className="lpb-tile" style={{ background: B.blue }}>
+              <label className="lpb-label" htmlFor="lpb-ind">Industry <span style={{ fontWeight: 400 }}>(optional)</span></label>
+              <select
+                id="lpb-ind"
+                className="lpb-input lpb-select"
                 value={domain}
                 onChange={e => setDomain(e.target.value)}
-                placeholder="e.g. Fintech, Healthcare, Education…"
-                style={{ width: '100%', padding: '11px 13px', borderRadius: FIELD_RADIUS, border: `1.5px solid ${LIT.border}`, fontSize: 14, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: mode === 'public' ? 18 : 24, color: LIT.text }}
-                onFocus={e => (e.target.style.borderColor = LIT.accent)}
-                onBlur={e => (e.target.style.borderColor = LIT.border)}
-              />
+                style={{ color: domain ? B.ink : B.muted }}
+              >
+                <option value="">Choose one</option>
+                {INDUSTRIES.map(i => <option key={i} value={i} style={{ color: B.ink }}>{i}</option>)}
+              </select>
+            </div>
 
-              {/* Email (optional, public mode only) */}
-              {mode === 'public' && (
-                <>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: LIT.muted, display: 'block', marginBottom: 6, fontFamily: LIT.headFont }}>
-                    Email <span style={{ color: LIT.muted, fontWeight: 400 }}>(optional — get notified if someone responds)</span>
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    style={{ width: '100%', padding: '11px 13px', borderRadius: FIELD_RADIUS, border: `1.5px solid ${LIT.border}`, fontSize: 14, outline: 'none', fontFamily: LIT.bodyFont, boxSizing: 'border-box' as const, marginBottom: 24, color: LIT.text }}
-                    onFocus={e => (e.target.style.borderColor = LIT.accent)}
-                    onBlur={e => (e.target.style.borderColor = LIT.border)}
-                  />
-                </>
-              )}
-
-              {error && <div style={{ color: '#dc2626', fontSize: 13, marginBottom: 14, fontFamily: LIT.bodyFont }}>{error}</div>}
-
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  onClick={handle}
-                  disabled={!valid || posting}
-                  style={{
-                    flex: 2, padding: '14px', borderRadius: FIELD_RADIUS, border: 'none',
-                    background: valid ? LIT.accent : LIT.border,
-                    color: valid ? '#fff' : LIT.muted,
-                    fontSize: 14, fontWeight: 700,
-                    cursor: valid ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
-                  }}
-                >
-                  {posting ? 'Logging…' : '🎯 Log this pain point →'}
-                </button>
-                <button onClick={onClose} style={{
-                  flex: 1, padding: '14px', borderRadius: FIELD_RADIUS,
-                  border: `1.5px solid ${LIT.border}`, background: LIT.card,
-                  color: LIT.secondary, fontSize: 14, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}>
-                  Cancel
-                </button>
+            {/* Frequency */}
+            <div className="lpb-tile lpb-span" style={{ background: B.white }}>
+              <div className="lpb-label" style={{ marginBottom: 10 }}>How often does it happen? <span style={{ color: '#e03131' }}>*</span></div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {FREQ_CHOICES.map(f => (
+                  <button key={f} type="button" aria-pressed={frequency === f}
+                    className={`lpb-chip${frequency === f ? ' sel' : ''}`} onClick={() => setFrequency(f)}>
+                    {FREQ_SHORT[f] ?? f}
+                  </button>
+                ))}
               </div>
-            </>
-          )}
-        </div>
+            </div>
+
+            {/* Severity */}
+            <button type="button" aria-pressed={impact === 'high'} className={`${sevClass('high')} lpb-high`} onClick={() => setImpact('high')}>
+              <div className="t">High</div>
+              <div className="s">Blocking or costly</div>
+            </button>
+            <div className="lpb-stack">
+              <button type="button" aria-pressed={impact === 'medium'} className={`${sevClass('medium')} lpb-mini`} style={{ background: B.amber }} onClick={() => setImpact('medium')}>
+                <div className="t">Medium</div>
+                <div className="s">Annoying but managed</div>
+              </button>
+              <button type="button" aria-pressed={impact === 'low'} className={`${sevClass('low')} lpb-mini`} style={{ background: B.mint }} onClick={() => setImpact('low')}>
+                <div className="t">Low</div>
+                <div className="s">Nice to fix</div>
+              </button>
+            </div>
+
+            {/* Email (public only) */}
+            {mode === 'public' && (
+              <div className="lpb-tile lpb-span" style={{ background: B.white }}>
+                <label className="lpb-label" htmlFor="lpb-email">
+                  Email <span style={{ fontWeight: 400, color: B.muted }}>(optional — get notified if someone responds)</span>
+                </label>
+                <input id="lpb-email" className="lpb-input lpb-on-white" type="email" value={email}
+                  onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+              </div>
+            )}
+
+            {/* Submit */}
+            <button type="button" className="lpb-submit lpb-span" onClick={handle} disabled={!valid || posting}>
+              <span>
+                <span style={{ display: 'block', fontSize: 18, fontWeight: 800 }}>{posting ? 'Submitting…' : 'Submit pain point'}</span>
+                <span style={{ display: 'block', fontSize: 12.5, marginTop: 3, opacity: .7, color: error ? '#ffb4b4' : undefined }}>
+                  {error ? error : missing.length ? `Still needed: ${missing.join(', ')}.` : 'Public and visible to founders'}
+                </span>
+              </span>
+              <span style={{ width: 40, height: 40, flex: '0 0 auto', borderRadius: '50%', background: B.yellow, color: B.ink, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+              </span>
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
