@@ -18,19 +18,22 @@ function guideForPath(pathname: string): string {
   return 'getting-started';
 }
 
+// Pill links inside a cream track (2026-10 redesign): the active one is an
+// ink pill, the rest are plain text on the track.
 const navStyle = (isActive: boolean): React.CSSProperties => ({
-  padding: '7px 16px',
-  borderRadius: 20,
-  fontSize: 13,
-  fontWeight: 500,
+  padding: '8px 16px',
+  borderRadius: 999,
+  fontSize: 14,
+  fontWeight: isActive ? 600 : 500,
   border: 'none',
-  background: isActive ? '#1d1d1f' : 'transparent',
-  color: isActive ? '#fff' : '#6e6e73',
+  background: isActive ? '#16121d' : 'transparent',
+  color: isActive ? '#fff' : '#16121d',
   cursor: 'pointer',
   transition: 'all .18s',
   textDecoration: 'none',
   display: 'inline-block',
   letterSpacing: '-0.01em',
+  whiteSpace: 'nowrap',
 });
 
 // Smaller pill for the mobile-only secondary nav row below the header —
@@ -39,14 +42,14 @@ const navStyle = (isActive: boolean): React.CSSProperties => ({
 const navStyleMobile = (isActive: boolean): React.CSSProperties => ({
   ...navStyle(isActive),
   padding: '6px 14px',
-  fontSize: 12,
-  borderRadius: 16,
+  fontSize: 13,
 });
 
 const BOTTOM_TABS = [
   { to: '/journey',    label: 'Journey',    icon: '🧭' },
   { to: '/community',  label: 'Community',  icon: '🏆' },
   { to: '/progress',   label: 'My Ideas',   icon: '💡' },
+  { to: '/grafter',    label: 'Grafter',    icon: '📈' },
   { to: '/messages',   label: 'Messages',   icon: '✉️' },
 ];
 
@@ -97,17 +100,17 @@ export default function AppShell() {
   }, [helpMenuOpen]);
 
   const iconBtn: React.CSSProperties = {
-    width: 34, height: 34, borderRadius: '50%',
-    background: 'transparent', border: '1px solid #d2d2d7',
+    width: 38, height: 38, borderRadius: '50%',
+    background: 'transparent', border: '1px solid #d9d3c5',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', transition: 'all .18s', flexShrink: 0,
-    color: '#6e6e73', fontSize: 13, fontWeight: 700,
+    color: '#16121d', fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
   };
 
   const helpMenuItemStyle: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 8, width: '100%',
     padding: '12px 16px', background: 'none', border: 'none', textAlign: 'left' as const,
-    fontSize: 13, fontWeight: 600, color: '#1d1d1f', cursor: 'pointer', fontFamily: 'inherit',
+    fontSize: 14, fontWeight: 600, color: '#16121d', cursor: 'pointer', fontFamily: 'inherit',
   };
 
   return (
@@ -115,23 +118,28 @@ export default function AppShell() {
       <ImpersonationBanner />
       <nav style={{
         position: 'fixed', top: bannerOffset, left: 0, right: 0, zIndex: 100,
-        background: 'rgba(255,255,255,.92)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid #e5e5ea',
+        background: '#f3f0e8',
+        borderBottom: '1px solid #e2ddd1',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 24px', height: 64,
+        gap: 16, padding: '0 clamp(16px, 3vw, 32px)', height: 64,
+        fontFamily: 'var(--font-ui)',
       }}>
         <Logo size={isMobile ? 'sm' : 'lg'} />
 
         {/* Desktop nav links — hidden on mobile */}
         {!isMobile && (
-          <div style={{ display: 'flex', gap: 2 }}>
+          <div style={{ display: 'flex', gap: 4, background: '#e8e3d7', padding: 4, borderRadius: 999 }}>
             {!user?.is_admin && (
               <NavLink to="/community" style={({ isActive }) => navStyle(isActive)}>Community</NavLink>
             )}
             {!user?.is_admin && (
               <NavLink to="/progress" style={({ isActive }) => navStyle(isActive || location.pathname.startsWith('/work') || location.pathname === '/journey')}>My Idea Vault</NavLink>
+            )}
+            {!user?.is_admin && (
+              <NavLink to="/grafter" style={({ isActive }) => navStyle(isActive)}>Grafter</NavLink>
+            )}
+            {!user?.is_admin && (
+              <NavLink to="/content" style={({ isActive }) => navStyle(isActive)}>Content</NavLink>
             )}
             {user?.is_admin && (
               <NavLink to="/admin" style={({ isActive }) => ({
@@ -151,8 +159,8 @@ export default function AppShell() {
               onClick={() => setHelpMenuOpen(v => !v)}
               title="Help & feedback"
               style={iconBtn}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f7'; (e.currentTarget as HTMLButtonElement).style.color = '#1d1d1f'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#6e6e73'; }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#e8e3d7'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
             >
               ?
             </button>
@@ -170,9 +178,9 @@ export default function AppShell() {
                 left: isMobile ? 0 : 'auto',
                 width: isMobile ? '100%' : 210,
                 background: '#fff',
-                borderRadius: isMobile ? 0 : 14,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
-                border: '1px solid #e5e5ea',
+                borderRadius: isMobile ? 0 : 16,
+                boxShadow: '0 12px 40px rgba(22,18,29,0.14)',
+                border: '1px solid #e2ddd1',
                 overflow: 'hidden',
                 zIndex: 200,
               }}>
@@ -184,7 +192,7 @@ export default function AppShell() {
                 </button>
                 <button
                   onClick={() => { setHelpMenuOpen(false); setProfileOpen(false); setFeedbackOpen(true); }}
-                  style={{ ...helpMenuItemStyle, borderTop: '1px solid #f0f0f5' }}
+                  style={{ ...helpMenuItemStyle, borderTop: '1px solid #e2ddd1' }}
                 >
                   💬 Feedback
                 </button>
@@ -198,7 +206,7 @@ export default function AppShell() {
             onClick={() => navigate('/messages')}
             title="Private messages"
             style={{ ...iconBtn, position: 'relative', fontSize: 15 }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f7'; }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#e8e3d7'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
           >
             ✉️
@@ -206,10 +214,10 @@ export default function AppShell() {
               <span style={{
                 position: 'absolute', top: -2, right: -2,
                 width: 15, height: 15, borderRadius: '50%',
-                background: '#ff3b30', color: '#fff',
+                background: '#7c3aed', color: '#fff',
                 fontSize: 9, fontWeight: 700,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '1.5px solid #fff',
+                border: '1.5px solid #f3f0e8',
               }}>
                 {unread > 9 ? '9+' : unread}
               </span>
@@ -219,10 +227,10 @@ export default function AppShell() {
           <button
             onClick={() => { setFeedbackOpen(false); setProfileOpen(true); }}
             style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: '#1d1d1f', color: '#fff',
-              border: 'none', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', letterSpacing: '-0.01em',
+              width: 38, height: 38, borderRadius: '50%',
+              background: '#7c3aed', color: '#fff',
+              border: 'none', fontSize: 13, fontWeight: 700,
+              cursor: 'pointer', letterSpacing: '-0.01em', fontFamily: 'inherit',
             }}
           >
             {user?.avatar_initials ?? '?'}
@@ -239,8 +247,8 @@ export default function AppShell() {
       {isMobile && (
         <div style={{
           position: 'fixed', top: 64 + bannerOffset, left: 0, right: 0, zIndex: 99,
-          background: 'rgba(255,255,255,.98)',
-          borderBottom: '1px solid #e5e5ea',
+          background: '#f3f0e8',
+          borderBottom: '1px solid #e2ddd1',
           display: 'flex', gap: 8, alignItems: 'center',
           padding: '8px 16px', overflowX: 'auto', WebkitOverflowScrolling: 'touch',
         }}>
@@ -249,6 +257,12 @@ export default function AppShell() {
           )}
           {!user?.is_admin && (
             <NavLink to="/progress" style={({ isActive }) => navStyleMobile(isActive || location.pathname.startsWith('/work') || location.pathname === '/journey')}>My Idea Vault</NavLink>
+          )}
+          {!user?.is_admin && (
+            <NavLink to="/grafter" style={({ isActive }) => navStyleMobile(isActive)}>Grafter</NavLink>
+          )}
+          {!user?.is_admin && (
+            <NavLink to="/content" style={({ isActive }) => navStyleMobile(isActive)}>Content</NavLink>
           )}
           {user?.is_admin && (
             <NavLink to="/admin" style={({ isActive }) => ({
@@ -260,7 +274,7 @@ export default function AppShell() {
         </div>
       )}
 
-      <main style={{ paddingTop: (isMobile ? 108 : 64) + bannerOffset, paddingBottom: isMobile && !user?.is_admin ? 60 : 0, minHeight: '100vh', background: '#f5f5f7' }}>
+      <main style={{ paddingTop: (isMobile ? 108 : 64) + bannerOffset, paddingBottom: isMobile && !user?.is_admin ? 60 : 0, minHeight: '100vh', background: '#f3f0e8' }}>
         <Outlet />
       </main>
 
@@ -268,10 +282,7 @@ export default function AppShell() {
       {isMobile && !user?.is_admin && (
         <nav style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
-          background: 'rgba(255,255,255,0.95)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '1px solid #e5e5ea',
+          background: '#16121d',
           display: 'flex',
           height: 60,
           paddingBottom: 'env(safe-area-inset-bottom)',
@@ -288,25 +299,19 @@ export default function AppShell() {
                   flex: 1, display: 'flex', flexDirection: 'column',
                   alignItems: 'center', justifyContent: 'center', gap: 2,
                   background: 'none', border: 'none', cursor: 'pointer',
-                  color: isActive ? '#1d1d1f' : '#aeaeb2',
-                  position: 'relative',
+                  color: isActive ? '#f5f2ff' : '#8a8299',
+                  position: 'relative', fontFamily: 'inherit',
                 }}
               >
-                <span style={{ fontSize: 20, lineHeight: 1 }}>{tab.icon}</span>
-                <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 400, letterSpacing: '-0.01em' }}>
+                <span style={{ width: 22, height: 3, borderRadius: 2, background: isActive ? '#d6ff3d' : '#2a2236', marginBottom: 2 }} />
+                <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '-0.01em' }}>
                   {tab.label}
                 </span>
                 {hasUnread && (
                   <span style={{
                     position: 'absolute', top: 6, right: '50%', marginRight: -18,
                     width: 8, height: 8, borderRadius: '50%',
-                    background: '#ff3b30', border: '1.5px solid #fff',
-                  }} />
-                )}
-                {isActive && (
-                  <span style={{
-                    position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                    width: 20, height: 3, borderRadius: 2, background: '#1d1d1f',
+                    background: '#7c3aed', border: '1.5px solid #16121d',
                   }} />
                 )}
               </button>

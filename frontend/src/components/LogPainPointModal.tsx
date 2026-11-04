@@ -128,6 +128,24 @@ textarea.lpb-input{resize:none;line-height:1.55;background:${B.field}}
 }
 `;
 
+// Turn a failed submit into something specific. A bare "something went wrong"
+// hides whether it was validation (400), the server/database (500) or the
+// network (no response), which is exactly what's needed to diagnose it.
+function describeSubmitError(err: unknown): string {
+  const e = err as { response?: { status?: number; data?: { error?: unknown } }; message?: string };
+  const status = e?.response?.status;
+  if (!status) return "Couldn't reach the server — check your connection (or that the backend is running) and try again.";
+  const data = e.response?.data?.error;
+  if (status === 400 && data && typeof data === 'object') {
+    const fe = (data as { fieldErrors?: Record<string, string[] | undefined> }).fieldErrors ?? {};
+    const first = Object.values(fe).flat().find(Boolean);
+    if (first) return first;
+  }
+  if (status === 429) return 'Too many submissions just now — please wait a minute and try again.';
+  if (status >= 500) return `The server hit a problem saving this (error ${status}). Please try again shortly.`;
+  return typeof data === 'string' ? data : `Something went wrong (error ${status}) — mind trying again?`;
+}
+
 interface Props {
   onClose: () => void;
   onLogged: (pp: PainPoint) => void;
@@ -188,8 +206,8 @@ export default function LogPainPointModal({ onClose, onLogged, mode = 'member' }
         const pp = res.data.post ?? { id: Date.now().toString(), content, stage: 'idea', created_at: new Date().toISOString(), author_name: 'You', author_initials: 'Y', encourage_count: 0, pursue_count: 0, comment_count: 0, user_reacted: null };
         setTimeout(() => { onLogged(pp); onClose(); }, 1200);
       }
-    } catch {
-      setError("Something went wrong — mind trying again in a moment?");
+    } catch (err) {
+      setError(describeSubmitError(err));
     }
     finally { setPosting(false); }
   };

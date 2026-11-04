@@ -11,28 +11,48 @@ import AvailabilityModal from '@/components/AvailabilityModal';
 import EmailPreviewModal from '@/components/EmailPreviewModal';
 import InterviewScriptCard from '@/components/InterviewScriptCard';
 import Button from '@/components/Button';
-import Card from '@/components/Card';
+
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { deriveVeraVerdicts } from '@/utils/veraVerdicts';
 
 // ── Design tokens ──────────────────────────────────────────────────────────
 
-const T1 = '#1d1d1f';
-const T2 = '#6e6e73';
-const T3 = '#b0b0b8';
-const BORDER  = '#e5e5ea';
-const BORDER2 = '#d2d2d7';
+// 2026-10 redesign palette: cream paper, ink text, one violet accent and a
+// lime highlight. Mirrors the tokens in index.css.
+const T1 = '#16121d';
+const T2 = '#4a4357';
+const T3 = '#6f6880';
+const BORDER  = '#e2ddd1';
+const BORDER2 = '#d9d3c5';
+const CREAM   = '#f3f0e8';
+const CREAM2  = '#e8e3d7';
+const INK     = '#16121d';
+const INK2    = '#1c1726';
+const INK_TXT = '#f5f2ff';
+const INK_DIM = '#c9c0da';
+const INK_MUTE = '#8a8299';
+const ACCENT  = '#7c3aed';
+const ACCENT_DEEP = '#6d28d9';
+const LIME    = '#d6ff3d';
+const MONO    = "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace";
+// Small uppercase mono eyebrow used above every title / card.
+const eyebrow = (color: string = T3, size = 11): React.CSSProperties => ({
+  fontFamily: MONO, fontSize: size, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const, color,
+});
 // Colour used to render text the USER typed, so it's visually distinct from
 // system-asked questions/labels (which are bolded instead). Kept as one
 // constant so any input field can opt in consistently.
-const USER_INPUT_COLOR = '#2563eb';
+const USER_INPUT_COLOR = '#6d28d9';
 
+// One accent for every stage (2026-10 redesign) — the product reads as one
+// journey, not five colour-coded modules. Kept as a per-stage map so the
+// hundreds of `STAGE_COLORS[mod]` call sites keep working unchanged.
 const STAGE_COLORS = {
   idea:     '#7c3aed',
-  hone:     '#2563eb',
-  validate: '#059669',
-  shape:    '#d97706',
-  done:     '#dc2626',
+  hone:     '#7c3aed',
+  validate: '#7c3aed',
+  shape:    '#7c3aed',
+  done:     '#7c3aed',
 };
 
 // A handful of named text roles, defined once, instead of hand-tuning
@@ -47,14 +67,14 @@ const STAGE_COLORS = {
 const TYPE: Record<string, React.CSSProperties> = {
   // Muted italic one-liner shown under a step's H1 (STEP_GOALS.<mod>[n]).
   stepSubtitle: {
-    fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui",
-    fontSize: 19, fontStyle: 'italic' as const, lineHeight: 1.4,
+    fontFamily: 'inherit',
+    fontSize: 17, lineHeight: 1.5, color: '#4a4357',
   },
   // Small uppercase eyebrow label at the top of a postcard/summary card
   // ("YOUR HYPOTHESIS", "YOUR CALL", "Feature 1", ...).
   postcardLabel: {
-    fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif',
-    fontSize: 11, fontWeight: 900 as const, letterSpacing: 0.4,
+    fontFamily: "'JetBrains Mono', ui-monospace, Menlo, monospace",
+    fontSize: 11, fontWeight: 700 as const, letterSpacing: '0.12em',
     textTransform: 'uppercase' as const,
   },
 };
@@ -94,15 +114,13 @@ function JengaBlock({ label, color, selected, badge, icon, onClick }: {
       type="button"
       onClick={onClick}
       style={{
-        textAlign: 'left' as const, width: '100%', padding: '8px 12px', cursor: 'pointer',
-        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.02em', lineHeight: 1.3, fontWeight: selected ? 700 : 500,
-        border: `2px solid ${color}`, borderRadius: 4,
-        background: selected ? color : '#fff6e0',
-        color: selected ? '#fff' : '#5c4324',
-        transform: selected ? 'translateX(22px)' : 'translateX(0)',
-        boxShadow: selected ? '2px 3px 6px rgba(0,0,0,.2)' : '0 1px 2px rgba(0,0,0,.08)',
-        transition: 'transform .25s cubic-bezier(.3,.6,.4,1), background .25s, color .25s, box-shadow .25s',
-        display: 'flex', alignItems: 'center', gap: 6,
+        textAlign: 'left' as const, width: '100%', padding: '12px 14px', cursor: 'pointer',
+        fontFamily: 'inherit', fontSize: 14, lineHeight: 1.3, fontWeight: selected ? 700 : 500,
+        border: 'none', borderRadius: 14,
+        background: selected ? color : '#fff',
+        color: selected ? '#fff' : T1,
+        transition: 'background .2s, color .2s, transform .15s',
+        display: 'flex', alignItems: 'center', gap: 8,
       }}
     >
       {icon}
@@ -133,11 +151,11 @@ function JengaTower({ items, color, colorOf, iconOf, labelOf, isSelected, onTogg
   rankOf?: (item: string) => number | null;
 }) {
   return (
-    <div style={{ background: 'linear-gradient(180deg, #f7e7c4 0%, #ecd29e 100%)', border: '1.5px solid #cdac72', borderRadius: 10, padding: '10px 10px 14px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 1px 2px 4px rgba(0,0,0,.06)' }}>
+    <div style={{ background: CREAM2, borderRadius: 18, padding: 6 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {items.map(item => {
           const on = isSelected(item);
-          const itemColor = colorOf ? colorOf(item) : (color || '#8a5a2b');
+          const itemColor = colorOf ? colorOf(item) : (color || ACCENT);
           const rank = rankOf ? rankOf(item) : null;
           const badge = rank ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16, borderRadius: '50%', background: '#fff', color: itemColor, fontSize: 10, fontWeight: 900, flexShrink: 0 }}>{rank}</span>
@@ -150,170 +168,14 @@ function JengaTower({ items, color, colorOf, iconOf, labelOf, isSelected, onTogg
   );
 }
 
-// ── Slider-style picker (Validate Step 1 "Goal Builder", 2026-09-05) ──────
-// Same drop-in prop shape as JengaTower (so it slots into the same call
-// sites) but rendered as a segmented slider bar instead of a stack of wood
-// blocks — filled up to whichever segment is selected, matching the visual
-// language PainGaugeStep already established for "pick a point on a scale."
-// Reused here because all 5 Goal Builder questions ARE points on a scale
-// (more conversations, higher %, stronger proof, narrower ICP, longer
-// deadline), unlike JengaTower's other use sites which are true multi-pick
-// lists — so JengaTower itself is untouched.
-function SliderTower({ items, color, iconOf, labelOf, isSelected, onToggle }: {
-  items: string[];
-  color?: string;
-  iconOf?: (item: string) => React.ReactNode;
-  labelOf?: (item: string) => React.ReactNode;
-  isSelected: (item: string) => boolean;
-  onToggle: (item: string) => void;
-}) {
-  const selectedIdx = items.findIndex(isSelected);
-  const c = color || '#8a5a2b';
-  return (
-    <div>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-        {items.map((item, i) => {
-          const on = selectedIdx >= 0 && i <= selectedIdx;
-          const active = i === selectedIdx;
-          return (
-            <button
-              key={item}
-              type="button"
-              onClick={() => onToggle(item)}
-              title={typeof labelOf?.(item) === 'string' ? (labelOf(item) as string) : item}
-              style={{
-                flex: 1, height: 36, border: 'none', borderRadius: 6, cursor: 'pointer', padding: 0,
-                background: on ? c : '#e5e5ea', transition: 'background .12s, transform .12s',
-                transform: active ? 'scaleY(1.18)' : 'none',
-                outline: active ? `2px solid ${c}` : 'none', outlineOffset: 2,
-              }}
-            />
-          );
-        })}
-      </div>
-      <div style={{ fontSize: 12, fontWeight: 700, color: selectedIdx >= 0 ? c : T3, minHeight: 16 }}>
-        {selectedIdx >= 0 ? (<>{iconOf?.(items[selectedIdx])} {labelOf ? labelOf(items[selectedIdx]) : items[selectedIdx]}</>) : 'Tap a segment to preview it'}
-      </div>
-    </div>
-  );
-}
-
-// One Goal Builder question row: full picker while open, a compact one-line
-// echo (value + "↺ change") once answered — same progressive-reveal /
-// collapse-to-echo pattern as HoneScorecard, so only one question's full
-// picker is on screen at a time instead of all 5 at once.
-function GoalQuestionRow({ visible, open, accent, emoji, question, echoLabel, onReopen, children }: {
-  visible: boolean; open: boolean; accent: string; emoji: string; question: string;
-  echoLabel?: string; onReopen: () => void; children: React.ReactNode;
-}) {
-  if (!visible) return null;
-  if (!open) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          <span style={{ fontSize: 16, flexShrink: 0 }}>{emoji}</span>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 11.5, color: T1, fontWeight: 700 }}>{question}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: accent, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>{echoLabel}</div>
-          </div>
-        </div>
-        <button onClick={onReopen} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit', flexShrink: 0 }}>↺ change</button>
-      </div>
-    );
-  }
-  return (
-    <div>
-      <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 17, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.25 }}>{question}</div>
-          <div style={{ borderTop: `2px solid ${accent}`, marginTop: 3, maxWidth: 150 }} />
-        </div>
-        <span style={{ fontSize: 20 }}>{emoji}</span>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-// Validate Step 1's "Goal Builder" — 5 questions, one at a time. Each is a
-// point on a scale (more conversations / higher % / stronger proof /
-// narrower ICP / longer deadline), so each uses SliderTower instead of the
-// old always-all-visible JengaTower grid; answering one reveals the next
-// (same prevAnswered chain HoneScorecard uses), and a picked question
-// collapses to a one-line echo — reopen it any time via "↺ change".
-// A typed custom answer (GoalCustomInput) intentionally does NOT
-// auto-collapse its row (only a slider tap does) so the row doesn't
-// vanish mid-keystroke; the next question still reveals as soon as any
-// value — preset or typed — is present.
-// Locks in a slider's tentatively-tapped segment. Split out from the tap
-// itself (2026-09-05, user feedback: a single tap was committing the answer
-// and collapsing the question before there was any chance to see what a
-// segment meant relative to the others) — tapping a segment now only
-// previews it; this button is the actual commit.
-// One WTP/ICP/Pain-confirm key-term sticky note in the Goal Builder header
-// row. Collapsed by default (just the icon + term, e.g. "💰 WTP") — tap to
-// expand and see the full definition. Previously always showed the full
-// definition, crowding the header before a founder has even looked at the
-// questions below (2026-09-06 user feedback: these boards should collapse
-// by default).
-function KeyTermCard({ term, name, icon, full, bg, color, rotate }: {
-  term: string; name: string; icon: string; full: string; bg: string; color: string; rotate: number;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={() => setOpen(o => !o)}
-      style={{
-        background: bg, borderRadius: 4, padding: open ? '10px 12px' : '8px 12px',
-        boxShadow: '0 3px 8px rgba(0,0,0,0.14)', transform: `rotate(${rotate}deg)`,
-        border: 'none', cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit',
-        width: '100%',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 700, fontSize: 17, color, lineHeight: 1.15 }}>{icon} {term}</div>
-        <span style={{ fontSize: 11, color, opacity: 0.6, flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
-      </div>
-      {open && (
-        <>
-          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: 12, fontStyle: 'italic', color, opacity: 0.85, marginTop: 3, marginBottom: 3, lineHeight: 1.2 }}>{name}</div>
-          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 500, fontSize: 13, lineHeight: 1.3, color: '#3f3f46' }}>{full}</div>
-        </>
-      )}
-    </button>
-  );
-}
-
-function ConfirmAnswerButton({ accent, disabled, onClick }: { accent: string; disabled: boolean; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        marginTop: 8, padding: '7px 16px', borderRadius: 8, border: 'none',
-        background: disabled ? '#e5e5ea' : accent, color: disabled ? '#999' : '#fff',
-        fontSize: 12.5, fontWeight: 700, cursor: disabled ? 'default' : 'pointer', fontFamily: 'inherit',
-      }}
-    >
-      Confirm ✓
-    </button>
-  );
-}
+// (SliderTower / GoalQuestionRow / KeyTermCard / ConfirmAnswerButton retired by the 2026-10 redesign — the Goal Builder now renders its own option tiles.)
 
 function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: (k: string, v: string) => void }) {
+  // 2026-10 redesign: five collapsible question sections (open = ink card
+  // with an option-tile grid, answered = white row with the answer pill),
+  // tap-to-select (the old tap-to-preview + Confirm two-step is gone), and
+  // the lime "You win if…" card alongside. Data model unchanged.
   const [reopenedKey, setReopenedKey] = useState<string | null>(null);
-  // Tap-to-preview, button-to-commit (2026-09-05, user feedback: a single tap
-  // was committing + collapsing the row before there was any chance to
-  // compare options). Each question keeps its own pending candidate so
-  // reopening an already-answered row doesn't clobber a different row that
-  // is independently open for the first time.
-  const [pendingQ1, setPendingQ1] = useState('');
-  const [pendingQ2, setPendingQ2] = useState('');
-  const [pendingQ3, setPendingQ3] = useState('');
-  const [pendingQ4, setPendingQ4] = useState('');
-  const [pendingQ5, setPendingQ5] = useState('');
 
   const rateOpts   = [{ v:'50', label:'50% or more' }, { v:'60', label:'60% or more' }, { v:'80', label:'80% or more' }, { v:'100', label:'All of them' }];
   const signalOpts = [
@@ -337,14 +199,6 @@ function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: 
   const icpOn   = get('valGoalICP')     || '';
   const time    = get('valGoalTime')    || '';
 
-  // What the slider previews right now: a tapped-but-not-yet-confirmed
-  // candidate if there is one, else the already-committed answer.
-  const activeQ1 = pendingQ1 || convos;
-  const activeQ2 = pendingQ2 || rate;
-  const activeQ3 = pendingQ3 || signal;
-  const activeQ4 = pendingQ4 || icpOn;
-  const activeQ5 = pendingQ5 || time;
-
   const writeSuccess = (c: string, r: string, s: string, icp: string, t: string) => {
     if (!c && !r && !s) { set('valGoalSuccess', ''); return; }
     const rLabel   = rateOpts.find(o => o.v === r)?.label || r || '';
@@ -361,222 +215,163 @@ function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: 
     set('valGoalSuccess', parts.join(' · '));
   };
 
+  type Opt = { v: string; big: string; small: string; rec?: boolean };
+  type Q = {
+    key: string; n: string; title: string; tag: string; hint: string; field: string;
+    opts: Opt[]; value: string; minCol: number; placeholder: string;
+    answerLabel: (v: string) => string;
+    commit: (v: string) => void;
+  };
+  const QS: Q[] = [
+    {
+      key: 'q1', n: '01', title: 'How many real conversations count?', tag: 'Sample size', hint: 'Fewer than 5 is a gut check, not evidence.',
+      field: 'valGoalConvos', value: convos, minCol: 84, placeholder: 'or type your own number…',
+      opts: [{ v: '3', big: '3', small: 'Gut check' }, { v: '5', big: '5', small: 'Early signal', rec: true }, { v: '7', big: '7', small: 'Lucky 7' }, { v: '10', big: '10', small: 'Solid proof' }, { v: '15+', big: '15+', small: 'All in' }],
+      answerLabel: v => `${v} conversations`,
+      commit: v => { set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); },
+    },
+    {
+      key: 'q2', n: '02', title: 'What % must feel the pain for it to be real?', tag: 'Pain confirm rate', hint: 'If most people shrug, the pain is not sharp enough yet.',
+      field: 'valGoalRate', value: rate, minCol: 110, placeholder: 'or type your own %…',
+      opts: [{ v: '50', big: '50%', small: 'Half' }, { v: '60', big: '60%', small: 'Most', rec: true }, { v: '80', big: '80%', small: 'Strong' }, { v: '100', big: '100%', small: 'All of them' }],
+      answerLabel: v => rateOpts.find(o => o.v === v)?.label || v,
+      commit: v => { set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); },
+    },
+    {
+      key: 'q3', n: '03', title: "What's your proof this problem truly exists?", tag: 'WTP · willingness to pay', hint: 'Someone offering to pre-pay beats ten polite nods.',
+      field: 'valGoalSignal', value: signal, minCol: 150, placeholder: 'or describe your own proof…',
+      opts: [{ v: 'none', big: 'Pain', small: 'confirms are enough' }, { v: 'verbal-1', big: '1', small: "says they'd pay", rec: true }, { v: 'verbal-2', big: '2', small: "say they'd pay" }, { v: 'preorder', big: '$', small: '1 pre-order / deposit' }, { v: 'loi', big: 'LOI', small: '1 signed contract' }],
+      answerLabel: v => signalOpts.find(o => o.v === v)?.label || v,
+      commit: v => { set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); },
+    },
+    {
+      key: 'q4', n: '04', title: 'Can you picture your customer right now?', tag: 'ICP · ideal customer profile', hint: 'The narrower the target, the sharper every conversation.',
+      field: 'valGoalICP', value: icpOn, minCol: 130, placeholder: 'or describe your customer…',
+      opts: [{ v: '1', big: 'Anyone', small: 'in pain' }, { v: '2', big: 'A role', small: 'or function', rec: true }, { v: '3', big: 'A company', small: 'type' }, { v: '4', big: 'Named', small: 'people' }],
+      answerLabel: v => ICP_LABELS[v] || v,
+      commit: v => { set('valGoalICP', v); writeSuccess(convos, rate, signal, v, time); },
+    },
+    {
+      key: 'q5', n: '05', title: 'When will you stop validating and decide?', tag: 'Deadline', hint: 'Validation without an end date never ends.',
+      field: 'valGoalTime', value: time, minCol: 110, placeholder: 'or type your own timeframe…',
+      opts: [{ v: '1w', big: '1 wk', small: 'Sprint' }, { v: '2w', big: '2 wks', small: 'Focused', rec: true }, { v: '1m', big: '1 mo', small: 'Thorough' }, { v: 'open', big: '∞', small: 'No deadline' }],
+      answerLabel: v => timeOpts.find(o => o.v === v)?.label || v,
+      commit: v => { set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); },
+    },
+  ];
+
   const summary = get('valGoalSuccess') || '';
-
-  // Q1
-  const Q1_OPTS = [
-    { v: '3',   emoji: '🤏', vibe: 'Gut check' },
-    { v: '5',   emoji: '🖐️', vibe: 'Early signal' },
-    { v: '7',   emoji: '🎯', vibe: 'Lucky 7' },
-    { v: '10',  emoji: '💪', vibe: 'Solid proof' },
-    { v: '15+', emoji: '🚀', vibe: 'All in' },
-  ];
-  const q1ByV = new Map(Q1_OPTS.map(o => [o.v, o]));
-  const q1Preset = Q1_OPTS.some(o => o.v === convos);
-
-  // Q2
-  const Q2_OPTS = [
-    { v: '50',  emoji: '🤷', vibe: 'Half' },
-    { v: '60',  emoji: '🙌', vibe: 'Most' },
-    { v: '80',  emoji: '🔥', vibe: 'Strong' },
-    { v: '100', emoji: '💯', vibe: 'All of em' },
-  ];
-  const q2Preset = rateOpts.some(o => o.v === rate);
-
-  // Q3
-  const Q3_OPTS = [
-    { v: 'none',     emoji: '🤝' },
-    { v: 'verbal-1', emoji: '🗣️' },
-    { v: 'verbal-2', emoji: '💬' },
-    { v: 'preorder', emoji: '💳' },
-    { v: 'loi',      emoji: '📝' },
-  ];
-  const q3Preset = signalOpts.some(o => o.v === signal);
-
-  // Q4
-  const Q4_OPTS = [
-    { val: '1', emoji: '🌊', vibe: 'Anyone in pain' },
-    { val: '2', emoji: '👥', vibe: 'A role or function' },
-    { val: '3', emoji: '🏢', vibe: 'A company type' },
-    { val: '4', emoji: '🎯', vibe: 'Named people' },
-  ];
-  const q4ByV = new Map(Q4_OPTS.map(o => [o.val, o]));
-  const q4Preset = ['1', '2', '3', '4'].includes(icpOn);
-
-  // Q5
-  const Q5_OPTS = [
-    { v: '1w',   emoji: '⚡' },
-    { v: '2w',   emoji: '🏃' },
-    { v: '1m',   emoji: '📅' },
-    { v: 'open', emoji: '♾️' },
-  ];
-  const q5Preset = timeOpts.some(o => o.v === time);
+  const answered = QS.filter(q => !!q.value).length;
+  const allDone = answered === QS.length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
-      <GoalQuestionRow
-        visible={true}
-        open={!convos || reopenedKey === 'q1' || !q1Preset}
-        accent="#2563eb" emoji="🗣️" question="How many real conversations count?"
-        echoLabel={q1Preset ? `${q1ByV.get(convos)?.emoji} ${convos} — ${q1ByV.get(convos)?.vibe}` : convos}
-        onReopen={() => { setPendingQ1(''); setReopenedKey('q1'); }}
-      >
-        <SliderTower
-          items={Q1_OPTS.map(o => o.v)}
-          color="#2563eb"
-          labelOf={v => { const o = q1ByV.get(v)!; return `${v} — ${o.vibe}`; }}
-          iconOf={v => q1ByV.get(v)?.emoji}
-          isSelected={v => activeQ1 === v}
-          onToggle={v => setPendingQ1(v)}
-        />
-        <ConfirmAnswerButton
-          accent="#2563eb"
-          disabled={!activeQ1}
-          onClick={() => { set('valGoalConvos', activeQ1); writeSuccess(activeQ1, rate, signal, icpOn, time); setPendingQ1(''); setReopenedKey(null); }}
-        />
-        <div style={{ marginTop: 8 }}>
-          <GoalCustomInput
-            accent="#2563eb"
-            placeholder="or type your own…"
-            value={q1Preset ? '' : convos}
-            onChange={v => { setPendingQ1(''); set('valGoalConvos', v); writeSuccess(v, rate, signal, icpOn, time); }}
-          />
-        </div>
-      </GoalQuestionRow>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+        {QS.map((q, i) => {
+          const visible = i === 0 || !!QS[i - 1].value;
+          if (!visible) return null;
+          const isPreset = q.opts.some(o => o.v === q.value);
+          const isOpen = !q.value || reopenedKey === q.key;
+          return (
+            <section key={q.key} style={{ borderRadius: 22, background: isOpen ? INK : '#fff', color: isOpen ? INK_TXT : T1, overflow: 'hidden', transition: 'background .2s' }}>
+              <button
+                type="button"
+                onClick={() => setReopenedKey(isOpen ? null : q.key)}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, background: 'transparent', color: 'inherit', border: 'none', padding: '18px 20px', cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1, minWidth: 0 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: isOpen ? LIME : ACCENT, marginTop: 3 }}>{q.n}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                    <span style={{ fontSize: isOpen ? 20 : 16, fontWeight: 800, lineHeight: 1.2, letterSpacing: '-0.01em' }}>{q.title}</span>
+                    <span style={{ fontFamily: MONO, fontSize: 10, color: isOpen ? INK_MUTE : T3, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>{q.tag}</span>
+                  </div>
+                </div>
+                {q.value && (
+                  <span style={{ fontSize: 13, fontWeight: 700, padding: '6px 12px', borderRadius: 999, background: isOpen ? '#2a2236' : LIME, color: isOpen ? INK_TXT : INK, flexShrink: 0, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                    {isPreset ? q.answerLabel(q.value) : q.value}
+                  </span>
+                )}
+              </button>
+              {isOpen && (
+                <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <span style={{ fontSize: 14, color: INK_DIM }}>{q.hint}</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(${q.minCol}px, 1fr))`, gap: 6 }}>
+                    {q.opts.map(o => {
+                      const on = q.value === o.v;
+                      return (
+                        <button
+                          key={o.v}
+                          type="button"
+                          onClick={() => { q.commit(o.v); setReopenedKey(null); }}
+                          style={{ position: 'relative' as const, borderRadius: 16, padding: '14px 10px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: on ? LIME : '#2a2236', color: on ? INK : INK_TXT, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, transition: 'all .12s' }}
+                        >
+                          <span style={{ fontSize: o.big.length > 4 ? 18 : 24, fontWeight: 800, lineHeight: 1 }}>{o.big}</span>
+                          <span style={{ fontSize: 12, textAlign: 'center' as const, color: on ? INK : INK_DIM }}>{o.small}</span>
+                          {o.rec && !on && (
+                            <span style={{ position: 'absolute' as const, top: -6, right: -4, background: ACCENT, color: '#fff', fontFamily: MONO, fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 999, letterSpacing: '0.06em' }}>SAGE PICK</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <input
+                    type="text"
+                    defaultValue={isPreset ? '' : q.value}
+                    placeholder={q.placeholder}
+                    onKeyDown={e => { if (e.key === 'Enter') { const v = (e.currentTarget as HTMLInputElement).value.trim(); if (v) { q.commit(v); setReopenedKey(null); } } }}
+                    onBlur={e => { const v = e.currentTarget.value.trim(); if (v && v !== q.value) q.commit(v); }}
+                    style={{ borderRadius: 12, padding: '10px 14px', fontSize: 14, background: 'transparent', color: INK_TXT, border: '1px solid #3a3148', outline: 'none', fontFamily: 'inherit' }}
+                  />
+                </div>
+              )}
+            </section>
+          );
+        })}
+      </div>
 
-      <GoalQuestionRow
-        visible={!!convos}
-        open={!rate || reopenedKey === 'q2' || !q2Preset}
-        accent="#f59e0b" emoji="🎯" question="What % must feel the pain for it to be real?"
-        echoLabel={q2Preset ? `${Q2_OPTS.find(o => o.v === rate)?.emoji} ${rateOpts.find(ro => ro.v === rate)?.label}` : rate}
-        onReopen={() => { setPendingQ2(''); setReopenedKey('q2'); }}
-      >
-        <SliderTower
-          items={Q2_OPTS.map(o => o.v)}
-          color="#d97706"
-          labelOf={v => rateOpts.find(ro => ro.v === v)?.label}
-          iconOf={v => Q2_OPTS.find(o => o.v === v)?.emoji}
-          isSelected={v => activeQ2 === v}
-          onToggle={v => setPendingQ2(v)}
-        />
-        <ConfirmAnswerButton
-          accent="#d97706"
-          disabled={!activeQ2}
-          onClick={() => { set('valGoalRate', activeQ2); writeSuccess(convos, activeQ2, signal, icpOn, time); setPendingQ2(''); setReopenedKey(null); }}
-        />
-        <div style={{ marginTop: 8 }}>
-          <GoalCustomInput
-            accent="#d97706"
-            placeholder="or type your own %…"
-            value={q2Preset ? '' : rate}
-            onChange={v => { setPendingQ2(''); set('valGoalRate', v); writeSuccess(convos, v, signal, icpOn, time); }}
-          />
-        </div>
-      </GoalQuestionRow>
-
-      <GoalQuestionRow
-        visible={!!rate}
-        open={!signal || reopenedKey === 'q3' || !q3Preset}
-        accent="#10b981" emoji="🔑" question="What's your proof this problem truly exists?"
-        echoLabel={q3Preset ? `${Q3_OPTS.find(o => o.v === signal)?.emoji} ${signalOpts.find(o => o.v === signal)?.label}` : signal}
-        onReopen={() => { setPendingQ3(''); setReopenedKey('q3'); }}
-      >
-        <SliderTower
-          items={Q3_OPTS.map(o => o.v)}
-          color="#059669"
-          iconOf={v => Q3_OPTS.find(o => o.v === v)?.emoji}
-          labelOf={v => signalOpts.find(o => o.v === v)?.label}
-          isSelected={v => activeQ3 === v}
-          onToggle={v => setPendingQ3(v)}
-        />
-        <ConfirmAnswerButton
-          accent="#059669"
-          disabled={!activeQ3}
-          onClick={() => { set('valGoalSignal', activeQ3); writeSuccess(convos, rate, activeQ3, icpOn, time); setPendingQ3(''); setReopenedKey(null); }}
-        />
-        <div style={{ marginTop: 8 }}>
-          <GoalCustomInput
-            accent="#059669"
-            placeholder="or describe your own proof…"
-            value={q3Preset ? '' : signal}
-            onChange={v => { setPendingQ3(''); set('valGoalSignal', v); writeSuccess(convos, rate, v, icpOn, time); }}
-          />
-        </div>
-      </GoalQuestionRow>
-
-      <GoalQuestionRow
-        visible={!!signal}
-        open={!icpOn || reopenedKey === 'q4' || !q4Preset}
-        accent="#7c3aed" emoji="🔍" question="Can you picture your customer right now?"
-        echoLabel={q4Preset ? `${q4ByV.get(icpOn)?.emoji} ${q4ByV.get(icpOn)?.vibe}` : icpOn}
-        onReopen={() => { setPendingQ4(''); setReopenedKey('q4'); }}
-      >
-        <SliderTower
-          items={Q4_OPTS.map(o => o.val)}
-          color="#7c3aed"
-          labelOf={v => q4ByV.get(v)?.vibe}
-          iconOf={v => q4ByV.get(v)?.emoji}
-          isSelected={v => activeQ4 === v}
-          onToggle={v => setPendingQ4(v)}
-        />
-        <ConfirmAnswerButton
-          accent="#7c3aed"
-          disabled={!activeQ4}
-          onClick={() => { set('valGoalICP', activeQ4); writeSuccess(convos, rate, signal, activeQ4, time); setPendingQ4(''); setReopenedKey(null); }}
-        />
-        <div style={{ marginTop: 8 }}>
-          <GoalCustomInput
-            accent="#7c3aed"
-            placeholder="or describe your customer…"
-            value={q4Preset ? '' : icpOn}
-            onChange={v => { setPendingQ4(''); set('valGoalICP', v); writeSuccess(convos, rate, signal, v, time); }}
-          />
-        </div>
-      </GoalQuestionRow>
-
-      <GoalQuestionRow
-        visible={!!icpOn}
-        open={!time || reopenedKey === 'q5' || !q5Preset}
-        accent="#ef4444" emoji="⏱️" question="When will you stop validating and decide?"
-        echoLabel={q5Preset ? `${Q5_OPTS.find(o => o.v === time)?.emoji} ${timeOpts.find(o => o.v === time)?.label}` : time}
-        onReopen={() => { setPendingQ5(''); setReopenedKey('q5'); }}
-      >
-        <SliderTower
-          items={Q5_OPTS.map(o => o.v)}
-          color="#dc2626"
-          iconOf={v => Q5_OPTS.find(o => o.v === v)?.emoji}
-          labelOf={v => timeOpts.find(o => o.v === v)?.label}
-          isSelected={v => activeQ5 === v}
-          onToggle={v => setPendingQ5(v)}
-        />
-        <ConfirmAnswerButton
-          accent="#dc2626"
-          disabled={!activeQ5}
-          onClick={() => { set('valGoalTime', activeQ5); writeSuccess(convos, rate, signal, icpOn, activeQ5); setPendingQ5(''); setReopenedKey(null); }}
-        />
-        <div style={{ marginTop: 8 }}>
-          <GoalCustomInput
-            accent="#dc2626"
-            placeholder="or type your own timeframe…"
-            value={q5Preset ? '' : time}
-            onChange={v => { setPendingQ5(''); set('valGoalTime', v); writeSuccess(convos, rate, signal, icpOn, v); }}
-          />
-        </div>
-      </GoalQuestionRow>
-
-      {!!time && (summary ? (
-        <div style={{ padding: '20px 24px 22px', borderRadius: 14, background: '#fff', border: '2px solid #e2e8f0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 22 }}>🎉</span>
-            <span style={{ fontSize: 13, color: '#64748b', letterSpacing: '.06em', textTransform: 'uppercase' as const, fontFamily: "'Bebas Neue', 'Inter', sans-serif" }}>You win if…</span>
+      <div style={{ position: 'sticky' as const, top: 80, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ background: LIME, color: INK, borderRadius: 28, padding: 22, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>
+            <span>You win if…</span>
+            <span style={{ opacity: .7 }}>{allDone ? 'Bar set ✓' : `${answered}/${QS.length} set`}</span>
           </div>
-          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 26, fontWeight: 600, color: '#000', lineHeight: 1.4 }}>{summary}</div>
+          {summary ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {summary.split(' · ').map((line, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 'clamp(18px, 1.8vw, 21px)', fontWeight: 700, lineHeight: 1.25 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
+                  <span>{line}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <span style={{ fontSize: 15 }}>Your winning condition will build here as you answer.</span>
+          )}
+          {convos && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderTop: '1px solid #16121d22', paddingTop: 12 }}>
+              <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em' }}>THE BAR, PER CONVERSATION</span>
+              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' as const }}>
+                {(() => {
+                  const n = Math.min(parseInt(convos) || 0, 15);
+                  const payN = signal === 'verbal-1' || signal === 'preorder' || signal === 'loi' ? 1 : signal === 'verbal-2' ? 2 : 0;
+                  const painN = Math.round(((parseInt(rate) || 0) / 100) * n);
+                  return Array.from({ length: n }).map((_, i) => {
+                    const mark = i < payN ? '$' : i < painN ? '!' : '○';
+                    return (
+                      <div key={i} style={{ width: 26, height: 26, borderRadius: '50%', background: mark === '$' ? INK : mark === '!' ? ACCENT : '#16121d22', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: mark === '○' ? INK : mark === '$' ? LIME : '#fff' }}>{mark}</div>
+                    );
+                  });
+                })()}
+              </div>
+              <div style={{ display: 'flex', gap: 14, fontSize: 12, flexWrap: 'wrap' as const }}>
+                <span>$ say they'd pay</span>
+                <span>! confirm the pain</span>
+                <span>○ talked</span>
+              </div>
+            </div>
+          )}
         </div>
-      ) : (
-        <div style={{ padding: '12px 16px', borderRadius: 10, background: '#fff', border: `1px dashed ${BORDER}` }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#555', textAlign: 'center' as const }}>Your winning condition will appear here as you fill in the options above ☝️</div>
-        </div>
-      ))}
+      </div>
     </div>
   );
 }
@@ -586,82 +381,115 @@ function ValidationGoalBuilder({ get, set }: { get: (k: string) => string; set: 
 // to Validate Step 2's tap-in-priority-order chip picker). Shows the running
 // ranked list, then the next undecided candidate with an explicit Add/Skip
 // choice — never a whole grid of chips to scan and tap blindly.
-function RankedPickQueue({ items, ranked, accent, emoji, onAdd, onRemove }: {
+function RankedPickQueue({ items, ranked, accent, emoji, onAdd, onRemove, onMove }: {
   items: string[]; ranked: string[]; accent: string; emoji: string;
-  onAdd: (item: string) => void; onRemove: (item: string) => void;
+  onAdd: (item: string) => void; onRemove: (item: string) => void; onMove?: (item: string, dir: -1 | 1) => void;
 }) {
+  // 2026-10 redesign: ink "ADD AS #n?" deck card + numbered ranking rows.
+  void accent; void emoji;
   const [skipped, setSkipped] = useState<string[]>([]);
   const remaining = items.filter(i => !ranked.includes(i) && !skipped.includes(i));
   const current = remaining[0];
+  const nextRank = ranked.length + 1;
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+      {current ? (
+        <div style={{ position: 'relative' as const }}>
+          {remaining.length > 1 && <div style={{ position: 'absolute', inset: 0, top: 8, transform: 'scale(.97)', borderRadius: 20, background: '#3a3148' }} />}
+          <div style={{ position: 'relative' as const, background: INK, color: INK_TXT, borderRadius: 24, padding: 22, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 11, color: INK_MUTE }}>
+              <span style={{ color: LIME, fontWeight: 700 }}>ADD AS #{nextRank}?</span>
+              <span>{items.length - remaining.length + 1} / {items.length}</span>
+            </div>
+            <span style={{ fontSize: 'clamp(22px, 2.4vw, 30px)', fontWeight: 700, lineHeight: 1.2, letterSpacing: '-0.01em' }}>{current}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8 }}>
+              <button type="button" onClick={() => onAdd(current)} style={{ borderRadius: 14, padding: 14, fontSize: 16, fontWeight: 800, background: ACCENT, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>+ Add as #{nextRank}</button>
+              <button type="button" onClick={() => setSkipped(s => [...s, current])} style={{ borderRadius: 14, padding: 14, fontSize: 15, fontWeight: 700, background: 'transparent', color: INK_DIM, border: '1px solid #3a3148', cursor: 'pointer', fontFamily: 'inherit' }}>Skip for now</button>
+            </div>
+          </div>
+        </div>
+      ) : skipped.length > 0 ? (
+        <div style={{ padding: '12px 14px', borderRadius: 14, border: `1px dashed ${BORDER2}`, fontSize: 13, color: T3 }}>
+          {skipped.length} skipped. <button type="button" onClick={() => setSkipped([])} style={{ background: 'none', border: 'none', color: ACCENT_DEEP, fontWeight: 700, cursor: 'pointer', fontSize: 13, padding: 0, fontFamily: 'inherit' }}>Review them again</button>
+        </div>
+      ) : null}
       {ranked.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginBottom: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
           {ranked.map((item, i) => (
-            <div key={item} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', borderRadius: 8, background: `${accent}12`, border: `1px solid ${accent}30` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                <span style={{ fontSize: 11, fontWeight: 800, color: accent, flexShrink: 0 }}>#{i + 1}</span>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>{item}</span>
-              </div>
-              <button type="button" onClick={() => onRemove(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: T3, flexShrink: 0, fontFamily: 'inherit' }}>✕</button>
+            <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 12px 12px 14px', borderRadius: 14, background: i === 0 ? ACCENT : '#fff', color: i === 0 ? '#fff' : T1 }}>
+              <span style={{ fontSize: i === 0 ? 22 : 16, fontWeight: 800, width: 32, flexShrink: 0, color: i === 0 ? '#fff' : T3 }}>#{i + 1}</span>
+              <span style={{ flex: 1, fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{item}</span>
+              {onMove && (
+                <div style={{ display: 'flex', flexDirection: 'column' as const }}>
+                  <button type="button" onClick={() => onMove(item, -1)} disabled={i === 0} style={{ background: 'transparent', color: 'inherit', border: 'none', fontSize: 11, padding: '1px 6px', cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? .35 : 1 }}>▲</button>
+                  <button type="button" onClick={() => onMove(item, 1)} disabled={i === ranked.length - 1} style={{ background: 'transparent', color: 'inherit', border: 'none', fontSize: 11, padding: '1px 6px', cursor: i === ranked.length - 1 ? 'default' : 'pointer', opacity: i === ranked.length - 1 ? .35 : 1 }}>▼</button>
+                </div>
+              )}
+              <button type="button" onClick={() => onRemove(item)} style={{ background: 'transparent', color: 'inherit', border: 'none', fontSize: 16, padding: 4, cursor: 'pointer', opacity: .7 }}>×</button>
             </div>
           ))}
         </div>
       )}
-      {current ? (
-        <div style={{ padding: '14px 16px', borderRadius: 10, background: '#fff', border: `2px solid ${accent}40` }}>
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginBottom: 10 }}>{emoji} {current}</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={() => onAdd(current)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', background: accent, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>+ Add as #{ranked.length + 1}</button>
-            <button type="button" onClick={() => setSkipped(s => [...s, current])} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: T3, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Skip for now</button>
-          </div>
-        </div>
-      ) : skipped.length > 0 ? (
-        <div style={{ padding: '10px 14px', borderRadius: 8, border: `1px dashed ${BORDER}`, fontSize: 12, color: T3 }}>
-          {skipped.length} skipped. <button type="button" onClick={() => setSkipped([])} style={{ background: 'none', border: 'none', color: accent, fontWeight: 700, cursor: 'pointer', fontSize: 12, padding: 0, fontFamily: 'inherit' }}>↺ review them</button>
-        </div>
-      ) : null}
     </div>
   );
 }
 
 // One-card-at-a-time queue for an unordered accept/skip multi-select — the
-// Step 2 "stop rules" equivalent of RankedPickQueue, minus the ordering.
+// Step 2 "tripwires" equivalent of RankedPickQueue, minus the ordering.
 function AcceptQueue({ items, accepted, accent, emoji, onAccept, onRemove }: {
   items: string[]; accepted: string[]; accent: string; emoji: string;
   onAccept: (item: string) => void; onRemove: (item: string) => void;
 }) {
+  void accent; void emoji;
   const [skipped, setSkipped] = useState<string[]>([]);
   const remaining = items.filter(i => !accepted.includes(i) && !skipped.includes(i));
   const current = remaining[0];
+  const RED = '#ff5a36';
+  const splitRule = (r: string) => {
+    const m = r.match(/^(.*?)\s*→\s*(.*)$/);
+    return m ? { cond: m[1], act: m[2] } : { cond: r, act: '' };
+  };
   return (
-    <div>
-      {accepted.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginBottom: 10 }}>
-          {accepted.map(item => (
-            <div key={item} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', borderRadius: 8, background: `${accent}12`, border: `1px solid ${accent}30` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                <span style={{ fontSize: 12 }}>✓</span>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#0f172a' }}>{item}</span>
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+      {current ? (() => {
+        const { cond, act } = splitRule(current);
+        return (
+          <div style={{ position: 'relative' as const }}>
+            {remaining.length > 1 && <div style={{ position: 'absolute', inset: 0, top: 8, transform: 'scale(.97)', borderRadius: 20, background: '#ffb4a1' }} />}
+            <div style={{ position: 'relative' as const, background: RED, color: '#fff', borderRadius: 24, padding: 22, display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 11 }}>
+                <span style={{ fontWeight: 700 }}>TRIPWIRE?</span>
+                <span>{items.length - remaining.length + 1} / {items.length}</span>
               </div>
-              <button type="button" onClick={() => onRemove(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, color: T3, flexShrink: 0, fontFamily: 'inherit' }}>✕</button>
+              <span style={{ fontSize: 'clamp(22px, 2.4vw, 30px)', fontWeight: 700, lineHeight: 1.25, letterSpacing: '-0.01em' }}>
+                {cond}{act && <> <span style={{ background: INK, color: '#fff', padding: '0 8px', borderRadius: 8, whiteSpace: 'nowrap' as const }}>→ {act}</span></>}
+              </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8 }}>
+                <button type="button" onClick={() => onAccept(current)} style={{ borderRadius: 14, padding: 14, fontSize: 16, fontWeight: 800, background: INK, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>✓ Accept</button>
+                <button type="button" onClick={() => setSkipped(s => [...s, current])} style={{ borderRadius: 14, padding: 14, fontSize: 15, fontWeight: 700, background: 'transparent', color: '#fff', border: '1px solid #ffffff66', cursor: 'pointer', fontFamily: 'inherit' }}>Skip</button>
+              </div>
             </div>
-          ))}
-        </div>
-      )}
-      {current ? (
-        <div style={{ padding: '14px 16px', borderRadius: 10, background: '#fff', border: `2px solid ${accent}40` }}>
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', marginBottom: 10 }}>{emoji} {current}</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={() => onAccept(current)} style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: 'none', background: accent, color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>✓ Accept</button>
-            <button type="button" onClick={() => setSkipped(s => [...s, current])} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: T3, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Skip</button>
           </div>
-        </div>
-      ) : skipped.length > 0 ? (
-        <div style={{ padding: '10px 14px', borderRadius: 8, border: `1px dashed ${BORDER}`, fontSize: 12, color: T3 }}>
-          {skipped.length} skipped. <button type="button" onClick={() => setSkipped([])} style={{ background: 'none', border: 'none', color: accent, fontWeight: 700, cursor: 'pointer', fontSize: 12, padding: 0, fontFamily: 'inherit' }}>↺ review them</button>
+        );
+      })() : skipped.length > 0 ? (
+        <div style={{ padding: '12px 14px', borderRadius: 14, border: `1px dashed ${BORDER2}`, fontSize: 13, color: T3 }}>
+          {skipped.length} skipped. <button type="button" onClick={() => setSkipped([])} style={{ background: 'none', border: 'none', color: ACCENT_DEEP, fontWeight: 700, cursor: 'pointer', fontSize: 13, padding: 0, fontFamily: 'inherit' }}>Review them again</button>
         </div>
       ) : null}
+      {accepted.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+          {accepted.map(item => {
+            const { cond, act } = splitRule(item);
+            return (
+              <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 12px 12px 14px', borderRadius: 14, background: '#fff', color: T1 }}>
+                {act && <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 6, background: /pivot/i.test(act) ? ACCENT : INK, color: '#fff', textTransform: 'uppercase' as const, flexShrink: 0 }}>{act}</span>}
+                <span style={{ flex: 1, fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{cond}</span>
+                <button type="button" onClick={() => onRemove(item)} style={{ background: 'transparent', border: 'none', fontSize: 16, padding: 4, cursor: 'pointer', color: T3 }}>×</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -772,14 +600,14 @@ const STEP_GOALS: Record<Mod, string[]> = {
   hone: [
     'Reject "everyone." The more specific you are, the better. Remember — at this stage you\'re making an assumption. That\'s okay.',
     'Force the problem into one sentence. No vague language.',
-    'Your best guess — not facts yet. Validate will test it.',
+    'List the ways you think people cope with this today — then rank them from most to least common. The #1 approach becomes your primary hypothesis to test.',
     'Most startups fail not because the idea was bad — but because the team wasn\'t ready. Be honest here.',
-    'Score 0–5 on each dimension. 20+ unlocks Validate.',
+    'Score each dimension 0–5 based on what you know today. You need 20+ to move forward.',
     'See how big this market might be — and who else is already circling it. A wrap-up on your idea before you move to Validate.',
   ],
   validate: [
-    'Set a clear bar for what success looks like before you start.',
-    'Decide what you\'re trying to prove and when you\'d stop.',
+    'Set a clear bar for what success looks like before you start. Set your bar in 5 taps. No typing needed.',
+    'What matters most — and when you\'d walk away. Decide what you\'re trying to prove and when you\'d stop.',
     'Get specific on who you\'re targeting before you reach out.',
     'Real names beat personas — round up the people you\'ll actually reach out to.',
     'Open your calendar and send requests so people can book time with you directly.',
@@ -912,36 +740,15 @@ function useStepAnimation() {
 // ── Style helpers ──────────────────────────────────────────────────────────
 
 const inp: React.CSSProperties = {
-  width: '100%', padding: '12px 14px',
-  border: `1.5px solid ${BORDER}`, borderRadius: 10,
-  fontSize: 15, outline: 'none', background: '#fff',
+  width: '100%', padding: '14px 16px',
+  border: `1.5px solid ${BORDER}`, borderRadius: 14,
+  fontSize: 16, outline: 'none', background: '#fff',
   color: USER_INPUT_COLOR, boxSizing: 'border-box', lineHeight: 1.6,
   fontFamily: 'inherit', transition: 'border-color .18s',
 };
 const ta = (h = 90): React.CSSProperties => ({ ...inp, minHeight: h, resize: 'vertical' as const });
-const lbl: React.CSSProperties = { fontSize: 14, fontWeight: 800, color: '#3a3a3c', display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 };
+const lbl: React.CSSProperties = { fontSize: 15, fontWeight: 700, color: T1, display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 };
 const col: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 20 };
-
-// Manual-entry fallback for a chip row — controlled directly off the same
-// field the chips write to, so typing here just IS "picking a custom value".
-// Defined at module scope (not inline inside a step's render function) so its
-// component identity is stable across re-renders — otherwise React remounts
-// the <input> on every keystroke and focus is lost after the first character.
-const GoalCustomInput = ({ value, onChange, placeholder, accent }: { value: string; onChange: (v: string) => void; placeholder: string; accent: string }) => (
-  <input
-    type="text"
-    value={value}
-    onChange={e => onChange(e.target.value)}
-    placeholder={placeholder}
-    style={{
-      padding: '7px 13px', borderRadius: 20, fontSize: 13, fontWeight: 600,
-      border: `1.5px dashed ${value ? accent : BORDER2}`, background: value ? `${accent}0c` : '#fff',
-      color: value ? accent : T2, outline: 'none', minWidth: 150, fontFamily: 'inherit',
-    }}
-    onFocus={e => (e.currentTarget.style.borderColor = accent)}
-    onBlur={e => (e.currentTarget.style.borderColor = e.currentTarget.value ? accent : BORDER2)}
-  />
-);
 
 // ── Idea context (avoids prop-drilling ideaId into every field) ────────────
 
@@ -1017,14 +824,14 @@ function AskCommunityButton({ ask, compact = false }: { ask: string; compact?: b
           title="Ask the community"
           style={{
             background: replyCount > 0 ? '#eff6ff' : compact ? 'transparent' : '#f0f4ff',
-            border: `1.5px solid ${replyCount > 0 ? '#2563eb60' : compact ? 'transparent' : '#2563eb25'}`,
+            border: `1.5px solid ${replyCount > 0 ? '#7c3aed60' : compact ? 'transparent' : '#7c3aed25'}`,
             borderRadius: compact ? 999 : 8, padding: compact && replyCount === 0 ? '3px 6px' : '3px 10px',
-            fontSize: 11, fontWeight: 700, color: '#2563eb',
+            fontSize: 11, fontWeight: 700, color: '#7c3aed',
             cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5,
             transition: 'all .15s', whiteSpace: 'nowrap' as const,
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; e.currentTarget.style.borderColor = '#2563eb60'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = replyCount > 0 ? '#eff6ff' : compact ? 'transparent' : '#f0f4ff'; e.currentTarget.style.borderColor = replyCount > 0 ? '#2563eb60' : compact ? 'transparent' : '#2563eb25'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#dbeafe'; e.currentTarget.style.borderColor = '#7c3aed60'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = replyCount > 0 ? '#eff6ff' : compact ? 'transparent' : '#f0f4ff'; e.currentTarget.style.borderColor = replyCount > 0 ? '#7c3aed60' : compact ? 'transparent' : '#7c3aed25'; }}
         >
           💬 {replyCount > 0 ? `${replyCount} new repl${replyCount === 1 ? 'y' : 'ies'}` : (compact ? null : 'Ask community')}
         </button>
@@ -1051,12 +858,12 @@ function AskCommunityButton({ ask, compact = false }: { ask: string; compact?: b
               <div style={{ textAlign: 'center', padding: '52px 32px' }}>
                 <div style={{ fontSize: 52, marginBottom: 14 }}>🎉</div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: '#059669', marginBottom: 6 }}>Posted to community!</div>
-                <div style={{ fontSize: 13, color: '#6e6e73', lineHeight: 1.55 }}>Other founders at your stage can now weigh in. Come back to check the replies!</div>
+                <div style={{ fontSize: 13, color: '#4a4357', lineHeight: 1.55 }}>Other founders at your stage can now weigh in. Come back to check the replies!</div>
               </div>
             ) : (
               <>
                 {/* Header */}
-                <div style={{ padding: '22px 24px 18px', borderBottom: '1px solid #f5f5f7' }}>
+                <div style={{ padding: '22px 24px 18px', borderBottom: '1px solid #f3f0e8' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <div>
                       <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -.4, color: '#111', marginBottom: 8 }}>Ask the community ❓</div>
@@ -1064,14 +871,14 @@ function AskCommunityButton({ ask, compact = false }: { ask: string; compact?: b
                         📍 {ask}
                       </div>
                     </div>
-                    <button onClick={() => setOpen(false)} style={{ background: '#f5f5f7', border: 'none', borderRadius: '50%', width: 32, height: 32, fontSize: 15, cursor: 'pointer', color: '#6e6e73', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 12 }}>✕</button>
+                    <button onClick={() => setOpen(false)} style={{ background: '#f3f0e8', border: 'none', borderRadius: '50%', width: 32, height: 32, fontSize: 15, cursor: 'pointer', color: '#4a4357', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 12 }}>✕</button>
                   </div>
                 </div>
 
                 {/* Compose */}
                 <div style={{ padding: '20px 24px 24px' }}>
                   <div style={{
-                    border: `2px solid ${focused ? '#2563eb' : '#e5e5ea'}`,
+                    border: `2px solid ${focused ? '#7c3aed' : '#e2ddd1'}`,
                     borderRadius: 16, overflow: 'hidden',
                     boxShadow: focused ? '0 0 0 4px rgba(37,99,235,.1)' : 'none',
                     transition: 'all .2s', marginBottom: 16,
@@ -1104,7 +911,7 @@ function AskCommunityButton({ ask, compact = false }: { ask: string; compact?: b
                   </div>
 
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => setOpen(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #e5e5ea', background: '#fff', color: '#6e6e73', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                    <button onClick={() => setOpen(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #e2ddd1', background: '#fff', color: '#4a4357', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
                       Cancel
                     </button>
                     <button
@@ -1112,8 +919,8 @@ function AskCommunityButton({ ask, compact = false }: { ask: string; compact?: b
                       disabled={!question.trim() || posting}
                       style={{
                         flex: 2, padding: '12px', borderRadius: 12, border: 'none',
-                        background: question.trim() && !posting ? '#2563eb' : '#f0f0f0',
-                        color: question.trim() && !posting ? '#fff' : '#b0b0b8',
+                        background: question.trim() && !posting ? '#7c3aed' : '#f0f0f0',
+                        color: question.trim() && !posting ? '#fff' : '#8a8299',
                         fontSize: 13, fontWeight: 700,
                         cursor: question.trim() && !posting ? 'pointer' : 'default',
                         transition: 'all .15s',
@@ -1142,13 +949,13 @@ function AskCommunityButton({ ask, compact = false }: { ask: string; compact?: b
 // default (opt-out via underline={false}); flipped to opt-in 2026-09-05 —
 // removed app-wide per user request, so a handful of Hone steps that had
 // already turned it off explicitly are now just redundant, not special.
-function MarkerQuestion({ children, accent = '#2563eb', underline = false }: { children: React.ReactNode; accent?: string; underline?: boolean }) {
+function MarkerQuestion({ children, accent = '#7c3aed', underline = false }: { children: React.ReactNode; accent?: string; underline?: boolean }) {
   return (
     <span style={{ display: 'inline-block' }}>
       <span style={{
-        fontSize: 22, fontWeight: 900, color: '#0f172a',
-        fontFamily: "'Playfair Display', Georgia, serif",
-        letterSpacing: -0.5, lineHeight: 1.2,
+        fontSize: 22, fontWeight: 800, color: T1,
+        fontFamily: 'inherit',
+        letterSpacing: '-0.02em', lineHeight: 1.15,
       }}>
         {children}
       </span>
@@ -1166,7 +973,7 @@ function FieldLabel({ n, children, ask, accent }: { n?: number; children: React.
     <label style={{ ...lbl, justifyContent: 'space-between' }}>
       <span style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
         {n !== undefined && (
-          <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ededf0', border: `1px solid ${BORDER}`, color: '#6e6e73', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{n}</span>
+          <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#ededf0', border: `1px solid ${BORDER}`, color: '#4a4357', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{n}</span>
         )}
         <span>{accent ? <MarkerQuestion accent={accent}>{children}</MarkerQuestion> : children}</span>
       </span>
@@ -1224,7 +1031,7 @@ function EditableText({ value, placeholder, onSave, onDelete, accent, multiline 
         )}
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" onClick={commit} style={{ border: 'none', background: accent, color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>Save</button>
-          <button type="button" onClick={cancel} style={{ border: `1px solid ${BORDER}`, background: '#fff', color: '#6e6e73', fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+          <button type="button" onClick={cancel} style={{ border: `1px solid ${BORDER}`, background: '#fff', color: '#4a4357', fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '5px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
         </div>
       </div>
     );
@@ -1263,17 +1070,15 @@ function WobbleChip({ index, active, color, onClick, children, size = 'md' }: { 
       type="button"
       onClick={onClick}
       style={{
-        padding: size === 'sm' ? '5px 12px' : '7px 14px',
-        fontFamily: "'Bebas Neue', 'Inter', sans-serif",
-        letterSpacing: '.02em',
-        textTransform: 'uppercase' as const,
+        padding: size === 'sm' ? '6px 12px' : '8px 14px',
+        fontFamily: 'inherit',
         fontSize: size === 'sm' ? 13 : 14,
+        fontWeight: 600,
         cursor: 'pointer',
-        border: `${active ? 2.5 : 2}px solid ${active ? color : '#d8d8d8'}`,
-        background: active ? `${color}12` : '#fffdf8',
-        color: active ? color : '#555',
-        boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
-        borderRadius: 20,
+        border: 'none',
+        background: active ? color : '#fff',
+        color: active ? '#fff' : T1,
+        borderRadius: 999,
         transition: 'all .12s',
       }}
     >
@@ -1293,16 +1098,15 @@ function WhiteboardChip({ active, color, onClick, children, size = 'md' }: { act
       type="button"
       onClick={onClick}
       style={{
-        padding: size === 'sm' ? '5px 13px' : '7px 15px',
-        fontFamily: "'Kalam', cursive",
-        fontSize: size === 'sm' ? 13 : 14.5,
-        fontWeight: 700,
+        padding: size === 'sm' ? '6px 13px' : '8px 15px',
+        fontFamily: 'inherit',
+        fontSize: size === 'sm' ? 13 : 14,
+        fontWeight: 600,
         cursor: 'pointer',
-        border: `2px ${active ? 'solid' : 'dashed'} ${color}`,
+        border: 'none',
         background: active ? color : '#fff',
-        color: active ? '#fff' : color,
+        color: active ? '#fff' : T1,
         borderRadius: 999,
-        boxShadow: active ? '1.5px 2px 0 rgba(0,0,0,.12)' : 'none',
         transition: 'all .12s',
       }}
     >
@@ -1313,10 +1117,10 @@ function WhiteboardChip({ active, color, onClick, children, size = 'md' }: { act
 
 function Callout({ type = 'example', tag, children }: { type?: 'example' | 'warn' | 'info' | 'green'; tag?: string; children: React.ReactNode }) {
   const cfg = {
-    example: { bg: '#f5f3ff', bl: '#7c3aed', tc: '#3b0764', tag: '#7c3aed' },
-    warn:    { bg: '#fffbeb', bl: '#d97706', tc: '#78350f', tag: '#d97706' },
-    info:    { bg: '#eff6ff', bl: '#2563eb', tc: '#1e3a8a', tag: '#2563eb' },
-    green:   { bg: '#f0fdf4', bl: '#059669', tc: '#064e3b', tag: '#059669' },
+    example: { bg: '#faf7ff', bl: '#7c3aed', tc: '#16121d', tag: '#7c3aed' },
+    warn:    { bg: '#fffbeb', bl: '#b45309', tc: '#16121d', tag: '#b45309' },
+    info:    { bg: '#ffffff', bl: '#7c3aed', tc: '#16121d', tag: '#7c3aed' },
+    green:   { bg: '#ecfdf5', bl: '#15803d', tc: '#16121d', tag: '#15803d' },
   }[type];
   return (
     <div style={{ borderLeft: `4px solid ${cfg.bl}`, background: cfg.bg, borderRadius: '0 10px 10px 0', padding: '12px 16px', fontSize: 14, lineHeight: 1.65 }}>
@@ -1343,18 +1147,19 @@ function BMCLabel(_: { blocks: string[] }) {
 // 2) but clears ALL of Hone's data and returns to Step 1, not just one
 // step's.
 function HoneRestartControl({ onRestart }: { onRestart: () => void }) {
+  // Pulled up so it sits on the same line as StepBars' mono eyebrow.
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -52, marginBottom: -4, position: 'relative', zIndex: 1 }}>
       <button
         onClick={onRestart}
         title="Clear all Hone data and start this stage over from Step 1"
         style={{
-          display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700,
-          color: '#7c6a9e', background: 'transparent', border: '1px solid #ece6fb',
-          borderRadius: 999, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit',
+          display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 500,
+          color: T2, background: 'transparent', border: `1px solid ${BORDER2}`,
+          borderRadius: 999, padding: '6px 12px', cursor: 'pointer', fontFamily: 'inherit',
         }}
       >
-        ↻ Restart Hone
+        ↺ Restart
       </button>
     </div>
   );
@@ -1402,7 +1207,7 @@ function MultiEntryShell({
   renderBuilder,
   renderCard,
   addLabel,
-  accentColor = '#2563eb',
+  accentColor = '#7c3aed',
   isEntryValid,
 }: {
   fieldValue: string;
@@ -1484,7 +1289,7 @@ function PersonaEntryCard({ entry, index, onRemove }: { entry: string; index: nu
         <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' as const, color: c, marginBottom: 2 }}>Persona {index + 1}</div>
         <div style={{ fontSize: 13, fontWeight: 600, color: '#1e3a8a', lineHeight: 1.4 }}>{entry}</div>
       </div>
-      <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b0b0b8', fontSize: 15, padding: 4, lineHeight: 1, flexShrink: 0 }}>✕</button>
+      <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8299', fontSize: 15, padding: 4, lineHeight: 1, flexShrink: 0 }}>✕</button>
     </div>
   );
 }
@@ -1498,7 +1303,7 @@ function ProblemEntryCard({ entry, index, onRemove }: { entry: string; index: nu
         <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' as const, color: c, marginBottom: 3 }}>Problem {index + 1}</div>
         <div style={{ fontSize: 13, color: '#1e3a8a', lineHeight: 1.55, fontStyle: 'italic' }}>{entry}</div>
       </div>
-      <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b0b0b8', fontSize: 15, padding: 4, lineHeight: 1, flexShrink: 0 }}>✕</button>
+      <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8299', fontSize: 15, padding: 4, lineHeight: 1, flexShrink: 0 }}>✕</button>
     </div>
   );
 }
@@ -1510,19 +1315,19 @@ function ConsequenceEntryCard({ entry, index, onRemove }: { entry: string; index
   const typeConf = [
     { label: 'Wasted time', icon: '⏰', color: '#7c3aed' },
     { label: 'Financial drain', icon: '💸', color: '#059669' },
-    { label: 'Missed opportunity', icon: '📉', color: '#2563eb' },
+    { label: 'Missed opportunity', icon: '📉', color: '#7c3aed' },
     { label: 'Grinding frustration', icon: '😤', color: '#d97706' },
     { label: 'It compounds', icon: '🔄', color: '#dc2626' },
   ].find(c => c.label === typeLabel);
-  const c = typeConf?.color ?? '#6e6e73';
+  const c = typeConf?.color ?? '#4a4357';
   return (
     <div key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: 10, background: `${c}07`, border: `1.5px solid ${c}30`, animation: 'wup .15s ease' }}>
       <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{typeConf?.icon ?? '⚡'}</span>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 1, textTransform: 'uppercase' as const, color: c, marginBottom: 3 }}>{typeLabel || `Consequence ${index + 1}`}</div>
-        <div style={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.55, fontStyle: 'italic' }}>{text}</div>
+        <div style={{ fontSize: 13, color: '#16121d', lineHeight: 1.55, fontStyle: 'italic' }}>{text}</div>
       </div>
-      <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b0b0b8', fontSize: 15, padding: 4, lineHeight: 1, flexShrink: 0 }}>✕</button>
+      <button onClick={onRemove} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8299', fontSize: 15, padding: 4, lineHeight: 1, flexShrink: 0 }}>✕</button>
     </div>
   );
 }
@@ -1537,15 +1342,24 @@ function StepBars({ mod, step }: { mod: Mod; step: number }) {
   // above it. Slimmed to a thin bar with a small caption below, so it still
   // orients founders on mobile (where there's no sidebar at all) without
   // fighting the sidebar for attention on desktop.
+  // 2026-10 redesign: segmented progress bar (done = ink, current = violet
+  // fill, upcoming = parchment) with a mono counter, then the mono eyebrow
+  // "HONE 02 · STEP 2 OF 6" that sits right above the step's H1.
+  const nn = String(step + 1).padStart(2, '0');
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-      <div style={{ display: 'flex', gap: 4, flex: 1 }}>
-        {Array.from({ length: total }).map((_, i) => (
-          <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i < step ? c : i === step ? `${c}55` : BORDER, transition: 'background .3s' }} />
-        ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 4, flex: 1 }}>
+          {Array.from({ length: total }).map((_, i) => (
+            <div key={i} style={{ flex: 1, height: 6, borderRadius: 3, background: i < step ? INK : i === step ? c : BORDER, transition: 'background .3s' }} />
+          ))}
+        </div>
+        <div style={{ fontFamily: MONO, fontSize: 11, color: T3, flexShrink: 0 }}>
+          {step + 1}/{total}
+        </div>
       </div>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.03em', color: T3, flexShrink: 0 }}>
-        {step + 1}/{total}
+      <div style={{ ...eyebrow(c), display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span>{META[mod].label} {nn} · Step {step + 1} of {total}</span>
       </div>
     </div>
   );
@@ -1565,16 +1379,10 @@ function ModBadge(_: { mod: Mod }) {
 // interesting" avatar exploration on 2026-07-28. Pure/presentational (no
 // closures over WorkPage state) so it's safe at module scope.
 function AgentAvatar({ size = 40 }: { size?: number }) {
+  // 2026-10 redesign: Sage is a lime disc with an ink "S".
   return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <svg width={size * 0.72} height={size * 0.72} viewBox="0 0 96 96">
-        <polygon points="48,14 66,26 62,50 48,60 34,50 30,26" fill="#f4a340" />
-        <polygon points="48,14 66,26 48,38 30,26" fill="#f7bb63" />
-        <polygon points="36,48 60,48 54,74 48,84 42,74" fill="#e5e7eb" />
-        <polygon points="40,40 48,40 44,46" fill="#1c1917" />
-        <polygon points="48,40 56,40 52,46" fill="#1c1917" />
-        <polygon points="44,52 52,52 48,58" fill="#dc2626" />
-      </svg>
+    <div style={{ width: size, height: size, borderRadius: '50%', background: LIME, color: INK, display: 'grid', placeItems: 'center', flexShrink: 0, fontWeight: 800, fontSize: Math.round(size * 0.5), lineHeight: 1 }}>
+      S
     </div>
   );
 }
@@ -1586,23 +1394,19 @@ function AgentAvatar({ size = 40 }: { size?: number }) {
 // small postage-stamp icon in the corner. `extra` lets each call site keep
 // its own accent (e.g. a colored top border) layered on top.
 function postcardStyle(rotate: number, extra: React.CSSProperties = {}): React.CSSProperties {
+  void rotate;
   return {
-    background: 'linear-gradient(135deg, #fdf6ec 0%, #faf0dd 100%)',
-    border: '1px solid #d8c39a',
-    borderRadius: 8,
-    boxShadow: '0 3px 8px rgba(0,0,0,0.08)',
+    background: '#fff',
+    border: 'none',
+    borderRadius: 20,
     position: 'relative' as const,
-    transform: `rotate(${rotate}deg)`,
     ...extra,
   };
 }
 
 function PostcardStamp({ top = 10, right = 12 }: { top?: number; right?: number }) {
   return (
-    <div style={{
-      position: 'absolute' as const, top, right, fontSize: 18,
-      opacity: 0.5, transform: 'rotate(9deg)', pointerEvents: 'none' as const,
-    }}>📮</div>
+    <div style={{ position: 'absolute' as const, top, right, width: 8, height: 8, borderRadius: '50%', background: LIME, pointerEvents: 'none' as const }} />
   );
 }
 
@@ -1612,15 +1416,12 @@ function PostcardStamp({ top = 10, right = 12 }: { top?: number; right?: number 
 // marker-ink border, and an asymmetric border-radius (rather than a uniform
 // one) so corners read as hand-drawn instead of a designed rounded rect.
 function whiteboardBoxStyle(color: string, rotate: number, extra: React.CSSProperties = {}): React.CSSProperties {
+  void rotate;
   return {
-    background: '#fffefb',
-    backgroundImage: 'radial-gradient(#00000010 1px, transparent 1px)',
-    backgroundSize: '12px 12px',
-    border: `2px dashed ${color}`,
-    borderRadius: '18px 8px 16px 8px / 8px 16px 8px 18px',
-    boxShadow: '2px 3px 0 rgba(0,0,0,.05)',
+    background: '#fff',
+    border: `1.5px dashed ${color}66`,
+    borderRadius: 20,
     position: 'relative' as const,
-    transform: `rotate(${rotate}deg)`,
     ...extra,
   };
 }
@@ -1644,14 +1445,12 @@ function swooshUnderline(color: string, width = 160) {
 function StepGoal({ text }: { text: string }) {
   if (!text) return null;
   return (
-    <div style={{
-      display: 'flex', alignItems: 'flex-start', gap: 7,
-      margin: '8px 0 0', fontFamily: 'var(--font-ui)', fontSize: 13, fontStyle: 'italic' as const, lineHeight: 1.5,
-      color: T2,
+    <p style={{
+      margin: '10px 0 0', fontFamily: 'inherit', fontSize: 'clamp(15px, 1.5vw, 18px)', lineHeight: 1.5,
+      color: T2, maxWidth: 720,
     }}>
-      <span style={{ fontSize: 13, flexShrink: 0 }}>💡</span>
-      <span>{text}</span>
-    </div>
+      {text}
+    </p>
   );
 }
 
@@ -1717,7 +1516,7 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
     } catch { /* silent */ } finally { setPosting(false); }
   };
 
-  const c = stageColor ?? '#1d1d1f';
+  const c = stageColor ?? ACCENT;
   return (
     <>
       <style>{`
@@ -1734,38 +1533,45 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
         }
       `}</style>
       <div style={{ marginTop: 28 }}>
-        {/* Nav buttons */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: disabled ? 6 : 14 }}>
+        {/* Nav buttons — 2026-10 redesign: one big violet CTA, a quiet
+            outlined Back, and the ask-the-community button as a round icon. */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: disabled ? 6 : 14, alignItems: 'stretch' }}>
           {onBack && (
-            <Button variant="secondary" size="lg" onClick={onBack} style={{ flex: 1, padding: '13px 16px' }}>← Back</Button>
+            <button
+              type="button"
+              onClick={onBack}
+              style={{ flex: '0 0 auto', padding: '18px 22px', borderRadius: 16, border: `1.5px solid ${BORDER2}`, background: 'transparent', color: T1, fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+            >← Back</button>
           )}
-          <Button
-            variant="primary"
-            size="lg"
+          <button
+            type="button"
             onClick={disabled ? handleBlockedClick : onNext}
             aria-disabled={disabled || undefined}
             title={disabled ? (disabledReason || 'Fill in what\'s required above to continue.') : undefined}
             style={{
-              flex: 2,
-              transition: 'background .15s',
+              flex: 1, minWidth: 0,
+              padding: '20px 24px', borderRadius: 16, border: 'none',
+              fontSize: 18, fontWeight: 800, fontFamily: 'inherit', letterSpacing: '-0.01em',
+              transition: 'background .15s, transform .1s',
               animation: shaking ? 'navShake .5s ease' : undefined,
-              ...(disabled ? { background: '#e5e5ea', color: T3, cursor: 'not-allowed' } : { cursor: 'pointer' }),
+              ...(disabled
+                ? { background: CREAM2, color: T3, cursor: 'not-allowed' }
+                : { background: c === '#16121d' ? INK : c, color: '#fff', cursor: 'pointer' }),
             }}
-          >{nextLabel}</Button>
+          >{nextLabel}</button>
           {ideaId && (
-            <Button
-              variant="secondary"
-              size="lg"
+            <button
+              type="button"
               onClick={() => setModalOpen(true)}
               title="Ask the community about this step"
-              style={{ flex: '0 0 auto', width: 46, padding: '13px 0', fontSize: 17, lineHeight: 1 }}
-            >💬</Button>
+              style={{ flex: '0 0 auto', width: 60, borderRadius: 16, border: `1.5px solid ${BORDER2}`, background: 'transparent', fontSize: 20, lineHeight: 1, cursor: 'pointer' }}
+            >💬</button>
           )}
         </div>
         {disabled && (
           <div style={{
-            fontSize: 12.5, marginBottom: 14, textAlign: 'right' as const,
-            color: showReason ? '#b42318' : T3,
+            marginBottom: 14, textAlign: 'right' as const,
+            color: showReason ? '#b42318' : T3, fontFamily: MONO, fontSize: 12,
             fontWeight: showReason ? 700 : 400,
             transition: 'color .15s, font-weight .15s',
             animation: showReason ? 'navReasonFlash .5s ease' : undefined,
@@ -1787,23 +1593,23 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
                 <div style={{ fontSize: 44, marginBottom: 12 }}>🎉</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#059669', marginBottom: 6 }}>Posted to community!</div>
-                <div style={{ fontSize: 13, color: '#6e6e73' }}>Other founders will see your question on your idea page.</div>
+                <div style={{ fontSize: 13, color: '#4a4357' }}>Other founders will see your question on your idea page.</div>
               </div>
             ) : (
               <>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -.4, color: '#1d1d1f', marginBottom: 4 }}>Ask the community</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -.4, color: '#16121d', marginBottom: 4 }}>Ask the community</div>
                     {stepTitle && (
-                      <div style={{ fontSize: 12, color: '#6e6e73', background: '#f5f5f7', border: '1px solid #e5e5ea', borderRadius: 6, padding: '3px 10px', display: 'inline-block' }}>
+                      <div style={{ fontSize: 12, color: '#4a4357', background: '#f3f0e8', border: '1px solid #e2ddd1', borderRadius: 6, padding: '3px 10px', display: 'inline-block' }}>
                         Re: {stepTitle}
                       </div>
                     )}
                   </div>
-                  <Button variant="ghost" onClick={() => setModalOpen(false)} style={{ fontSize: 20, color: '#b0b0b8', lineHeight: 1, padding: 4 }}>✕</Button>
+                  <Button variant="ghost" onClick={() => setModalOpen(false)} style={{ fontSize: 20, color: '#8a8299', lineHeight: 1, padding: 4 }}>✕</Button>
                 </div>
 
-                <div style={{ background: '#f5f5f7', border: '1px solid #e5e5ea', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#6e6e73', lineHeight: 1.55 }}>
+                <div style={{ background: '#f3f0e8', border: '1px solid #e2ddd1', borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, color: '#4a4357', lineHeight: 1.55 }}>
                   💡 Your question will be posted to your idea's community thread — other founders at the same stage can weigh in.
                 </div>
 
@@ -1818,7 +1624,7 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
                   autoFocus
                   style={{
                     width: '100%', boxSizing: 'border-box', minHeight: 120,
-                    padding: '14px 16px', border: `2px solid ${focused ? '#1d1d1f' : '#e5e5ea'}`,
+                    padding: '14px 16px', border: `2px solid ${focused ? '#16121d' : '#e2ddd1'}`,
                     borderRadius: 12, fontSize: 14, outline: 'none', resize: 'vertical' as const,
                     lineHeight: 1.65, fontFamily: 'inherit', color: USER_INPUT_COLOR, transition: 'border-color .18s',
                   }}
@@ -1846,19 +1652,72 @@ function NavRow({ onBack, onNext, nextLabel = 'Next →', disabled = false, disa
   );
 }
 
-function CompleteBadge({ mod, onContinue, onBack }: { mod: Mod; onContinue: () => void; onBack?: () => void }) {
-  const c = STAGE_COLORS[mod];
+// Stage-complete copy for the ink celebration screen (2026-10 redesign).
+const STAGE_DONE_COPY: Record<Mod, { kicker: string; verb: string; sub: string; quote: string; by: string; nextLabel: string; nextSub: string; nextTime: string }> = {
+  idea:     { kicker: 'Stage 01 / 03 · Complete ✓', verb: 'Done.',    sub: 'You nailed your one-liner and your "why".', quote: 'Action is the foundational key to all success.', by: '— Pablo Picasso', nextLabel: 'Hone it', nextSub: 'Get specific. Define who has the problem, why it hurts, and score your idea.', nextTime: 'Up next · ~20 min' },
+  hone:     { kicker: 'Stage 02 / 03 · Complete ✓', verb: 'Held up.', sub: 'You interrogated your idea and it held up.', quote: "If you're not embarrassed by the first version of your product, you've launched too late.", by: '— Reid Hoffman, LinkedIn co-founder', nextLabel: 'Validate', nextSub: 'Talk to 3 real people. Confirm the pain exists before you build anything.', nextTime: 'Up next · Final core stage' },
+  validate: { kicker: 'Stage 03 / 03 · Complete ✓', verb: 'Proven.',  sub: 'Real people confirmed the pain. You know what to build.', quote: 'The only way to win is to learn faster than anyone else.', by: '— Eric Ries', nextLabel: 'Shape', nextSub: 'Define the smallest possible MVP — three features, a price, a channel.', nextTime: 'Optional · ~1 hour' },
+  shape:    { kicker: 'Optional · Shape complete ✓', verb: 'Scoped.',  sub: 'A lean MVP with a backlog you can actually build.', quote: 'Make something people want.', by: '— Paul Graham', nextLabel: 'Ship', nextSub: 'Build it, launch it, get your first five users.', nextTime: 'Optional · ~2–3 hours' },
+  done:     { kicker: 'Shipped ✓', verb: 'Live.',     sub: 'You built something real and put it in front of people.', quote: 'Shipping beats perfection. Iteration beats guessing.', by: '— MVP Club', nextLabel: 'Keep iterating', nextSub: 'Back to your vault to start the next loop.', nextTime: 'What now' },
+};
+
+function CompleteBadge({ mod, onContinue, onBack, statement }: { mod: Mod; onContinue: () => void; onBack?: () => void; statement?: string }) {
+  const copy = STAGE_DONE_COPY[mod];
+  const modIndex = MODULES.indexOf(mod);
+  const nextNumeral = String(Math.min(modIndex + 2, MODULES.length)).padStart(2, '0');
+  const [copied, setCopied] = useState(false);
   return (
-    <div style={{ textAlign: 'center', padding: '52px 0' }}>
-      <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-      <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.5, marginBottom: 8, fontFamily: "'Playfair Display', Georgia, serif", color: T1 }}>{META[mod].label} complete!</div>
-      <div style={{ fontSize: 15, color: '#3a3a3c', marginBottom: 32, lineHeight: 1.6 }}>Move to the next stage when you're ready.</div>
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-        {onBack && (
-          <button onClick={onBack} style={{ background: '#fff', color: '#555', border: '1.5px solid #e0e0e0', borderRadius: 999, padding: '14px 28px', fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>← Back</button>
+    <div style={{ background: INK, color: INK_TXT, borderRadius: 'clamp(20px, 2.5vw, 32px)', overflow: 'hidden', display: 'flex', flexDirection: 'column', fontFamily: 'inherit' }}>
+      <div style={{ padding: 'clamp(22px, 4vw, 56px) clamp(18px, 3vw, 40px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: 'clamp(28px, 5vw, 64px)', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+          <span style={eyebrow(LIME, 12)}>{copy.kicker}</span>
+          <h1 style={{ margin: 0, fontSize: 'clamp(72px, 12vw, 180px)', fontWeight: 800, lineHeight: 0.9, letterSpacing: '-0.05em', color: INK_TXT }}>
+            {META[mod].label}<span style={{ color: LIME }}>.</span><br />
+            <span style={{ color: ACCENT }}>{copy.verb}</span>
+          </h1>
+          <p style={{ margin: 0, fontSize: 'clamp(19px, 2vw, 24px)', color: INK_DIM, lineHeight: 1.35 }}>{copy.sub}</p>
+          <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', gap: 6, borderLeft: `3px solid ${ACCENT}`, paddingLeft: 16 }}>
+            <blockquote style={{ margin: 0, fontSize: 'clamp(18px, 1.8vw, 22px)', fontWeight: 600, color: INK_TXT, lineHeight: 1.35 }}>{copy.quote}</blockquote>
+            <figcaption style={{ fontFamily: MONO, fontSize: 12, color: INK_MUTE }}>{copy.by}</figcaption>
+          </figure>
+        </div>
+        {statement && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+            <div style={{ background: LIME, color: INK, borderRadius: 24, padding: 'clamp(20px, 2.6vw, 32px)', display: 'flex', flexDirection: 'column', gap: 12, transform: 'rotate(-1.2deg)' }}>
+              <span style={eyebrow(INK, 11)}>{META[mod].label === 'Idea' ? 'Your one-liner' : 'Your idea'}</span>
+              <p style={{ margin: 0, fontSize: 'clamp(20px, 2.4vw, 28px)', fontWeight: 600, lineHeight: 1.3 }}>“{statement}”</p>
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const }}>
+              <button
+                onClick={() => { navigator.clipboard.writeText(statement); setCopied(true); setTimeout(() => setCopied(false), 1800); }}
+                style={{ background: 'transparent', color: INK_TXT, border: '1px solid #3a3148', borderRadius: 999, padding: '10px 16px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}
+              >{copied ? 'Copied ✓' : 'Copy statement'}</button>
+              {onBack && (
+                <button onClick={onBack} style={{ background: 'transparent', color: INK_TXT, border: '1px solid #3a3148', borderRadius: 999, padding: '10px 16px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Edit statement</button>
+              )}
+            </div>
+          </div>
         )}
-        <button onClick={onContinue} style={{ background: c, color: '#fff', border: 'none', borderRadius: 999, padding: '14px 36px', fontSize: 16, fontWeight: 700, cursor: 'pointer' }}>Continue →</button>
+        {!statement && onBack && (
+          <div>
+            <button onClick={onBack} style={{ background: 'transparent', color: INK_TXT, border: '1px solid #3a3148', borderRadius: 999, padding: '10px 16px', fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Review answers</button>
+          </div>
+        )}
       </div>
+      <section style={{ background: INK2, padding: 'clamp(18px, 2.5vw, 28px) clamp(18px, 3vw, 40px)', display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' as const }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 260 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, display: 'grid', placeItems: 'center', fontFamily: MONO, fontWeight: 700, color: '#a78bfa', border: '1px solid #3a3148', flexShrink: 0 }}>{nextNumeral}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={eyebrow(INK_MUTE)}>{copy.nextTime}</span>
+            <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em' }}>{copy.nextLabel}</span>
+            <span style={{ fontSize: 15, color: INK_DIM, lineHeight: 1.4 }}>{copy.nextSub}</span>
+          </div>
+        </div>
+        <button
+          onClick={onContinue}
+          style={{ background: LIME, color: INK, border: 'none', borderRadius: 16, padding: '20px 32px', fontSize: 19, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+        >Start {copy.nextLabel} →</button>
+      </section>
     </div>
   );
 }
@@ -2089,157 +1948,96 @@ function IdeaOneLinerChat({ initialName, initialOneLiner, userName, onChange }: 
   const done = stepIndex >= ONE_LINER_QUESTIONS.length;
   const activeQ = !done ? ONE_LINER_QUESTIONS[stepIndex] : null;
 
-  // ── "Magazine Cover Feature" treatment (Direction 13) ────────────────────
-  // Replaces the whiteboard/chat-bubble skin above with an editorial one:
-  // a masthead byline, the live question set as a bold condensed headline
-  // with a kicker + rule (like a cover line), earlier questions collapsed
-  // to small kickers, and answers rendered as serif pull-quotes instead of
-  // chat bubbles. Pure re-skin — every piece of state/logic above (turns,
-  // fields, submitAnswer, restart, the typewriter) is untouched.
+  // ── 2026-10 redesign: chat card ──────────────────────────────────────────
+  // White rounded card: Sage header (lime "S" disc, mono "● idea desk"),
+  // bubbles (Sage = cream, founder = ink), a typing indicator, and a cream
+  // composer with an ink send button. Every piece of state/logic above
+  // (turns, fields, submitAnswer, restart, the typewriter) is untouched.
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', gap: 8,
-      background: '#fffdfa', border: '1px solid #e8e3d3',
-      borderTop: `4px solid ${STAGE_COLORS.idea}`, borderRadius: 10,
-      padding: '14px 18px 14px',
-      fontFamily: 'inherit',
+    <section style={{
+      display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: 24, overflow: 'hidden',
+      fontFamily: 'inherit', minHeight: 420,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' as const, gap: '4px 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <AgentAvatar size={16} />
-          <span style={{
-            fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
-            letterSpacing: '.08em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea,
-            whiteSpace: 'nowrap' as const,
-          }}>
-            Idea Desk · By Sage
-          </span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '14px 18px', borderBottom: `1px solid ${BORDER}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <AgentAvatar size={32} />
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+            <span style={{ fontWeight: 700, fontSize: 15, color: T1 }}>Sage</span>
+            <span style={{ fontFamily: MONO, fontSize: 10, color: '#15803d' }}>● idea desk</span>
+          </div>
         </div>
         <button
           onClick={restart}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-            fontSize: 11, fontWeight: 600, letterSpacing: '.02em', fontFamily: 'inherit',
-            color: confirmingRestart ? '#dc2626' : T3, flexShrink: 0, whiteSpace: 'nowrap' as const,
-          }}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, fontSize: 13, fontFamily: 'inherit', color: confirmingRestart ? '#dc2626' : T3, flexShrink: 0, whiteSpace: 'nowrap' as const }}
         >
           ↺ {confirmingRestart ? 'Click again to restart' : 'Restart this step'}
         </button>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflowY: 'auto' as const, paddingRight: 2 }}>
+
+      <div style={{ flex: 1, padding: 18, display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 420, overflowY: 'auto' as const }}>
         {turns.map((t, i) => {
           const isLast = i === turns.length - 1;
-
-          if (t.role === 'agent' && t.kind === 'react') {
-            // Small caption reacting to the answer above it.
-            return (
-              <div key={i} style={{
-                fontFamily: 'inherit', fontWeight: 500,
-                fontSize: 13, lineHeight: 1.4, color: STAGE_COLORS.idea, opacity: 0.85,
-              }}>
-                — {t.text}
-              </div>
-            );
-          }
-
           if (t.role === 'agent') {
-            // 'ask' turn. The live (last) question runs as the full headline;
-            // every earlier question collapses to a small label sitting
-            // above the answer that resolved it.
-            if (isLast) {
-              return (
-                <div key={i}>
-                  <div style={{
-                    fontFamily: 'inherit', fontSize: 11, fontWeight: 600,
-                    letterSpacing: '.1em', textTransform: 'uppercase' as const, color: STAGE_COLORS.idea, marginBottom: 4,
-                  }}>
-                    Question {stepIndex + 1} of {ONE_LINER_QUESTIONS.length}
-                  </div>
-                  <div style={{
-                    fontFamily: 'inherit', fontSize: 22, fontWeight: 700, lineHeight: 1.2,
-                    letterSpacing: '-0.01em', color: T1,
-                  }}>
-                    {/* Only the CURRENT question (last turn) types itself out —
-                        every earlier ask in the history renders instantly. */}
-                    <TypewriterAsk text={t.text} />
-                  </div>
-                  <div style={{ borderTop: `2px solid ${BORDER}`, marginTop: 8 }} />
-                </div>
-              );
-            }
+            const isReact = t.kind === 'react';
             return (
-              <div key={i} style={{
-                fontFamily: 'inherit', fontSize: 10.5, fontWeight: 600,
-                letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3,
-              }}>
-                {t.text}
+              <div key={i} style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <div style={{
+                  maxWidth: '82%', padding: '11px 15px', borderRadius: '18px 18px 18px 4px',
+                  background: CREAM, color: isReact ? T2 : T1,
+                  fontSize: isReact ? 14 : 16, fontWeight: isReact ? 500 : 600, lineHeight: 1.45,
+                }}>
+                  {isLast && !isReact ? <TypewriterAsk text={t.text} /> : t.text}
+                </div>
               </div>
             );
           }
-
-          // User answer — a quoted line with a left accent bar.
           return (
-            <div key={i} style={{ borderLeft: `3px solid ${STAGE_COLORS.idea}`, paddingLeft: 10 }}>
-              <div style={{
-                fontFamily: 'inherit',
-                fontWeight: 600, fontSize: 15, lineHeight: 1.35, color: T1,
-              }}>
-                "{t.text}"
+            <div key={i} style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ maxWidth: '82%', padding: '11px 15px', borderRadius: '18px 18px 4px 18px', background: INK, color: INK_TXT, fontSize: 15, fontWeight: 500, lineHeight: 1.45 }}>
+                {t.text}
               </div>
             </div>
           );
         })}
-        {reacting && (
-          <div style={{
-            fontFamily: 'inherit', fontWeight: 500,
-            fontSize: 13, color: STAGE_COLORS.idea, opacity: 0.6,
-          }}>
-            — thinking…
-          </div>
-        )}
-        {smoothing && (
-          <div style={{
-            fontFamily: 'inherit', fontWeight: 500,
-            fontSize: 13, color: STAGE_COLORS.idea, opacity: 0.6,
-          }}>
-            ✨ — polishing your one-liner…
+        {(reacting || smoothing) && (
+          <div style={{ display: 'flex', gap: 4, padding: '14px 16px', background: CREAM, borderRadius: '18px 18px 18px 4px', width: 'fit-content', alignItems: 'center' }}>
+            {[0, 1, 2].map(d => (
+              <span key={d} style={{ width: 7, height: 7, borderRadius: '50%', background: T3, animation: `dot 1.2s ${d * 0.2}s infinite` }} />
+            ))}
+            {smoothing && <span style={{ fontFamily: MONO, fontSize: 10, color: T3, marginLeft: 6 }}>polishing your one-liner…</span>}
           </div>
         )}
         <div ref={bottomRef} />
       </div>
 
       {!done && (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <form
+          onSubmit={e => { e.preventDefault(); if (!reacting) submitAnswer(); }}
+          style={{ display: 'flex', gap: 8, padding: 12, background: '#fcfbf8', borderTop: `1px solid ${BORDER}` }}
+        >
           <input
-            style={{
-              ...inp, flex: 1, background: 'transparent',
-              border: 'none', borderBottom: `1.5px solid ${BORDER}`, borderRadius: 0,
-              padding: '6px 2px', fontFamily: 'inherit', fontSize: 15,
-            }}
+            style={{ flex: 1, minWidth: 0, borderRadius: 14, padding: '14px 16px', fontSize: 16, background: '#fff', color: T1, border: `1px solid ${BORDER}`, outline: 'none', fontFamily: 'inherit' }}
             value={draft}
             placeholder={activeQ ? activeQ.placeholder : ''}
             onChange={e => setDraft(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !reacting) submitAnswer(); }}
             disabled={reacting}
+            onFocus={e => (e.currentTarget.style.borderColor = ACCENT)}
+            onBlur={e => (e.currentTarget.style.borderColor = BORDER)}
           />
           <button
-            onClick={submitAnswer}
+            type="submit"
             disabled={reacting || !draft.trim()}
+            aria-label="Send"
             style={{
-              padding: '8px 16px', borderRadius: 4, border: 'none',
-              background: STAGE_COLORS.idea, color: '#fff',
-              fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
-              letterSpacing: '.04em', textTransform: 'uppercase' as const,
-              cursor: reacting || !draft.trim() ? 'not-allowed' : 'pointer',
-              opacity: reacting || !draft.trim() ? 0.5 : 1,
-              flexShrink: 0,
+              width: 50, borderRadius: 14, border: 'none', background: INK, color: LIME,
+              fontSize: 20, fontWeight: 800, cursor: reacting || !draft.trim() ? 'not-allowed' : 'pointer',
+              opacity: reacting || !draft.trim() ? 0.5 : 1, flexShrink: 0, fontFamily: 'inherit',
             }}
-          >
-            Next →
-          </button>
-        </div>
+          >↑</button>
+        </form>
       )}
-    </div>
+      <style>{`@keyframes dot{0%,80%,100%{opacity:.25}40%{opacity:1}}`}</style>
+    </section>
   );
 }
 
@@ -2332,12 +2130,12 @@ function PrivacySettingsModal({ value, onChange, hasContent, onClose }: {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 18 }}>
           <div style={{ fontSize: 32, lineHeight: 1 }}>🔒</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 19, fontWeight: 800, color: '#1d1d1f', lineHeight: 1.2, marginBottom: 4 }}>Privacy</div>
-            <div style={{ fontSize: 13, color: '#6e6e73', lineHeight: 1.55 }}>
+            <div style={{ fontSize: 19, fontWeight: 800, color: '#16121d', lineHeight: 1.2, marginBottom: 4 }}>Privacy</div>
+            <div style={{ fontSize: 13, color: '#4a4357', lineHeight: 1.55 }}>
               Nothing about this idea is public by default. Turn a section on to let it show on your Community page — turn it off any time.
             </div>
           </div>
-          <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: 20, color: '#b0b0b8', cursor: 'pointer', lineHeight: 1, padding: 4 }}>✕</button>
+          <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: 20, color: '#8a8299', cursor: 'pointer', lineHeight: 1, padding: 4 }}>✕</button>
         </div>
 
         {/* Master toggle — sets every section above at once. Shows "mixed" via
@@ -2348,8 +2146,8 @@ function PrivacySettingsModal({ value, onChange, hasContent, onClose }: {
           borderRadius: 14, padding: '12px 16px', marginBottom: 18,
         }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#1d1d1f' }}>All sections</div>
-            <div style={{ fontSize: 11.5, color: '#6e6e73' }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#16121d' }}>All sections</div>
+            <div style={{ fontSize: 11.5, color: '#4a4357' }}>
               {allOn ? 'Everything is public.' : allOff ? 'Everything is private.' : `${onCount} of ${total} sections public.`}
             </div>
           </div>
@@ -2412,68 +2210,43 @@ function OneLinerPreviewCard({ value, publicOn, onTogglePublic }: { value: strin
 
   if (!value.trim()) return null;
 
-  // 2026-09-20: "unlocked artifact" treatment, not a form-preview card --
-  // dark gradient chrome (same card language as Hone's redesigned queue
-  // steps), an XP-badge-style eyebrow (matching Hone's "⚡ +10–50 XP" chip),
-  // and the quote set in italic serif with real quotation marks. The live
-  // per-blank highlighting is unchanged -- it's functional feedback (what's
-  // filled vs. still blank), not decoration, so it stays, just recolored to
-  // read against a dark ground.
+  // 2026-10 redesign: the ink "statement" card — lime mono eyebrow, a
+  // privacy toggle, and the sentence set big with each blank tinted violet
+  // once it's filled (dashed while it's still empty).
+  // Filled parts read as violet-tinted text with a thin underline (not a
+  // solid block — on a long one-liner the blocks swallowed the whole card).
+  // Type size steps down with sentence length so the card never balloons.
+  const part = (v: string, placeholder: string) => (
+    <span style={{
+      color: filled(v) ? '#c4b5fd' : INK_MUTE,
+      borderBottom: filled(v) ? '2px solid #7c3aed' : '2px dashed #3a3148',
+      paddingBottom: 1,
+    }}>{v || placeholder}</span>
+  );
+  const len = value.trim().length;
+  const stmtSize = len > 220 ? 'clamp(16px, 1.5vw, 19px)' : len > 140 ? 'clamp(18px, 1.8vw, 22px)' : len > 80 ? 'clamp(20px, 2.2vw, 27px)' : 'clamp(22px, 2.6vw, 34px)';
   return (
-    <div style={{
+    <section style={{
       position: 'relative' as const, overflow: 'hidden',
-      background: 'linear-gradient(160deg, #2f2354, #221a3d)', border: '1.5px solid #4c3f80',
-      borderRadius: 14, padding: '20px 20px 22px', fontFamily: 'inherit',
-      boxShadow: '0 16px 32px -14px rgba(43,25,82,.5)',
+      background: INK, color: INK_TXT, borderRadius: 24, padding: 'clamp(20px, 2.6vw, 32px)',
+      display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'inherit',
     }}>
-      <div style={{
-        position: 'absolute' as const, inset: 0, pointerEvents: 'none' as const,
-        background: `radial-gradient(120% 80% at 0% 0%, ${accent}22, transparent 60%)`,
-      }} />
-      <div style={{ position: 'relative' as const, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const, marginBottom: 14 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: "'Bebas Neue', sans-serif", fontSize: 13, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: '#fbbf24' }}>
-          ⚡ Unlocked Idea Statement
-        </span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
+        <span style={eyebrow(LIME)}>{allFilled ? 'Your one-liner ✓' : 'Your one-liner · in progress'}</span>
         <PublicToggle on={publicOn} onToggle={onTogglePublic} label="Your one-liner" dark />
       </div>
-
       {m ? (
-        <div style={{ position: 'relative' as const, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 17, lineHeight: 1.7, color: '#fff', fontWeight: 500 }}>
-          {/* Highlight sweep — fires once, the moment the last blank gets
-              filled in, celebrating the fully-assembled one-liner. */}
+        <p style={{ position: 'relative' as const, margin: 0, fontSize: stmtSize, fontWeight: 600, lineHeight: 1.45, letterSpacing: '-0.01em' }}>
           {justCompleted && (
-            <div style={{
-              position: 'absolute', left: 0, right: 0, bottom: 2, height: '0.85em',
-              background: `${accent}33`, borderRadius: 2, zIndex: -1,
-              animation: 'highlighterSweep 1.1s ease-out forwards',
-            }} />
+            <span style={{ position: 'absolute', left: 0, right: 0, bottom: 2, height: '0.85em', background: `${accent}33`, borderRadius: 2, zIndex: 0, animation: 'highlighterSweep 1.1s ease-out forwards' }} />
           )}
-          <span>&ldquo;I'm building </span>
-          <span style={{
-            fontStyle: 'normal' as const, color: filled(pb) ? '#c4b5fd' : '#9c8fc4', fontWeight: 700,
-            borderBottom: filled(pb) ? '2px solid #a78bfa' : '2px dashed #4c3f80', paddingBottom: 1,
-          }}>{pb || "what you're building"}</span>
-          <span> for </span>
-          <span style={{
-            fontStyle: 'normal' as const, color: filled(pf) ? '#c4b5fd' : '#9c8fc4', fontWeight: 700,
-            borderBottom: filled(pf) ? '2px solid #a78bfa' : '2px dashed #4c3f80', paddingBottom: 1,
-          }}>{pf || "who it's for"}</span>
-          <span> who </span>
-          <span style={{
-            fontStyle: 'normal' as const, color: filled(pw) ? '#c4b5fd' : '#9c8fc4', fontWeight: 700,
-            borderBottom: filled(pw) ? '2px solid #a78bfa' : '2px dashed #4c3f80', paddingBottom: 1,
-          }}>{pw || 'their struggle'}</span>
-          <span> so they can </span>
-          <span style={{
-            fontStyle: 'normal' as const, color: filled(po) ? '#c4b5fd' : '#9c8fc4', fontWeight: 800,
-            borderBottom: filled(po) ? '2px solid #a78bfa' : '2px dashed #4c3f80', paddingBottom: 1,
-          }}>{po || 'what happens next'}</span>
-          <span>.&rdquo;</span>
-        </div>
+          I'm building {part(pb, "what you're building")} for {part(pf, "who it's for")} who {part(pw, 'their struggle')} so they can {part(po, 'what happens next')}.
+        </p>
       ) : (
-        <div style={{ position: 'relative' as const, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 17, lineHeight: 1.7, color: '#fff', fontWeight: 500 }}>&ldquo;{value}&rdquo;</div>
+        <p style={{ margin: 0, fontSize: stmtSize, fontWeight: 600, lineHeight: 1.45 }}>“{value}”</p>
       )}
-    </div>
+      <span style={{ fontSize: 12, color: INK_MUTE }}>Answer Sage on the left — each part fills in here as you go.</span>
+    </section>
   );
 }
 
@@ -2508,53 +2281,45 @@ function OneLinerQualityMeter({ value }: { value: string }) {
   const started = Object.values(parts).some(v => v && !v.includes('___'));
   if (!started) return null;
 
-  const accent = STAGE_COLORS.idea;
   const rows = ONE_LINER_PILLARS.map(p => ({ ...p, text: parts[p.key], score: oneLinerPillarScore(parts[p.key]) }));
   const overall = Math.round(rows.reduce((s, p) => s + p.score, 0) / rows.length);
   const weakest = [...rows].filter(p => p.text && !p.text.includes('___')).sort((a, b) => a.score - b.score)[0];
 
+  // 2026-10 redesign: a ring score (conic gradient) next to the four pillar
+  // chips and a one-line tip.
+  const ringColor = overall >= 70 ? '#15803d' : overall >= 40 ? '#b45309' : '#b42318';
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', gap: 8,
-      background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 12,
-      padding: '14px 18px', fontFamily: 'inherit',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: T3 }}>
-          One-liner clarity
-        </span>
-        <span style={{
-          fontSize: 12, fontWeight: 700,
-          color: overall >= 70 ? '#059669' : overall >= 40 ? '#d97706' : '#dc2626',
-          background: overall >= 70 ? '#f0fdf4' : overall >= 40 ? '#fffbeb' : '#fef2f2',
-          borderRadius: 999, padding: '2px 10px',
-        }}>
-          {overall}/100
-        </span>
-      </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-        {rows.map(p => {
-          const has = !!p.text && !p.text.includes('___');
-          const good = has && p.score >= 60;
-          return (
-            <span key={p.key} title={p.label} style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              fontSize: 11, fontWeight: 600, color: good ? '#059669' : has ? '#d97706' : T3,
-              background: good ? '#f0fdf4' : has ? '#fffbeb' : '#f5f5f7',
-              border: `1px solid ${good ? '#bbf7d0' : has ? '#fde68a' : BORDER}`,
-              borderRadius: 999, padding: '3px 9px',
-            }}>
-              {good ? '✓' : has ? '•' : '○'} {p.label}
-            </span>
-          );
-        })}
-      </div>
-      {weakest && weakest.score < 60 && (
-        <div style={{ fontSize: 11, color: accent, lineHeight: 1.5 }}>
-          💡 "{weakest.label}" is thin — a few more specific words there usually sharpens the whole line.
+    <section style={{ background: '#fff', borderRadius: 24, padding: 20, display: 'flex', alignItems: 'center', gap: 18, fontFamily: 'inherit', flexWrap: 'wrap' as const }}>
+      <div style={{ width: 84, height: 84, borderRadius: '50%', background: `conic-gradient(${ringColor} ${overall * 3.6}deg, ${CREAM2} 0)`, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+        <div style={{ width: 66, height: 66, borderRadius: '50%', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+          <span style={{ fontSize: 24, fontWeight: 800, color: T1, letterSpacing: '-0.03em' }}>{overall}</span>
+          <span style={{ fontFamily: MONO, fontSize: 9, color: T3, marginTop: 2 }}>/100</span>
         </div>
-      )}
-    </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minWidth: 200 }}>
+        <span style={eyebrow(T3)}>One-liner clarity</span>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+          {rows.map(p => {
+            const has = !!p.text && !p.text.includes('___');
+            const good = has && p.score >= 60;
+            return (
+              <span key={p.key} title={p.label} style={{
+                fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 999,
+                background: good ? '#ecfdf5' : has ? '#fffbeb' : CREAM,
+                color: good ? '#15803d' : has ? '#b45309' : T3,
+              }}>
+                {good ? '✓ ' : has ? '• ' : '○ '}{p.label}
+              </span>
+            );
+          })}
+        </div>
+        {weakest && weakest.score < 60 && (
+          <span style={{ fontSize: 13, color: ACCENT_DEEP, lineHeight: 1.45 }}>
+            "{weakest.label}" is thin — a few more specific words there usually sharpens the whole line.
+          </span>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -2595,6 +2360,8 @@ interface MarketCompetitorData {
   // ("~5-10%", "small niche player") or blank, never a bare confident
   // percentage. Always rendered with an "AI estimate, unverified" affordance.
   marketShare?: string;
+  // Official website when Sage found one; the UI falls back to a search link.
+  url?: string;
   features?: FeatureCoverage[];
   // A free-text list of this competitor's own real features/capabilities —
   // NOT scored against differentiators and not bounded to them. Rendered as
@@ -2609,6 +2376,14 @@ interface MarketSnapshotData {
   differentiators: string[];
   yourCoverage: FeatureCoverage[];
   competitors: MarketCompetitorData[];
+}
+
+// Link to a competitor's site: the real URL when Sage found one, else a search.
+function competitorSiteHref(c: { name: string; url?: string }): string {
+  return c.url || `https://www.google.com/search?q=${encodeURIComponent(c.name + ' official site')}`;
+}
+function competitorSiteLabel(url: string): string {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return 'Visit site'; }
 }
 
 function parseMarketSnapshot(raw: string): MarketSnapshotData | null {
@@ -2633,6 +2408,7 @@ function parseMarketSnapshot(raw: string): MarketSnapshotData | null {
             users: typeof c.users === 'string' ? c.users : undefined,
             founded: typeof c.founded === 'string' ? c.founded : undefined,
             marketShare: typeof c.marketShare === 'string' ? c.marketShare : undefined,
+            url: typeof c.url === 'string' && /^https?:\/\//i.test(c.url) ? c.url : undefined,
             features: Array.isArray(c.features) ? c.features.filter(isCoverage) : undefined,
             featureList: Array.isArray(c.featureList) ? c.featureList.filter((s: any) => typeof s === 'string' && s.trim()) : undefined,
           }))
@@ -3045,7 +2821,7 @@ function MarketSwotPanel({ snapshot, ideaName }: { snapshot: MarketSnapshotData;
           const activeItem = activeIdx !== null ? q.items[activeIdx] : null;
           return (
             <div key={q.label}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 10, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' as const, color: q.color }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: .8, textTransform: 'uppercase' as const, color: q.color }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: q.color, flexShrink: 0 }} />
                 {q.label}
               </div>
@@ -3223,7 +2999,7 @@ function MarketSnapshotPanel({
   const saveEdit = () => { if (draft) onChange(JSON.stringify(draft)); setEditing(false); };
 
   return (
-    <Card padding="md">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <style>{`
         @keyframes msnapSpin { to { transform: rotate(360deg); } }
         @keyframes msnapPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
@@ -3243,28 +3019,24 @@ function MarketSnapshotPanel({
         .msnap-reveal-pop { animation: msnapPop .5s ease-out; }
         .msnap-tag-pop { opacity: 0; animation: msnapTagPop .4s ease-out forwards; }
       `}</style>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: snapshot ? 14 : 4, flexWrap: 'wrap' as const, gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 15 }}>🔎</span>
-          <span style={{ fontSize: 13, fontWeight: 800, color: T1 }}>Sage Market Snapshot</span>
-          <span style={{ fontSize: 10, fontWeight: 700, color: '#b45309', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 999, padding: '2px 8px' }}>Sage draft — verify</span>
+          <span style={eyebrow(ACCENT)}>Sage market snapshot ·</span>
+          <span style={eyebrow('#b45309')}>Sage draft — verify</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {snapshot && !editing && <PublicToggle on={publicOn} onToggle={onTogglePublic} label="Market Snapshot" />}
           {snapshot && !editing && (
-            <Button variant="secondary" size="sm" onClick={startEdit}>✏️ Edit</Button>
+            <button onClick={startEdit} style={{ background: 'transparent', border: `1px solid ${BORDER2}`, borderRadius: 999, padding: '8px 14px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', color: T1 }}>Edit</button>
           )}
-          <Button variant="primary" size="sm" onClick={generate} disabled={generating}>
+          <button onClick={generate} disabled={generating} style={{ background: INK, color: LIME, border: 'none', borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: generating ? 'default' : 'pointer', fontFamily: 'inherit', opacity: generating ? .6 : 1 }}>
             {generating ? 'Thinking…' : snapshot ? '↻ Regenerate' : '✨ Generate'}
-          </Button>
+          </button>
         </div>
       </div>
 
       {!snapshot && !generating && (
-        <div style={{
-          fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, lineHeight: 1.45, color: T1,
-          background: `${STAGE_COLORS.idea}12`, borderRadius: 12, padding: '10px 14px',
-        }}>
+        <div style={{ fontFamily: 'inherit', fontSize: 16, lineHeight: 1.5, color: T1, background: '#fff', borderRadius: 20, padding: '18px 20px' }}>
           Get a Sage-drafted domain, rough market size, and a few competitors to research — a starting point, not a fact.
         </div>
       )}
@@ -3281,14 +3053,14 @@ function MarketSnapshotPanel({
               </div>
             </div>
             {retryAttempt === 0 ? (
-              <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 11, color: '#93e5ab', lineHeight: 1.75, overflow: 'hidden' }}>
+              <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: MONO, fontSize: 11, color: '#93e5ab', lineHeight: 1.75, overflow: 'hidden' }}>
                 <div className="msnap-line">$ analyzing your idea<span style={{ opacity: .6 }}>…</span></div>
                 <div className="msnap-line">→ reading domain signals<span style={{ opacity: .6 }}>…</span></div>
                 <div className="msnap-line">→ sizing TAM / SAM<span style={{ opacity: .6 }}>…</span></div>
                 <div className="msnap-line">→ checking competitors <span className="msnap-cursor" style={{ display: 'inline-block', width: 6, height: 11, background: '#93e5ab', verticalAlign: 'middle' }} /></div>
               </div>
             ) : (
-              <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 11, color: '#fcd34d', lineHeight: 1.75, overflow: 'hidden' }}>
+              <div style={{ flex: 1, background: '#1e293b', borderRadius: 10, padding: '10px 12px', fontFamily: MONO, fontSize: 11, color: '#fcd34d', lineHeight: 1.75, overflow: 'hidden' }}>
                 <div className="msnap-line">⚠ that attempt took too long<span style={{ opacity: .6 }}>…</span></div>
                 <div className="msnap-line">↻ retrying automatically (attempt {retryAttempt} of {MAX_AUTO_RETRIES})<span style={{ opacity: .6 }}>…</span></div>
                 <div className="msnap-line" style={{ color: '#93e5ab' }}>Hang tight — the local model can be slow, this can take a minute<span className="msnap-cursor" style={{ display: 'inline-block', width: 6, height: 11, background: '#93e5ab', verticalAlign: 'middle', marginLeft: 4 }} /></div>
@@ -3304,68 +3076,62 @@ function MarketSnapshotPanel({
 
       {snapshot && !editing && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }} className={revealing ? 'msnap-reveal-pop' : undefined}>
-          {/* Domain */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Domain</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: STAGE_COLORS.idea, background: `${STAGE_COLORS.idea}12`, border: `1.5px solid ${STAGE_COLORS.idea}30`, borderRadius: 20, padding: '3px 10px' }}>
-              {MARKET_DOMAIN_LABELS[snapshot.domain] ?? snapshot.domain}
-            </span>
-            {currentDomain !== snapshot.domain && (
-              <button onClick={() => onApplyDomain(snapshot.domain)} style={{ fontSize: 11, fontWeight: 700, color: STAGE_COLORS.idea, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                Use as my idea's domain →
-              </button>
-            )}
-            {currentDomain === snapshot.domain && <span style={{ fontSize: 11, color: '#059669', fontWeight: 700 }}>✓ Set on your idea</span>}
-          </div>
-
-          {/* Market sizing — TAM as a headline figure with SAM shown as a
-              filled portion of the same bar (illustrative, not to scale —
-              Sage gives rough ranges, not precise figures) instead of two
-              separately-styled nested boxes. */}
-          <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
-            <div style={{ padding: '16px 18px 14px' }}>
-              <div style={{ fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 10, fontWeight: 700, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Total addressable market</div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: T1, letterSpacing: -.3 }}>{snapshot.tam.value || '—'}</div>
-              <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.6, marginTop: 4, maxWidth: '62ch' }}>{snapshot.tam.basis}</div>
-{(() => {
-                // The SAM bar used to be pinned at a fixed 38% width whatever
-                // the numbers said. When both figures parse we now draw it to
-                // true scale; when they don't we keep the old illustrative bar
-                // and say so, rather than implying a proportion we can't back.
-                const tamN = parseMarketSize(snapshot.tam.value);
-                const samN = parseMarketSize(snapshot.sam.value);
-                const toScale = tamN !== null && samN !== null && tamN > 0 && samN <= tamN;
-                const pct = toScale ? (samN! / tamN!) * 100 : null;
-                // Below ~26% the "SAM <value>" label can't sit inside the fill
-                // without being clipped, so it moves outside the bar end.
-                const labelInside = pct !== null && pct >= 26;
-                return (
-                  <>
-                    <div style={{ position: 'relative', height: 38, margin: '14px 0 4px', borderRadius: 9, background: `linear-gradient(90deg, ${STAGE_COLORS.idea}1c, #eda1001c)`, border: `1px solid ${STAGE_COLORS.idea}22` }}>
-                      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: toScale ? `${pct}%` : '38%', minWidth: toScale ? 6 : 160, background: `linear-gradient(90deg, ${STAGE_COLORS.idea}, #a970ff)`, borderRadius: '9px 5px 5px 9px', boxShadow: '0 0 0 1px #ffffff30 inset, 3px 0 12px -2px #7c3aed90' }}>
-                        {(!toScale || labelInside) && (
-                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', padding: '0 14px', color: '#fff', fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' as const, textShadow: '0 1px 2px #00000030', overflow: 'hidden' }}>SAM {snapshot.sam.value || '—'}</div>
-                        )}
+          {/* Domain + market sizing — ink hero (2026-10 redesign): TAM as
+              the headline figure, SAM drawn as a circle inside the TAM
+              circle, scaled by area when both figures parse. */}
+          {(() => {
+            const tamN = parseMarketSize(snapshot.tam.value);
+            const samN = parseMarketSize(snapshot.sam.value);
+            const toScale = tamN !== null && samN !== null && tamN > 0 && samN <= tamN;
+            const pct = toScale ? (samN! / tamN!) * 100 : null;
+            // area-scaled: diameter ratio = sqrt(area ratio); clamp so the label stays readable
+            const diam = pct === null ? 55 : Math.max(28, Math.min(88, Math.sqrt(pct / 100) * 100));
+            return (
+              <section style={{ background: INK, color: INK_TXT, borderRadius: 24, padding: 'clamp(18px, 2.5vw, 28px)', display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 'clamp(16px, 3vw, 36px)', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+                    <span style={{ fontFamily: MONO, fontSize: 10, color: INK_MUTE, letterSpacing: '0.1em' }}>DOMAIN</span>
+                    <span style={{ borderRadius: 999, padding: '4px 10px', fontSize: 13, fontWeight: 700, border: '1px solid #3a3148' }}>
+                      {MARKET_DOMAIN_LABELS[snapshot.domain] ?? snapshot.domain}
+                    </span>
+                    {currentDomain !== snapshot.domain && (
+                      <button onClick={() => onApplyDomain(snapshot.domain)} style={{ fontSize: 13, color: LIME, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+                        Use as my idea's domain →
+                      </button>
+                    )}
+                    {currentDomain === snapshot.domain && <span style={{ fontSize: 12, color: LIME }}>✓ Set on your idea</span>}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 11, color: '#a78bfa', letterSpacing: '0.1em' }}>TOTAL ADDRESSABLE MARKET</span>
+                    <span style={{ fontSize: 'clamp(34px, 4.2vw, 56px)', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.04em', overflowWrap: 'anywhere' as const }}>{snapshot.tam.value || '—'}</span>
+                    <span style={{ fontSize: 13, color: INK_DIM }}>annual revenue</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 13.5, color: INK_DIM, lineHeight: 1.5 }}>{snapshot.tam.basis}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 10, color: LIME, letterSpacing: '0.1em' }}>WHY THIS SAM</span>
+                    <span style={{ fontSize: 13.5, lineHeight: 1.5 }}>{snapshot.sam.basis}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: 'clamp(160px, 20vw, 220px)' }}>
+                  <div style={{ position: 'relative', width: '100%', aspectRatio: '1 / 1', borderRadius: '50%', background: '#211a2d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ position: 'absolute', top: 10, left: 0, right: 0, textAlign: 'center' as const, fontFamily: MONO, fontSize: 9, color: INK_MUTE }}>TAM · {snapshot.tam.value || '—'}</span>
+                    <div style={{ width: `${diam}%`, aspectRatio: '1 / 1', borderRadius: '50%', background: ACCENT, display: 'grid', placeItems: 'center', padding: 6 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' as const, lineHeight: 1.1 }}>
+                        <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em' }}>SAM</span>
+                        <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 800 }}>{snapshot.sam.value || '—'}</span>
+                        <span style={{ fontSize: 10, color: '#e9ddff' }}>{pct !== null ? `~${pct < 1 ? '<1' : pct.toFixed(pct < 10 ? 1 : 0)}% of TAM` : 'not to scale'}</span>
                       </div>
-                      {toScale && !labelInside && (
-                        <div style={{ position: 'absolute', left: `calc(${pct}% + 10px)`, top: 0, bottom: 0, display: 'flex', alignItems: 'center', fontSize: 11.5, fontWeight: 700, color: STAGE_COLORS.idea, whiteSpace: 'nowrap' as const }}>SAM {snapshot.sam.value || '—'}</div>
-                      )}
-                      <div style={{ position: 'absolute', right: 14, top: 0, bottom: 0, display: 'flex', alignItems: 'center', fontSize: 11, fontWeight: 800, color: '#92400e' }}>TAM {snapshot.tam.value || '—'}</div>
                     </div>
-                    <div style={{ fontSize: 11, color: T3 }}>
-                      {toScale
-                        ? <>Drawn to scale — SAM is about <strong style={{ color: T2 }}>{pct! < 1 ? '<1' : pct!.toFixed(pct! < 10 ? 1 : 0)}%</strong> of TAM ({fmtMarketSize(samN!)} of {fmtMarketSize(tamN!)}). Ranges are read at their midpoint, and Sage's figures are rough estimates to verify.</>
-                        : <>Illustrative, not to scale — Sage's figures here aren't precise enough to size the bar against.</>}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-            <div style={{ padding: '12px 18px 16px', borderTop: `1px solid ${BORDER}`, background: `linear-gradient(135deg, ${STAGE_COLORS.idea}08, #eda10008)` }}>
-              <div style={{ fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 9.5, fontWeight: 700, color: STAGE_COLORS.idea, textTransform: 'uppercase' as const, letterSpacing: .5 }}>Why this SAM</div>
-              <div style={{ fontSize: 12, color: T2, lineHeight: 1.6, marginTop: 3 }}>{snapshot.sam.basis}</div>
-            </div>
-          </div>
+                  </div>
+                  <span style={{ fontSize: 10.5, color: INK_MUTE, textAlign: 'center' as const, lineHeight: 1.4 }}>
+                    {toScale
+                      ? <>Drawn to scale by area ({fmtMarketSize(samN!)} of {fmtMarketSize(tamN!)}). Ranges are read at their midpoint; Sage's figures are rough estimates to verify.</>
+                      : <>Illustrative, not to scale — Sage's figures here aren't precise enough to size the circles against.</>}
+                  </span>
+                </div>
+              </section>
+            );
+          })()}
 
           {/* Competitors — one unified table (product identity, feature
               coverage score + per-feature checks, and the "at a glance"
@@ -3373,6 +3139,7 @@ function MarketSnapshotPanel({
               two separate tables that all repeated the same names. Falls
               back to the plain name+note tag grid below for snapshots
               generated before differentiators/yourCoverage existed. */}
+          <section style={{ background: '#fff', borderRadius: 24, padding: 'clamp(16px, 2.5vw, 24px)', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {snapshot.differentiators.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {(() => {
@@ -3463,8 +3230,8 @@ function MarketSnapshotPanel({
                             <div style={{ borderLeft: `3px solid ${c.color}`, paddingLeft: 8, minWidth: 0 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontWeight: 700, color: T1, fontSize: 11.5, whiteSpace: 'nowrap' as const, overflow: 'hidden' as const, textOverflow: 'ellipsis' as const }}>
                                 {c.name}
-                                <a href={`https://www.google.com/search?q=${encodeURIComponent(c.name + ' official site')}`} target="_blank" rel="noopener noreferrer"
-                                  title={`Search for ${c.name}'s official site`}
+                                <a href={competitorSiteHref(c)} target="_blank" rel="noopener noreferrer"
+                                  title={c.url ? c.url : `Search for ${c.name}'s official site`}
                                   style={{ display: 'inline-flex', color: T3, textDecoration: 'none', fontSize: 11, fontWeight: 400, flexShrink: 0 }}
                                   onClick={e => e.stopPropagation()}>🔗</a>
                                 <a href={`https://www.google.com/search?q=${encodeURIComponent(c.name + ' reviews')}`} target="_blank" rel="noopener noreferrer"
@@ -3528,17 +3295,23 @@ function MarketSnapshotPanel({
                     style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '8px 10px', animationDelay: revealing ? `${0.15 + i * 0.12}s` : undefined }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: T1, marginBottom: 2 }}>{c.name}</div>
                     <div style={{ fontSize: 10.5, color: T2, lineHeight: 1.4 }}>{c.note}</div>
+                    <a href={competitorSiteHref(c)} target="_blank" rel="noopener noreferrer"
+                      title={c.url ? c.url : `Search for ${c.name}'s official site`}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 6, fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: ACCENT, textDecoration: 'none' }}>
+                      {c.url ? competitorSiteLabel(c.url) : 'Find site'} ↗
+                    </a>
                   </div>
                 ))}
               </div>
               <CompetitorFeatureListSection snapshot={snapshot} revealing={revealing} />
             </div>
           )}
+          </section>
         </div>
       )}
 
       {snapshot && editing && draft && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, background: '#fff', borderRadius: 24, padding: 'clamp(18px, 3vw, 30px)' }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, color: T3, textTransform: 'uppercase' as const, marginBottom: 4 }}>Domain</div>
             <select value={draft.domain} onChange={e => setDraft({ ...draft, domain: e.target.value })}
@@ -3599,7 +3372,7 @@ function MarketSnapshotPanel({
           </div>
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -3758,7 +3531,7 @@ type PersonaPickerHandle = { flush: () => string; isDraftValid: () => boolean; a
 const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string; onChange: (v: string) => void; oneLiner?: string }>(function PersonaPickerStep({
   value, onChange, oneLiner = '',
 }, ref) {
-  const AC = '#2563eb';
+  void ACCENT; // (AC retired with the 2026-10 redesign — cards use INK/LIME)
 
   const [personas, setPersonas]   = useState<PersonaEntry[]>(() => initPersonas(value));
   const [showForm, setShowForm]   = useState(() => initPersonas(value).length === 0);
@@ -3877,190 +3650,173 @@ const PersonaPickerStep = React.forwardRef<PersonaPickerHandle, { value: string;
 
   const B2B_SIZES = ['1–10', '11–50', '51–200', '201–1000', '1000+'];
 
-  const inputStyle = (focused: boolean): React.CSSProperties => ({
-    width: '100%', boxSizing: 'border-box', padding: '11px 14px',
-    border: `2px solid ${focused ? AC : BORDER}`, borderRadius: 10,
-    fontSize: 14, lineHeight: 1.5, fontFamily: 'inherit', color: USER_INPUT_COLOR,
-    background: focused ? '#f0f4ff' : '#fafafa', outline: 'none',
-    transition: 'border-color .15s, background .15s',
+  // 2026-10 redesign — ink "who is it?" card inputs
+  const inkInput = (focused: boolean, big = false): React.CSSProperties => ({
+    width: '100%', boxSizing: 'border-box', padding: big ? 16 : '12px 14px',
+    border: `1.5px solid ${focused ? ACCENT : '#2a2236'}`, borderRadius: 14,
+    fontSize: big ? 24 : 15, fontWeight: big ? 700 : 500, lineHeight: 1.4, fontFamily: 'inherit', color: '#fff',
+    background: '#211a2d', outline: 'none', transition: 'border-color .15s',
   });
+  const inkLabel: React.CSSProperties = { fontFamily: MONO, fontSize: 11, color: INK_MUTE, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 8 };
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-      {/* Saved persona cards — handwritten postcard style, now carrying the
-          facets that were previously collected and then discarded. */}
-      {personas.map((p, i) => {
-        const dims  = personaDims(p);
-        const sharp = personaSharpness(p);
-        const showPrimaryUI = personas.length > 1;
-        return (
-          <div key={p.id} style={{
-            ...postcardStyle(i % 2 === 0 ? -1 : 1),
-            padding: '12px 16px 14px 14px',
-            ...(p.primary && showPrimaryUI ? { boxShadow: `0 0 0 2px ${AC}55` } : {}),
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <PostcardStamp />
-              <div style={{ width: 28, height: 28, borderRadius: '50%', background: AC, color: '#fff', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' as const, marginBottom: 1 }}>
-                  {/* B2B/B2C on a legacy entry is a storage default, not something
-                      the founder chose, so it isn't shown as though it were. */}
-                  {!p.legacy && <span style={{ fontSize: 10, fontWeight: 700, color: AC, letterSpacing: '.07em', textTransform: 'uppercase' as const }}>{p.type.toUpperCase()}</span>}
-                  {showPrimaryUI && p.primary && (
-                    <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase' as const, color: '#fff', background: AC, borderRadius: 5, padding: '2px 7px' }}>Start here</span>
-                  )}
-                  {showPrimaryUI && !p.primary && (
-                    <button onClick={() => makePrimary(p.id)}
-                      style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.07em', textTransform: 'uppercase' as const, color: T2, background: 'transparent', border: `1px solid ${BORDER2}`, borderRadius: 5, padding: '2px 7px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                      Make this the one
-                    </button>
-                  )}
-                </div>
-                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: T1, lineHeight: 1.4 }}>{parsePersonaText(serializePersona(p))}</div>
-              </div>
-              <button onClick={() => removePersona(p.id)} aria-label="Remove this segment" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 17, color: T3, padding: '2px 6px', lineHeight: 1, flexShrink: 0, alignSelf: 'flex-start' }}>✕</button>
-            </div>
-
-            {p.legacy ? (
-              <div style={{ marginTop: 9, paddingLeft: 38, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
-                <span style={{ fontSize: 12, color: T3 }}>Saved before we captured the details.</span>
-                <button onClick={() => { setFormType('b2c'); setFormWho(p.role); setFormCtx(''); setShowForm(true); removePersona(p.id); }}
-                  style={{ fontSize: 12, fontWeight: 600, color: AC, background: 'transparent', border: `1px solid ${AC}55`, borderRadius: 7, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Add details
-                </button>
-              </div>
-            ) : (
-             <>
-            {/* Which dimensions this segment actually pins down */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginTop: 10, paddingLeft: 38 }}>
+  const personaCard = (p: PersonaEntry, i: number) => {
+    const dims  = personaDims(p);
+    const sharp = personaSharpness(p);
+    const showPrimaryUI = personas.length > 1;
+    const isLime = p.primary || personas.length === 1;
+    const name = p.type === 'b2b' ? (p.role || 'Role') : (p.who || 'Someone');
+    const initial = (name.trim()[0] || '?').toUpperCase();
+    const fg = isLime ? INK : T1;
+    const mute = isLime ? '#3a3148' : T3;
+    return (
+      <div key={p.id} style={{
+        background: isLime ? LIME : '#fff', color: fg, borderRadius: 28, padding: 22,
+        display: 'flex', flexDirection: 'column', gap: 16, position: 'relative',
+        transform: isLime ? 'rotate(-0.6deg)' : 'none',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const, color: mute }}>
+          <span>{isLime ? 'Target persona' : `Persona ${i + 1}`}{!p.legacy ? ` · ${p.type}` : ''}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {showPrimaryUI && !p.primary && (
+              <button onClick={() => makePrimary(p.id)} style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: ACCENT_DEEP, background: 'transparent', border: `1px solid ${BORDER2}`, borderRadius: 999, padding: '3px 8px', cursor: 'pointer' }}>
+                Make this the one
+              </button>
+            )}
+            <button onClick={() => removePersona(p.id)} aria-label="Remove this segment" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 16, color: mute, padding: 0, lineHeight: 1 }}>✕</button>
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: INK, color: LIME, display: 'grid', placeItems: 'center', fontSize: 28, fontWeight: 800, flexShrink: 0 }}>{initial}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <span style={{ fontSize: 'clamp(22px, 2.4vw, 30px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em' }}>{name}</span>
+            {p.type === 'b2b' && p.size && <span style={{ fontSize: 15, marginTop: 4 }}>at a {p.size} company</span>}
+            {p.type === 'b2c' && p.ctx && <span style={{ fontSize: 15, marginTop: 4 }}>who {p.ctx}</span>}
+          </div>
+        </div>
+        {p.legacy ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const }}>
+            <span style={{ fontSize: 13, color: mute }}>Saved before we captured the details.</span>
+            <button onClick={() => { setFormType('b2c'); setFormWho(p.role); setFormCtx(''); setShowForm(true); removePersona(p.id); }}
+              style={{ fontSize: 13, fontWeight: 700, color: fg, background: 'transparent', border: `1px solid ${mute}`, borderRadius: 999, padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              Add details
+            </button>
+          </div>
+        ) : (
+          <>
+            {p.type === 'b2b' && p.ctx && <div style={{ fontSize: 15, lineHeight: 1.45 }}><span style={{ fontFamily: MONO, fontSize: 11, color: mute, marginRight: 8 }}>STRUGGLE</span>{p.ctx}</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', borderTop: `1px solid ${isLime ? '#16121d22' : BORDER}` }}>
               {dims.map(d => (
-                <span key={d.label} style={{
-                  fontSize: 11, padding: '3px 9px', borderRadius: 999,
-                  border: `1px solid ${d.filled ? BORDER2 : BORDER}`,
-                  borderStyle: d.filled ? 'solid' : 'dashed',
-                  background: d.filled ? '#ffffffaa' : 'transparent',
-                  color: d.filled ? T2 : T3,
-                }}>
-                  {d.filled ? '' : '+ '}{d.label}
-                </span>
+                <div key={d.label} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '9px 0', fontSize: 14, borderBottom: `1px solid ${isLime ? '#16121d22' : BORDER}` }}>
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: mute, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>{d.label}</span>
+                  <span style={{ fontWeight: 700 }}>{d.filled ? '✓' : '—'}</span>
+                </div>
               ))}
             </div>
-
-            {/* Sharpness — names what's missing, never blocks Next */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' as const, marginTop: 10, paddingLeft: 38 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' as const }}>
               <span style={{ display: 'flex', gap: 3 }} role="img" aria-label={`Segment detail: ${sharp.filled} of ${sharp.total} filled in — ${sharp.label}`}>
                 {dims.map((d, di) => (
-                  <i key={di} style={{ width: 20, height: 5, borderRadius: 2, background: di < sharp.filled ? sharp.color : BORDER, display: 'block' }} />
+                  <i key={di} style={{ width: 20, height: 5, borderRadius: 2, background: di < sharp.filled ? (isLime ? INK : ACCENT) : (isLime ? '#16121d22' : BORDER), display: 'block' }} />
                 ))}
               </span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: sharp.color }}>{sharp.label}</span>
-              <span style={{ fontSize: 12, color: T2 }}>— {sharp.why}</span>
+              <span style={{ fontSize: 12, fontWeight: 700 }}>{sharp.label}</span>
+              <span style={{ fontSize: 12, color: mute }}>— {sharp.why}</span>
             </div>
+            <InputField
+              value={p.reach}
+              placeholder="Where could you find ten of them? e.g. r/podcasting, a Slack you're in…"
+              style={(focused: boolean) => ({
+                width: '100%', boxSizing: 'border-box' as const, padding: '10px 12px',
+                border: `1.5px solid ${focused ? INK : (isLime ? '#16121d33' : BORDER)}`, borderRadius: 12,
+                fontSize: 13, lineHeight: 1.5, fontFamily: 'inherit', color: INK,
+                background: '#ffffffcc', outline: 'none',
+              })}
+              onChange={(v: string) => patchPersona(p.id, { reach: v })}
+            />
+          </>
+        )}
+      </div>
+    );
+  };
 
-            {/* Reachability: the question that decides whether Validate is
-                even possible, asked here where changing your mind is free. */}
-            <div style={{ marginTop: 9, paddingLeft: 38 }}>
-              <InputField
-                value={p.reach}
-                placeholder="Where could you find ten of them? e.g. r/podcasting, a Slack you're in…"
-                style={(focused: boolean) => ({
-                  width: '100%', boxSizing: 'border-box' as const, padding: '8px 11px',
-                  border: `1.5px solid ${focused ? AC : BORDER}`, borderRadius: 9,
-                  fontSize: 13, lineHeight: 1.5, fontFamily: 'inherit', color: USER_INPUT_COLOR,
-                  background: focused ? '#f0f4ff' : '#ffffffaa', outline: 'none',
-                })}
-                onChange={(v: string) => patchPersona(p.id, { reach: v })}
-              />
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Seeded from the Idea one-liner */}
+        {seed && showForm && (
+          <div style={{ background: '#fff', borderRadius: 18, padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' as const }}>
+            <div style={{ flex: 1, minWidth: 200, fontSize: 14, color: T2, lineHeight: 1.5 }}>
+              <span style={eyebrow(T3, 10)}>From your one-liner</span><br />
+              <span style={{ color: T1, fontWeight: 600 }}>{seed.who}</span> who {seed.ctx}
             </div>
-             </>
-            )}
-          </div>
-        );
-      })}
-
-      {/* Seeded from the Idea one-liner — the audience and their struggle are
-          already captured there, so the founder starts from something. */}
-      {seed && showForm && (
-        <div style={{ border: `1.5px solid ${STAGE_COLORS.idea}44`, background: `${STAGE_COLORS.idea}0c`, borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-          <span style={{ fontSize: 16, lineHeight: 1.3 }} aria-hidden="true">💡</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, color: T2, lineHeight: 1.55 }}>
-              <strong style={{ color: T1 }}>From your one-liner:</strong>{' '}
-              <span style={{ color: STAGE_COLORS.idea, fontWeight: 600 }}>{seed.who}</span>
-              {' '}who {seed.ctx}
-            </div>
-            <button onClick={applySeed}
-              style={{ marginTop: 9, padding: '6px 14px', borderRadius: 8, border: 'none', background: STAGE_COLORS.idea, color: '#fff', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={applySeed} style={{ padding: '8px 14px', borderRadius: 999, border: 'none', background: INK, color: LIME, fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
               Start from this
             </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Add form */}
-      {showForm && (
-        <div style={{ border: `1.5px solid ${BORDER2}`, borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-          {/* B2B / B2C toggle */}
-          <div style={{ display: 'flex', background: '#f4f4f5', border: `1.5px solid ${BORDER2}`, borderRadius: 999, padding: 3, width: 'fit-content' }}>
-            {(['b2b', 'b2c'] as const).map(t => (
-              <button key={t} onClick={() => setFormType(t)} style={{ padding: '6px 20px', borderRadius: 999, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all .15s', background: formType === t ? AC : 'transparent', color: formType === t ? '#fff' : T2 }}>
-                {t.toUpperCase()}
-              </button>
-            ))}
-          </div>
-
-          {/* B2B fields */}
-          {formType === 'b2b' && <>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: T3, letterSpacing: '.07em', textTransform: 'uppercase' as const, marginBottom: 6 }}>Their role or title</div>
-              <InputField value={formRole} placeholder="e.g. Head of Operations" style={inputStyle} onChange={setFormRole} />
+        {/* Add form — ink card */}
+        {showForm && (
+          <div style={{ background: INK, color: INK_TXT, borderRadius: 24, padding: 'clamp(20px, 3vw, 32px)', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'flex', gap: 6, background: '#211a2d', padding: 4, borderRadius: 999, width: 'fit-content' }}>
+              {(['b2b', 'b2c'] as const).map(t => (
+                <button key={t} onClick={() => setFormType(t)} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all .15s', background: formType === t ? '#fff' : 'transparent', color: formType === t ? INK : INK_DIM }}>
+                  {t === 'b2b' ? 'B2B · a role at a company' : 'B2C · a person'}
+                </button>
+              ))}
             </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: T3, letterSpacing: '.07em', textTransform: 'uppercase' as const, marginBottom: 6 }}>Company size</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-                {B2B_SIZES.map(sz => (
-                  <button key={sz} onClick={() => setFormSize(sz)} style={{ padding: '6px 14px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 500, transition: 'all .15s', border: '1.5px solid', borderColor: formSize === sz ? AC : BORDER2, background: formSize === sz ? `${AC}12` : '#fff', color: formSize === sz ? AC : T2 }}>{sz}</button>
-                ))}
+
+            {formType === 'b2b' && <>
+              <div>
+                <div style={inkLabel}>The person with the pain</div>
+                <InputField value={formRole} placeholder="e.g. Head of Operations" style={(f: boolean) => inkInput(f, true)} onChange={setFormRole} />
               </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: T3, letterSpacing: '.07em', textTransform: 'uppercase' as const, marginBottom: 6 }}>What do they struggle with? <span style={{ fontWeight: 400, textTransform: 'none' as const, letterSpacing: 0 }}>(completes "who ___")</span></div>
-              <InputField value={formCtx} placeholder="e.g. can't get budget approved without a 3-month process" style={inputStyle} onChange={setFormCtx} />
-            </div>
-          </>}
+              <div>
+                <div style={inkLabel}>At a company of</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, background: '#211a2d', padding: 4, borderRadius: 14 }}>
+                  {B2B_SIZES.map(sz => (
+                    <button key={sz} onClick={() => setFormSize(sz)} style={{ borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s', background: formSize === sz ? LIME : 'transparent', color: formSize === sz ? INK : INK_DIM }}>{sz}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div style={inkLabel}>What do they struggle with? <span style={{ textTransform: 'none' as const, letterSpacing: 0 }}>(completes "who ___")</span></div>
+                <InputField value={formCtx} placeholder="e.g. can't get budget approved without a 3-month process" style={(f: boolean) => inkInput(f)} onChange={setFormCtx} />
+              </div>
+            </>}
 
-          {/* B2C fields */}
-          {formType === 'b2c' && <>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: T3, letterSpacing: '.07em', textTransform: 'uppercase' as const, marginBottom: 6 }}>Who are they?</div>
-              <InputField value={formWho} placeholder="e.g. Independent podcasters, solo founders, busy parents" style={inputStyle} onChange={setFormWho} />
-            </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: T3, letterSpacing: '.07em', textTransform: 'uppercase' as const, marginBottom: 6 }}>What do they struggle with? <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(completes "who ___")</span></div>
-              <InputField value={formCtx} placeholder="e.g. can't grow their audience past 500 listeners" style={inputStyle} onChange={setFormCtx} />
-            </div>
-          </>}
+            {formType === 'b2c' && <>
+              <div>
+                <div style={inkLabel}>The person with the pain</div>
+                <InputField value={formWho} placeholder="e.g. Independent podcasters, solo founders, busy parents" style={(f: boolean) => inkInput(f, true)} onChange={setFormWho} />
+              </div>
+              <div>
+                <div style={inkLabel}>What do they struggle with? <span style={{ textTransform: 'none' as const, letterSpacing: 0 }}>(completes "who ___")</span></div>
+                <InputField value={formCtx} placeholder="e.g. can't grow their audience past 500 listeners" style={(f: boolean) => inkInput(f)} onChange={setFormCtx} />
+              </div>
+            </>}
 
-          {/* Add / Cancel row */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={addPersona} disabled={!canAdd} style={{ padding: '9px 20px', borderRadius: 10, border: 'none', background: canAdd ? AC : BORDER, color: canAdd ? '#fff' : T3, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: canAdd ? 'pointer' : 'default', transition: 'all .15s' }}>
-              + Add person
-            </button>
-            {personas.length > 0 && (
-              <button onClick={() => setShowForm(false)} style={{ padding: '9px 16px', borderRadius: 10, border: `1.5px solid ${BORDER2}`, background: 'transparent', color: T2, fontFamily: 'inherit', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
-            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={addPersona} disabled={!canAdd} style={{ flex: 1, padding: '14px 20px', borderRadius: 14, border: 'none', background: canAdd ? LIME : '#2a2236', color: canAdd ? INK : INK_MUTE, fontFamily: 'inherit', fontSize: 16, fontWeight: 800, cursor: canAdd ? 'pointer' : 'default', transition: 'all .15s' }}>
+                + Add person
+              </button>
+              {personas.length > 0 && (
+                <button onClick={() => setShowForm(false)} style={{ padding: '14px 16px', borderRadius: 14, border: '1px solid #3a3148', background: 'transparent', color: INK_TXT, fontFamily: 'inherit', fontSize: 15, cursor: 'pointer' }}>Cancel</button>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Add-another button */}
-      {!showForm && personas.length > 0 && (
-        <button onClick={() => setShowForm(true)} style={{ alignSelf: 'flex-start', padding: '8px 16px', borderRadius: 999, border: `1.5px dashed ${BORDER2}`, background: 'transparent', color: T2, fontFamily: 'inherit', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-          + Add another person
-        </button>
+        {!showForm && personas.length > 0 && (
+          <button onClick={() => setShowForm(true)} style={{ alignSelf: 'flex-start', padding: '10px 16px', borderRadius: 999, border: `1.5px dashed ${BORDER2}`, background: 'transparent', color: T2, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+            + Add another person
+          </button>
+        )}
+      </div>
+
+      {personas.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {personas.map((p, i) => personaCard(p, i))}
+        </div>
       )}
     </div>
   );
@@ -4122,20 +3878,20 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
     onChange(assembled);
   }, [role, size, context]);
 
-  const accent = '#2563eb';
+  const accent = '#7c3aed';
   const allFilled = role.trim() && size && context.trim();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
       <div style={{
         background: focused ? '#f0f4ff' : '#fafafa',
-        border: `2px solid ${focused ? accent + '40' : '#e5e5ea'}`,
+        border: `2px solid ${focused ? accent + '40' : '#e2ddd1'}`,
         borderRadius: 16, padding: '28px 28px 24px', transition: 'border-color .2s, background .2s',
       }}>
 
         {/* Role input */}
         <div style={{ marginBottom: 22 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: role.trim() ? accent : '#b0b0b8', marginBottom: 6, transition: 'color .2s' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: role.trim() ? accent : '#8a8299', marginBottom: 6, transition: 'color .2s' }}>
             Role / job title
           </div>
           <div style={{ position: 'relative' }}>
@@ -4147,9 +3903,9 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
               placeholder={AUDIENCE_ROLE_HINTS[0]}
               style={{
                 width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none',
-                borderBottom: `2.5px solid ${focused === 'role' ? accent : role.trim() ? accent + '60' : '#d2d2d7'}`,
+                borderBottom: `2.5px solid ${focused === 'role' ? accent : role.trim() ? accent + '60' : '#d9d3c5'}`,
                 outline: 'none', padding: '6px 2px 10px', fontSize: 19, fontWeight: 700,
-                color: USER_INPUT_COLOR, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: -.3,
+                color: USER_INPUT_COLOR, fontFamily: 'inherit', letterSpacing: -.3,
                 transition: 'border-color .2s', caretColor: accent,
               }}
             />
@@ -4159,7 +3915,7 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
             {['Startup Founder', 'Product Manager', 'Engineer', 'Designer', 'Freelancer', 'Operations Lead', 'Marketing Manager', 'Sales Rep'].map(chip => {
               const on = role === chip;
               return (
-                <button key={chip} onClick={() => setRole(on ? '' : chip)} style={{ padding: '5px 11px', borderRadius: 20, fontSize: 11, fontWeight: on ? 700 : 500, border: `1.5px solid ${on ? accent : '#d2d2d7'}`, background: on ? `${accent}12` : '#fff', color: on ? accent : '#6e6e73', cursor: 'pointer', transition: 'all .12s', fontFamily: 'inherit' }}>
+                <button key={chip} onClick={() => setRole(on ? '' : chip)} style={{ padding: '5px 11px', borderRadius: 20, fontSize: 11, fontWeight: on ? 700 : 500, border: `1.5px solid ${on ? accent : '#d9d3c5'}`, background: on ? `${accent}12` : '#fff', color: on ? accent : '#4a4357', cursor: 'pointer', transition: 'all .12s', fontFamily: 'inherit' }}>
                   {on ? '✓ ' : ''}{chip}
                 </button>
               );
@@ -4169,7 +3925,7 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
 
         {/* Audience type picker */}
         <div style={{ marginBottom: 22 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: size ? accent : '#b0b0b8', marginBottom: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: size ? accent : '#8a8299', marginBottom: 10 }}>
             Audience type
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
@@ -4178,9 +3934,9 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
               return (
                 <button key={s.key} onClick={() => setSize(s.key)} style={{
                   padding: '8px 14px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
-                  border: `1.5px solid ${sel ? accent : '#d2d2d7'}`,
+                  border: `1.5px solid ${sel ? accent : '#d9d3c5'}`,
                   background: sel ? `${accent}10` : '#fff',
-                  color: sel ? accent : '#6e6e73',
+                  color: sel ? accent : '#4a4357',
                   fontSize: 12, fontWeight: sel ? 700 : 500, transition: 'all .15s',
                 }}>
                   <div style={{ fontWeight: 700 }}>{s.label}</div>
@@ -4193,7 +3949,7 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
 
         {/* Context input */}
         <div style={{ marginBottom: 22 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: context.trim() ? accent : '#b0b0b8', marginBottom: 6, transition: 'color .2s' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: context.trim() ? accent : '#8a8299', marginBottom: 6, transition: 'color .2s' }}>
             Industry / context
           </div>
           <div style={{ position: 'relative' }}>
@@ -4205,9 +3961,9 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
               placeholder={AUDIENCE_CONTEXT_HINTS[0]}
               style={{
                 width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none',
-                borderBottom: `2.5px solid ${focused === 'context' ? accent : context.trim() ? accent + '60' : '#d2d2d7'}`,
+                borderBottom: `2.5px solid ${focused === 'context' ? accent : context.trim() ? accent + '60' : '#d9d3c5'}`,
                 outline: 'none', padding: '6px 2px 10px', fontSize: 19, fontWeight: 700,
-                color: USER_INPUT_COLOR, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: -.3,
+                color: USER_INPUT_COLOR, fontFamily: 'inherit', letterSpacing: -.3,
                 transition: 'border-color .2s', caretColor: accent,
               }}
             />
@@ -4217,7 +3973,7 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
             {['B2B SaaS companies', 'E-commerce brands', 'Remote-first teams', 'Healthcare providers', 'Creative agencies', 'Fintech startups', 'Early-stage startups'].map(chip => {
               const on = context === chip;
               return (
-                <button key={chip} onClick={() => setContext(on ? '' : chip)} style={{ padding: '5px 11px', borderRadius: 20, fontSize: 11, fontWeight: on ? 700 : 500, border: `1.5px solid ${on ? accent : '#d2d2d7'}`, background: on ? `${accent}12` : '#fff', color: on ? accent : '#6e6e73', cursor: 'pointer', transition: 'all .12s', fontFamily: 'inherit' }}>
+                <button key={chip} onClick={() => setContext(on ? '' : chip)} style={{ padding: '5px 11px', borderRadius: 20, fontSize: 11, fontWeight: on ? 700 : 500, border: `1.5px solid ${on ? accent : '#d9d3c5'}`, background: on ? `${accent}12` : '#fff', color: on ? accent : '#4a4357', cursor: 'pointer', transition: 'all .12s', fontFamily: 'inherit' }}>
                   {on ? '✓ ' : ''}{chip}
                 </button>
               );
@@ -4228,7 +3984,7 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
         {/* Who pays */}
         {!hideWhoPays && (
           <div>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: whoPaysValue.trim() ? accent : '#b0b0b8', marginBottom: 6 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: whoPaysValue.trim() ? accent : '#8a8299', marginBottom: 6 }}>
               Who actually pays?
             </div>
             <div style={{ position: 'relative' }}>
@@ -4240,9 +3996,9 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
                 placeholder="The ops manager pays, not the CEO"
                 style={{
                   width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none',
-                  borderBottom: `2.5px solid ${focused === 'pays' ? accent : whoPaysValue.trim() ? accent + '60' : '#d2d2d7'}`,
+                  borderBottom: `2.5px solid ${focused === 'pays' ? accent : whoPaysValue.trim() ? accent + '60' : '#d9d3c5'}`,
                   outline: 'none', padding: '6px 2px 10px', fontSize: 17, fontWeight: 600,
-                  color: USER_INPUT_COLOR, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: -.3,
+                  color: USER_INPUT_COLOR, fontFamily: 'inherit', letterSpacing: -.3,
                   transition: 'border-color .2s', caretColor: accent,
                 }}
               />
@@ -4256,14 +4012,14 @@ function AudienceBuilder({ value, onChange, whoPaysValue, onWhoPaysChange, hideW
       {(role || size || context) && (
         <div style={{
           marginTop: 16, background: allFilled ? '#eff6ff' : '#fff',
-          border: `1.5px solid ${allFilled ? accent + '35' : '#e5e5ea'}`,
+          border: `1.5px solid ${allFilled ? accent + '35' : '#e2ddd1'}`,
           borderRadius: 12, padding: '16px 18px', transition: 'all .3s',
         }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: allFilled ? accent : '#b0b0b8', marginBottom: 8 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: allFilled ? accent : '#8a8299', marginBottom: 8 }}>
             {allFilled ? '🎯 Your audience' : 'Preview (keep filling…)'}
           </div>
-          <div style={{ fontSize: 15, lineHeight: 1.7, fontFamily: "'Playfair Display', Georgia, serif", color: '#1d1d1f' }}>
-            <span style={{ color: role.trim() ? accent : '#b0b0b8', fontWeight: 700 }}>{role.trim() || '___'}</span>
+          <div style={{ fontSize: 15, lineHeight: 1.7, fontFamily: 'inherit', color: '#16121d' }}>
+            <span style={{ color: role.trim() ? accent : '#8a8299', fontWeight: 700 }}>{role.trim() || '___'}</span>
             {size && (
               <>{' '}<span style={{ color: accent, fontWeight: 700 }}>({AUDIENCE_TYPES.find(s => s.key === size)?.label})</span></>
             )}
@@ -4312,23 +4068,13 @@ type SeverityLevel = 'critical' | 'major' | 'minor';
 type SeverityProblem = { id: string; text: string; severity: SeverityLevel | '' };
 
 const SEVERITY_CONFIG: Record<SeverityLevel, { icon: string; label: string; bg: string; border: string; textColor: string }> = {
-  critical: { icon: '🔥', label: 'Critical', bg: '#fef2f2', border: '#fecaca', textColor: '#dc2626' },
-  major:    { icon: '😤', label: 'Major',    bg: '#fff7ed', border: '#fed7aa', textColor: '#ea580c' },
-  minor:    { icon: '😐', label: 'Minor',    bg: '#f9f9f9', border: '#e5e5ea', textColor: '#6e6e73' },
+  critical: { icon: '🔥', label: 'Critical', bg: '#fdecec', border: '#f5c2c2', textColor: '#b42318' },
+  major:    { icon: '😤', label: 'Major',    bg: '#fff3e6', border: '#f5d2ad', textColor: '#b45309' },
+  minor:    { icon: '😐', label: 'Minor',    bg: '#f3f0e8', border: '#e2ddd1', textColor: '#4a4357' },
 };
 
 // Small corner badge showing a keyboard-shortcut number — sits on a button
 // that already has `position: relative`.
-function KeyBadge({ k }: { k: string }) {
-  return (
-    <span style={{
-      position: 'absolute', top: -6, right: -4, width: 15, height: 15, borderRadius: 4,
-      background: '#1a1a1a', color: '#fff', fontSize: 9, fontWeight: 800,
-      display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-      fontFamily: 'inherit', boxShadow: '0 1px 3px rgba(0,0,0,.25)',
-    }}>{k}</span>
-  );
-}
 
 function serializeSeverityProblem(p: SeverityProblem): string {
   if (!p.text.trim()) return '';
@@ -4426,23 +4172,23 @@ function SeverityGateModal({ raw, accentColor, onClose, onDone }: {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: mode === 'choose' ? 18 : 22 }}>
           <div style={{ fontSize: 30, lineHeight: 1 }}>🎯</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#1d1d1f', lineHeight: 1.2 }}>
+            <div style={{ fontFamily: 'inherit', fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#16121d', lineHeight: 1.2 }}>
               {mode === 'choose' ? 'How severe are these, really?' : `Problem ${cursor + 1} of ${total}`}
             </div>
             {mode === 'choose' && (
-              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#6e6e73', lineHeight: 1.5, marginTop: 4 }}>
+              <div style={{ fontFamily: 'inherit', fontStyle: 'italic', fontSize: 14, color: '#4a4357', lineHeight: 1.5, marginTop: 4 }}>
                 These are still your own assumptions, not confirmed facts — a quick gut call is fine. {total} {total === 1 ? "problem hasn't" : "problems haven't"} been tagged yet.
               </div>
             )}
           </div>
-          <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: 20, color: '#b0b0b8', cursor: 'pointer', lineHeight: 1, padding: 4 }}>✕</button>
+          <button onClick={onClose} style={{ border: 'none', background: 'none', fontSize: 20, color: '#8a8299', cursor: 'pointer', lineHeight: 1, padding: 4 }}>✕</button>
         </div>
 
         {mode === 'choose' ? (
           <>
             <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginBottom: 20, maxHeight: 140, overflow: 'auto' }}>
               {missingIdx.map(i => (
-                <div key={i} style={{ borderLeft: `3px solid ${BORDER2}`, paddingLeft: 10, fontSize: 12.5, color: '#6e6e73', lineHeight: 1.4 }}>
+                <div key={i} style={{ borderLeft: `3px solid ${BORDER2}`, paddingLeft: 10, fontSize: 12.5, color: '#4a4357', lineHeight: 1.4 }}>
                   {entries[i].text}
                 </div>
               ))}
@@ -4457,7 +4203,7 @@ function SeverityGateModal({ raw, accentColor, onClose, onDone }: {
                 }}>
                   <span style={{ fontSize: 20 }}>{sc.icon}</span>
                   <div>
-                    <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: sc.textColor }}>Mark everything left {sc.label}</div>
+                    <div style={{ fontFamily: 'inherit', fontSize: 14, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: sc.textColor }}>Mark everything left {sc.label}</div>
                     <div style={{ fontSize: 11.5, color: '#8a8a90', marginTop: 1 }}>
                       {lvl === 'critical' ? "Deal-breaker level pain, if it's real." : lvl === 'major' ? 'A real problem worth solving.' : 'Annoying, but low-stakes.'}
                     </div>
@@ -4466,7 +4212,7 @@ function SeverityGateModal({ raw, accentColor, onClose, onDone }: {
               ))}
             </div>
 
-            <div style={{ textAlign: 'center' as const, fontSize: 11.5, color: '#b0b0b8', marginBottom: 10 }}>— or —</div>
+            <div style={{ textAlign: 'center' as const, fontSize: 11.5, color: '#8a8299', marginBottom: 10 }}>— or —</div>
 
             <button onClick={() => setMode('one-by-one')} style={{
               width: '100%', padding: '11px 16px', borderRadius: 12, border: `1.5px solid ${accentColor}40`,
@@ -4479,7 +4225,7 @@ function SeverityGateModal({ raw, accentColor, onClose, onDone }: {
         ) : (
           <>
             <div style={{ background: '#fafafa', border: `1.5px solid ${BORDER}`, borderRadius: 14, padding: '16px 18px', marginBottom: 18 }}>
-              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#1e293b', lineHeight: 1.4 }}>
+              <div style={{ fontFamily: 'inherit', fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#1e293b', lineHeight: 1.4 }}>
                 "{current?.text}"
               </div>
             </div>
@@ -4491,7 +4237,7 @@ function SeverityGateModal({ raw, accentColor, onClose, onDone }: {
                   cursor: 'pointer', textAlign: 'left' as const, transition: 'all .12s',
                 }}>
                   <span style={{ fontSize: 20 }}>{sc.icon}</span>
-                  <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: sc.textColor }}>{sc.label}</span>
+                  <span style={{ fontFamily: 'inherit', fontSize: 14, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: sc.textColor }}>{sc.label}</span>
                 </button>
               ))}
             </div>
@@ -4511,7 +4257,7 @@ function PainPointCard({
   entry: PainPoint; idx: number; total: number; active: boolean;
   onActivate: () => void; onChange: (field: keyof PainPoint, val: string) => void; onRemove: () => void;
 }) {
-  const accent = '#2563eb';
+  const accent = '#7c3aed';
   const [focused, setFocused] = useState<string | null>(null);
   const complete = isPainPointComplete(entry);
   const hasAny = entry.who || entry.prob || entry.cause || entry.cons;
@@ -4525,7 +4271,7 @@ function PainPointCard({
 
   return (
     <div style={{
-      border: `2px solid ${active ? accent + '35' : complete ? '#22c55e30' : '#e5e5ea'}`,
+      border: `2px solid ${active ? accent + '35' : complete ? '#22c55e30' : '#e2ddd1'}`,
       borderRadius: 16, marginBottom: 12, overflow: 'hidden',
       background: active ? '#f8faff' : '#fafafa',
       transition: 'border-color .2s, background .2s',
@@ -4541,7 +4287,7 @@ function PainPointCard({
       >
         <div style={{
           width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-          background: complete ? '#22c55e' : active ? accent : '#d2d2d7',
+          background: complete ? '#22c55e' : active ? accent : '#d9d3c5',
           color: '#fff', fontSize: 11, fontWeight: 800,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'background .2s',
@@ -4550,11 +4296,11 @@ function PainPointCard({
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {hasAny && !active ? (
-            <div style={{ fontSize: 13, color: complete ? '#1d1d1f' : '#6e6e73', lineHeight: 1.4, fontStyle: complete ? 'normal' : 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+            <div style={{ fontSize: 13, color: complete ? '#16121d' : '#4a4357', lineHeight: 1.4, fontStyle: complete ? 'normal' : 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
               {assemblePainPoint(entry).replace(/\.$/, '') || '(incomplete…)'}
             </div>
           ) : (
-            <div style={{ fontSize: 12, fontWeight: 600, color: active ? accent : '#8e8e93' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: active ? accent : '#6f6880' }}>
               {active ? `Pain point ${idx + 1}` : `Pain point ${idx + 1} — tap to fill`}
             </div>
           )}
@@ -4563,11 +4309,11 @@ function PainPointCard({
           {total > 1 && (
             <button
               onClick={e => { e.stopPropagation(); onRemove(); }}
-              style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#b0b0b8', fontSize: 16, padding: '2px 4px', lineHeight: 1 }}
+              style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#8a8299', fontSize: 16, padding: '2px 4px', lineHeight: 1 }}
               title="Remove"
             >×</button>
           )}
-          <span style={{ fontSize: 12, color: '#b0b0b8', transition: 'transform .2s', display: 'inline-block', transform: active ? 'rotate(180deg)' : 'none' }}>▾</span>
+          <span style={{ fontSize: 12, color: '#8a8299', transition: 'transform .2s', display: 'inline-block', transform: active ? 'rotate(180deg)' : 'none' }}>▾</span>
         </div>
       </div>
 
@@ -4589,9 +4335,9 @@ function PainPointCard({
                     placeholder={slot.hints[0]}
                     style={{
                       width: '100%', boxSizing: 'border-box', background: 'transparent', border: 'none',
-                      borderBottom: `2.5px solid ${focused === slot.key ? accent : entry[slot.key].trim() ? accent + '50' : '#d2d2d7'}`,
+                      borderBottom: `2.5px solid ${focused === slot.key ? accent : entry[slot.key].trim() ? accent + '50' : '#d9d3c5'}`,
                       outline: 'none', padding: '6px 2px 8px', fontSize: 16, fontWeight: 700,
-                      color: USER_INPUT_COLOR, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: -.3,
+                      color: USER_INPUT_COLOR, fontFamily: 'inherit', letterSpacing: -.3,
                       transition: 'border-color .2s', caretColor: accent,
                     }}
                   />
@@ -4606,20 +4352,20 @@ function PainPointCard({
           {hasAny && (
             <div style={{
               marginTop: 16, background: complete ? '#eff6ff' : '#fff',
-              border: `1.5px solid ${complete ? accent + '30' : '#e5e5ea'}`,
+              border: `1.5px solid ${complete ? accent + '30' : '#e2ddd1'}`,
               borderRadius: 10, padding: '12px 16px', transition: 'all .3s',
             }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: complete ? accent : '#b0b0b8', marginBottom: 6 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase' as const, color: complete ? accent : '#8a8299', marginBottom: 6 }}>
                 {complete ? '🎯 Statement' : 'Preview…'}
               </div>
-              <div style={{ fontSize: 14, lineHeight: 1.7, fontFamily: "'Playfair Display', Georgia, serif", color: '#1d1d1f' }}>
-                <span style={{ color: entry.who.trim() ? accent : '#b0b0b8', fontWeight: 700 }}>{entry.who.trim() || '___'}</span>
+              <div style={{ fontSize: 14, lineHeight: 1.7, fontFamily: 'inherit', color: '#16121d' }}>
+                <span style={{ color: entry.who.trim() ? accent : '#8a8299', fontWeight: 700 }}>{entry.who.trim() || '___'}</span>
                 {' '}struggle with{' '}
-                <span style={{ color: entry.prob.trim() ? accent : '#b0b0b8', fontWeight: 700 }}>{entry.prob.trim() || '___'}</span>
+                <span style={{ color: entry.prob.trim() ? accent : '#8a8299', fontWeight: 700 }}>{entry.prob.trim() || '___'}</span>
                 {' '}because{' '}
-                <span style={{ color: entry.cause.trim() ? accent : '#b0b0b8', fontWeight: 700 }}>{entry.cause.trim() || '___'}</span>
+                <span style={{ color: entry.cause.trim() ? accent : '#8a8299', fontWeight: 700 }}>{entry.cause.trim() || '___'}</span>
                 {', '}resulting in{' '}
-                <span style={{ color: entry.cons.trim() ? accent : '#b0b0b8', fontWeight: 700 }}>{entry.cons.trim() || '___'}</span>.
+                <span style={{ color: entry.cons.trim() ? accent : '#8a8299', fontWeight: 700 }}>{entry.cons.trim() || '___'}</span>.
               </div>
             </div>
           )}
@@ -4639,7 +4385,7 @@ const PROBLEM_CATEGORY_META: Record<string, { label: string; color: string }> = 
   Time: { label: '⏰ Time', color: '#7c3aed' },
   Cost: { label: '💸 Cost', color: '#059669' },
   Frustration: { label: '😤 Frustration', color: '#d97706' },
-  Access: { label: '🔍 Access', color: '#2563eb' },
+  Access: { label: '🔍 Access', color: '#7c3aed' },
   Growth: { label: '📉 Growth', color: '#dc2626' },
 };
 
@@ -5002,16 +4748,15 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
             return (
               <div key={p.id} style={{
                 border: 'none',
-                borderLeft: `4px solid ${isEditing ? '#1a1a1a' : inkColor}`,
-                borderRadius: 3,
-                background: isEditing ? '#fff' : cfg ? cfg.bg : '#fffdf8',
-                padding: '12px 16px 12px 14px', transition: 'all .15s',
+                borderRadius: 12,
+                background: isEditing ? CREAM : cfg ? cfg.bg : CREAM,
+                padding: '10px 12px', transition: 'all .15s',
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: isEditing ? 8 : 8 }}>
                   <div style={{
                     width: 22, height: 22, flexShrink: 0, marginTop: 1,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
+                    fontFamily: 'inherit', fontSize: 13,
                     border: `2px solid ${inkColor}`, color: inkColor, background: 'transparent',
                     borderRadius: '50%',
                   }}>
@@ -5027,16 +4772,16 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                       style={{ flex: 1, fontSize: 14, color: USER_INPUT_COLOR, lineHeight: 1.5, fontFamily: 'inherit', border: '1.5px solid #1a1a1a', borderRadius: 6, padding: '6px 10px', resize: 'none' as const, outline: 'none' }}
                     />
                   ) : (
-                    <div style={{ flex: 1, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#1e293b', lineHeight: 1.35, paddingTop: 1 }}>{p.text}</div>
+                    <div style={{ flex: 1, fontFamily: 'inherit', fontSize: 14, fontWeight: 500, color: T1, lineHeight: 1.4, paddingTop: 1 }}>{p.text}</div>
                   )}
                   {!isEditing && (
-                    <button onClick={() => startEdit(p)} title="Edit" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#b0b0b8', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>✏️</button>
+                    <button onClick={() => startEdit(p)} title="Edit" style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, color: '#8a8299', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>✏️</button>
                   )}
-                  <button onClick={() => isEditing ? setEditingId(null) : removeProblem(p.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 16, color: '#b0b0b8', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>{isEditing ? '✕' : '✕'}</button>
+                  <button onClick={() => isEditing ? setEditingId(null) : removeProblem(p.id)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 16, color: '#8a8299', padding: '0 4px', lineHeight: 1, flexShrink: 0 }}>{isEditing ? '✕' : '✕'}</button>
                 </div>
                 {isEditing ? (
                   <div style={{ display: 'flex', gap: 8, marginLeft: 36 }}>
-                    <button onClick={() => commitEdit(p.id)} disabled={!editText.trim()} style={{ padding: '5px 14px', borderRadius: 7, border: 'none', background: editText.trim() ? '#1a1a1a' : '#e5e5ea', color: editText.trim() ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: editText.trim() ? 'pointer' : 'default' }}>Save</button>
+                    <button onClick={() => commitEdit(p.id)} disabled={!editText.trim()} style={{ padding: '5px 14px', borderRadius: 7, border: 'none', background: editText.trim() ? '#1a1a1a' : '#e2ddd1', color: editText.trim() ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: editText.trim() ? 'pointer' : 'default' }}>Save</button>
                     <button onClick={() => setEditingId(null)} style={{ padding: '5px 12px', borderRadius: 7, border: '1.5px solid #e0e0e0', background: '#fff', color: '#888', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
                   </div>
                 ) : (
@@ -5060,10 +4805,10 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                           <button key={lvl} onClick={() => { updateSeverity(p.id, lvl); setReopenedSeverityId(null); }} style={{
                             padding: on ? '3px 11px 4px' : '3px 10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: on ? 800 : 600,
                             transition: 'all .12s', display: 'flex', alignItems: 'center', gap: 4,
-                            border: on ? `2.5px solid ${sc.textColor}` : '1.5px solid #e5e5ea',
+                            border: on ? `2.5px solid ${sc.textColor}` : '1.5px solid #e2ddd1',
                             borderRadius: on ? '50% 50% 48% 52% / 60% 55% 45% 40%' : 999,
                             transform: on ? 'rotate(-1.2deg)' : 'none',
-                            background: on ? sc.bg : '#fff', color: on ? sc.textColor : '#b0b0b8',
+                            background: on ? sc.bg : '#fff', color: on ? sc.textColor : '#8a8299',
                           }}>
                             {sc.icon} {sc.label}
                           </button>
@@ -5078,7 +4823,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                       {p.severity && (
                         <span style={{
                           display: 'inline-flex', alignItems: 'center', gap: 5,
-                          background: SEVERITY_CONFIG[p.severity].textColor, color: '#fff', fontFamily: "'Bebas Neue', 'Inter', sans-serif",
+                          background: SEVERITY_CONFIG[p.severity].textColor, color: '#fff', fontFamily: 'inherit',
                           fontWeight: 700, fontSize: 12, letterSpacing: '.05em', textTransform: 'uppercase' as const, borderRadius: 4, padding: '4px 12px',
                         }}>
                           {SEVERITY_CONFIG[p.severity].icon} {SEVERITY_CONFIG[p.severity].label}
@@ -5102,7 +4847,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                             return (
                               <button key={f} onClick={() => updateConsequenceFreq(p.text, f)} style={{
                                 padding: '3px 10px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: on ? 800 : 600,
-                                border: on ? '2px solid #7c3aed' : '1.5px solid #e5e5ea', background: on ? '#f5f3ff' : '#fff', color: on ? '#6d28d9' : '#b0b0b8',
+                                border: on ? '2px solid #7c3aed' : '1.5px solid #e2ddd1', background: on ? '#f5f3ff' : '#fff', color: on ? '#6d28d9' : '#8a8299',
                               }}>{f}</button>
                             );
                           })}
@@ -5114,7 +4859,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                               return (
                                 <button key={c.text} onClick={() => toggleConsequenceChip(p.text, c.text)} style={{
                                   padding: '3px 10px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: on ? 800 : 600,
-                                  border: on ? '2px solid #7c3aed' : '1.5px solid #e5e5ea', background: on ? '#f5f3ff' : '#fff', color: on ? '#6d28d9' : '#b0b0b8',
+                                  border: on ? '2px solid #7c3aed' : '1.5px solid #e2ddd1', background: on ? '#f5f3ff' : '#fff', color: on ? '#6d28d9' : '#8a8299',
                                 }}>{c.icon} {c.text}</button>
                               );
                             })}
@@ -5141,7 +4886,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
   const toggleSeverityGroup = (lvl: SeverityLevel) => setOpenSeverityGroups(prev => ({ ...prev, [lvl]: !prev[lvl] }));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 20, alignItems: 'start' }}>
 
       <style>{`
         @keyframes sevPulse {
@@ -5176,16 +4921,15 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
         </div>
       )}
 
-      {/* ── Suggestion chips — one at a time, swipe-style queue, AI-tailored once ── */}
+      {/* ── Column 1: the problem deck — one suggestion at a time, AI-tailored once ── */}
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 14, minWidth: 0 }}>
       <div style={{
-          position: 'relative' as const, borderRadius: 20, overflow: 'hidden',
-          background: '#ffffff',
-          border: '1px solid #ece6fb', boxShadow: '0 10px 30px -16px rgba(76,49,140,.18)',
-          padding: '20px 20px 22px', display: 'flex', flexDirection: 'column' as const, gap: 18,
+          position: 'relative' as const,
+          display: 'flex', flexDirection: 'column' as const, gap: 18,
         }}>
           <div style={{ position: 'relative' as const, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#6d28d9' }}>Problem Quest · Rate what's broken</span>
+              <span style={eyebrow(ACCENT)}>Problem quest · Rate what's broken</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {(problems.some(p => p.text.trim()) || skippedSuggestions.size > 0) && (
@@ -5201,16 +4945,16 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                   ↻ Restart
                 </button>
               )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', borderRadius: 999, padding: '4px 10px' }}>
-                ⚡ +10–50 XP per problem
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: MONO, fontSize: 10, fontWeight: 700, color: INK, background: LIME, borderRadius: 999, padding: '5px 10px', letterSpacing: '0.06em' }}>
+                ⚡ +10–50 XP PER PROBLEM
               </div>
             </div>
           </div>
         {displayGroups.length > 0 && (
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' as const }}>
-              <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#2e1f52' }}>
-                Select everything that applies to your customer:
+              <div style={{ fontFamily: 'inherit', fontSize: 15, color: T2 }}>
+                Does your customer feel each of these?
               </div>
               <button
                 onClick={retryProblemChips}
@@ -5229,7 +4973,6 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                 </span>
               )}
             </div>
-            <div style={{ borderTop: '2px solid #7c3aed', marginTop: 3, maxWidth: 130 }} />
           </div>
         )}
         {genState.loading && displayGroups.length === 0 && (
@@ -5239,7 +4982,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
               <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#d97706', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.15s' }} />
               <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#d97706', display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.3s' }} />
             </div>
-            <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#4b3d73', fontWeight: 600 }}>
+            <span style={{ fontFamily: 'inherit', fontStyle: 'italic', fontSize: 16, color: '#4b3d73', fontWeight: 600 }}>
               Sage is reading your idea and coming up with relevant problems…
             </span>
           </div>
@@ -5265,29 +5008,29 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                 to a single-card view each time. */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' as const }}>
               <div style={{ flex: 1, minWidth: 140 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#7c6a9e', marginBottom: 4 }}>
+                <div style={{ fontFamily: MONO, fontSize: 11, color: T3, marginBottom: 6 }}>
                   {queueViewMode === 'stack' && currentSuggestion
                     ? `Card ${Math.min(suggestionsReviewedCount + 1, allSuggestionsFlat.length)} of ${allSuggestionsFlat.length}`
                     : `${Math.min(suggestionsReviewedCount + (currentSuggestion ? 1 : 0), allSuggestionsFlat.length)} of ${allSuggestionsFlat.length} reviewed`}
                 </div>
-                <div style={{ height: 5, borderRadius: 999, background: '#ece6fb', overflow: 'hidden' }}>
+                <div style={{ height: 6, borderRadius: 3, background: BORDER, overflow: 'hidden' }}>
                   <div style={{
-                    height: '100%', borderRadius: 999, background: 'linear-gradient(90deg,#7c3aed,#a78bfa)',
+                    height: '100%', borderRadius: 3, background: ACCENT,
                     width: `${allSuggestionsFlat.length ? (suggestionsReviewedCount / allSuggestionsFlat.length) * 100 : 0}%`,
                     transition: 'width .25s ease',
                   }} />
                 </div>
               </div>
-              <div style={{ display: 'inline-flex', border: '1.5px solid #ece6fb', borderRadius: 9, padding: 2, flexShrink: 0 }}>
+              <div style={{ display: 'inline-flex', gap: 4, background: CREAM2, borderRadius: 999, padding: 4, flexShrink: 0 }}>
                 {(['stack', 'table'] as const).map(m => (
                   <button key={m} onClick={() => setQueueViewMode(m)} style={{
-                    padding: '5px 12px', borderRadius: 7, border: 'none', cursor: 'pointer',
-                    fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit',
-                    background: queueViewMode === m ? '#7c3aed' : 'transparent',
-                    color: queueViewMode === m ? '#fff' : '#7c6a9e',
+                    padding: '8px 16px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                    fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
+                    background: queueViewMode === m ? INK : 'transparent',
+                    color: queueViewMode === m ? '#fff' : T1,
                     transition: 'all .15s',
                   }}>
-                    {m === 'stack' ? '🗂 Cards' : '📋 Table'}
+                    {m === 'stack' ? 'Cards' : 'Table'}
                   </button>
                 ))}
               </div>
@@ -5299,17 +5042,16 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {remainingSuggestionsQueue.map(s => (
                     <div key={s.text} style={{
-                      display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px',
-                      border: '1px solid #4c3f80', borderRadius: 9, background: 'linear-gradient(160deg, #2f2354, #221a3d)',
+                      display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px',
+                      borderRadius: 16, background: '#fff', flexWrap: 'wrap' as const,
                     }}>
                       <span style={{
-                        flexShrink: 0, fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 9.5,
-                        letterSpacing: '.06em', textTransform: 'uppercase' as const, color: s.color,
-                        border: `1.5px solid ${s.color}`, padding: '2px 7px', borderRadius: 999,
+                        flexShrink: 0, fontFamily: MONO, fontSize: 10, fontWeight: 700,
+                        letterSpacing: '.08em', textTransform: 'uppercase' as const, color: ACCENT, width: 62,
                       }}>
                         {s.category}
                       </span>
-                      <span style={{ flex: 1, fontFamily: 'inherit', fontSize: 13.5, fontWeight: 500, color: '#fff', lineHeight: 1.4, minWidth: 0 }}>
+                      <span style={{ flex: 1, fontFamily: 'inherit', fontSize: 15, fontWeight: 500, color: T1, lineHeight: 1.4, minWidth: 160 }}>
                         {s.text}
                       </span>
                       <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
@@ -5334,58 +5076,59 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                 </div>
               )
             ) : currentSuggestion ? (
+              <>
               <div style={{ position: 'relative' as const, width: '100%' }}>
                 {/* Card-stack illusion — two faded, offset cards peeking out
                     from behind the active one so this doesn't sit alone on
                     an empty canvas. Purely decorative (no content), so
                     there's nothing to keep in sync with the real queue. */}
                 {remainingSuggestionsQueue.length > 2 && (
-                  <div style={{ position: 'absolute', inset: 0, top: 12, transform: 'scale(.96) rotate(1deg)', background: '#291f47', border: '1.5px solid #3a2d63', borderRadius: 14, zIndex: 0 }} />
+                  <div style={{ position: 'absolute', inset: 0, top: 12, transform: 'scale(.96) rotate(1deg)', background: '#d9d3c5', borderRadius: 24, zIndex: 0 }} />
                 )}
                 {remainingSuggestionsQueue.length > 1 && (
-                  <div style={{ position: 'absolute', inset: 0, top: 6, transform: 'scale(.98) rotate(-.6deg)', background: '#302553', border: '1.5px solid #43356f', borderRadius: 14, zIndex: 1 }} />
+                  <div style={{ position: 'absolute', inset: 0, top: 6, transform: 'scale(.98) rotate(-.6deg)', background: '#3a3148', borderRadius: 24, zIndex: 1 }} />
                 )}
                 <div style={{
                   position: 'relative' as const, zIndex: 2,
-                  background: 'linear-gradient(160deg, #2f2354, #221a3d)', border: '1.5px solid #4c3f80',
-                  borderRadius: 14, padding: '24px 22px', boxShadow: '0 16px 32px -14px rgba(43,25,82,.5)',
-                  display: 'flex', flexDirection: 'column', gap: 14,
+                  background: INK, color: INK_TXT,
+                  borderRadius: 28, padding: 'clamp(22px, 3.5vw, 40px)',
+                  display: 'flex', flexDirection: 'column', gap: 18,
                 }}>
-                  <div style={{
-                    alignSelf: 'flex-start', fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11,
-                    letterSpacing: '.08em', textTransform: 'uppercase' as const, color: currentSuggestion.color,
-                    border: `1.5px solid ${currentSuggestion.color}`, padding: '3px 10px', borderRadius: 999,
-                  }}>
-                    {currentSuggestion.category}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '5px 12px', color: LIME, border: '1px solid #3a3148', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
+                      {currentSuggestion.category}
+                    </span>
+                    <span style={{ fontFamily: MONO, fontSize: 12, color: INK_MUTE }}>
+                      {Math.min(suggestionsReviewedCount + 1, allSuggestionsFlat.length)} / {allSuggestionsFlat.length}
+                    </span>
                   </div>
-                  <div style={{ fontFamily: 'inherit', fontSize: 18, fontWeight: 500, lineHeight: 1.5, color: '#fff' }}>
+                  <p style={{ margin: 0, fontFamily: 'inherit', fontSize: 'clamp(26px, 3.4vw, 44px)', fontWeight: 700, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
                     {currentSuggestion.text}
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {(['minor', 'major', 'critical'] as SeverityLevel[]).map((lvl, i) => (
-                      <button
-                        key={lvl}
-                        onClick={() => addSuggestionWithSeverity(currentSuggestion.text, lvl)}
-                        style={{
-                          position: 'relative' as const, flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
-                          fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
-                          border: `1.5px solid ${SEVERITY_CONFIG[lvl].textColor}`, background: `${SEVERITY_CONFIG[lvl].textColor}14`, color: SEVERITY_CONFIG[lvl].textColor, fontWeight: 700,
-                        }}
-                      >
-                        <KeyBadge k={String(i + 2)} /> {SEVERITY_CONFIG[lvl].label}
-                      </button>
-                    ))}
+                  </p>
+                  <span style={{ fontSize: 13, color: INK_MUTE }}>Does your customer feel this? Rate how much it hurts.</span>
+                </div>
+              </div>
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 4 }}>
+                  <button
+                    onClick={() => skipCurrentSuggestion(currentSuggestion.text)}
+                    style={{ position: 'relative' as const, borderRadius: 16, padding: '18px 6px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'clamp(14px, 1.5vw, 17px)', fontWeight: 800, background: CREAM2, color: T2, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2 }}
+                  >
+                    Not it
+                    <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 500 }}>key 1</span>
+                  </button>
+                  {(['minor', 'major', 'critical'] as SeverityLevel[]).map((lvl, i) => (
                     <button
-                      onClick={() => skipCurrentSuggestion(currentSuggestion.text)}
-                      style={{
-                        position: 'relative' as const, flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
-                        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
-                        border: '1.5px solid #4c3f80', background: 'transparent', color: '#b0a4d6', fontWeight: 700,
-                      }}
+                      key={lvl}
+                      onClick={() => addSuggestionWithSeverity(currentSuggestion.text, lvl)}
+                      style={{ position: 'relative' as const, borderRadius: 16, padding: '18px 6px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'clamp(14px, 1.5vw, 17px)', fontWeight: 800, background: lvl === 'critical' ? ACCENT : lvl === 'major' ? INK : '#fff', color: lvl === 'minor' ? T1 : '#fff', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2 }}
                     >
-                      <KeyBadge k="1" /> Skip
+                      {SEVERITY_CONFIG[lvl].label}
+                      <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 500, opacity: .8 }}>key {i + 2}</span>
                     </button>
-                  </div>
+                  ))}
+                </div>
+                <div style={{ position: 'relative' as const, zIndex: 2, marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {/* Prominent custom-problem entry — right on the active
                       card, so a founder can capture their own phrasing the
                       moment it occurs to them instead of scrolling down to
@@ -5397,7 +5140,7 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                         onChange={e => setStackCustomText(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addCustomText(stackCustomText); setStackCustomText(''); setStackCustomOpen(false); } if (e.key === 'Escape') setStackCustomOpen(false); }}
                         placeholder="Describe the specific frustration your customer experiences…"
-                        style={{ width: '100%', boxSizing: 'border-box' as const, border: '1.5px solid #4c3f80', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontFamily: 'inherit', color: '#fff', background: '#1e1636', lineHeight: 1.5, resize: 'none' as const, outline: 'none' }}
+                        style={{ width: '100%', boxSizing: 'border-box' as const, border: `1.5px solid ${BORDER2}`, borderRadius: 14, padding: '12px 14px', fontSize: 15, fontFamily: 'inherit', color: T1, background: '#fff', lineHeight: 1.5, resize: 'none' as const, outline: 'none' }}
                       />
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => { addCustomText(stackCustomText); setStackCustomText(''); setStackCustomOpen(false); }} disabled={!stackCustomText.trim()} style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: stackCustomText.trim() ? '#7c3aed' : '#ffffff14', color: stackCustomText.trim() ? '#fff' : '#6d6390', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, cursor: stackCustomText.trim() ? 'pointer' : 'default' }}>Add</button>
@@ -5405,12 +5148,13 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                       </div>
                     </div>
                   ) : (
-                    <button onClick={() => setStackCustomOpen(true)} style={{ alignSelf: 'flex-start', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, fontSize: 12, fontWeight: 600, color: '#8b7fb3', textDecoration: 'underline' }}>
+                    <button onClick={() => setStackCustomOpen(true)} style={{ alignSelf: 'flex-start', border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, fontSize: 14, fontWeight: 600, color: ACCENT_DEEP, textDecoration: 'underline' }}>
                       + describe a different problem instead
                     </button>
                   )}
                 </div>
               </div>
+              </>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#7c6a9e', padding: '10px 2px' }}>
                 <span>{skippedSuggestions.size > 0 ? `You've been through all ${allSuggestionsFlat.length} suggestions.` : `That's everything Sage suggested — nice work.`}</span>
@@ -5425,18 +5169,56 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
         )}
       </div>
 
-      {/* ── Divider ── */}
-      <div style={{ height: 1, background: '#e8e8e8' }} />
+      {/* ── Add your own ── */}
+      {!showCustom ? (
+        <button
+          onClick={() => setShowCustom(true)}
+          style={{ alignSelf: 'flex-start', padding: 0, border: 'none', background: 'transparent', color: ACCENT_DEEP, fontFamily: 'inherit', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
+        >
+          + Describe your own problem
+        </button>
+      ) : (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            autoFocus
+            value={customText}
+            onChange={e => setCustomText(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustom(); } if (e.key === 'Escape') { setShowCustom(false); setCustomText(''); } }}
+            placeholder="One sentence. No vague language."
+            style={{ flex: 1, minWidth: 0, boxSizing: 'border-box' as const, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '14px 16px', fontSize: 16, fontFamily: 'inherit', color: T1, background: '#fff', outline: 'none' }}
+          />
+          <button onClick={addCustom} disabled={!customText.trim()} style={{ borderRadius: 14, padding: '0 18px', border: 'none', background: customText.trim() ? INK : CREAM2, color: customText.trim() ? LIME : T3, fontFamily: 'inherit', fontSize: 15, fontWeight: 800, cursor: customText.trim() ? 'pointer' : 'default' }}>
+            Add
+          </button>
+          <button onClick={() => { setShowCustom(false); setCustomText(''); }} style={{ borderRadius: 14, padding: '0 14px', border: `1px solid ${BORDER2}`, background: 'transparent', color: T2, fontFamily: 'inherit', fontSize: 14, cursor: 'pointer' }}>
+            Cancel
+          </button>
+        </div>
+      )}
+      </div>
 
-      {/* ── Selected problems list with severity — grouped-by-severity declutter (Option 4) ── */}
-      {/* Held back while Sage is still generating fresh chips above, so a
-          confident-looking "captured" list doesn't sit next to a loading
-          indicator that's still saying it's reading the idea. */}
+      {/* ── Column 2: Pain board — selected problems grouped by severity ── */}
       {filled.length > 0 && !pickerLoading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#aaa', letterSpacing: '.1em', textTransform: 'uppercase' as const }}>
-            Selected · how severe?
+        <section style={{ background: '#fff', borderRadius: 24, padding: 18, display: 'flex', flexDirection: 'column', gap: 14, position: 'sticky' as const, top: 80 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 }}>
+            <span style={{ fontWeight: 800, fontSize: 18, color: T1 }}>Pain board</span>
+            <span style={{ fontFamily: MONO, fontSize: 11, color: T3 }}>
+              {filled.length} problem{filled.length !== 1 ? 's' : ''} · {filled.filter(p => p.severity).length} rated
+            </span>
           </div>
+          {(() => {
+            const rated = filled.filter(p => p.severity);
+            if (rated.length === 0) return null;
+            return (
+              <div style={{ display: 'flex', borderRadius: 5, overflow: 'hidden', background: CREAM, height: 10 }}>
+                {(['critical', 'major', 'minor'] as SeverityLevel[]).map(lvl => {
+                  const n = rated.filter(p => p.severity === lvl).length;
+                  if (!n) return null;
+                  return <div key={lvl} style={{ width: `${(n / rated.length) * 100}%`, background: lvl === 'critical' ? ACCENT : lvl === 'major' ? INK : BORDER2 }} />;
+                })}
+              </div>
+            );
+          })()}
 
           {/* Not yet tagged — always rendered open. The severity-nudge effect
               above (SEVERITY_NUDGE_EVENT) scrollIntoView()s and pulses the
@@ -5458,75 +5240,28 @@ const ProblemBuilder = React.forwardRef<ProblemBuilderHandle, { value: string; o
                 <div
                   onClick={() => toggleSeverityGroup(lvl)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
-                    borderRadius: 8, background: sc.bg, border: `1.5px solid ${sc.border}`,
-                    cursor: 'pointer', userSelect: 'none' as const, transition: 'box-shadow .15s',
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0',
+                    cursor: 'pointer', userSelect: 'none' as const,
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 0 0 2px ${sc.border}`; }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; }}
                 >
-                  <span style={{
-                    width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 10, color: '#fff', background: sc.textColor,
-                  }}>{isOpen ? '▾' : '▸'}</span>
-                  <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.05em', color: sc.textColor, textTransform: 'uppercase' as const }}>
-                    {sc.icon} {sc.label}
+                  <span style={{ width: 10, height: 10, borderRadius: 3, flexShrink: 0, background: lvl === 'critical' ? ACCENT : lvl === 'major' ? INK : BORDER2 }} />
+                  <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: T1, letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
+                    {sc.label}
                   </span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: sc.textColor }}>{group.length}</span>
-                  {!isOpen && (
-                    <span style={{ marginLeft: 'auto', fontSize: 10.5, fontWeight: 600, color: sc.textColor, opacity: 0.65 }}>tap to review →</span>
-                  )}
+                  <span style={{ fontWeight: 800, color: T1 }}>{group.length}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, color: T3 }}>{isOpen ? '▾' : '▸'}</span>
                 </div>
                 {isOpen && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {group.map((p, i) => renderProblemCard(p, i))}
                   </div>
                 )}
               </div>
             );
           })}
-        </div>
+        </section>
       )}
 
-      {/* ── Add your own ── */}
-      {!showCustom ? (
-        <button
-          onClick={() => setShowCustom(true)}
-          style={{ alignSelf: 'flex-start', padding: '9px 18px', borderRadius: 8, border: `2px dashed #1a1a1a`, background: 'transparent', color: '#1a1a1a', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-        >
-          + Describe your own problem
-        </button>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <textarea
-            rows={2}
-            autoFocus
-            value={customText}
-            onChange={e => setCustomText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addCustom(); } }}
-            placeholder="Describe the specific frustration your customer experiences…"
-            style={{ width: '100%', boxSizing: 'border-box' as const, border: '2px solid #1a1a1a', borderRadius: 8, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', color: USER_INPUT_COLOR, lineHeight: 1.5, resize: 'none' as const, outline: 'none' }}
-          />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={addCustom} disabled={!customText.trim()} style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: customText.trim() ? '#1a1a1a' : '#e5e5ea', color: customText.trim() ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: customText.trim() ? 'pointer' : 'default', transition: 'all .15s' }}>
-              Add
-            </button>
-            <button onClick={() => { setShowCustom(false); setCustomText(''); }} style={{ padding: '8px 16px', borderRadius: 8, border: '1.5px solid #e0e0e0', background: '#fff', color: '#888', fontFamily: 'inherit', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Summary — handwritten postcard style ── */}
-      {filled.length > 0 && !pickerLoading && (
-        <div style={{ ...postcardStyle(-1), padding: '12px 16px', fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 700, color: '#166534' }}>
-          <PostcardStamp />
-          ✓ {filled.length} problem{filled.length > 1 ? 's' : ''} captured
-          {problems.some(p => p.severity === 'critical') && <span style={{ marginLeft: 8, color: '#dc2626' }}> · {problems.filter(p => p.severity === 'critical').length} 🔥 critical</span>}
-        </div>
-      )}
     </div>
   );
 });
@@ -5568,7 +5303,7 @@ function SageProblemInterview({
   onAdd: (texts: string[]) => void;
   onClose: () => void;
 }) {
-  const AC = '#2563eb';
+  const AC = '#7c3aed';
   const segmentLabel = segment.role || 'your customer';
   const opener = `Think about someone in your "${segmentLabel}" segment${segment.detail ? ` (${segment.detail})` : ''}. What's the last time this got in their way — what were they doing right before it happened?`;
 
@@ -5617,7 +5352,7 @@ function SageProblemInterview({
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: `${AC}0a`, borderBottom: `1px solid ${AC}20` }}>
         <span style={{ width: 20, height: 20, borderRadius: '50%', background: AC, color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>S</span>
         <span style={{ fontSize: 12.5, fontWeight: 700, color: AC }}>Sage is interviewing you about {segmentLabel}</span>
-        <button onClick={onClose} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: '#8e8e93', fontSize: 13 }}>Close</button>
+        <button onClick={onClose} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6f6880', fontSize: 13 }}>Close</button>
       </div>
 
       <div style={{ maxHeight: 320, overflowY: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -5629,14 +5364,14 @@ function SageProblemInterview({
             borderBottomRightRadius: turn.role === 'founder' ? 4 : 12,
             background: turn.role === 'founder' ? `${AC}0d` : '#f7f3ff',
             border: `1px solid ${turn.role === 'founder' ? AC + '30' : '#7c3aed30'}`,
-            fontSize: 13.5, lineHeight: 1.5, color: '#1d1d1f',
+            fontSize: 13.5, lineHeight: 1.5, color: '#16121d',
           }}>
             {turn.text}
           </div>
         ))}
         {loading && (
           <div style={{ alignSelf: 'flex-start', display: 'flex', gap: 3, padding: '9px 13px' }}>
-            {[0, 1, 2].map(i => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#b0b0b8' }} />)}
+            {[0, 1, 2].map(i => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#8a8299' }} />)}
           </div>
         )}
         <div ref={bottomRef} />
@@ -5644,13 +5379,13 @@ function SageProblemInterview({
 
       {extracted.length > 0 && (
         <div style={{ padding: '0 16px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#b0b0b8' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#8a8299' }}>
             Added to your problem list below
           </div>
           {extracted.map((e, i) => {
             const cfg = EVIDENCE_CONFIG[e.evidence];
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#1d1d1f' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#16121d' }}>
                 <span style={{ flex: 1 }}>{e.text}</span>
                 <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: cfg.color, border: `1px solid ${cfg.color}50`, borderRadius: 999, padding: '2px 8px' }}>{cfg.label}</span>
               </div>
@@ -5674,9 +5409,9 @@ function SageProblemInterview({
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder="Type your answer…"
               disabled={loading}
-              style={{ flex: 1, border: '1.5px solid #e5e5ea', borderRadius: 8, padding: '9px 12px', fontSize: 13.5, fontFamily: 'inherit', outline: 'none' }}
+              style={{ flex: 1, border: '1.5px solid #e2ddd1', borderRadius: 8, padding: '9px 12px', fontSize: 13.5, fontFamily: 'inherit', outline: 'none' }}
             />
-            <button onClick={send} disabled={loading || !input.trim()} style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: input.trim() && !loading ? AC : '#e5e5ea', color: input.trim() && !loading ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: input.trim() && !loading ? 'pointer' : 'default' }}>
+            <button onClick={send} disabled={loading || !input.trim()} style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: input.trim() && !loading ? AC : '#e2ddd1', color: input.trim() && !loading ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: input.trim() && !loading ? 'pointer' : 'default' }}>
               Send
             </button>
           </>
@@ -5697,7 +5432,7 @@ function SageProblemInterview({
 function StepQuestionBar({ blocks: _blocks, children }: { blocks: string[]; children?: React.ReactNode }) {
   if (!children) return null;
   return (
-    <div style={{ marginTop: 6 }}>
+    <div style={{ marginTop: 10 }}>
       {children}
     </div>
   );
@@ -5709,7 +5444,7 @@ function StepQuestionBar({ blocks: _blocks, children }: { blocks: string[]; chil
 // carries "this opens Sage."
 function SageCtaLink({ onClick }: { onClick: () => void }) {
   return (
-    <span onClick={onClick} style={{ fontSize: 10, fontWeight: 700, color: '#6D28D9', cursor: 'pointer', flexShrink: 0 }}>
+    <span onClick={onClick} style={{ fontSize: 13, fontWeight: 600, color: ACCENT_DEEP, cursor: 'pointer', flexShrink: 0 }}>
       Prefer to talk it through? Chat it out with Sage, your guide →
     </span>
   );
@@ -5736,7 +5471,7 @@ function SageStepInterview({
   onAdd: (texts: string[]) => void;
   onClose: () => void;
 }) {
-  const AC = '#2563eb';
+  const AC = '#7c3aed';
 
   const [history, setHistory] = useState<ChatTurn[]>(() => [{ role: 'sage', text: opener }]);
   const [input, setInput]     = useState('');
@@ -5784,7 +5519,7 @@ function SageStepInterview({
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: `${AC}0a`, borderBottom: `1px solid ${AC}20` }}>
         <span style={{ width: 20, height: 20, borderRadius: '50%', background: AC, color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>S</span>
         <span style={{ fontSize: 12.5, fontWeight: 700, color: AC }}>{headerLabel}</span>
-        <button onClick={onClose} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: '#8e8e93', fontSize: 13 }}>Close</button>
+        <button onClick={onClose} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', color: '#6f6880', fontSize: 13 }}>Close</button>
       </div>
 
       <div style={{ maxHeight: 320, overflowY: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -5796,14 +5531,14 @@ function SageStepInterview({
             borderBottomRightRadius: turn.role === 'founder' ? 4 : 12,
             background: turn.role === 'founder' ? `${AC}0d` : '#f7f3ff',
             border: `1px solid ${turn.role === 'founder' ? AC + '30' : '#7c3aed30'}`,
-            fontSize: 13.5, lineHeight: 1.5, color: '#1d1d1f',
+            fontSize: 13.5, lineHeight: 1.5, color: '#16121d',
           }}>
             {turn.text}
           </div>
         ))}
         {loading && (
           <div style={{ alignSelf: 'flex-start', display: 'flex', gap: 3, padding: '9px 13px' }}>
-            {[0, 1, 2].map(i => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#b0b0b8' }} />)}
+            {[0, 1, 2].map(i => <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: '#8a8299' }} />)}
           </div>
         )}
         <div ref={bottomRef} />
@@ -5811,13 +5546,13 @@ function SageStepInterview({
 
       {extracted.length > 0 && (
         <div style={{ padding: '0 16px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#b0b0b8' }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#8a8299' }}>
             {addedLabel}
           </div>
           {extracted.map((e, i) => {
             const cfg = EVIDENCE_CONFIG[e.evidence];
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#1d1d1f' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#16121d' }}>
                 <span style={{ flex: 1 }}>{e.text}</span>
                 <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: cfg.color, border: `1px solid ${cfg.color}50`, borderRadius: 999, padding: '2px 8px' }}>{cfg.label}</span>
               </div>
@@ -5841,9 +5576,9 @@ function SageStepInterview({
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder="Type your answer…"
               disabled={loading}
-              style={{ flex: 1, border: '1.5px solid #e5e5ea', borderRadius: 8, padding: '9px 12px', fontSize: 13.5, fontFamily: 'inherit', outline: 'none' }}
+              style={{ flex: 1, border: '1.5px solid #e2ddd1', borderRadius: 8, padding: '9px 12px', fontSize: 13.5, fontFamily: 'inherit', outline: 'none' }}
             />
-            <button onClick={send} disabled={loading || !input.trim()} style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: input.trim() && !loading ? AC : '#e5e5ea', color: input.trim() && !loading ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: input.trim() && !loading ? 'pointer' : 'default' }}>
+            <button onClick={send} disabled={loading || !input.trim()} style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: input.trim() && !loading ? AC : '#e2ddd1', color: input.trim() && !loading ? '#fff' : '#aaa', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, cursor: input.trim() && !loading ? 'pointer' : 'default' }}>
               Send
             </button>
           </>
@@ -5915,7 +5650,6 @@ function FounderReadinessStep({
   // Direction A: the time-commitment picker collapses to an echo pill once
   // answered — this tracks an explicit "change" reopen, kept separate from
   // `timeValue` itself so reopening never clears the actual answer.
-  const [timeOpen, setTimeOpen] = useState(false);
   const selectedSkills = (skillsValue || '').split('|').filter(Boolean);
   const toggleSkill = (label: string) => {
     const next = selectedSkills.includes(label)
@@ -5932,235 +5666,195 @@ function FounderReadinessStep({
     onCofounderChange(next.join('|'));
   };
 
-  // 2026-09-19: purple, not Hone's nominal stage blue -- matches the accent
-  // every other interior Hone element (Steps 1-3) already settled on. The
-  // page's own <H> heading stays STAGE_COLORS.hone at its call site --
-  // that's the app-wide stage-branding convention, unrelated to this.
-  const honeColor = '#7c3aed';
+  // 2026-10 redesign: numbered question cards (01 ink, 02–04 white) in the
+  // left column, a sticky lime "Founder advantage card" on the right.
+  const honeColor = ACCENT;
+  const skillCoverage = SKILL_CHIPS.map(c => selectedSkills.includes(c.label));
+  const timeOpt = TIME_OPTIONS.find(t => t.val === timeValue);
+  const archetype = (() => {
+    if (!timeValue) return 'Founder';
+    const s = selectedSkills;
+    if (s.includes('Engineering') && (s.includes('Product / design'))) return 'Builder-founder';
+    if (s.includes('Engineering')) return 'Technical founder';
+    if (s.includes('Sales / BD') || s.includes('Marketing')) return 'Go-to-market founder';
+    if (s.includes('Domain expertise')) return 'Domain-expert founder';
+    if (s.includes('Operations')) return 'Operator-founder';
+    return 'Founder';
+  })();
+  const filledCount = [!!timeValue, selectedSkills.length > 0, selectedCofounders.length > 0, !!founderFitValue.trim()].filter(Boolean).length;
 
-  const Section = ({ icon, title, subtitle }: { icon: string; title: string; subtitle?: string }) => (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: subtitle ? 4 : 0 }}>
-        <span style={{ fontSize: 18 }}>{icon}</span>
-        <div>
-          <div style={{
-            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15,
-            letterSpacing: '.04em', textTransform: 'uppercase' as const, color: honeColor,
-          }}>{title}</div>
-          <div style={{ borderTop: `2px solid ${honeColor}`, marginTop: 3, maxWidth: 130 }} />
-        </div>
+  const cardHead = (n: string, title: string, sub: string, dark = false) => (
+    <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+      <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: dark ? LIME : honeColor, marginTop: 4 }}>{n}</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <span style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.02em' }}>{title}</span>
+        <span style={{ fontSize: 14, color: dark ? INK_DIM : T2, lineHeight: 1.45 }}>{sub}</span>
       </div>
-      {subtitle && <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, fontWeight: 500, color: '#3f3f46', lineHeight: 1.45, paddingLeft: 26 }}>{subtitle}</div>}
     </div>
   );
+  const card = (dark: boolean): React.CSSProperties => ({
+    background: dark ? INK : '#fff', color: dark ? INK_TXT : T1, borderRadius: 24,
+    padding: 'clamp(20px, 3vw, 30px)', display: 'flex', flexDirection: 'column', gap: 16,
+  });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
 
-      {/* ── 1. Time commitment ── */}
-      <div>
-        <Section
-          icon="⏰"
-          title="How much time can you realistically commit?"
-          subtitle="Be honest — under-committing is the #1 reason startups stall. What's true right now?"
-        />
-        {/* Direction A: collapses to an echo pill once answered — same
-            pattern as the who-pays / spark-type pickers. */}
-        <div style={{ display: (!timeValue || timeOpen) ? 'grid' : 'none', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 10 }}>
-          {TIME_OPTIONS.map((opt) => {
-            const on = timeValue === opt.val;
-            return (
-              <button key={opt.val} onClick={() => { onTimeChange(on ? '' : opt.val); setTimeOpen(false); }}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, textAlign: 'center' as const,
-                  padding: '14px 10px', cursor: 'pointer', fontFamily: 'inherit', position: 'relative' as const,
-                  border: `2px solid ${on ? honeColor : '#e0e0e0'}`,
-                  borderRadius: 14,
-                  background: on ? honeColor : '#fffdf8',
-                  transition: 'all .15s',
-                }}>
-                {on && (
-                  <span style={{ position: 'absolute' as const, top: 6, right: 6, width: 16, height: 16, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4 10-11" stroke={honeColor} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </span>
-                )}
-                <span style={{ fontSize: 24 }}>{opt.icon}</span>
-                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.02em', fontWeight: 700, color: on ? '#fff' : '#1e293b' }}>{opt.label}</div>
-                <div style={{ fontSize: 11, color: on ? 'rgba(255,255,255,.85)' : '#8e8e93', lineHeight: 1.3 }}>{opt.desc}</div>
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ display: (timeValue && !timeOpen) ? 'flex' : 'none', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            padding: '4px 12px', borderRadius: 4,
-            background: honeColor, color: '#fff',
-            fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontWeight: 700, fontSize: 12,
-            letterSpacing: '.05em', textTransform: 'uppercase' as const,
-          }}>
-            {TIME_OPTIONS.find(t => t.val === timeValue)?.icon} {TIME_OPTIONS.find(t => t.val === timeValue)?.label}
+        {/* ── 01. Time commitment ── */}
+        <section style={card(true)}>
+          {cardHead('01', 'How much time can you realistically commit?', "Be honest — under-committing is the #1 reason startups stall. What's true right now?", true)}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', gap: 6, background: '#211a2d', padding: 4, borderRadius: 14 }}>
+            {[...TIME_OPTIONS].reverse().map((opt) => {
+              const on = timeValue === opt.val;
+              return (
+                <button key={opt.val} onClick={() => onTimeChange(on ? '' : opt.val)}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, textAlign: 'center' as const,
+                    padding: '12px 6px', cursor: 'pointer', fontFamily: 'inherit', border: 'none', borderRadius: 10,
+                    background: on ? LIME : 'transparent', color: on ? INK : INK_DIM, transition: 'all .15s',
+                  }}>
+                  <span style={{ fontSize: 15, fontWeight: 800 }}>{opt.label}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '0.06em', textTransform: 'uppercase' as const, opacity: .8 }}>{opt.desc}</span>
+                </button>
+              );
+            })}
           </div>
-          <button
-            onClick={() => setTimeOpen(true)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
-          >
-            ↺ change
-          </button>
-        </div>
-        {timeValue === 'minimal' && (
-          <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: '#fffbeb', border: '1.5px solid #fcd34d', fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#92400e', lineHeight: 1.45 }}>
-            ⚠️ A few hours a week is rarely enough to get a startup off the ground. Consider what it would take to carve out more time before committing.
-          </div>
-        )}
-      </div>
-
-      {/* ── 2. Skills you bring ── */}
-      {/* Direction A: each section stays hidden until the one before it has
-          an answer — `display` toggle (not unmount) so nothing resets while
-          hidden, same pattern used for the Idea steps and Hone step 1/3. */}
-      <div style={{ display: timeValue ? 'block' : 'none' }}>
-        <Section
-          icon="🧠"
-          title="What skills do you bring to the table?"
-          subtitle="Select everything that genuinely applies to you right now."
-        />
-        <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10 }}>
-          {SKILL_CHIPS.map((chip) => {
-            const on = selectedSkills.includes(chip.label);
-            return (
-              <button key={chip.label} onClick={() => toggleSkill(chip.label)}
-                style={{
-                  padding: '8px 15px', cursor: 'pointer',
-                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.02em', fontWeight: 700,
-                  border: `2px solid ${on ? honeColor : '#d8d8d8'}`,
-                  borderRadius: 999,
-                  background: on ? honeColor : '#fffdf8',
-                  color: on ? '#fff' : '#555',
-                  boxShadow: on ? `0 2px 8px ${honeColor}40` : 'none',
-                  transition: 'all .15s',
-                }}>
-                {chip.icon} {on ? '✓ ' : ''}{chip.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── 3. Co-founder ── */}
-      <div style={{ display: selectedSkills.length > 0 ? 'block' : 'none' }}>
-        <Section
-          icon="🤝"
-          title="What kind of co-founder might you need?"
-          subtitle="No commitment yet — just exploring. What skills would complement yours most? You can seek community matches during Validate."
-        />
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
-          {COFOUNDER_ARCHETYPES.map((arch) => {
-            const on = selectedCofounders.includes(arch.val);
-            return (
-              <button key={arch.val} onClick={() => toggleCofounder(arch.val)}
-                style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 10,
-                  padding: '14px 16px', cursor: 'pointer',
-                  fontFamily: 'inherit', textAlign: 'left' as const,
-                  border: `2px solid ${on ? honeColor : '#e0e0e0'}`,
-                  borderRadius: 12,
-                  background: on ? `${honeColor}0f` : '#fff',
-                  boxShadow: on ? `0 2px 8px ${honeColor}22` : '0 1px 2px rgba(0,0,0,.03)',
-                  transition: 'all .15s',
-                }}
-                onMouseEnter={e => { if (!on) { e.currentTarget.style.borderColor = `${honeColor}80`; e.currentTarget.style.background = '#fafafa'; } }}
-                onMouseLeave={e => { if (!on) { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.background = '#fff'; } }}
-              >
-                <span style={{ fontSize: 22, flexShrink: 0, marginTop: 1 }}>{arch.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'inherit', fontSize: 15, fontWeight: 700, color: on ? honeColor : '#1e293b', marginBottom: 2 }}>
-                    {on ? '✓ ' : ''}{arch.label}
-                  </div>
-                  <div style={{ fontFamily: 'inherit', fontSize: 12.5, color: '#8e8e93' }}>{arch.desc}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── 4. Why you ── */}
-      <div style={{ display: selectedCofounders.length > 0 ? 'block' : 'none' }}>
-        <Section
-          icon="🎯"
-          title="Why are YOU the right person to solve this?"
-          subtitle="Investors and customers ask this. Lived experience, domain knowledge, or unique access — what's your edge?"
-        />
-        <textarea
-          rows={4}
-          value={founderFitValue}
-          onChange={e => onFounderFitChange(e.target.value)}
-          placeholder="e.g. I've worked in this industry for 8 years and hit this problem every single day. I know the buyers, the process, and why every existing tool fails…"
-          style={{
-            width: '100%', boxSizing: 'border-box' as const,
-            border: '2px solid #e0e0e0', borderRadius: 10,
-            padding: '12px 14px', fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic',
-            color: USER_INPUT_COLOR, fontWeight: 600, lineHeight: 1.6, resize: 'vertical' as const, outline: 'none',
-            transition: 'border-color .15s',
-          }}
-          onFocus={e => { e.currentTarget.style.borderColor = honeColor; }}
-          onBlur={e => { e.currentTarget.style.borderColor = '#e0e0e0'; }}
-        />
-        <div style={{ textAlign: 'right' as const, fontSize: 11, color: founderFitValue.length > 400 ? '#dc2626' : '#b0b0b8', marginTop: -4, marginBottom: 4 }}>
-          {founderFitValue.length} characters{founderFitValue.trim().length < 20 ? ' · a sentence or two is plenty' : ''}
-        </div>
-        <SuggestionChips
-          chips={FOUNDER_FIT_CHIPS}
-          onSelect={v => {
-            const cur = founderFitValue.trim();
-            if (!cur) { onFounderFitChange(v); return; }
-            onFounderFitChange(`${cur}${/[.!?…]$/.test(cur) ? ' ' : '. '}${v}`);
-          }}
-          accent={honeColor}
-        />
-      </div>
-
-      {/* ── Readiness summary — handwritten postcard style ── */}
-      {(timeValue && selectedSkills.length > 0 && selectedCofounders.length > 0 && founderFitValue.trim()) && (
-        <div style={{
-          background: '#fff', border: `1.5px solid ${honeColor}40`, borderTop: `4px solid ${honeColor}`,
-          borderRadius: 14, padding: '18px 20px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <span style={{ fontSize: 16 }}>🎖️</span>
-            <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: honeColor }}>Founder advantage card</span>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginBottom: 14 }}>
-            <span style={{
-              fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700,
-              padding: '6px 12px', borderRadius: 999, background: honeColor, color: '#fff',
-            }}>
-              ⏰ Bandwidth: {TIME_OPTIONS.find(t => t.val === timeValue)?.label ?? timeValue}
-            </span>
-            <span style={{
-              fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700,
-              padding: '6px 12px', borderRadius: 999, background: honeColor, color: '#fff',
-            }}>
-              🧠 Skills: {selectedSkills.join(', ')}
-            </span>
-            {selectedCofounders.length > 0 && (
-              <span style={{
-                fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700,
-                padding: '6px 12px', borderRadius: 999, background: honeColor, color: '#fff',
-              }}>
-                🤝 Seeking: {selectedCofounders.map(v => COFOUNDER_ARCHETYPES.find(a => a.val === v)?.label ?? v).join(' + ')}
+          {timeOpt && (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 16 }}>
+              <span style={{ fontSize: 'clamp(48px, 7vw, 80px)', fontWeight: 800, color: LIME, lineHeight: 1, letterSpacing: '-0.05em' }}>
+                {timeOpt.val === 'fulltime' ? '40+' : timeOpt.val === '20hrs' ? '20' : timeOpt.val === '10hrs' ? '10' : '<5'}
               </span>
-            )}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 16, fontWeight: 700 }}>hrs / week</span>
+                <span style={{ fontSize: 14, color: INK_DIM }}>{timeOpt.desc}</span>
+              </div>
+            </div>
+          )}
+          {timeValue === 'minimal' && (
+            <div style={{ padding: '10px 14px', borderRadius: 12, background: '#2a2236', fontSize: 14, color: INK_DIM, lineHeight: 1.5 }}>
+              A few hours a week is rarely enough to get a startup off the ground. Consider what it would take to carve out more time before committing.
+            </div>
+          )}
+        </section>
+
+        {/* ── 02. Skills ── */}
+        <section style={{ ...card(false), display: timeValue ? 'flex' : 'none' }}>
+          {cardHead('02', 'What skills do you bring to the table?', 'Select everything that genuinely applies to you right now.')}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 8 }}>
+            {SKILL_CHIPS.map((chip) => {
+              const on = selectedSkills.includes(chip.label);
+              return (
+                <button key={chip.label} onClick={() => toggleSkill(chip.label)}
+                  style={{
+                    borderRadius: 14, padding: 14, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    background: on ? INK : CREAM, color: on ? '#fff' : T1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, textAlign: 'left' as const, transition: 'all .15s',
+                  }}>
+                  {chip.label}
+                  <span style={{ fontSize: 13, color: on ? LIME : T3 }}>{on ? '✓' : '+'}</span>
+                </button>
+              );
+            })}
           </div>
-          <div style={{
-            fontFamily: 'inherit', fontSize: 14.5, color: '#1d1d1f', fontWeight: 500,
-            lineHeight: 1.6, borderTop: `1px solid ${honeColor}22`, paddingTop: 12,
-          }}>
-            <span style={{ fontWeight: 700, color: honeColor }}>Edge: </span>"{founderFitValue.trim()}"
+        </section>
+
+        {/* ── 03. Co-founder ── */}
+        <section style={{ ...card(false), display: selectedSkills.length > 0 ? 'flex' : 'none' }}>
+          {cardHead('03', 'What kind of co-founder might you need?', 'No commitment yet — just exploring. What skills would complement yours most? You can seek community matches during Validate.')}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
+            {COFOUNDER_ARCHETYPES.map((arch) => {
+              const on = selectedCofounders.includes(arch.val);
+              const fillsGap = (arch.val === 'technical' && !selectedSkills.includes('Engineering'))
+                || (arch.val === 'sales' && !selectedSkills.includes('Sales / BD') && !selectedSkills.includes('Marketing'))
+                || (arch.val === 'domain' && !selectedSkills.includes('Domain expertise'));
+              return (
+                <button key={arch.val} onClick={() => toggleCofounder(arch.val)}
+                  style={{
+                    position: 'relative' as const, borderRadius: 16, padding: 16, border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' as const,
+                    background: on ? ACCENT : CREAM, color: on ? '#fff' : T1, display: 'flex', flexDirection: 'column', gap: 2, transition: 'all .15s',
+                  }}>
+                  <span style={{ fontSize: 16, fontWeight: 800 }}>{on ? '✓ ' : ''}{arch.label}</span>
+                  <span style={{ fontSize: 13, color: on ? '#e9ddff' : T3 }}>{arch.desc}</span>
+                  {fillsGap && !on && (
+                    <span style={{ position: 'absolute' as const, top: 10, right: 10, background: LIME, color: INK, fontFamily: MONO, fontSize: 9, fontWeight: 700, padding: '3px 7px', borderRadius: 999, letterSpacing: '0.06em' }}>FILLS YOUR GAP</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
+        </section>
+
+        {/* ── 04. Why you ── */}
+        <section style={{ ...card(false), display: selectedCofounders.length > 0 ? 'flex' : 'none', gap: 14 }}>
+          {cardHead('04', 'Why are you the right person to solve this?', "Investors and customers ask this. Lived experience, domain knowledge, or unique access — what's your edge?")}
+          <textarea
+            rows={3}
+            value={founderFitValue}
+            onChange={e => onFounderFitChange(e.target.value)}
+            placeholder="Your edge, in a sentence or two"
+            style={{
+              width: '100%', boxSizing: 'border-box' as const,
+              border: `1px solid ${BORDER}`, borderRadius: 14,
+              padding: 16, fontSize: 19, fontFamily: 'inherit',
+              color: T1, fontWeight: 500, lineHeight: 1.5, resize: 'vertical' as const, outline: 'none',
+              background: '#fcfbf8', transition: 'border-color .15s',
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = honeColor; }}
+            onBlur={e => { e.currentTarget.style.borderColor = BORDER; }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
+            <span style={{ fontFamily: MONO, fontSize: 10, color: INK_MUTE, letterSpacing: '0.1em' }}>TRY →</span>
+            {FOUNDER_FIT_CHIPS.map(v => (
+              <button key={v} onClick={() => {
+                const cur = founderFitValue.trim();
+                if (!cur) { onFounderFitChange(v); return; }
+                onFounderFitChange(`${cur}${/[.!?…]$/.test(cur) ? ' ' : '. '}${v}`);
+              }} style={{ background: '#faf7ff', color: ACCENT_DEEP, border: 'none', borderRadius: 999, padding: '6px 11px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {v}
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {/* ── Founder advantage card ── */}
+      <div style={{ position: 'sticky' as const, top: 80, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ background: LIME, color: INK, borderRadius: 28, padding: 22, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>
+            <span>Founder advantage card</span>
+            <span style={{ opacity: .7 }}>{filledCount}/4 filled</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 58, height: 58, borderRadius: '50%', background: INK, color: LIME, display: 'grid', placeItems: 'center', fontSize: 20, fontWeight: 800, flexShrink: 0 }}>
+              {archetype.split(/[\s-]/).map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em' }}>{archetype}</span>
+              <span style={{ fontSize: 14, marginTop: 2 }}>{timeOpt ? `${timeOpt.label} · ${timeOpt.desc}` : 'Time commitment not set yet'}</span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em' }}>SKILL COVERAGE</span>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${SKILL_CHIPS.length}, 1fr)`, gap: 3 }}>
+              {skillCoverage.map((on, i) => (
+                <div key={i} title={SKILL_CHIPS[i].label} style={{ height: 10, borderRadius: 5, background: on ? INK : '#16121d22' }} />
+              ))}
+            </div>
+            <span style={{ fontSize: 13 }}>{selectedSkills.length ? selectedSkills.join(' · ') : 'Pick your skills above'}</span>
+          </div>
+          {selectedCofounders.length > 0 && (
+            <div style={{ fontSize: 14 }}>
+              <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em', marginRight: 8 }}>SEEKING</span>
+              {selectedCofounders.map(v => COFOUNDER_ARCHETYPES.find(a => a.val === v)?.label ?? v).join(' + ')}
+            </div>
+          )}
+          {founderFitValue.trim() && (
+            <div style={{ fontSize: 15, lineHeight: 1.5, borderTop: '1px solid #16121d22', paddingTop: 12 }}>
+              <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em', marginRight: 8 }}>EDGE</span>"{founderFitValue.trim()}"
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -6170,7 +5864,7 @@ function FounderReadinessStep({
 const CONSEQUENCE_OPTIONS = [
   { group: '⏰ Time', color: '#7c3aed', items: ['Hours lost weekly', 'Half their day gone', 'Constant firefighting', 'No time to think'] },
   { group: '💸 Money', color: '#059669', items: ['Wasting budget', 'Losing revenue', 'Paying for bad tools', 'Leaving money behind'] },
-  { group: '📉 Growth', color: '#2563eb', items: ["Can't scale", "Falling behind", "Losing customers", "Stuck in place"] },
+  { group: '📉 Growth', color: '#7c3aed', items: ["Can't scale", "Falling behind", "Losing customers", "Stuck in place"] },
   { group: '😤 Frustration', color: '#d97706', items: ['Team burnout', 'Recurring stress', 'Morale drops', 'People quit'] },
   { group: '🔄 Compounds', color: '#dc2626', items: ['Gets worse over time', 'Harder to fix later', 'Debt builds up', 'Competitors pull ahead'] },
 ];
@@ -6196,7 +5890,7 @@ function ConsequenceBuilder({ value, onChange }: { value: string; onChange: (v: 
 
         return (
           <div key={group.group} style={{
-            border: `2px solid ${groupSelected.length > 0 ? group.color + '40' : isOpen ? '#d0d5de' : '#e5e5ea'}`,
+            border: `2px solid ${groupSelected.length > 0 ? group.color + '40' : isOpen ? '#d0d5de' : '#e2ddd1'}`,
             borderRadius: 14, marginBottom: 10, overflow: 'hidden',
             background: groupSelected.length > 0 ? `${group.color}06` : '#fafafa',
             transition: 'border-color .2s, background .2s',
@@ -6212,7 +5906,7 @@ function ConsequenceBuilder({ value, onChange }: { value: string; onChange: (v: 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
                   width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                  background: groupSelected.length > 0 ? group.color : '#f0f0f5',
+                  background: groupSelected.length > 0 ? group.color : '#e8e3d7',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 14, transition: 'background .2s',
                 }}>
@@ -6227,19 +5921,19 @@ function ConsequenceBuilder({ value, onChange }: { value: string; onChange: (v: 
                   </span>
                 )}
               </div>
-              <span style={{ fontSize: 12, color: '#b0b0b8', display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
+              <span style={{ fontSize: 12, color: '#8a8299', display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}>▾</span>
             </div>
 
             {/* Chips — shown when open */}
             {isOpen && (
-              <div style={{ padding: '0 18px 16px', borderTop: '1.5px solid #f0f0f5' }}>
+              <div style={{ padding: '0 18px 16px', borderTop: '1.5px solid #e8e3d7' }}>
                 <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, paddingTop: 12 }}>
                   {group.items.map(item => {
                     const on = selected.includes(item);
                     return (
                       <button key={item} onClick={() => toggle(item)} style={{
                         padding: '7px 14px', borderRadius: 20, cursor: 'pointer',
-                        border: `2px solid ${on ? group.color : '#e5e5ea'}`,
+                        border: `2px solid ${on ? group.color : '#e2ddd1'}`,
                         background: on ? `${group.color}12` : '#fff',
                         color: on ? group.color : '#3a3a3c',
                         fontSize: 13, fontWeight: on ? 700 : 500,
@@ -6306,26 +6000,26 @@ function FrequencyPicker({ value, onChange }: { value: string; onChange: (v: str
             style={{
               display: 'flex', alignItems: 'center', gap: 14,
               padding: '14px 18px', borderRadius: 14, cursor: 'pointer',
-              border: `2px solid ${on ? accent + '50' : '#e5e5ea'}`,
+              border: `2px solid ${on ? accent + '50' : '#e2ddd1'}`,
               background: on ? `${accent}08` : '#fafafa',
               transition: 'all .15s',
             }}
           >
             <div style={{
               width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-              background: on ? accent : '#f0f0f5',
+              background: on ? accent : '#e8e3d7',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 18, transition: 'background .2s',
             }}>
               {opt.icon}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: on ? 700 : 500, color: on ? accent : '#1d1d1f' }}>{opt.label}</div>
-              <div style={{ fontSize: 11, color: '#8e8e93', marginTop: 1 }}>{opt.desc}</div>
+              <div style={{ fontSize: 14, fontWeight: on ? 700 : 500, color: on ? accent : '#16121d' }}>{opt.label}</div>
+              <div style={{ fontSize: 11, color: '#6f6880', marginTop: 1 }}>{opt.desc}</div>
             </div>
             <div style={{
               width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-              border: `2px solid ${on ? accent : '#d2d2d7'}`,
+              border: `2px solid ${on ? accent : '#d9d3c5'}`,
               background: on ? accent : 'transparent',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all .15s',
@@ -6376,48 +6070,37 @@ function ProblemContextCard({ who, problems, pain, problemCount }: { who: string
   const [open, setOpen] = useState(false);
   if (!who && !problems) return null;
   const summaryLabel = problemCount
-    ? `💭 Solving for ${problemCount} problem${problemCount !== 1 ? 's' : ''}${who ? ` in ${who}` : ''}`
-    : `💭 Remember — what you're solving`;
+    ? <><strong style={{ fontWeight: 800 }}>Solving for {problemCount} problem{problemCount !== 1 ? 's' : ''}</strong>{who ? <> felt by {who}</> : null}</>
+    : <strong style={{ fontWeight: 800 }}>Remember — what you're solving</strong>;
   return (
-    <div style={{
-      background: '#fefce8', border: '1.5px solid #fde047', borderRadius: 10,
-      marginTop: -10, marginBottom: 10,
-      boxShadow: '2px 3px 0px #fde04788',
-      overflow: 'hidden',
-    }}>
+    <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden' }}>
       {/* Header / toggle */}
       <button
         onClick={() => setOpen(o => !o)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '10px 14px', background: 'none', border: 'none', cursor: 'pointer',
-          textAlign: 'left' as const,
+          padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer',
+          textAlign: 'left' as const, fontFamily: 'inherit', gap: 8,
         }}
       >
-        <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.04em', textTransform: 'uppercase' as const, color: '#a16207' }}>
+        <span style={{ fontFamily: 'inherit', fontSize: 14, color: T1 }}>
           {summaryLabel}
         </span>
-        <span style={{ fontSize: 11, color: '#a16207', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
-          {open ? 'collapse' : 'click to expand'}
+        <span style={{ fontFamily: MONO, fontSize: 11, color: ACCENT_DEEP, display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+          {open ? 'collapse' : 'show context'}
           <span style={{ fontSize: 13, transition: 'transform .2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
         </span>
       </button>
 
       {/* Collapsible body */}
       {open && (
-        <div style={{ padding: '0 14px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {who && (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>👥</span>
-              <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#713f12', lineHeight: 1.35 }}><strong style={{ fontWeight: 700 }}>For:</strong> {who}</span>
-            </div>
+            <div style={{ fontSize: 13, padding: '6px 10px', borderRadius: 10, background: CREAM, color: T1 }}><span style={{ fontFamily: MONO, fontSize: 10, color: T3, marginRight: 8 }}>FOR</span>{who}</div>
           )}
           {problems && (
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 13, flexShrink: 0, marginTop: 2 }}>📝</span>
-              <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#1c1c1e', fontWeight: 600, lineHeight: 1.35 }}>
-                "{problems}"
-              </span>
+            <div style={{ fontSize: 14, padding: '8px 10px', borderRadius: 10, background: '#faf7ff', color: T1, fontWeight: 600, lineHeight: 1.4 }}>
+              "{problems}"
             </div>
           )}
           {pain.length > 0 && (
@@ -6426,9 +6109,9 @@ function ProblemContextCard({ who, problems, pain, problemCount }: { who: string
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {pain.map((p) => (
                   <span key={p} style={{
-                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.03em', textTransform: 'uppercase' as const,
-                    padding: '3px 10px', borderRadius: 4, background: '#fef3c7', color: '#92400e',
-                    border: '1px solid #fde68a', display: 'inline-block',
+                    fontFamily: MONO, fontSize: 10, letterSpacing: '.06em', textTransform: 'uppercase' as const,
+                    padding: '4px 10px', borderRadius: 999, background: CREAM, color: T2,
+                    display: 'inline-block',
                   }}>{p}</span>
                 ))}
               </div>
@@ -6466,8 +6149,8 @@ const RANK_SLOT_META: { label: string; icon: string }[] = [
   { label: '#3 Alternate', icon: '🥉' },
 ];
 const rankArrowStyle = (disabled: boolean): React.CSSProperties => ({
-  width: 18, height: 13, border: 'none', background: 'transparent', padding: 0,
-  fontSize: 8, lineHeight: 1, color: disabled ? '#e5e5ea' : '#9a9aa0',
+  width: 22, height: 16, border: 'none', background: 'transparent', padding: 0,
+  fontSize: 10, lineHeight: 1, color: disabled ? 'rgba(128,128,128,.35)' : 'inherit',
   cursor: disabled ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
 });
 
@@ -6667,23 +6350,20 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
   const alternativesReviewedCount = allAlternativesFlat.length - remainingAlternativesQueue.length;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20, alignItems: 'start' }}>
 
       <style>{`
         @keyframes sageDotBounce { 0%, 80%, 100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-7px); opacity: 1; } }
       `}</style>
 
-      {/* ── Coping Quest panel — same white panel + purple accent + dark
-          card-stack language as Step 2's Problem Quest, folded in
-          2026-09-19 so this step no longer looks like an older,
-          unmigrated design next to its neighbors. ── */}
+      {/* ── Column 1: the coping deck (2026-10 redesign) ── */}
+      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 14, minWidth: 0 }}>
       <div style={{
-        position: 'relative' as const, borderRadius: 20, overflow: 'hidden',
-        background: '#ffffff', border: '1px solid #ece6fb', boxShadow: '0 10px 30px -16px rgba(76,49,140,.18)',
-        padding: '20px 20px 22px', display: 'flex', flexDirection: 'column' as const, gap: 16,
+        position: 'relative' as const,
+        display: 'flex', flexDirection: 'column' as const, gap: 16,
       }}>
-        <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#6d28d9' }}>
-          Coping Quest · How are they solving this today?
+        <span style={eyebrow(ACCENT)}>
+          Coping quest · How are they solving this today?
         </span>
 
       {/* ── Chip grid by category — whiteboard style, AI-tailored once ── */}
@@ -6694,7 +6374,7 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
             <span style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.15s' }} />
             <span style={{ width: 9, height: 9, borderRadius: '50%', background: c, display: 'inline-block', animation: 'sageDotBounce 1.1s ease-in-out infinite', animationDelay: '.3s' }} />
           </div>
-          <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#4b3d73', fontWeight: 600 }}>
+          <span style={{ fontFamily: 'inherit', fontStyle: 'italic', fontSize: 16, color: '#4b3d73', fontWeight: 600 }}>
             Sage is reading your problem and coming up with how people cope today…
           </span>
         </div>
@@ -6715,8 +6395,8 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
       {displayGroups.length > 0 && (
         <div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' as const }}>
-            <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 16, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#2e1f52' }}>
-              Rank how people cope today
+            <div style={{ fontFamily: 'inherit', fontSize: 15, color: T2 }}>
+              Is this how your customer copes today?
             </div>
             <button
               onClick={retryAltChips}
@@ -6730,76 +6410,71 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
               {genState.loading ? 'asking Sage…' : 'ask Sage again'}
             </button>
           </div>
-          <div style={{ borderTop: '2px solid #7c3aed', marginTop: 3, maxWidth: 120 }} />
         </div>
       )}
       {displayGroups.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ flex: 1, minWidth: 140 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#7c6a9e', marginBottom: 4 }}>
+            <div style={{ fontFamily: MONO, fontSize: 11, color: T3, marginBottom: 6 }}>
               {currentAlternative
                 ? `Card ${Math.min(alternativesReviewedCount + 1, allAlternativesFlat.length)} of ${allAlternativesFlat.length}`
                 : `${Math.min(alternativesReviewedCount, allAlternativesFlat.length)} of ${allAlternativesFlat.length} reviewed`}
             </div>
-            <div style={{ height: 5, borderRadius: 999, background: '#ece6fb', overflow: 'hidden' }}>
+            <div style={{ height: 6, borderRadius: 3, background: BORDER, overflow: 'hidden' }}>
               <div style={{
-                height: '100%', borderRadius: 999, background: 'linear-gradient(90deg,#7c3aed,#a78bfa)',
+                height: '100%', borderRadius: 3, background: ACCENT,
                 width: `${allAlternativesFlat.length ? (alternativesReviewedCount / allAlternativesFlat.length) * 100 : 0}%`,
                 transition: 'width .25s ease',
               }} />
             </div>
           </div>
           {currentAlternative ? (
+            <>
             <div style={{ position: 'relative' as const, width: '100%' }}>
               {/* Card-stack illusion — two faded, offset cards peeking out
                   from behind the active one. Same treatment as Step 2's
                   queue; purely decorative, nothing to keep in sync. */}
               {remainingAlternativesQueue.length > 2 && (
-                <div style={{ position: 'absolute', inset: 0, top: 12, transform: 'scale(.96) rotate(1deg)', background: '#291f47', border: '1.5px solid #3a2d63', borderRadius: 14, zIndex: 0 }} />
+                <div style={{ position: 'absolute', inset: 0, top: 12, transform: 'scale(.96) rotate(1deg)', background: '#d9d3c5', borderRadius: 24, zIndex: 0 }} />
               )}
               {remainingAlternativesQueue.length > 1 && (
-                <div style={{ position: 'absolute', inset: 0, top: 6, transform: 'scale(.98) rotate(-.6deg)', background: '#302553', border: '1.5px solid #43356f', borderRadius: 14, zIndex: 1 }} />
+                <div style={{ position: 'absolute', inset: 0, top: 6, transform: 'scale(.98) rotate(-.6deg)', background: '#3a3148', borderRadius: 24, zIndex: 1 }} />
               )}
               <div style={{
                 position: 'relative' as const, zIndex: 2,
-                background: 'linear-gradient(160deg, #2f2354, #221a3d)', border: '1.5px solid #4c3f80',
-                borderRadius: 14, padding: '24px 22px', boxShadow: '0 16px 32px -14px rgba(43,25,82,.5)',
-                display: 'flex', flexDirection: 'column', gap: 14,
+                background: INK, color: INK_TXT,
+                borderRadius: 28, padding: 'clamp(22px, 3vw, 34px)',
+                display: 'flex', flexDirection: 'column', gap: 18,
               }}>
-                <div style={{
-                  alignSelf: 'flex-start', fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11,
-                  letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#c4b5fd',
-                  border: '1.5px solid #c4b5fd', padding: '3px 10px', borderRadius: 999,
-                }}>
-                  {currentAlternative.category}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '5px 12px', color: LIME, border: '1px solid #3a3148', letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>
+                    {currentAlternative.category}
+                  </span>
+                  <span style={{ fontFamily: MONO, fontSize: 12, color: INK_MUTE }}>
+                    {Math.min(alternativesReviewedCount + 1, allAlternativesFlat.length)} / {allAlternativesFlat.length}
+                  </span>
                 </div>
-                <div style={{ fontFamily: 'inherit', fontSize: 18, fontWeight: 500, lineHeight: 1.5, color: '#fff' }}>
+                <p style={{ margin: 0, fontFamily: 'inherit', fontSize: 'clamp(24px, 2.8vw, 36px)', fontWeight: 700, lineHeight: 1.12, letterSpacing: '-0.02em' }}>
                   {currentAlternative.text}
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button
-                    onClick={() => setSkippedAlternatives(prev => { const next = new Set(prev); next.add(currentAlternative.text); return next; })}
-                    style={{
-                      flex: 1, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
-                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
-                      border: '1.5px solid #4c3f80', background: 'transparent', color: '#b0a4d6', fontWeight: 700,
-                    }}
-                  >
-                    Skip
-                  </button>
-                  <button
-                    onClick={() => toggle(currentAlternative.text)}
-                    style={{
-                      flex: 2, padding: '10px 4px', borderRadius: 9, cursor: 'pointer',
-                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12.5, letterSpacing: '.03em',
-                      border: '1.5px solid #a78bfa', background: '#a78bfa14', color: '#c4b5fd', fontWeight: 700,
-                    }}
-                  >
-                    + Add
-                  </button>
-                </div>
+                </p>
+                <span style={{ fontSize: 13, color: INK_MUTE }}>Is this how your customer copes today?</span>
               </div>
             </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 8 }}>
+              <button
+                onClick={() => setSkippedAlternatives(prev => { const next = new Set(prev); next.add(currentAlternative.text); return next; })}
+                style={{ borderRadius: 16, padding: 18, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 17, fontWeight: 800, background: CREAM2, color: T2 }}
+              >
+                Not it
+              </button>
+              <button
+                onClick={() => toggle(currentAlternative.text)}
+                style={{ borderRadius: 16, padding: 18, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 17, fontWeight: 800, background: ACCENT, color: '#fff' }}
+              >
+                + Add to ranking
+              </button>
+            </div>
+            </>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, fontSize: 13, color: '#7c6a9e', padding: '10px 2px' }}>
               <span>{skippedAlternatives.size > 0 ? `You've been through all ${allAlternativesFlat.length} suggestions.` : `That's everything Sage suggested — nice work.`}</span>
@@ -6822,21 +6497,21 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
             value={customText}
             onChange={e => setCustomText(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') addCustom(); if (e.key === 'Escape') setShowCustom(false); }}
-            placeholder="Describe another approach they use…"
-            style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: `2px solid ${c}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: USER_INPUT_COLOR }}
+            placeholder="+ Add your own way people cope"
+            style={{ flex: 1, minWidth: 0, padding: '14px 16px', borderRadius: 14, border: `1px solid ${BORDER}`, background: '#fff', fontSize: 15, fontFamily: 'inherit', outline: 'none', color: T1 }}
           />
           <button onClick={addCustom} disabled={!customText.trim()}
-            style={{ padding: '9px 14px', borderRadius: 8, background: customText.trim() ? c : '#e5e5ea', color: customText.trim() ? '#fff' : T3, border: 'none', fontSize: 13, fontWeight: 600, cursor: customText.trim() ? 'pointer' : 'default' }}>
+            style={{ padding: '0 18px', borderRadius: 14, background: customText.trim() ? INK : CREAM2, color: customText.trim() ? LIME : T3, border: 'none', fontSize: 15, fontWeight: 800, cursor: customText.trim() ? 'pointer' : 'default' }}>
             Add
           </button>
           <button onClick={() => setShowCustom(false)}
-            style={{ padding: '9px 12px', borderRadius: 8, background: '#f0f0f5', color: T2, border: 'none', fontSize: 13, cursor: 'pointer' }}>
+            style={{ padding: '0 14px', borderRadius: 14, background: 'transparent', color: T2, border: `1px solid ${BORDER2}`, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
             Cancel
           </button>
         </div>
       ) : (
         <button onClick={() => setShowCustom(true)}
-          style={{ alignSelf: 'flex-start' as const, padding: '8px 14px', borderRadius: 8, border: `2px dashed ${BORDER}`, background: 'transparent', color: T2, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+          style={{ alignSelf: 'flex-start' as const, padding: 0, border: 'none', background: 'transparent', color: ACCENT_DEEP, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
           + Add your own
         </button>
       )}
@@ -6847,40 +6522,49 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
           a confident "Your hypothesis: ..." card while the loading indicator above
           still says "reading your problem..." reads as a contradiction. It reappears
           the instant loading finishes. */}
-      {items.length > 0 && !pickerLoading && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      </div>
 
-          {/* Top 3 ranked slots — replaces the flat ★/× list. ▲▼ reorder;
-              only #1 feeds the hypothesis/Validate downstream, but real
-              #2/#3 slots make the ranking visible at a glance. */}
+      {/* ── Column 2: hypothesis + ranking (2026-10 redesign) ── */}
+      {items.length > 0 && !pickerLoading && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, position: 'sticky' as const, top: 80 }}>
+
+          {items.length >= 1 && (
+            <div style={{ background: LIME, color: INK, borderRadius: 24, padding: 'clamp(20px, 2.5vw, 28px)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>
+                <span>Your hypothesis</span>
+                <span style={{ opacity: .7 }}>Test in Validate</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 'clamp(19px, 2vw, 24px)', fontWeight: 600, lineHeight: 1.3 }}>
+                Most people are solving this by {(items[0].charAt(0).toLowerCase() + items[0].slice(1)).replace(/[.。]+$/, '')}.
+              </p>
+            </div>
+          )}
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase' as const, color: '#b0b0b8' }}>
-              Ranked — #1 becomes your hypothesis
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '4px 4px 0' }}>
+              <span style={eyebrow(T3)}>Ranked — #1 becomes your hypothesis</span>
+              <span style={{ fontSize: 12, color: INK_MUTE }}>▲▼ to reorder</span>
             </div>
             {RANK_SLOT_META.map((slot, i) => {
               const item = items[i];
               if (!item) {
                 return (
-                  <div key={i} style={{ border: '1.5px dashed #e0e0e0', borderRadius: 10, padding: '11px 14px', fontSize: 12.5, fontWeight: 600, color: '#c7c7cc' }}>
-                    {slot.icon} {slot.label} — empty
+                  <div key={i} style={{ border: `1.5px dashed ${BORDER2}`, borderRadius: 16, padding: '12px 14px', fontSize: 13, fontWeight: 600, color: T3 }}>
+                    #{i + 1} · {slot.label} — empty
                   </div>
                 );
               }
               const category = allAlternativesFlat.find(a => a.text === item)?.category || 'Custom';
               return (
                 <div key={item} style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  border: `1.5px solid ${i === 0 ? c : '#e5e5ea'}`, borderRadius: 10, padding: '10px 12px',
-                  background: i === 0 ? `${c}0d` : '#fff',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  borderRadius: 16, padding: '12px 12px 12px 14px',
+                  background: i === 0 ? INK : '#fff', color: i === 0 ? INK_TXT : T1,
                 }}>
-                  <span style={{ fontSize: 17, flexShrink: 0 }}>{slot.icon}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <span style={{
-                      fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 9.5, letterSpacing: '.05em',
-                      textTransform: 'uppercase' as const, color: c, border: `1px solid ${c}`,
-                      borderRadius: 999, padding: '1px 7px', marginRight: 7,
-                    }}>{category}</span>
-                    <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: i === 0 ? '#1e293b' : '#555', fontWeight: i === 0 ? 600 : 500 }}>{item}</span>
+                  <span style={{ fontSize: i === 0 ? 28 : 20, fontWeight: 800, width: 34, flexShrink: 0, color: i === 0 ? LIME : T3, letterSpacing: '-0.04em', lineHeight: 1 }}>{i + 1}</span>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: i === 0 ? INK_MUTE : ACCENT }}>{category} · {slot.label}</span>
+                    <span style={{ fontFamily: 'inherit', fontSize: 15, fontWeight: 600, lineHeight: 1.35 }}>{item}</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 1, flexShrink: 0 }}>
                     <button onClick={() => moveItem(item, -1)} disabled={i === 0} title="Move up" style={rankArrowStyle(i === 0)}>▲</button>
@@ -6892,21 +6576,12 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
             })}
           </div>
 
-          {/* Hypothesis — moved right under the ranking so it updates live
-              without scrolling past everything else you've added. */}
-          {items.length >= 2 && (
-            <div style={{ ...postcardStyle(1), fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 700, color: '#065f46', padding: '11px 15px' }}>
-              <PostcardStamp top={8} right={10} />
-              <strong>Your hypothesis:</strong> Most people are solving this by <em>{items[0].charAt(0).toLowerCase() + items[0].slice(1)}</em>. You'll test this in Validate.
-            </div>
-          )}
-
           {/* Everything beyond the top 3 — collapsed by default so a long
               pick list doesn't turn back into a wall of rows. */}
           {items.length > 3 && (
             <div>
               <button onClick={() => setShowAllRanked(o => !o)} style={{
-                fontSize: 12, fontWeight: 700, color: '#8e8e93', background: 'none', border: 'none',
+                fontSize: 12, fontWeight: 700, color: '#6f6880', background: 'none', border: 'none',
                 cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 4,
               }}>
                 {showAllRanked ? 'Hide' : `+${items.length - 3} more pick${items.length - 3 !== 1 ? 's' : ''}`}
@@ -6919,11 +6594,11 @@ const AlternativeRankingStep = React.forwardRef<AlternativeRankingHandle, {
                     return (
                       <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, border: '1px solid #ececec', background: '#fafafa' }}>
                         <span style={{
-                          fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 9.5, letterSpacing: '.05em',
-                          textTransform: 'uppercase' as const, color: '#8e8e93', border: '1px solid #d2d2d7',
+                          fontFamily: 'inherit', fontSize: 9.5, letterSpacing: '.05em',
+                          textTransform: 'uppercase' as const, color: '#6f6880', border: '1px solid #d9d3c5',
                           borderRadius: 999, padding: '1px 7px', flexShrink: 0,
                         }}>{category}</span>
-                        <span style={{ flex: 1, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#555' }}>{item}</span>
+                        <span style={{ flex: 1, fontFamily: 'inherit', fontStyle: 'italic', fontSize: 14, color: '#555' }}>{item}</span>
                         <button onClick={() => moveItem(item, -1)} title="Move up into ranked slots" style={rankArrowStyle(false)}>▲</button>
                         <button onClick={() => remove(item)} title="Remove" style={{ width: 18, height: 18, border: 'none', background: 'transparent', color: '#ccc', fontSize: 14, cursor: 'pointer', flexShrink: 0 }}>×</button>
                       </div>
@@ -7026,112 +6701,91 @@ const WEAK_SIGNAL_ADVICE: Record<string, string> = {
 function HoneScorecard({ values, onChange }: { values: Record<string, string>; onChange: (k: string, v: string) => void }) {
   const total = SCORE_DIMS.reduce((s, d) => s + (parseInt(values[d.key] ?? '0') || 0), 0);
   const pct = Math.round((total / 40) * 100);
-  // 2026-09-19: purple, not Hone's nominal stage blue -- same accent as
-  // Steps 1-3's interior elements. Grade colors (green/amber/red) are
-  // semantic (Strong/Needs work/Weak), not the accent, and stay as-is.
-  const c = '#7c3aed';
-  const grade = total >= 32 ? { label: 'Strong — move to Validate.', short: 'Strong',    bg: '#f0fdf4', bc: '#059669', tc: '#065f46' }
-    : total >= 20 ? { label: 'Needs refinement. Revisit Who + What.', short: 'Needs work', bg: '#fffbeb', bc: '#d97706', tc: '#92400e' }
-    : { label: 'Likely vague — deepen your thinking.', short: 'Weak', bg: '#fef2f2', bc: '#dc2626', tc: '#991b1b' };
-  // Direction A: which already-answered dimension (if any) the user has
-  // explicitly reopened via "change" to re-score. Separate from the values
-  // themselves so reopening a row never clears its score — only one row is
-  // ever reopened at a time, mirroring the mockup's "1 of 8" chat flow.
-  const [reopenedKey, setReopenedKey] = useState<string | null>(null);
+  const grade = total >= 32 ? { label: 'Strong — move to Validate.', short: 'Strong', color: '#15803d' }
+    : total >= 20 ? { label: 'Needs refinement. Revisit Who + What.', short: 'Needs work', color: '#b45309' }
+    : { label: 'Likely vague — deepen your thinking.', short: 'Weak', color: '#b42318' };
+  const readColor = total >= 32 ? LIME : total >= 20 ? '#fbbf24' : '#f87171';
+  const answeredCount = SCORE_DIMS.filter(d => values[d.key] !== undefined && values[d.key] !== '').length;
+  const weakest = SCORE_DIMS
+    .filter(d => values[d.key] !== undefined && values[d.key] !== '')
+    .sort((a, b) => (parseInt(values[a.key]) || 0) - (parseInt(values[b.key]) || 0))[0];
+
+  // 2026-10 redesign: every dimension is one row of a white table with a
+  // 0–5 mono picker on the right; rows reveal one at a time (the previous
+  // row must be answered) so the founder scores in order. The ink
+  // "Strength index" card on the right updates live.
   return (
-    <div style={{ ...col, maxWidth: 800 }}>
-      {/* ── Strength Index gauge — sticky so it stays visible and updates
-          live while scrolling through all 8 dimensions, instead of a total
-          buried at the very bottom of the list. ── */}
-      <div style={{
-        position: 'sticky' as const, top: 0, zIndex: 3, background: '#fff',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14,
-        paddingBottom: 12, marginBottom: 4, borderBottom: `1px solid ${BORDER}`,
-      }}>
-        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 500, color: '#334155' }}>Score each dimension 0–5 based on what you know today.</div>
-        <div key={total} style={{
-          display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-end', gap: 2, flexShrink: 0,
-          padding: '8px 16px', borderRadius: 14, background: grade.bg, border: `2px solid ${grade.bc}`,
-          animation: 'tickPop .4s ease',
-        }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: grade.tc, textTransform: 'uppercase' as const, letterSpacing: '.06em' }}>Strength Index</span>
-          <span style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-            <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, fontWeight: 800, color: grade.bc }}>{pct}%</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: grade.tc }}>{grade.short}</span>
-          </span>
-        </div>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20, alignItems: 'start' }}>
+      <div style={{ background: '#fff', borderRadius: 24, overflow: 'hidden' }}>
+        {SCORE_DIMS.map((d, di) => {
+          const cur = parseInt(values[d.key] ?? '0') || 0;
+          const prevAnswered = di === 0 || (values[SCORE_DIMS[di - 1].key] !== undefined && values[SCORE_DIMS[di - 1].key] !== '');
+          const answered = values[d.key] !== undefined && values[d.key] !== '';
+          const isWeak = answered && cur <= 2;
+          return (
+            <div key={d.key} style={{
+              display: prevAnswered ? 'flex' : 'none', flexDirection: 'column', gap: 12,
+              padding: '18px clamp(16px, 2.4vw, 24px)', borderTop: di === 0 ? 'none' : `1px solid ${BORDER}`,
+              background: !answered ? '#faf7ff' : '#fff',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px 20px', flexWrap: 'wrap' as const }}>
+                <div style={{ display: 'flex', gap: 12, flex: 1, minWidth: 220 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 4 }}>{String(di + 1).padStart(2, '0')}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.2, color: T1 }}>{d.label}</span>
+                    <span style={{ fontSize: 14, color: T2, lineHeight: 1.4 }}>{d.desc}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {[0, 1, 2, 3, 4, 5].map(n => {
+                    const on = answered && cur === n;
+                    return (
+                      <button key={n} onClick={() => onChange(d.key, String(n))} style={{
+                        width: 40, height: 40, borderRadius: 10, border: 'none', cursor: 'pointer',
+                        fontFamily: MONO, fontSize: 14, fontWeight: 700,
+                        background: on ? INK : CREAM, color: on ? LIME : T2, transition: 'all .12s',
+                      }}>{n}</button>
+                    );
+                  })}
+                </div>
+              </div>
+              {isWeak && (
+                <div style={{ fontSize: 13, padding: '10px 12px', borderRadius: 10, background: '#ffece6', color: '#9a2b12', lineHeight: 1.45 }}>
+                  {WEAK_SIGNAL_ADVICE[d.key]}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {SCORE_DIMS.map((d, di) => {
-        const cur = parseInt(values[d.key] ?? '0') || 0;
-        // Direction A: dimensions reveal one at a time, mirroring the
-        // mockup's "1 of 8 at a time, running total kept quietly" — each
-        // row waits until the row before it has an answer. Checks the raw
-        // string value rather than `cur` (a parsed number, which reads as
-        // 0 both when a row is unanswered AND when someone deliberately
-        // scores a dimension 0) so a real "0" score still counts as
-        // answered and unlocks the next row. `display` toggle keeps every
-        // row mounted so later rows' own scores aren't lost while hidden.
-        const prevAnswered = di === 0 || (values[SCORE_DIMS[di - 1].key] !== undefined && values[SCORE_DIMS[di - 1].key] !== '');
-        const answered = values[d.key] !== undefined && values[d.key] !== '';
-        // The 0-5 picker stays open until answered, then collapses to a
-        // compact echo badge — reopened only by tapping "change".
-        const rowOpen = !answered || reopenedKey === d.key;
-        const isWeak = answered && cur <= 2;
-        return (
-          <div key={d.key} style={{
-            display: prevAnswered ? 'block' : 'none',
-            border: `1.5px solid ${isWeak ? '#fecaca' : '#e2e8f0'}`, borderRadius: 12,
-            padding: '14px 16px', background: '#fff',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 4 }}>
-              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#1e293b' }}>{d.label}</div>
-              <div style={{ display: !rowOpen ? 'flex' : 'none', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15,
-                  background: c, color: '#fff',
-                }}>{cur}</div>
-                <button
-                  onClick={() => setReopenedKey(d.key)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11, fontWeight: 600, color: T3, fontFamily: 'inherit' }}
-                >
-                  ↺ change
-                </button>
-              </div>
-            </div>
-            <div style={{ fontSize: 12.5, color: '#8e8e93', marginBottom: 10 }}>{d.desc}</div>
-            <div style={{ display: rowOpen ? 'flex' : 'none', flexDirection: 'column' as const, gap: 6 }}>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {[0, 1, 2, 3, 4, 5].map(n => (
-                  <button key={n} onClick={() => { onChange(d.key, String(n)); setReopenedKey(null); }} style={{
-                    flex: 1, height: 38, borderRadius: 9,
-                    fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15, cursor: 'pointer',
-                    border: `2px solid ${cur === n ? c : '#d8d8d8'}`,
-                    background: cur === n ? c : '#fffdf8',
-                    color: cur === n ? '#fff' : '#555',
-                    transition: 'all .15s',
-                  }}>{n}</button>
-                ))}
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#b0b0b8' }}>
-                <span>0 = Not at all</span>
-                <span>5 = Completely</span>
-              </div>
-            </div>
-            {isWeak && (
-              <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 13, flexShrink: 0 }}>💡</span>
-                <span style={{ fontSize: 12, color: '#991b1b', lineHeight: 1.45 }}>{WEAK_SIGNAL_ADVICE[d.key]}</span>
-              </div>
+      <div style={{ position: 'sticky' as const, top: 80, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div key={total} style={{ background: INK, color: INK_TXT, borderRadius: 28, padding: 22, display: 'flex', flexDirection: 'column', gap: 16, animation: 'tickPop .4s ease' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const, color: INK_MUTE }}>
+            <span>Strength index</span>
+            <span style={{ color: readColor }}>{answeredCount}/{SCORE_DIMS.length} scored</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+            <span style={{ fontSize: 'clamp(72px, 8vw, 104px)', fontWeight: 800, color: readColor, lineHeight: 1, letterSpacing: '-0.05em' }}>{total}</span>
+            <span style={{ fontSize: 20, fontWeight: 700, color: INK_MUTE }}>/ 40 · {pct}%</span>
+          </div>
+          <div style={{ position: 'relative', height: 12, borderRadius: 6, background: '#2a2236' }}>
+            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 6, background: readColor, width: `${pct}%`, transition: 'width .3s' }} />
+            <div style={{ position: 'absolute', left: '50%', top: -3, bottom: -3, width: 2, background: INK_TXT }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 10, color: INK_MUTE }}>
+            <span>0</span>
+            <span style={{ color: INK_TXT }}>20 · VALIDATE UNLOCKS</span>
+            <span>40</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontFamily: MONO, fontSize: 10, color: INK_MUTE, letterSpacing: '0.1em' }}>OVERALL READ</span>
+            <span style={{ fontSize: 20, fontWeight: 800 }}>{answeredCount === 0 ? 'Start scoring' : grade.label}</span>
+            {weakest && (parseInt(values[weakest.key]) || 0) <= 2 && (
+              <span style={{ fontSize: 14, color: INK_DIM }}>Weakest: {weakest.label.toLowerCase()} ({values[weakest.key]}/5).</span>
             )}
           </div>
-        );
-      })}
-
-      <div style={{ borderRadius: 12, border: `1.5px solid ${grade.bc}40`, background: grade.bg, padding: '14px 18px' }}>
-        <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 11, letterSpacing: '.05em', textTransform: 'uppercase' as const, color: grade.tc, marginBottom: 3 }}>Overall read</div>
-        <div style={{ fontSize: 15, color: grade.tc, fontWeight: 700 }}>{grade.label}</div>
+        </div>
       </div>
     </div>
   );
@@ -7168,7 +6822,7 @@ function BMCCanvas({ values, onChange }: { values: Record<string, string>; onCha
   const [editMode, setEditMode] = useState(false);
   const exportBMC = () => {
     const win = window.open('', '_blank'); if (!win) return;
-    win.document.write(`<!DOCTYPE html><html><head><title>BMC</title><style>body{font-family:-apple-system,sans-serif;padding:40px;max-width:900px;margin:0 auto}.block{margin-bottom:16px;padding:14px 16px;border:1.5px solid #e5e7eb;border-radius:10px}.bl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6e6e73;margin-bottom:5px}.bv{font-size:13px;white-space:pre-wrap;line-height:1.6;color:#111}</style></head><body><h1>Business Model Canvas</h1>${BMC_DEFS.map(b=>`<div class="block"><div class="bl">${b.label}</div><div class="bv">${values[b.key]||'–'}</div></div>`).join('')}<script>window.print()<\/script></body></html>`);
+    win.document.write(`<!DOCTYPE html><html><head><title>BMC</title><style>body{font-family:-apple-system,sans-serif;padding:40px;max-width:900px;margin:0 auto}.block{margin-bottom:16px;padding:14px 16px;border:1.5px solid #e5e7eb;border-radius:10px}.bl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#4a4357;margin-bottom:5px}.bv{font-size:13px;white-space:pre-wrap;line-height:1.6;color:#111}</style></head><body><h1>Business Model Canvas</h1>${BMC_DEFS.map(b=>`<div class="block"><div class="bl">${b.label}</div><div class="bv">${values[b.key]||'–'}</div></div>`).join('')}<script>window.print()<\/script></body></html>`);
     win.document.close();
   };
   if (editMode) return (
@@ -7185,7 +6839,7 @@ function BMCCanvas({ values, onChange }: { values: Record<string, string>; onCha
       ))}
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={exportBMC} style={{ flex: 1, padding: '10px', borderRadius: 8, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>🖨 Export</button>
-        <button onClick={() => setEditMode(false)} style={{ flex: 2, padding: '10px', borderRadius: 8, border: 'none', background: '#1d1d1f', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Done</button>
+        <button onClick={() => setEditMode(false)} style={{ flex: 2, padding: '10px', borderRadius: 8, border: 'none', background: '#16121d', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Done</button>
       </div>
     </div>
   );
@@ -7279,7 +6933,7 @@ function ValidationLearningsBuilder({ value, onChange }: { value: string; onChan
 
       {/* Pain signal */}
       <div>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#b0b0b8', marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#8a8299', marginBottom: 10 }}>
           Overall pain signal from your conversations
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -7304,7 +6958,7 @@ function ValidationLearningsBuilder({ value, onChange }: { value: string; onChan
       {/* Willingness to pay */}
       {signal && (
         <div style={{ animation: 'wup .2s ease' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#b0b0b8', marginBottom: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#8a8299', marginBottom: 10 }}>
             Would they pay for a solution?
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -7327,11 +6981,11 @@ function ValidationLearningsBuilder({ value, onChange }: { value: string; onChan
       {/* Best quote */}
       {signal && willPay && (
         <div style={{ animation: 'wup .2s ease' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#b0b0b8', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#8a8299', marginBottom: 8 }}>
             Best quote from a conversation
           </div>
           <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', top: 14, left: 14, fontSize: 24, color: '#e5e5ea', fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1 }}>"</span>
+            <span style={{ position: 'absolute', top: 14, left: 14, fontSize: 24, color: '#e2ddd1', fontFamily: 'inherit', lineHeight: 1 }}>"</span>
             <textarea
               value={quote}
               onChange={e => setQuote(e.target.value)}
@@ -7342,7 +6996,7 @@ function ValidationLearningsBuilder({ value, onChange }: { value: string; onChan
                 width: '100%', boxSizing: 'border-box', padding: '12px 14px 12px 34px',
                 border: `2px solid ${focused === 'quote' ? ACC : BORDER}`,
                 borderRadius: 10, fontSize: 14, outline: 'none', resize: 'vertical' as const,
-                lineHeight: 1.65, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', color: USER_INPUT_COLOR,
+                lineHeight: 1.65, fontFamily: 'inherit', fontStyle: 'italic', color: USER_INPUT_COLOR,
                 minHeight: 80, background: '#fff', transition: 'border-color .18s',
               }}
             />
@@ -7353,7 +7007,7 @@ function ValidationLearningsBuilder({ value, onChange }: { value: string; onChan
       {/* Key insight */}
       {signal && willPay && (
         <div style={{ animation: 'wup .2s ease' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#b0b0b8', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#8a8299', marginBottom: 8 }}>
             What surprised you most?
           </div>
           <textarea
@@ -7400,21 +7054,17 @@ const VALIDATE_HEROES = [
   { icon: '🧩', title: 'What are you assuming?',    sub: 'Write down what you believe before you test it. Assumptions you don\'t name are assumptions you can\'t kill.' },
   { icon: '🎯', title: 'Know who you\'re hunting',    sub: 'Get specific before you reach out. Vague targeting = wasted conversations.' },
   { icon: '🎤', title: 'Have the conversations',    sub: 'Every conversation confirms or kills an assumption. Go find out which. Log demand signals as you go.' },
-  { icon: '📡', title: 'Analyse what you found',    sub: 'Read the signals across conversations. Group what you heard into clear patterns.' },
-  { icon: '⚡', title: 'Make the call',              sub: 'You\'ve done the work. Commit to a direction — proceed, refine, or pivot.' },
+  { icon: '📡', title: 'What did the data actually tell you?', sub: 'Read the signals across conversations. Group what you heard into clear patterns.' },
+  { icon: '⚡', title: 'What\'s your verdict?',       sub: 'You\'ve done the work. Commit to a direction — build, pivot, or drop.' },
 ];
 
 function ValidateHero({ step }: { step: number }) {
+  // 2026-10 redesign: same big H1 + muted subtitle as every other step.
   const h = VALIDATE_HEROES[step];
-  const ac = '#059669';
   return (
-    // Matches the new H + description pattern but with an icon — keeps validate steps consistent
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 4 }}>
-      <div style={{ width: 52, height: 52, borderRadius: '50%', background: `${ac}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0 }}>{h.icon}</div>
-      <div>
-        <div style={{ marginBottom: 5 }}><MarkerQuestion accent={ac}>{h.title}</MarkerQuestion></div>
-        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', lineHeight: 1.5 }}>{h.sub}</div>
-      </div>
+    <div>
+      <h1 style={{ fontSize: 'clamp(34px, 5vw, 64px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.02, margin: 0, color: T1, fontFamily: 'inherit', maxWidth: 820 }}>{h.title}{/[.!?]$/.test(h.title) ? '' : '.'}</h1>
+      <StepGoal text={h.sub} />
     </div>
   );
 }
@@ -7484,15 +7134,15 @@ function StartChallengeModal({ ideaId, targetHint, onClose, onCreated }: {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 20 }}>
           <div style={{ fontSize: 36, lineHeight: 1 }}>🎯</div>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#1d1d1f', lineHeight: 1.2, marginBottom: 4 }}>Ask the community for help</div>
-            <div style={{ fontSize: 13, color: '#6e6e73', lineHeight: 1.55 }}>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#16121d', lineHeight: 1.2, marginBottom: 4 }}>Ask the community for help</div>
+            <div style={{ fontSize: 13, color: '#4a4357', lineHeight: 1.55 }}>
               Post a public ask to the MVP Club community. Members can connect you with the right people — or put their hand up if they fit the profile themselves.
             </div>
           </div>
         </div>
 
         {/* How it works */}
-        <div style={{ background: '#f5f5f7', borderRadius: 12, padding: '14px 16px', marginBottom: 20, display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+        <div style={{ background: '#f3f0e8', borderRadius: 12, padding: '14px 16px', marginBottom: 20, display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
           {[
             { icon: '📣', text: `Your ask: "Can you help? I'm trying to validate an idea and would appreciate a conversation or a warm intro to someone in your network. The people I'd love to speak with: ${target.trim() || '[describe who you need]'}."` },
             { icon: '🤝', text: 'Community members share contact details of people in their network who fit' },
@@ -7500,25 +7150,25 @@ function StartChallengeModal({ ideaId, targetHint, onClose, onCreated }: {
           ].map(row => (
             <div key={row.icon} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <span style={{ fontSize: 16, lineHeight: 1.4 }}>{row.icon}</span>
-              <span style={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.5 }}>{row.text}</span>
+              <span style={{ fontSize: 13, color: '#16121d', lineHeight: 1.5 }}>{row.text}</span>
             </div>
           ))}
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#6e6e73', marginBottom: 6 }}>Who do you need to speak with?</div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#4a4357', marginBottom: 6 }}>Who do you need to speak with?</div>
           <textarea
             rows={3}
-            style={{ width: '100%', border: '1.5px solid #e5e5ea', borderRadius: 10, padding: '10px 12px', fontSize: 14, resize: 'none', boxSizing: 'border-box' as const, outline: 'none', fontFamily: 'inherit', lineHeight: 1.5, color: USER_INPUT_COLOR }}
+            style={{ width: '100%', border: '1.5px solid #e2ddd1', borderRadius: 10, padding: '10px 12px', fontSize: 14, resize: 'none', boxSizing: 'border-box' as const, outline: 'none', fontFamily: 'inherit', lineHeight: 1.5, color: USER_INPUT_COLOR }}
             placeholder="e.g. Operations managers at mid-size logistics companies, startup founders who've raised a seed round, HR leads at companies with 50–200 employees…"
             value={target}
             onChange={e => setTarget(e.target.value)}
           />
         </div>
         <div style={{ marginBottom: 22 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#6e6e73', marginBottom: 6 }}>Industry or domain (optional)</div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: 1, color: '#4a4357', marginBottom: 6 }}>Industry or domain (optional)</div>
           <input
-            style={{ width: '100%', border: '1.5px solid #e5e5ea', borderRadius: 10, padding: '10px 12px', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none', fontFamily: 'inherit', color: USER_INPUT_COLOR }}
+            style={{ width: '100%', border: '1.5px solid #e2ddd1', borderRadius: 10, padding: '10px 12px', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none', fontFamily: 'inherit', color: USER_INPUT_COLOR }}
             placeholder="e.g. FinTech, HealthTech, HR Software…"
             value={domain}
             onChange={e => setDomain(e.target.value)}
@@ -7534,7 +7184,7 @@ function StartChallengeModal({ ideaId, targetHint, onClose, onCreated }: {
               Your challenge is live in the community — check for offers, warm intros, and fit matches waiting for you.
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={onClose} style={{ flex: 1, padding: '10px 0', borderRadius: 8, border: '1.5px solid #d1fae5', background: '#fff', color: '#6e6e73', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={onClose} style={{ flex: 1, padding: '10px 0', borderRadius: 8, border: '1.5px solid #d1fae5', background: '#fff', color: '#4a4357', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Close
               </button>
               <button onClick={viewExisting} style={{ flex: 2, padding: '10px 0', borderRadius: 8, border: 'none', background: '#059669', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -7544,7 +7194,7 @@ function StartChallengeModal({ ideaId, targetHint, onClose, onCreated }: {
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={onClose} style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: '1.5px solid #e5e5ea', background: '#fff', color: '#1d1d1f', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={onClose} style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: '1.5px solid #e2ddd1', background: '#fff', color: '#16121d', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
               Not now
             </button>
             <button
@@ -7743,36 +7393,36 @@ function MessageConfigModal({ channel, channelLabel, channelIcon, currentDefault
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
           <div style={{ fontSize: 28, lineHeight: 1 }}>{channelIcon}</div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#1d1d1f' }}>Customize your {channelLabel} message</div>
-            <div style={{ fontSize: 12.5, color: '#6e6e73' }}>Pick how this message gets written — it's always editable.</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#16121d' }}>Customize your {channelLabel} message</div>
+            <div style={{ fontSize: 12.5, color: '#4a4357' }}>Pick how this message gets written — it's always editable.</div>
           </div>
         </div>
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           <button onClick={() => setTab('current')}
-            style={{ flex: 1, padding: '9px 0', borderRadius: 9, border: tab === 'current' ? '1.5px solid #059669' : '1.5px solid #e5e5ea', background: tab === 'current' ? '#ecfdf5' : '#fff', color: tab === 'current' ? '#059669' : '#6e6e73', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ flex: 1, padding: '9px 0', borderRadius: 9, border: tab === 'current' ? '1.5px solid #059669' : '1.5px solid #e2ddd1', background: tab === 'current' ? '#ecfdf5' : '#fff', color: tab === 'current' ? '#059669' : '#4a4357', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>
             ✨ Use our current message
           </button>
           <button onClick={() => setTab('custom')}
-            style={{ flex: 1, padding: '9px 0', borderRadius: 9, border: tab === 'custom' ? '1.5px solid #059669' : '1.5px solid #e5e5ea', background: tab === 'custom' ? '#ecfdf5' : '#fff', color: tab === 'custom' ? '#059669' : '#6e6e73', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ flex: 1, padding: '9px 0', borderRadius: 9, border: tab === 'custom' ? '1.5px solid #059669' : '1.5px solid #e2ddd1', background: tab === 'custom' ? '#ecfdf5' : '#fff', color: tab === 'custom' ? '#059669' : '#4a4357', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}>
             ✏️ Build my own
           </button>
         </div>
 
         {tab === 'current' ? (
-          <div style={{ background: '#f5f5f7', borderRadius: 12, padding: '14px 16px', fontSize: 13.5, color: '#1d1d1f', lineHeight: 1.6, whiteSpace: 'pre-wrap' as const, marginBottom: 20 }}>
+          <div style={{ background: '#f3f0e8', borderRadius: 12, padding: '14px 16px', fontSize: 13.5, color: '#16121d', lineHeight: 1.6, whiteSpace: 'pre-wrap' as const, marginBottom: 20 }}>
             {currentDefaultText}
             <div style={{ marginTop: 10, fontSize: 11.5, color: '#9ca3af', fontStyle: 'italic' }}>Auto-updates as you change the audience label or problem statement above.</div>
           </div>
         ) : (
           <>
             <button onClick={() => setShowTemplates(s => !s)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10, padding: '7px 12px', borderRadius: 8, border: '1.5px solid #e5e5ea', background: '#fff', color: '#0f172a', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10, padding: '7px 12px', borderRadius: 8, border: '1.5px solid #e2ddd1', background: '#fff', color: '#16121d', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               📚 {showTemplates ? 'Hide' : 'Browse'} 50 pre-written templates
             </button>
             {showTemplates && (
-              <div style={{ border: '1.5px solid #e5e5ea', borderRadius: 10, maxHeight: 220, overflowY: 'auto' as const, marginBottom: 14, padding: 6 }}>
+              <div style={{ border: '1.5px solid #e2ddd1', borderRadius: 10, maxHeight: 220, overflowY: 'auto' as const, marginBottom: 14, padding: 6 }}>
                 {OUTREACH_TEMPLATES.map(tpl => {
                   const rendered = renderAudienceTemplate(tpl.text, audienceLabel);
                   const preview = rendered.replace(/\n/g, ' ');
@@ -7789,14 +7439,14 @@ function MessageConfigModal({ channel, channelLabel, channelIcon, currentDefault
               rows={7}
               value={text}
               onChange={e => setText(e.target.value)}
-              style={{ width: '100%', boxSizing: 'border-box' as const, border: '1.5px solid #e5e5ea', borderRadius: 10, padding: '12px 14px', fontSize: 13.5, fontFamily: 'inherit', lineHeight: 1.6, outline: 'none', color: USER_INPUT_COLOR, resize: 'vertical' as const, marginBottom: 18 }}
+              style={{ width: '100%', boxSizing: 'border-box' as const, border: '1.5px solid #e2ddd1', borderRadius: 10, padding: '12px 14px', fontSize: 13.5, fontFamily: 'inherit', lineHeight: 1.6, outline: 'none', color: USER_INPUT_COLOR, resize: 'vertical' as const, marginBottom: 18 }}
               placeholder="Write your own message…"
             />
           </>
         )}
 
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: '1.5px solid #e5e5ea', background: '#fff', color: '#1d1d1f', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={onClose} style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: '1.5px solid #e2ddd1', background: '#fff', color: '#16121d', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
             Cancel
           </button>
           <button onClick={save} disabled={tab === 'custom' && !text.trim()}
@@ -8055,44 +7705,40 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
 
     return (
       <>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-        {/* ── Part 1: From your own network ── */}
-        <div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
-            <div>
-              <div style={{ fontSize: 19, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
-                From your own network
-              </div>
-              <div style={{ borderTop: '2px solid #4f46e5', marginTop: 3, maxWidth: 170 }} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <button
-                onClick={() => setShowAvailability(true)}
-                title="Set your weekly availability for meeting requests"
-                style={{
-                  border: `1.5px solid ${VC}40`, background: `${VC}08`, color: VC, borderRadius: 20,
-                  padding: '5px 11px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' as const,
-                }}
-              >🗓️ Availability</button>
-              <button
-                onClick={() => { setShowAdd(true); setSelectedId(null); setAddAgreed(false); }}
-                title="Add person"
-                style={{
-                  width: 34, height: 34, borderRadius: '50%', flexShrink: 0, border: 'none', background: VC, color: '#fff',
-                  fontSize: 20, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: `0 2px 8px ${VC}59`, transition: 'transform .12s',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; }}
-              >＋</button>
-            </div>
+        {/* ── Stat tiles + calendar reminder (2026-10 redesign) ── */}
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+          <div style={{ background: INK, color: INK_TXT, borderRadius: 16, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 4, minWidth: 140, flex: 1 }}>
+            <span style={{ fontFamily: MONO, fontSize: 10, color: INK_MUTE, letterSpacing: '0.1em' }}>NAMES</span>
+            <span style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em' }}><span style={{ color: LIME }}>{contacts.length}</span><span style={{ color: '#5c5368' }}>/20</span></span>
+            <div style={{ height: 6, borderRadius: 3, background: '#2a2236', overflow: 'hidden' }}><div style={{ height: '100%', background: LIME, width: `${Math.min(100, (contacts.length / 20) * 100)}%`, transition: 'width .3s' }} /></div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14, color: '#374151', fontWeight: 500, lineHeight: 1.55, margin: '6px 0 12px' }}>
-            <span style={{ fontSize: 15, lineHeight: 1.55, flexShrink: 0 }}>💡</span>
-            <span>Add the people you personally know or can reach directly — aim for at least 20 for solid signal. One real person per slot — name, role, or description. No hard limit — add more if you can.</span>
+          <div style={{ background: LIME, color: INK, borderRadius: 16, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 4, minWidth: 140, flex: 1 }}>
+            <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em' }}>CONVERSATIONS</span>
+            <span style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em' }}>{doneCount}<span style={{ opacity: .45 }}>/10</span></span>
+            <div style={{ height: 6, borderRadius: 3, background: 'rgba(22,18,29,.15)', overflow: 'hidden' }}><div style={{ height: '100%', background: INK, width: `${Math.min(100, (doneCount / 10) * 100)}%`, transition: 'width .3s' }} /></div>
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '10px 14px', borderRadius: 16, background: '#fff', flex: 2, minWidth: 260, flexWrap: 'wrap' as const }}>
+            <span style={{ fontSize: 13, color: T1, lineHeight: 1.4 }}><strong style={{ fontWeight: 800 }}>Don't forget to clear your calendar!</strong> Free up time so you're actually available to talk.</span>
+            <button
+              onClick={() => setShowAvailability(true)}
+              title="Set your weekly availability for meeting requests"
+              style={{ borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 700, background: INK, color: LIME, border: 'none', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}
+            >Set availability</button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={eyebrow(ACCENT)}>+ From your own network</span>
+            <span style={{ fontSize: 12, color: T3 }}>Add the people you personally know or can reach directly — aim for at least 20 for solid signal. One real person per slot. No hard limit.</span>
+          </div>
+          <button
+            onClick={() => { setShowAdd(true); setSelectedId(null); setAddAgreed(false); }}
+            title="Add person"
+            style={{ borderRadius: 999, padding: '9px 16px', fontWeight: 800, background: INK, color: LIME, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, flexShrink: 0 }}
+          >+ Add person</button>
         </div>
 
         {/* ── Card grid ── */}
@@ -8118,33 +7764,31 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
           return (
             <div>
               {/* Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: 8, marginBottom: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', gap: 8, marginBottom: 8 }}>
                 {/* Filled cards — whiteboard bubble avatars */}
                 {contacts.map(c => {
                   const isSelected = selectedId === c.id;
                   // Selected chip reads orange rather than the stage's own green,
                   // so "this is the person I'm currently acting on" stays visually
                   // distinct from every other green accent on this page.
-                  const SEL = '#f97316';
                   return (
                     <div
                       key={c.id}
                       onClick={() => { setSelectedId(isSelected ? null : c.id); setMeetingErr(''); }}
                       style={{
-                        borderRadius: 10, padding: '10px 8px',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                        cursor: 'pointer', background: isSelected ? `${SEL}10` : 'transparent',
-                        minHeight: 90, justifyContent: 'center',
+                        borderRadius: 14, padding: '8px 10px',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                        cursor: 'pointer', background: isSelected ? INK : '#fff',
+                        minHeight: 72, justifyContent: 'center',
                         transition: 'all .15s', position: 'relative' as const,
                       }}
                     >
-                      {/* Avatar — gradient bubble */}
+                      {/* Avatar */}
                       <div style={{
-                        width: 52, height: 52, borderRadius: 999, flexShrink: 0, position: 'relative' as const,
-                        background: isSelected ? `radial-gradient(circle at 35% 35%, ${SEL}ee, ${SEL}99)` : `radial-gradient(circle at 35% 35%, ${VC}ee, ${VC}99)`,
-                        boxShadow: isSelected ? `0 0 0 3px ${SEL}44, 0 6px 16px ${SEL}44` : '0 3px 10px rgba(0,0,0,.12), inset 0 1px 2px rgba(255,255,255,.5)',
+                        width: 36, height: 36, borderRadius: 999, flexShrink: 0, position: 'relative' as const,
+                        background: isSelected ? LIME : CREAM2,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 16, letterSpacing: '.02em', fontWeight: 700, color: '#fff',
+                        fontFamily: 'inherit', fontSize: 15, fontWeight: 800, color: INK,
                       }}>
                         {initials(c.name)}
                         {/* Status dot */}
@@ -8182,9 +7826,10 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                           onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#fff'; (e.currentTarget as HTMLButtonElement).style.color = '#bbb'; (e.currentTarget as HTMLButtonElement).style.borderColor = '#fff'; }}
                         >×</button>
                       </div>
-                      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, fontWeight: 600, color: '#1e293b', textAlign: 'center' as const, lineHeight: 1.3, wordBreak: 'break-word' as const, maxWidth: '100%' }}>
+                      <div style={{ fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: isSelected ? INK_TXT : T1, textAlign: 'center' as const, lineHeight: 1.3, wordBreak: 'break-word' as const, maxWidth: '100%' }}>
                         {c.name.length > 18 ? c.name.slice(0, 16) + '…' : c.name}
                       </div>
+                      <div style={{ fontFamily: MONO, fontSize: 9, color: isSelected ? INK_MUTE : T3, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>{c.status}</div>
                     </div>
                   );
                 })}
@@ -8195,34 +7840,22 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                     key={`empty-${i}`}
                     onClick={() => { setShowAdd(true); setSelectedId(null); setAddAgreed(false); }}
                     style={{
-                      borderRadius: 10,
-                      padding: '10px 8px', display: 'flex', flexDirection: 'column',
-                      alignItems: 'center', justifyContent: 'center', gap: 6,
-                      cursor: 'pointer', minHeight: 90, background: 'transparent',
+                      borderRadius: 14,
+                      padding: '8px 10px', display: 'flex', flexDirection: 'column',
+                      alignItems: 'center', justifyContent: 'center', gap: 5,
+                      cursor: 'pointer', minHeight: 72, background: 'transparent', border: `1.5px dashed ${BORDER2}`,
                       transition: 'opacity .15s',
                     }}
                   >
                     <div style={{
-                      width: 52, height: 52, borderRadius: 999,
-                      background: `radial-gradient(circle at 35% 35%, ${VC}12, ${VC}22)`,
-                      boxShadow: '0 3px 10px rgba(0,0,0,.06), inset 0 1px 2px rgba(255,255,255,.6)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: VC, fontSize: 20, fontWeight: 700,
+                      width: 36, height: 36, borderRadius: 999, background: CREAM2,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: T3, fontSize: 18, fontWeight: 700,
                     }}>+</div>
-                    <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 13, color: '#9ca3af', fontWeight: 600, textAlign: 'center' as const }}>Add person</div>
+                    <div style={{ fontFamily: 'inherit', fontSize: 12, color: T3, fontWeight: 600, textAlign: 'center' as const }}>Add person</div>
                   </div>
                 ))}
 
                 {/* Slot counter label on last empty slot */}
-              </div>
-
-              {/* Progress bar — out of 20 */}
-              <div style={{ height: 4, background: BORDER, borderRadius: 999, overflow: 'hidden', marginBottom: 6 }}>
-                <div style={{ height: '100%', width: `${Math.min(100, (contacts.length / 20) * 100)}%`, background: VC, borderRadius: 999, transition: 'width .3s' }} />
-              </div>
-              <div style={{ fontSize: 12, color: doneCount >= 3 ? '#059669' : '#4b5563', fontWeight: 600, marginBottom: 10 }}>
-                {contacts.length === 0 ? 'Aim for at least 20 people who feel this pain'
-                  : doneCount >= 3 ? `✓ ${doneCount} conversations active or done — great momentum`
-                  : `${contacts.length} named${contacts.length < 20 ? ' · aim for 20+' : ''} · ${doneCount} conversation${doneCount !== 1 ? 's' : ''} in progress`}
               </div>
 
               {/* ── Pipeline funnel — same STATUS_FLOW/STATUS_COLOR the list below uses,
@@ -8240,15 +7873,15 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                   return `${h}${alpha}`;
                 };
                 return (
-                  <div style={{ display: 'flex', alignItems: 'stretch', gap: 3, marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'stretch', gap: 3, marginBottom: 10 }}>
                     {STATUS_FLOW.map((s, i) => (
                       <React.Fragment key={s}>
                         <div style={{
-                          flex: 1, minWidth: 0, borderRadius: 8, padding: '7px 4px',
+                          flex: 1, minWidth: 0, borderRadius: 8, padding: '4px 4px',
                           background: withAlpha(STATUS_COLOR[s], '12'), border: `1.5px solid ${withAlpha(STATUS_COLOR[s], '30')}`,
                           textAlign: 'center' as const,
                         }}>
-                          <div style={{ fontSize: 16, fontWeight: 800, color: STATUS_COLOR[s], lineHeight: 1.15 }}>{statusCounts[s]}</div>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: STATUS_COLOR[s], lineHeight: 1.15 }}>{statusCounts[s]}</div>
                           <div style={{ fontSize: 8.5, fontWeight: 700, color: STATUS_COLOR[s], opacity: 0.85, textTransform: 'uppercase' as const, letterSpacing: 0.3, whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' as const }}>
                             {s}
                           </div>
@@ -8264,10 +7897,10 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
 
               {/* Selected card detail */}
               {selectedContact && (
-                <div style={{ border: `1.5px solid ${VC}30`, borderRadius: 10, padding: '12px 14px', background: `${VC}05`, marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ borderRadius: 20, padding: '18px 20px', background: '#fff', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: T1 }}>{selectedContact.name}</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: T1, letterSpacing: '-0.01em' }}>{selectedContact.name}</div>
                       {selectedContact.contact && <div style={{ fontSize: 11, color: T2, marginTop: 1 }}>{selectedContact.contact}</div>}
                     </div>
                     <button onClick={() => removeContact(selectedContact.id)} style={{ border: 'none', background: 'transparent', color: '#ccc', fontSize: 18, cursor: 'pointer', padding: '0 2px', lineHeight: 1 }}>×</button>
@@ -8408,7 +8041,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                             title={!selectedContact.email ? 'Add an email above first' : undefined}
                             style={{
                               display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 20, border: 'none',
-                              background: !selectedContact.email ? '#e5e5ea' : VC, color: !selectedContact.email ? '#aaa' : '#fff',
+                              background: !selectedContact.email ? '#e2ddd1' : VC, color: !selectedContact.email ? '#aaa' : '#fff',
                               fontSize: 11, fontWeight: 700, cursor: !selectedContact.email ? 'default' : 'pointer', fontFamily: 'inherit',
                             }}>
                             {requestingMeeting === selectedContact.id ? 'Sending…' : '📅 Request a meeting'}
@@ -8423,7 +8056,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
 
               {/* Add form */}
               {showAdd && (
-                <div style={{ border: '2px solid #2563eb', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8, background: '#eff6ff', marginBottom: 4, boxShadow: '0 4px 14px rgba(37,99,235,.15)' }}>
+                <div style={{ border: '2px solid #7c3aed', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8, background: '#eff6ff', marginBottom: 4, boxShadow: '0 4px 14px rgba(37,99,235,.15)' }}>
                   <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1d4ed8', display: 'flex', alignItems: 'center', gap: 6 }}>
                     ➕ Add a new contact
                   </div>
@@ -8459,7 +8092,7 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                       {adding ? 'Adding…' : addAgreed ? 'Add — already agreed' : 'Add person'}
                     </button>
                     <button onClick={() => { setShowAdd(false); setName(''); setNewEmail(''); setNewPhone(''); setAddErr(''); setAddAgreed(false); }}
-                      style={{ padding: '8px 14px', borderRadius: 7, background: '#f0f0f5', color: T2, border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ padding: '8px 14px', borderRadius: 7, background: '#e8e3d7', color: T2, border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
                       Cancel
                     </button>
                   </div>
@@ -8474,69 +8107,66 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
             "Or shout it from the rooftops" (broad reach) sit side by side as two
             hand-placed notes instead of a plain stacked list. Same real actions,
             hrefs and handlers as before — only the container styling changed. ── */}
-        <div>
+        <section style={{ background: INK, color: INK_TXT, borderRadius: 20, padding: 'clamp(14px, 2vw, 20px)', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
-            <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a' }}>
-              📋 Not enough names yet?
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.01em' }}>Not enough names yet?</span>
+              <span style={{ fontSize: 13, color: INK_DIM }}>Every option asks the same questions as a live conversation, so answers stay comparable however they come in.</span>
+            </div>
             <button
               onClick={() => { setShowAdd(true); setSelectedId(null); setAddAgreed(true); }}
               title="Add someone who's already agreed to be interviewed"
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
-                border: '1.5px solid #059669', background: '#ecfdf5', color: '#059669', borderRadius: 20,
-                padding: '6px 12px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                border: `1px solid ${LIME}`, background: 'transparent', color: LIME, borderRadius: 999,
+                padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                 whiteSpace: 'nowrap' as const,
               }}
-            >＋ Someone already agreed?</button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14, color: '#374151', fontWeight: 500, lineHeight: 1.55, margin: '6px 0 12px' }}>
-            <span style={{ fontSize: 15, lineHeight: 1.55, flexShrink: 0 }}>💡</span>
-            <span>Every option asks the same questions as a live conversation, so answers stay comparable however they come in.</span>
+            >+ Someone already agreed?</button>
           </div>
 
           {/* ── Editable audience label — every message below adapts to this, since not every idea targets founders ── */}
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 4 }}>
-              Who are you reaching out to? <span style={{ fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0 }}>(used in every message below)</span>
+          <div>
+            <label style={{ display: 'block', fontFamily: MONO, fontSize: 10, color: INK_MUTE, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 6 }}>
+              Who are you reaching out to? · used in every message
             </label>
             <input
               type="text"
               value={audienceOverride}
               onChange={e => setAudienceOverride(e.target.value)}
               placeholder={persona && persona !== 'your target customer' ? persona : 'e.g. founders, HR managers, teachers, freelance designers'}
-              style={{ width: '100%', maxWidth: 360, boxSizing: 'border-box', padding: '8px 12px', border: `1.5px solid ${VC}45`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#0f172a', background: '#fff' }}
+              style={{ width: '100%', maxWidth: 420, boxSizing: 'border-box', padding: '8px 12px', border: '1px solid #3a3148', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none', background: '#211a2d', color: '#f5f2ff' }}
             />
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 16, alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 10, alignItems: 'stretch' }}>
 
             {/* ── Sticky note 1: Likely fits your ICP — someone you know vouches for them ── */}
             <div style={{
-              background: '#fef9c3', borderRadius: 4, padding: '14px 16px 16px', flex: '0 0 auto', minWidth: 200,
-              boxShadow: '0 4px 10px rgba(0,0,0,.14)', transform: 'rotate(-1.4deg)',
+              background: LIME, color: INK, borderRadius: 16, padding: 14, flex: '1 1 240px', minWidth: 220,
+              display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start',
             }}>
-              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#78350f', marginBottom: 2 }}>
+              <div style={{ fontFamily: 'inherit', fontSize: 16, fontWeight: 800, letterSpacing: '-0.01em' }}>
                 Ask a friend to vouch
               </div>
-              <div style={{ fontSize: 10.5, color: '#92400e', fontWeight: 600, marginBottom: 10 }}>
-                Likely fits your ICP
+              <div style={{ fontSize: 13 }}>
+                Likely fits your ICP · warm intros reply 3× more
               </div>
               <button onClick={() => !postedChallenge && setShowChallengeModal(true)}
-                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 20, background: postedChallenge ? '#ecfdf5' : '#fffbeb', color: postedChallenge ? '#059669' : '#78350f', border: `1.5px solid ${postedChallenge ? '#059669' : '#d97706'}`, fontSize: 12, fontWeight: 700, cursor: postedChallenge ? 'default' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 12px', borderRadius: 999, background: postedChallenge ? 'rgba(22,18,29,.12)' : INK, color: postedChallenge ? INK : LIME, border: 'none', fontSize: 14, fontWeight: 800, cursor: postedChallenge ? 'default' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
                 {postedChallenge ? '✓ Posted to community' : '✦ Seek community help'}
               </button>
             </div>
 
             {/* ── Sticky note 2: Broad reach — anyone can respond, screen after ── */}
             <div style={{
-              background: '#dbeafe', borderRadius: 4, padding: '14px 16px 16px', flex: '1 1 280px', minWidth: 260,
-              boxShadow: '0 4px 10px rgba(0,0,0,.14)', transform: 'rotate(0.8deg)',
+              background: INK2, color: INK_TXT, borderRadius: 16, padding: 14, flex: '2 1 300px', minWidth: 260,
+              display: 'flex', flexDirection: 'column', gap: 8,
             }}>
-              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: '#1e3a8a', marginBottom: 2 }}>
+              <div style={{ fontFamily: 'inherit', fontSize: 16, fontWeight: 800, letterSpacing: '-0.01em' }}>
                 Or shout it from the rooftops
               </div>
-              <div style={{ fontSize: 10.5, color: '#1d4ed8', fontWeight: 600, marginBottom: 10 }}>
+              <div style={{ fontSize: 13, color: INK_DIM }}>
                 Broad reach — anyone can respond — screen after
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
@@ -8596,14 +8226,14 @@ function OutreachTracker({ ideaId, persona, problem, ideaName, onLogInterview, i
                 {/* Copy a link where a stranger can leave their email + WhatsApp/phone number directly */}
                 <button
                   onClick={() => copyPlatform('contactlink', contactInfoLink)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 20, background: '#fff', color: '#0f172a', border: `1.5px solid ${VC}55`, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 20, background: '#fff', color: '#16121d', border: `1.5px solid ${VC}55`, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   🔗 {copiedPlatform === 'contactlink' ? 'Copied!' : "Copy 'leave your info' link"}
                 </button>
               </div>
             </div>
 
           </div>
-        </div>
+        </section>
 
       </div>
 
@@ -8744,7 +8374,7 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
     };
 
     return (
-      <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
+      <div style={{ background: '#fff', borderRadius: 24, overflow: 'hidden' }}>
 
         {/* Header — small icon + Bebas Neue kicker subheading (same
             treatment as the Sage guide above), a compact "total / bank"
@@ -8752,18 +8382,15 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
             question straight in (the old two-pill "Write your own" /
             "+ Add question" pair is now this icon plus the small
             "Browse interview bank" link below it). */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '14px 18px', borderBottom: `1px solid ${BORDER}` }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '18px 20px', borderBottom: `1px solid ${BORDER}` }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <span style={{ fontSize: 19 }}>🗣️</span>
-              <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: T1 }}>Your discovery questions</span>
-            </div>
-            <div style={{ fontSize: 10.5, color: '#64748b', paddingLeft: 26, marginTop: 2 }}>
-              {editQs.length} / {bankTotal} · interview bank
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <span style={{ fontFamily: 'inherit', fontSize: 22, fontWeight: 800, letterSpacing: '-0.01em', color: T1 }}>Interview bank</span>
+              <span style={{ fontFamily: MONO, fontSize: 11, color: T3 }}>{editQs.length} / {bankTotal} added</span>
             </div>
             <button
               onClick={() => setFwOpen(o => !o)}
-              style={{ background: 'none', border: 'none', padding: 0, marginLeft: 26, marginTop: 3, fontSize: 10.5, fontWeight: 700, fontFamily: 'inherit', color: ac, textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer', display: 'block' }}
+              style={{ background: 'none', border: 'none', padding: 0, marginTop: 6, fontSize: 13, fontWeight: 700, fontFamily: 'inherit', color: ACCENT_DEEP, textDecoration: 'underline', textUnderlineOffset: '2px', cursor: 'pointer', display: 'block' }}
             >
               {frameworkOpen ? 'Hide interview bank' : 'Browse interview bank'}
             </button>
@@ -8780,7 +8407,7 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
             <button
               onClick={addBlank}
               title="Write your own question"
-              style={{ width: 26, height: 26, borderRadius: '50%', border: `1.5px solid ${ac}`, background: '#fff', color: ac, fontSize: 15, fontWeight: 700, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' }}
+              style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', background: INK, color: LIME, fontSize: 18, fontWeight: 800, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' }}
             >
               +
             </button>
@@ -8789,44 +8416,44 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
 
         {/* Framework picker */}
         {frameworkOpen && (
-          <div style={{ borderBottom: `1px solid ${BORDER}`, background: '#fafafa' }}>
-            {/* Category strip */}
-            <div style={{ display: 'flex', overflowX: 'auto' as const, padding: '10px 18px 0', scrollbarWidth: 'none' as const, gap: 2 }}>
+          <div style={{ borderBottom: `1px solid ${BORDER}` }}>
+            {/* Category pills */}
+            <div style={{ display: 'flex', overflowX: 'auto' as const, padding: '12px 20px 6px', scrollbarWidth: 'none' as const, gap: 6 }}>
               {framework.map((cat, ci) => (
                 <button key={ci} onClick={() => setActiveCat(ci)} style={{
-                  padding: '6px 11px', borderRadius: '8px 8px 0 0',
-                  border: `1px solid ${activeCat === ci ? BORDER : 'transparent'}`,
-                  borderBottom: activeCat === ci ? '1px solid #fafafa' : `1px solid ${BORDER}`,
-                  background: activeCat === ci ? '#fafafa' : 'transparent',
-                  fontSize: 11, fontWeight: activeCat === ci ? 700 : 500,
-                  color: activeCat === ci ? cat.color : '#6e6e73',
+                  padding: '8px 14px', borderRadius: 999, border: 'none',
+                  background: activeCat === ci ? INK : CREAM,
+                  fontSize: 13, fontWeight: 700,
+                  color: activeCat === ci ? '#fff' : T1,
                   cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const, flexShrink: 0,
+                  display: 'flex', alignItems: 'center', gap: 6,
                 }}>
                   {cat.cat}
+                  <span style={{ fontFamily: MONO, fontSize: 11, opacity: .7 }}>{cat.questions.length}</span>
                 </button>
               ))}
             </div>
             {/* Suggestions */}
-            <div style={{ padding: '12px 18px 16px' }}>
-              <div style={{ fontSize: 11, color: '#b0b0b8', marginBottom: 10, fontStyle: 'italic' }}>
+            <div style={{ padding: '8px 20px 18px' }}>
+              <div style={{ fontSize: 14, color: T2, marginBottom: 10 }}>
                 {framework[activeCat].desc}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {framework[activeCat].questions.map((sq, si) => {
                   const added = editQs.some(e => e.q === sq.q);
                   return (
-                    <div key={si} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '10px 12px', borderRadius: 10, background: added ? '#f0fdf4' : '#fff', border: `1.5px solid ${added ? '#86efac' : BORDER}`, transition: 'all .12s' }}>
+                    <div key={si} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '14px 14px 14px 16px', borderRadius: 16, background: added ? '#faf7ff' : CREAM, transition: 'all .12s' }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: T1, lineHeight: 1.45 }}>"{sq.q}"</div>
-                        <div style={{ fontSize: 11, color: '#b0b0b8', marginTop: 4, fontStyle: 'italic' }}>💡 {sq.hint}</div>
+                        <div style={{ fontSize: 17, fontWeight: 700, color: T1, lineHeight: 1.35 }}>“{sq.q}”</div>
+                        <div style={{ fontSize: 13, color: T3, marginTop: 4 }}>{sq.hint}</div>
                       </div>
                       <button
                         onClick={() => !added && addFromFramework(sq)}
                         style={{
-                          padding: '6px 12px', borderRadius: 8, border: 'none', fontFamily: 'inherit',
-                          background: added ? '#dcfce7' : framework[activeCat].color,
-                          color: added ? '#166534' : '#fff',
-                          fontSize: 12, fontWeight: 700,
+                          padding: '10px 14px', borderRadius: 12, border: 'none', fontFamily: 'inherit',
+                          background: added ? CREAM2 : INK,
+                          color: added ? T3 : LIME,
+                          fontSize: 14, fontWeight: 800,
                           cursor: added ? 'default' : 'pointer', flexShrink: 0,
                         }}
                       >
@@ -8844,7 +8471,7 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
             dense rows for scanning the whole bank at once; click a row to
             edit it in place (unchanged add/remove/edit behavior). */}
         {editQs.length === 0 ? (
-          <div style={{ padding: '14px 18px', fontSize: 11, color: '#b0b0b8', fontStyle: 'italic' }}>
+          <div style={{ padding: '14px 18px', fontSize: 11, color: '#8a8299', fontStyle: 'italic' }}>
             Nothing added yet — tap + above or browse the interview bank.
           </div>
         ) : (
@@ -8885,7 +8512,7 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
                           </div>
                           {check.result.suggestion && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5, flexWrap: 'wrap' as const }}>
-                              <div style={{ fontSize: 11.5, fontStyle: 'italic' as const, color: '#1d1d1f', flex: '1 1 200px' }}>💡 "{check.result.suggestion}"</div>
+                              <div style={{ fontSize: 11.5, fontStyle: 'italic' as const, color: '#16121d', flex: '1 1 200px' }}>💡 "{check.result.suggestion}"</div>
                               <button onClick={() => acceptSuggestion(i, check.result!.suggestion as string)}
                                 style={{ fontSize: 10, fontWeight: 700, padding: '3px 9px', borderRadius: 8, border: 'none', background: ac, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
                                 Use this instead
@@ -8945,9 +8572,9 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
                       onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = '#f9f9fb'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = 'transparent'; }}>
                       <td style={{ padding: '7px 10px', fontSize: 11, color: '#94a3b8', fontWeight: 700, verticalAlign: 'top' as const }}>{i + 1}</td>
-                      <td title={catInfo?.cat} style={{ padding: '7px 10px', fontSize: 12, fontWeight: 700, color: catInfo?.color || '#b0b0b8', verticalAlign: 'top' as const }}>{catInfo ? catInfo.cat.split(' ')[0] : '—'}</td>
+                      <td title={catInfo?.cat} style={{ padding: '7px 10px', fontSize: 12, fontWeight: 700, color: catInfo?.color || '#8a8299', verticalAlign: 'top' as const }}>{catInfo ? catInfo.cat.split(' ')[0] : '—'}</td>
                       <td style={{ padding: '7px 10px', fontSize: 12, color: T1, verticalAlign: 'top' as const }}>{q.q}</td>
-                      <td style={{ padding: '7px 10px', fontSize: 10.5, color: '#b0b0b8', fontStyle: 'italic' as const, verticalAlign: 'top' as const }}>{q.hint}</td>
+                      <td style={{ padding: '7px 10px', fontSize: 10.5, color: '#8a8299', fontStyle: 'italic' as const, verticalAlign: 'top' as const }}>{q.hint}</td>
                       <td style={{ padding: '7px 10px', fontSize: 11, verticalAlign: 'top' as const, whiteSpace: 'nowrap' as const }}>
                         <button onClick={e => { e.stopPropagation(); runAiCheck(i); }} disabled={check?.loading}
                           title="Check this question's phrasing against the Do's/Don'ts"
@@ -8956,10 +8583,10 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
                         </button>
                         <span
                           title={q.chips?.length ? `${q.chips.length} quick-response chip${q.chips.length !== 1 ? 's' : ''} — click to edit and regenerate` : 'No quick-response chips yet — click to add some'}
-                          style={{ fontSize: 9.5, fontWeight: 700, color: q.chips?.length ? '#b45309' : '#d2d2d7', marginRight: 6 }}>
+                          style={{ fontSize: 9.5, fontWeight: 700, color: q.chips?.length ? '#b45309' : '#d9d3c5', marginRight: 6 }}>
                           🏷️{q.chips?.length ? q.chips.length : ''}
                         </span>
-                        <span style={{ color: '#d2d2d7' }}>✏️</span>
+                        <span style={{ color: '#d9d3c5' }}>✏️</span>
                       </td>
                     </tr>
                     {aiResultRow}
@@ -8971,7 +8598,7 @@ function QuestionEditor({ stored, framework, onSave, problemDomain }: {
         </div>
         )}
 
-        <div style={{ padding: '10px 18px', borderTop: `1px solid ${BORDER}`, fontSize: 11, color: '#b0b0b8', fontStyle: 'italic' }}>
+        <div style={{ padding: '10px 18px', borderTop: `1px solid ${BORDER}`, fontSize: 11, color: '#8a8299', fontStyle: 'italic' }}>
           Questions run one-by-one during each persona's interview. Min 3 · no maximum.
         </div>
       </div>
@@ -9185,19 +8812,19 @@ function MergedInterviewLog({ manual, ai, framework, title }: {
           return `<div class="q"><div class="qn">${qn}</div><div class="qbody"><div class="qtext">${esc(it.q)}</div>${it.sub ? `<div class="qhint">💡 ${esc(it.sub)}</div>` : ''}</div></div>`;
         }).join('')}
       </div>`).join('');
-    win.document.write(`<!DOCTYPE html><html><head><title>${esc(title || 'Interview Script')}</title><style>body{font-family:-apple-system,sans-serif;padding:36px;max-width:720px;margin:0 auto;color:#111}h1{font-size:20px;margin:0 0 4px}.sub{font-size:12px;color:#6e6e73;margin-bottom:20px}.stage{margin-bottom:18px}.stage-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6e6e73;border-bottom:1px solid #e5e7eb;padding-bottom:4px;margin-bottom:10px}.q{display:flex;gap:10px;margin-bottom:10px;page-break-inside:avoid}.qn{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:#111;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}.qtext{font-size:13px;line-height:1.5}.qhint{font-size:11px;color:#8e8e93;font-style:italic;margin-top:2px}@media print{body{padding:20px}}</style></head><body><h1>${esc(title || 'Interview Script')}</h1><div class="sub">${total} question${total !== 1 ? 's' : ''} · in stage order</div>${sections}<script>window.print()<\/script></body></html>`);
+    win.document.write(`<!DOCTYPE html><html><head><title>${esc(title || 'Interview Script')}</title><style>body{font-family:-apple-system,sans-serif;padding:36px;max-width:720px;margin:0 auto;color:#111}h1{font-size:20px;margin:0 0 4px}.sub{font-size:12px;color:#4a4357;margin-bottom:20px}.stage{margin-bottom:18px}.stage-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#4a4357;border-bottom:1px solid #e5e7eb;padding-bottom:4px;margin-bottom:10px}.q{display:flex;gap:10px;margin-bottom:10px;page-break-inside:avoid}.qn{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:#111;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}.qtext{font-size:13px;line-height:1.5}.qhint{font-size:11px;color:#6f6880;font-style:italic;margin-top:2px}@media print{body{padding:20px}}</style></head><body><h1>${esc(title || 'Interview Script')}</h1><div class="sub">${total} question${total !== 1 ? 's' : ''} · in stage order</div>${sections}<script>window.print()<\/script></body></html>`);
     win.document.close();
   };
 
   return (
-    <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden' }}>
+    <div style={{ background: '#fff', borderRadius: 24, overflow: 'hidden' }}>
       <button
         onClick={() => setOpen(o => !o)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: `${ac}0c`, borderBottom: open ? `1px solid ${ac}25` : 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', cursor: 'pointer', textAlign: 'left' as const }}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'transparent', borderBottom: open ? `1px solid ${BORDER}` : 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', cursor: 'pointer', textAlign: 'left' as const }}
       >
         <div>
-          <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: T1 }}>📋 Interview question backlog</div>
-          <div style={{ fontSize: 10.5, color: ac, fontWeight: 700, marginTop: 2 }}>{selectedCount} of {total} selected for the interview</div>
+          <div style={{ fontFamily: 'inherit', fontSize: 22, fontWeight: 800, letterSpacing: '-0.01em', color: T1 }}>Your script</div>
+          <div style={{ fontFamily: MONO, fontSize: 11, color: T3, marginTop: 2 }}>{selectedCount} of {total} selected for the interview</div>
         </div>
         <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
           {open ? 'collapse' : 'click to expand'}
@@ -9297,7 +8924,7 @@ function CollapsibleSection({ title, defaultOpen = false, children }: { title: s
         onClick={() => setOpen(o => !o)}
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#fafafa', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
       >
-        <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 16, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#334155' }}>{title}</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 16, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#334155' }}>{title}</span>
         <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
           {open ? 'collapse' : 'click to expand'}
           <span style={{ fontSize: 13, transition: 'transform .2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
@@ -9372,10 +8999,10 @@ function ValidateChip() {
   const isMobile = useIsMobile();
   return (
     <ChipPopover icon={META.validate.icon} label={META.validate.label} subLabel="Mom Test" color={c} width={580}>
-      <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#334155', marginBottom: 16 }}>📋 The Mom Test — Do's & Don'ts</div>
+      <div style={{ fontFamily: 'inherit', fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#334155', marginBottom: 16 }}>📋 The Mom Test — Do's & Don'ts</div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
         <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: 14, padding: '18px 20px' }}>
-          <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#059669', marginBottom: 12 }}>✅ Do</div>
+          <div style={{ fontFamily: 'inherit', fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#059669', marginBottom: 12 }}>✅ Do</div>
           {['Ask about specific past behavior', 'Ask what they\'ve already tried', 'Ask what it costs them — time or money', 'Ask "why" and "tell me more"', 'Let silence sit — don\'t rush to fill it', 'Keep it to 20–30 min'].map(t => (
             <div key={t} style={{ fontSize: 15, color: '#166534', marginBottom: 10, display: 'flex', gap: 8, lineHeight: 1.5 }}>
               <span style={{ flexShrink: 0 }}>·</span><span>{t}</span>
@@ -9383,7 +9010,7 @@ function ValidateChip() {
           ))}
         </div>
         <div style={{ background: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: 14, padding: '18px 20px' }}>
-          <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#dc2626', marginBottom: 12 }}>❌ Don't</div>
+          <div style={{ fontFamily: 'inherit', fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#dc2626', marginBottom: 12 }}>❌ Don't</div>
           {['Pitch your idea or solution', 'Ask hypothetical "would you" questions', 'Ask leading questions', 'Treat a compliment as validation', 'Defend your assumptions', 'Rush to solutions'].map(t => (
             <div key={t} style={{ fontSize: 15, color: '#991b1b', marginBottom: 10, display: 'flex', gap: 8, lineHeight: 1.5 }}>
               <span style={{ flexShrink: 0 }}>·</span><span>{t}</span>
@@ -9406,7 +9033,7 @@ function InterviewGuidePanel({ stored, onSave, genContext }: {
     assumptions?: string[];
   };
 }) {
-  const ac = STAGE_COLORS.validate;
+  void STAGE_COLORS;
   const init: DiscoveryGuideData | null = (() => {
     try { const p = JSON.parse(stored || 'null'); return (p && Array.isArray(p.sections) && p.sections.length) ? (p as DiscoveryGuideData) : null; }
     catch { return null; }
@@ -9473,17 +9100,19 @@ function InterviewGuidePanel({ stored, onSave, genContext }: {
 
   if (!guide) {
     return (
-      <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 14, padding: '32px 24px', textAlign: 'center' as const, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-        <SageAvatar size={144} />
-        <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 19, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: T1 }}>Ask Sage@MVP Club to draft your guide</div>
-        <div style={{ fontSize: 12.5, color: T2, maxWidth: 440, lineHeight: 1.5 }}>
-          Sage reads your Idea and Hone answers, then writes a solution-agnostic 30-minute interview guide grounded in your problem space — without ever revealing what you're building.
+      <section style={{ background: INK, color: INK_TXT, borderRadius: 24, padding: 'clamp(18px, 2.6vw, 26px)', display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' as const }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 260 }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: LIME, color: INK, display: 'grid', placeItems: 'center', fontSize: 24, fontWeight: 800, flexShrink: 0 }}>S</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span style={{ fontSize: 20, fontWeight: 800 }}>Ask Sage to draft your guide</span>
+            <span style={{ fontSize: 14, color: INK_DIM, lineHeight: 1.45 }}>Sage reads your Idea and Hone answers, then writes a solution-agnostic 30-minute interview guide grounded in your problem space — without ever revealing what you're building.</span>
+          </div>
         </div>
-        {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px' }}>⚠️ {error}</div>}
-        <button onClick={runGenerate} disabled={loading} style={{ marginTop: 4, padding: '11px 22px', borderRadius: 10, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${ac}80` : ac, color: '#fff', fontSize: 13.5, fontWeight: 700, fontFamily: 'inherit' }}>
-          {loading ? '🧙 Sage is thinking…' : '🔄 Ask Sage'}
+        {error && <div style={{ fontSize: 12, color: '#f87171', background: '#2a2236', borderRadius: 10, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
+        <button onClick={runGenerate} disabled={loading} style={{ borderRadius: 14, padding: '16px 24px', fontSize: 16, fontWeight: 800, background: LIME, color: INK, border: 'none', cursor: loading ? 'default' : 'pointer', fontFamily: 'inherit', opacity: loading ? .7 : 1, flexShrink: 0 }}>
+          {loading ? 'Sage is drafting…' : 'Draft my guide →'}
         </button>
-      </div>
+      </section>
     );
   }
 
@@ -9494,19 +9123,18 @@ function InterviewGuidePanel({ stored, onSave, genContext }: {
   // treatment used elsewhere for Sage's voice), small stacked meta line,
   // and the regenerate action as a plain text link.
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2, padding: '2px 0' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-        <span style={{ fontSize: 19 }}>🧙</span>
-        <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: T1 }}>Sage's interview guide is ready</span>
-        <span style={{ fontSize: 9, fontWeight: 800, color: ac }}>✓</span>
+    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, padding: '14px 18px', background: INK, color: INK_TXT, borderRadius: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ width: 28, height: 28, borderRadius: '50%', background: LIME, color: INK, display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 13 }}>S</span>
+        <span style={{ fontSize: 16, fontWeight: 800 }}>Sage's interview guide is ready ✓</span>
       </div>
-      <div style={{ fontSize: 10.5, color: '#64748b', paddingLeft: 26 }}>
+      <div style={{ fontSize: 13, color: INK_DIM, paddingLeft: 38 }}>
         {totalMinutes} min · {totalQuestions} question{totalQuestions !== 1 ? 's' : ''} · across {guide.sections.length} section{guide.sections.length !== 1 ? 's' : ''} — reorder, retime &amp; edit them on the next step
       </div>
       {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', marginTop: 4, marginLeft: 26 }}>⚠️ {error}</div>}
       <button onClick={runGenerate} disabled={loading} style={{
-        background: 'none', border: 'none', padding: 0, marginLeft: 26, marginTop: 1,
-        fontSize: 10.5, fontWeight: 700, fontFamily: 'inherit', color: ac,
+        background: 'none', border: 'none', padding: 0, marginLeft: 38, marginTop: 4,
+        fontSize: 13, fontWeight: 700, fontFamily: 'inherit', color: LIME,
         textDecoration: 'underline', textUnderlineOffset: '2px',
         cursor: loading ? 'default' : 'pointer', width: 'fit-content',
       }}>
@@ -9581,17 +9209,17 @@ function MvpHypothesisPanel({ genContext, onApply, hasApplied }: {
       <div style={whiteboardBoxStyle(hasApplied ? '#059669' : SC, -0.4, { padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const })}>
         <SageAvatar size={108} />
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontFamily: "'Kalam', cursive", fontSize: 19, fontWeight: 700, color: hasApplied ? '#059669' : '#1f2937' }}>
+          <div style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: hasApplied ? '#059669' : '#1f2937' }}>
             {hasApplied ? '✓ Your hypothesis below is saved' : 'Not sure where to start?'}
           </div>
-          <div style={{ fontFamily: "'Kalam', cursive", fontSize: 12.5, color: '#6b7280', lineHeight: 1.4 }}>
+          <div style={{ fontFamily: 'inherit', fontSize: 12.5, color: '#6b7280', lineHeight: 1.4 }}>
             {hasApplied
               ? 'This box always starts fresh when you revisit — your answer below isn’t affected. Ask Sage again if you want to compare other options.'
               : 'Sage can draft a few scoped-down options from what you confirmed in Validate.'}
           </div>
         </div>
-        {error && <div style={{ fontFamily: "'Kalam', cursive", fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '2px dashed #dc2626', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
-        <button onClick={runGenerate} disabled={loading} style={{ padding: '9px 18px', borderRadius: 999, border: `2px solid ${SC}`, cursor: loading ? 'default' : 'pointer', background: loading ? `${SC}80` : SC, color: '#fff', fontSize: 13.5, fontWeight: 700, fontFamily: "'Kalam', cursive", whiteSpace: 'nowrap' as const }}>
+        {error && <div style={{ fontFamily: 'inherit', fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '2px dashed #dc2626', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
+        <button onClick={runGenerate} disabled={loading} style={{ padding: '9px 18px', borderRadius: 999, border: `2px solid ${SC}`, cursor: loading ? 'default' : 'pointer', background: loading ? `${SC}80` : SC, color: '#fff', fontSize: 13.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}>
           {loading ? '🧙 Sage is thinking…' : hasApplied ? '✨ Ask Sage for other options' : '✨ Draft my MVP hypothesis'}
         </button>
       </div>
@@ -9602,21 +9230,21 @@ function MvpHypothesisPanel({ genContext, onApply, hasApplied }: {
     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
         <SageAvatar size={78} />
-        <span style={{ fontFamily: "'Kalam', cursive", fontSize: 18, fontWeight: 700, color: '#1f2937' }}>Sage's draft — pick one, edit it, or ignore it</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 18, fontWeight: 700, color: '#1f2937' }}>Sage's draft — pick one, edit it, or ignore it</span>
       </div>
       {candidates.map((c, i) => (
         <div key={i} style={whiteboardBoxStyle(SC, i % 2 === 0 ? -0.6 : 0.6, { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 })}>
-          <div style={{ fontFamily: "'Kalam', cursive", fontSize: 17, fontWeight: 700, color: '#1f2937', lineHeight: 1.4 }}>"{assembled(c)}"</div>
-          {c.rationale && <div style={{ fontFamily: "'Kalam', cursive", fontSize: 11.5, color: '#6b7280', lineHeight: 1.4 }}>💡 {c.rationale}</div>}
-          <button onClick={() => { onApply(c); setAppliedIdx(i); }} style={{ alignSelf: 'flex-start', marginTop: 2, padding: '6px 14px', borderRadius: 999, border: `2px solid ${SC}`, background: appliedIdx === i ? SC : '#fff', color: appliedIdx === i ? '#fff' : SC, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: "'Kalam', cursive" }}>
+          <div style={{ fontFamily: 'inherit', fontSize: 17, fontWeight: 700, color: '#1f2937', lineHeight: 1.4 }}>"{assembled(c)}"</div>
+          {c.rationale && <div style={{ fontFamily: 'inherit', fontSize: 11.5, color: '#6b7280', lineHeight: 1.4 }}>💡 {c.rationale}</div>}
+          <button onClick={() => { onApply(c); setAppliedIdx(i); }} style={{ alignSelf: 'flex-start', marginTop: 2, padding: '6px 14px', borderRadius: 999, border: `2px solid ${SC}`, background: appliedIdx === i ? SC : '#fff', color: appliedIdx === i ? '#fff' : SC, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             {appliedIdx === i ? '✓ Applied below' : 'Use this →'}
           </button>
         </div>
       ))}
-      {error && <div style={{ fontFamily: "'Kalam', cursive", fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '2px dashed #dc2626', borderRadius: 8, padding: '8px 12px' }}>⚠️ {error}</div>}
+      {error && <div style={{ fontFamily: 'inherit', fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '2px dashed #dc2626', borderRadius: 8, padding: '8px 12px' }}>⚠️ {error}</div>}
       <button onClick={runGenerate} disabled={loading} style={{
         background: 'none', border: 'none', padding: 0, marginTop: 1,
-        fontSize: 12, fontWeight: 700, fontFamily: "'Kalam', cursive", color: SC,
+        fontSize: 12, fontWeight: 700, fontFamily: 'inherit', color: SC,
         textDecoration: 'underline', textUnderlineOffset: '2px',
         cursor: loading ? 'default' : 'pointer', width: 'fit-content',
       }}>
@@ -9716,17 +9344,17 @@ function FeatureBacklogList({ get, set, color }: {
           }}
         >
           <span style={{ color, opacity: .6, fontSize: 13, cursor: 'grab', flexShrink: 0 }} title="Drag to reorder">⠿</span>
-          <span style={{ color, fontFamily: "'Kalam', cursive", fontSize: 15, fontWeight: 800, flexShrink: 0, width: 16, textAlign: 'center' as const }}>{i + 1}</span>
+          <span style={{ color, fontFamily: 'inherit', fontSize: 15, fontWeight: 800, flexShrink: 0, width: 16, textAlign: 'center' as const }}>{i + 1}</span>
           <input
             value={get(k)}
             onChange={e => set(k, e.target.value)}
             placeholder={placeholderFor(i)}
             style={{
               flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent',
-              fontFamily: "'Kalam', cursive", fontSize: 15.5, fontWeight: 700, color: '#1e293b',
+              fontFamily: 'inherit', fontSize: 15.5, fontWeight: 700, color: '#1e293b',
             }}
           />
-          {i >= 3 && i < 5 && <span style={{ fontSize: 10, fontFamily: "'Kalam', cursive", color: '#9a9aa0', flexShrink: 0 }}>optional</span>}
+          {i >= 3 && i < 5 && <span style={{ fontSize: 10, fontFamily: 'inherit', color: '#9a9aa0', flexShrink: 0 }}>optional</span>}
           {i >= 5 && (
             <button onClick={() => removeSlot(i)} title="Remove this feature" style={{
               background: 'none', border: 'none', cursor: 'pointer', color: '#c2c2c9',
@@ -9739,14 +9367,14 @@ function FeatureBacklogList({ get, set, color }: {
       {slotCount < MAX_FEATURES && (
         <button onClick={() => setSlotCount(c => Math.min(MAX_FEATURES, c + 1))} style={{
           alignSelf: 'flex-start', background: 'none', cursor: 'pointer', padding: '7px 4px',
-          border: 'none', color, fontFamily: "'Kalam', cursive", fontSize: 14, fontWeight: 700,
+          border: 'none', color, fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
         }}>
           + Add another feature
         </button>
       )}
       {slotCount > 5 && (
         <div style={{
-          fontFamily: "'Kalam', cursive", fontSize: 12.5, color: '#9a5b1f',
+          fontFamily: 'inherit', fontSize: 12.5, color: '#9a5b1f',
           background: '#fff7ed', border: `1.5px dashed ${color}60`, borderRadius: 10,
           padding: '8px 12px',
         }}>
@@ -9797,7 +9425,7 @@ function ShipWhatShippedCard({ plannedFeatures, get, set, color }: {
         const status = get(statusKey);
         return (
           <div key={i} style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f' }}>{i + 1}. {title}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#16121d' }}>{i + 1}. {title}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
               {SHIP_STATUS_OPTS.map((opt, oi) => (
                 <WobbleChip key={opt.key} index={oi} active={status === opt.key} color={color} onClick={() => setStatus(i, opt.key)} size="sm">
@@ -9811,7 +9439,7 @@ function ShipWhatShippedCard({ plannedFeatures, get, set, color }: {
       {additions.map((a, i) => (
         <div key={`add-${i}`} style={{ border: `1.5px dashed ${color}60`, borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, background: `${color}08` }}>
           <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, color, flexShrink: 0 }}>+ ADDED</span>
-          <span style={{ fontSize: 14, color: '#1d1d1f', flex: 1 }}>{a}</span>
+          <span style={{ fontSize: 14, color: '#16121d', flex: 1 }}>{a}</span>
           <button onClick={() => removeAddition(i)} title="Remove" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c2c2c9', fontSize: 14, fontWeight: 700, padding: '2px 4px', lineHeight: 1 }}>✕</button>
         </div>
       ))}
@@ -9879,7 +9507,7 @@ function DistributionSuggestPanel({ genContext, onApplyOne, onApplyAll, appliedC
       <div style={{ background: hasApplied ? '#f0fdf4' : '#fdfaf5', border: `1.5px dashed ${hasApplied ? '#86efac' : `${SC}80`}`, borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, marginBottom: 16 }}>
         <SageAvatar size={108} />
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>
+          <div style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>
             {hasApplied ? `✓ ${appliedCount} channel${appliedCount !== 1 ? 's' : ''} saved below` : 'Not sure where to find your first users?'}
           </div>
           <div style={{ fontSize: 12, color: T2, lineHeight: 1.4 }}>
@@ -9900,15 +9528,15 @@ function DistributionSuggestPanel({ genContext, onApplyOne, onApplyAll, appliedC
     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' as const }}>
         <SageAvatar size={78} />
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Sage's channel picks</span>
-        <button onClick={() => { onApplyAll(channels.map(c => c.channel)); setAppliedAll(true); setAppliedChannels(new Set(channels.map(c => c.channel))); }} style={{ marginLeft: 'auto', padding: '5px 12px', borderRadius: 999, border: 'none', background: appliedAll ? '#e5e7eb' : SC, color: appliedAll ? '#6e6e73' : '#fff', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <span style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Sage's channel picks</span>
+        <button onClick={() => { onApplyAll(channels.map(c => c.channel)); setAppliedAll(true); setAppliedChannels(new Set(channels.map(c => c.channel))); }} style={{ marginLeft: 'auto', padding: '5px 12px', borderRadius: 999, border: 'none', background: appliedAll ? '#e5e7eb' : SC, color: appliedAll ? '#4a4357' : '#fff', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
           {appliedAll ? '✓ Applied all' : `Apply all ${channels.length} →`}
         </button>
       </div>
       {channels.map((c, i) => (
         <div key={c.channel + i} style={{ ...postcardStyle(i % 2 === 0 ? -0.5 : 0.5), borderTop: `4px solid ${SC}`, padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' as const }}>
-            <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700, color: '#1e293b' }}>{c.channel}</span>
+            <span style={{ fontFamily: 'inherit', fontSize: 18, fontWeight: 700, color: '#1e293b' }}>{c.channel}</span>
             {c.evidenceBased ? (
               <span style={{ fontSize: 9.5, fontWeight: 800, color: '#059669', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 999, padding: '1px 7px', textTransform: 'uppercase' as const, letterSpacing: 0.3 }}>📊 from your data</span>
             ) : (
@@ -9976,7 +9604,7 @@ function PricingSuggestPanel({ genContext, onApply }: {
       <div style={{ background: '#fdfaf5', border: `1.5px dashed ${SC}80`, borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const, marginBottom: 16 }}>
         <SageAvatar size={108} />
         <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Not sure what to charge?</div>
+          <div style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Not sure what to charge?</div>
           <div style={{ fontSize: 12, color: T2, lineHeight: 1.4 }}>Sage suggests a model + price, and tells you honestly whether it's backed by your evidence or a general pattern.</div>
         </div>
         {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
@@ -9991,12 +9619,12 @@ function PricingSuggestPanel({ genContext, onApply }: {
     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8, marginBottom: 16 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
         <SageAvatar size={78} />
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Sage's pricing picks</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Sage's pricing picks</span>
       </div>
       {candidates.map((c, i) => (
         <div key={i} style={{ ...postcardStyle(i % 2 === 0 ? -0.6 : 0.6), borderTop: `4px solid ${SC}`, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
-            <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700, color: '#1e293b' }}>{c.revenueModel.join(' + ')} — {c.pricePoint}</span>
+            <span style={{ fontFamily: 'inherit', fontSize: 18, fontWeight: 700, color: '#1e293b' }}>{c.revenueModel.join(' + ')} — {c.pricePoint}</span>
             {c.evidenceBased ? (
               <span style={{ fontSize: 9.5, fontWeight: 800, color: '#059669', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 999, padding: '1px 7px', textTransform: 'uppercase' as const, letterSpacing: 0.3 }}>📊 from your evidence</span>
             ) : (
@@ -10082,7 +9710,7 @@ function PricingSanityCheckPanel({ revenueModel, pricePoint, genContext }: {
               <span>{meta.icon}</span><span>{meta.label}</span>
               {stale && <span style={{ fontSize: 10, fontWeight: 600, color: T2, marginLeft: 'auto' }}>✏️ picks changed since check</span>}
             </div>
-            <div style={{ fontSize: 11.5, color: '#1d1d1f', marginTop: 2, lineHeight: 1.4 }}>{result.rationale}</div>
+            <div style={{ fontSize: 11.5, color: '#16121d', marginTop: 2, lineHeight: 1.4 }}>{result.rationale}</div>
           </div>
         );
       })()}
@@ -10159,7 +9787,7 @@ function BuildSpecListEdit({ label, items, onChange, color, placeholder }: {
         placeholder={placeholder || 'One per line'}
         multiline
         accent={color}
-        textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}
+        textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}
         onSave={v => onChange(v.split('\n').map(s => s.trim()).filter(Boolean))}
       />
     </div>
@@ -10172,7 +9800,7 @@ function BuildSpecSelect({ label, value, options, onChange, color }: {
   return (
     <div>
       <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, color: T2, textTransform: 'uppercase' as const, marginBottom: 6 }}>{label}</div>
-      <select value={value} onChange={e => onChange(e.target.value)} style={{ ...inp, padding: '9px 10px', fontSize: 13, color: '#1d1d1f', cursor: 'pointer', border: `1.5px solid ${color}40` }}>
+      <select value={value} onChange={e => onChange(e.target.value)} style={{ ...inp, padding: '9px 10px', fontSize: 13, color: '#16121d', cursor: 'pointer', border: `1.5px solid ${color}40` }}>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
     </div>
@@ -10219,7 +9847,7 @@ function ShipBuildSpecPanel({ genContext, initialSpec, onSave, color }: {
       <div style={{ background: '#fdfaf5', border: `1.5px dashed ${color}80`, borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' as const }}>
         <SageAvatar size={120} />
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: T1 }}>Ready to turn this into a build spec?</div>
+          <div style={{ fontFamily: 'inherit', fontSize: 21, fontWeight: 700, color: T1 }}>Ready to turn this into a build spec?</div>
           <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.5 }}>Sage drafts a product definition, MVP hypothesis, feature list, technical requirements, and an ordered build sequence — grounded in everything you've validated so far. Everything else in Ship gets generated from this.</div>
         </div>
         {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
@@ -10251,7 +9879,7 @@ function ShipBuildSpecPanel({ genContext, initialSpec, onSave, color }: {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
         <SageAvatar size={78} />
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your build specification</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Your build specification</span>
         {savedPulse && <span style={{ fontSize: 11, fontWeight: 700, color: '#059669' }}>✓ saved</span>}
       </div>
 
@@ -10268,51 +9896,51 @@ function ShipBuildSpecPanel({ genContext, initialSpec, onSave, color }: {
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginBottom: 10 }}>
             <div>
               <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>Name</div>
-              <EditableText value={spec.productDefinition.name} accent={color} textStyle={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f' }}
+              <EditableText value={spec.productDefinition.name} accent={color} textStyle={{ fontSize: 14, fontWeight: 700, color: '#16121d' }}
                 onSave={v => commit({ ...spec, productDefinition: { ...spec.productDefinition, name: v } })} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>Customer</div>
-              <EditableText value={spec.productDefinition.customer} accent={color} textStyle={{ fontSize: 14, color: '#1d1d1f' }}
+              <EditableText value={spec.productDefinition.customer} accent={color} textStyle={{ fontSize: 14, color: '#16121d' }}
                 onSave={v => commit({ ...spec, productDefinition: { ...spec.productDefinition, customer: v } })} />
             </div>
           </div>
           <div style={{ marginBottom: 8 }}>
             <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>Problem</div>
-            <EditableText value={spec.productDefinition.problem} accent={color} multiline textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
+            <EditableText value={spec.productDefinition.problem} accent={color} multiline textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.6 }}
               onSave={v => commit({ ...spec, productDefinition: { ...spec.productDefinition, problem: v } })} />
           </div>
           <div>
             <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>Outcome</div>
-            <EditableText value={spec.productDefinition.outcome} accent={color} multiline textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
+            <EditableText value={spec.productDefinition.outcome} accent={color} multiline textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.6 }}
               onSave={v => commit({ ...spec, productDefinition: { ...spec.productDefinition, outcome: v } })} />
           </div>
         </div>
 
         <div style={{ ...bentoCard, gridArea: 'hyp' }}>
-          {bentoLabel('💡', '#eef2ff', '#2563eb', 'MVP hypothesis')}
-          <EditableText value={spec.mvpHypothesis} accent={color} multiline textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
+          {bentoLabel('💡', '#eef2ff', '#7c3aed', 'MVP hypothesis')}
+          <EditableText value={spec.mvpHypothesis} accent={color} multiline textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.6 }}
             onSave={v => commit({ ...spec, mvpHypothesis: v })} />
         </div>
 
         <div style={{ ...bentoCard, gridArea: 'journey' }}>
           {bentoLabel('🗺️', '#ecfdf5', '#059669', 'Core user journey')}
           <EditableText value={spec.coreUserJourney.join('\n')} placeholder="One step per line, in order" multiline accent={color}
-            textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}
+            textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}
             onSave={v => commit({ ...spec, coreUserJourney: v.split('\n').map(s => s.trim()).filter(Boolean) })} />
         </div>
 
         <div style={{ ...bentoCard, gridArea: 'features' }}>
           {bentoLabel('🧩', '#fff7ed', '#d97706', 'Feature list')}
           <EditableText value={spec.featureList.join('\n')} placeholder="One feature per line" multiline accent={color}
-            textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}
+            textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}
             onSave={v => commit({ ...spec, featureList: v.split('\n').map(s => s.trim()).filter(Boolean) })} />
         </div>
 
         <div style={{ ...bentoCard, gridArea: 'scope' }}>
           {bentoLabel('✂️', '#fdf2f8', '#db2777', 'Scope cuts (not in v1)')}
           <EditableText value={spec.scopeCuts.join('\n')} placeholder="One per line" multiline accent={color}
-            textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}
+            textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}
             onSave={v => commit({ ...spec, scopeCuts: v.split('\n').map(s => s.trim()).filter(Boolean) })} />
         </div>
 
@@ -10331,18 +9959,18 @@ function ShipBuildSpecPanel({ genContext, initialSpec, onSave, color }: {
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 12 }}>
             <div>
               <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>Integrations</div>
-              <EditableText value={tr.integrations.join(', ')} accent={color} textStyle={{ fontSize: 13, color: '#1d1d1f' }}
+              <EditableText value={tr.integrations.join(', ')} accent={color} textStyle={{ fontSize: 13, color: '#16121d' }}
                 placeholder="None"
                 onSave={v => commit({ ...spec, technicalRequirements: { ...tr, integrations: v.split(',').map(s => s.trim()).filter(Boolean) } })} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>LLM usage</div>
-              <EditableText value={tr.ai} accent={color} multiline textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
+              <EditableText value={tr.ai} accent={color} multiline textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.6 }}
                 onSave={v => commit({ ...spec, technicalRequirements: { ...tr, ai: v } })} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>Analytics</div>
-              <EditableText value={tr.analytics} accent={color} multiline textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
+              <EditableText value={tr.analytics} accent={color} multiline textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.6 }}
                 onSave={v => commit({ ...spec, technicalRequirements: { ...tr, analytics: v } })} />
             </div>
           </div>
@@ -10351,7 +9979,7 @@ function ShipBuildSpecPanel({ genContext, initialSpec, onSave, color }: {
         <div style={{ ...bentoCard, gridArea: 'sequence' }}>
           {bentoLabel('🧱', '#f5f3ff', '#7c3aed', 'Build sequence')}
           <EditableText value={spec.buildSequence.join('\n')} placeholder="One ordered phase per line" multiline accent={color}
-            textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}
+            textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.7, whiteSpace: 'pre-wrap' as const }}
             onSave={v => commit({ ...spec, buildSequence: v.split('\n').map(s => s.trim()).filter(Boolean) })} />
         </div>
       </div>
@@ -10463,7 +10091,7 @@ function ShipBuildPathPanel({ genContext, initialPath, initialTool, onPick, onEx
         <div style={{ background: '#fdfaf5', border: `1.5px dashed ${color}80`, borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const }}>
           <SageAvatar size={108} />
           <div style={{ flex: 1, minWidth: 180 }}>
-            <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Not sure which path fits?</div>
+            <div style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Not sure which path fits?</div>
             <div style={{ fontSize: 12, color: T2, lineHeight: 1.4 }}>Sage weighs your spec's complexity against how comfortable you said you are with code.</div>
           </div>
           {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
@@ -10476,7 +10104,7 @@ function ShipBuildPathPanel({ genContext, initialPath, initialTool, onPick, onEx
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: `${color}08`, border: `1px solid ${color}30`, borderRadius: 12, padding: '12px 16px' }}>
           <SageAvatar size={84} />
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700, color: T1 }}>
+            <div style={{ fontFamily: 'inherit', fontSize: 18, fontWeight: 700, color: T1 }}>
               Sage recommends {BUILD_PATH_OPTIONS.find(o => o.key === recommendation.path)?.label}
             </div>
             <div style={{ fontSize: 12, color: T2, lineHeight: 1.4, marginTop: 2 }}>{recommendation.rationale}</div>
@@ -10504,7 +10132,7 @@ function ShipBuildPathPanel({ genContext, initialPath, initialTool, onPick, onEx
                 <span style={{ position: 'absolute' as const, top: -9, right: 10, fontSize: 9.5, fontWeight: 800, color: '#fff', background: color, borderRadius: 999, padding: '2px 8px', letterSpacing: 0.3 }}>SAGE PICK</span>
               )}
               <div style={{ fontSize: 20, marginBottom: 4 }}>{opt.icon}</div>
-              <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 18, fontWeight: 700 }}>{opt.label}</div>
+              <div style={{ fontFamily: 'inherit', fontSize: 18, fontWeight: 700 }}>{opt.label}</div>
               <div style={{ fontSize: 12, color: on ? `${color}cc` : '#7a7a7a', marginTop: 2, lineHeight: 1.4 }}>{opt.desc}</div>
             </button>
           );
@@ -10526,7 +10154,7 @@ function ShipBuildPathPanel({ genContext, initialPath, initialTool, onPick, onEx
                   border: `1.5px solid ${on ? color : BORDER}`, background: on ? `${color}08` : '#fff',
                 }}>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: on ? color : '#1d1d1f' }}>{on ? '✓ ' : ''}{t.name}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: on ? color : '#16121d' }}>{on ? '✓ ' : ''}{t.name}</div>
                     <div style={{ fontSize: 12, color: T2, marginTop: 1 }}>{t.desc}</div>
                   </div>
                   <div style={{ fontSize: 11, color: T2, fontWeight: 600, flexShrink: 0, textAlign: 'right' as const }}>{t.pricing}</div>
@@ -10599,7 +10227,7 @@ function FlowEdit({ flow, onChange, onRemove, color }: {
     <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px', background: '#fff' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
         <div style={{ flex: 1 }}>
-          <EditableText value={flow.name} accent={color} textStyle={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f' }}
+          <EditableText value={flow.name} accent={color} textStyle={{ fontSize: 14, fontWeight: 700, color: '#16121d' }}
             placeholder="Flow name" canDelete={false} onSave={v => onChange({ ...flow, name: v })} />
         </div>
         <button type="button" title="Remove this flow" onClick={onRemove} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, padding: 2, opacity: 0.5, lineHeight: 1, flexShrink: 0 }}>🗑️</button>
@@ -10620,7 +10248,7 @@ function ScreenEdit({ screen, onChange, onRemove, color }: {
     <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px', background: '#fff' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
         <div style={{ flex: 1 }}>
-          <EditableText value={screen.name} accent={color} textStyle={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f' }}
+          <EditableText value={screen.name} accent={color} textStyle={{ fontSize: 14, fontWeight: 700, color: '#16121d' }}
             placeholder="Screen name" canDelete={false} onSave={v => onChange({ ...screen, name: v })} />
         </div>
         <button type="button" title="Remove this screen" onClick={onRemove} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 12, padding: 2, opacity: 0.5, lineHeight: 1, flexShrink: 0 }}>🗑️</button>
@@ -10628,18 +10256,18 @@ function ScreenEdit({ screen, onChange, onRemove, color }: {
       <div style={{ marginBottom: 10 }}>
         <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3, textTransform: 'uppercase' as const, letterSpacing: 1.2 }}>Category</div>
         <select value={screen.category} onChange={e => onChange({ ...screen, category: e.target.value as ScreenCategory })}
-          style={{ ...inp, padding: '9px 10px', fontSize: 13, color: '#1d1d1f', cursor: 'pointer', border: `1.5px solid ${color}40` }}>
+          style={{ ...inp, padding: '9px 10px', fontSize: 13, color: '#16121d', cursor: 'pointer', border: `1.5px solid ${color}40` }}>
           {SCREEN_CATEGORY_OPTS.map(c => <option key={c} value={c}>{SCREEN_CATEGORY_META[c].icon} {SCREEN_CATEGORY_META[c].label}</option>)}
         </select>
       </div>
       <div style={{ marginBottom: 10 }}>
         <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>Purpose</div>
-        <EditableText value={screen.purpose} accent={color} multiline textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
+        <EditableText value={screen.purpose} accent={color} multiline textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.6 }}
           placeholder="What this screen is for" canDelete={false} onSave={v => onChange({ ...screen, purpose: v })} />
       </div>
       <div>
         <div style={{ fontSize: 10, color: T2, fontWeight: 700, marginBottom: 3 }}>Features served</div>
-        <EditableText value={screen.features.join(', ')} accent={color} textStyle={{ fontSize: 13, color: '#1d1d1f' }}
+        <EditableText value={screen.features.join(', ')} accent={color} textStyle={{ fontSize: 13, color: '#16121d' }}
           placeholder="None — purely navigational" canDelete={false}
           onSave={v => onChange({ ...screen, features: v.split(',').map(s => s.trim()).filter(Boolean) })} />
       </div>
@@ -10686,7 +10314,7 @@ function ShipFlowScreenPanel({ genContext, initialData, onSave, color }: {
       <div style={{ background: '#fdfaf5', border: `1.5px dashed ${color}80`, borderRadius: 12, padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' as const }}>
         <SageAvatar size={120} />
         <div style={{ flex: 1, minWidth: 200 }}>
-          <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 21, fontWeight: 700, color: T1 }}>Ready to map your flows and screens?</div>
+          <div style={{ fontFamily: 'inherit', fontSize: 21, fontWeight: 700, color: T1 }}>Ready to map your flows and screens?</div>
           <div style={{ fontSize: 12.5, color: T2, lineHeight: 1.5 }}>Sage turns your feature list into the primary journeys users will take and the minimum set of screens to build them — each mapped back to the feature it serves.</div>
         </div>
         {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', width: '100%' }}>⚠️ {error}</div>}
@@ -10704,7 +10332,7 @@ function ShipFlowScreenPanel({ genContext, initialData, onSave, color }: {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
         <SageAvatar size={78} />
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your user flows & screens</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Your user flows & screens</span>
         {savedPulse && <span style={{ fontSize: 11, fontWeight: 700, color: '#059669' }}>✓ saved</span>}
       </div>
 
@@ -10817,7 +10445,7 @@ function ScreenPromptCard({ screen, prompt, onGenerate, onEdit, loading, error, 
     <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px', background: '#fff' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f' }}>{SCREEN_CATEGORY_META[screen.category]?.icon} {screen.name}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#16121d' }}>{SCREEN_CATEGORY_META[screen.category]?.icon} {screen.name}</div>
           <div style={{ fontSize: 11.5, color: T2, marginTop: 1 }}>{screen.purpose}</div>
         </div>
         <button onClick={onGenerate} disabled={loading} style={{ padding: '8px 16px', borderRadius: 999, border: 'none', cursor: loading ? 'default' : 'pointer', background: loading ? `${color}80` : color, color: '#fff', fontSize: 12.5, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap' as const, flexShrink: 0 }}>
@@ -10827,7 +10455,7 @@ function ScreenPromptCard({ screen, prompt, onGenerate, onEdit, loading, error, 
       {error && <div style={{ fontSize: 12, color: '#dc2626', background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '8px 12px', marginTop: 10 }}>⚠️ {error}</div>}
       {prompt && (
         <>
-          <textarea value={prompt} onChange={e => onEdit(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 200, marginTop: 10, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 11.5, color: '#1d1d1f', lineHeight: 1.6, resize: 'vertical' as const }} />
+          <textarea value={prompt} onChange={e => onEdit(e.target.value)} style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 200, marginTop: 10, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: MONO, fontSize: 11.5, color: '#16121d', lineHeight: 1.6, resize: 'vertical' as const }} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
             <button onClick={doCopy} style={{ padding: '7px 14px', borderRadius: 999, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               {copiedPulse ? '✓ Copied' : '📋 Copy prompt'}
@@ -10886,7 +10514,7 @@ function ShipUIPromptsPanel({ screens, baseContext, buildTool, initialPrompts, o
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
         <SageAvatar size={78} />
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your screen prompts</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Your screen prompts</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{generatedCount} / {screens.length} generated</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
@@ -10967,7 +10595,7 @@ function MasterPromptOutput({ prompt, buildTool, color }: { prompt: string; buil
 
   return (
     <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 16px', background: '#fff' }}>
-      <textarea readOnly value={prompt} style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 280, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", fontSize: 11.5, color: '#1d1d1f', lineHeight: 1.6, resize: 'vertical' as const, background: '#fafafa' }} />
+      <textarea readOnly value={prompt} style={{ width: '100%', boxSizing: 'border-box' as const, minHeight: 280, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: MONO, fontSize: 11.5, color: '#16121d', lineHeight: 1.6, resize: 'vertical' as const, background: '#fafafa' }} />
       <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' as const, alignItems: 'center' }}>
         <button onClick={doCopy} style={{ padding: '8px 16px', borderRadius: 999, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
           {copiedPulse ? '✓ Copied' : '📋 Copy prompt'}
@@ -11117,7 +10745,7 @@ function FeatureBuildCardPanel({ feature, index, data, onGenerate, onEdit, onSta
       <div onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '12px 16px', cursor: 'pointer' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <span style={{ fontSize: 13, fontWeight: 800, color: T2, flexShrink: 0 }}>{index + 1}.</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{feature}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#16121d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{feature}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: statusMeta.color, background: `${statusMeta.color}18`, borderRadius: 999, padding: '3px 10px', whiteSpace: 'nowrap' as const }}>{statusMeta.icon} {statusMeta.label}</span>
@@ -11137,28 +10765,28 @@ function FeatureBuildCardPanel({ feature, index, data, onGenerate, onEdit, onSta
               <div>
                 {label('User story')}
                 <EditableText value={data.userStory} accent={color} multiline canDelete={false}
-                  textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
+                  textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.6 }}
                   placeholder="As a ..., I want to ..., so that ..."
                   onSave={v => onEdit({ userStory: v })} />
               </div>
               <div>
                 {label('Why it matters')}
                 <EditableText value={data.whyMatters} accent={color} multiline canDelete={false}
-                  textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
+                  textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.6 }}
                   placeholder="Why this feature matters to the product"
                   onSave={v => onEdit({ whyMatters: v })} />
               </div>
               <div>
                 {label('UI & user flow')}
                 <EditableText value={data.uiFlow} accent={color} multiline canDelete={false}
-                  textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
+                  textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.6 }}
                   placeholder="Describe the UI and user flow for this feature"
                   onSave={v => onEdit({ uiFlow: v })} />
               </div>
               <div>
                 {label('Data & business logic')}
                 <EditableText value={data.dataLogic} accent={color} multiline canDelete={false}
-                  textStyle={{ fontSize: 13, color: '#1d1d1f', lineHeight: 1.6 }}
+                  textStyle={{ fontSize: 13, color: '#16121d', lineHeight: 1.6 }}
                   placeholder="What data this reads/writes, and any business rules"
                   onSave={v => onEdit({ dataLogic: v })} />
               </div>
@@ -11167,7 +10795,7 @@ function FeatureBuildCardPanel({ feature, index, data, onGenerate, onEdit, onSta
 
               <div>
                 {label('Status')}
-                <select value={status} onChange={e => onStatusChange(e.target.value as FeatureCardStatus)} style={{ ...inp, padding: '9px 10px', fontSize: 13, color: '#1d1d1f', cursor: 'pointer', border: `1.5px solid ${statusMeta.color}60`, width: 'auto' }}>
+                <select value={status} onChange={e => onStatusChange(e.target.value as FeatureCardStatus)} style={{ ...inp, padding: '9px 10px', fontSize: 13, color: '#16121d', cursor: 'pointer', border: `1.5px solid ${statusMeta.color}60`, width: 'auto' }}>
                   {FEATURE_CARD_STATUS_OPTS.map(s => <option key={s} value={s}>{FEATURE_CARD_STATUS_META[s].icon} {FEATURE_CARD_STATUS_META[s].label}</option>)}
                 </select>
               </div>
@@ -11229,7 +10857,7 @@ function ShipFeatureBuilderPanel({ features, genContext, spec, buildTool, buildP
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
         <SageAvatar size={78} />
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your build cards</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Your build cards</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{generatedCount} / {features.length} generated</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
@@ -11325,7 +10953,7 @@ function VibeCoachRequestCard({ index, request, onChange, onRemove, onGenerate, 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <span style={{ fontSize: 13, fontWeight: 800, color: T2, flexShrink: 0 }}>{index + 1}.</span>
           <span style={{ fontSize: 11.5, fontWeight: 700, color, background: `${color}18`, borderRadius: 999, padding: '3px 9px', flexShrink: 0, whiteSpace: 'nowrap' as const }}>{meta.icon} {meta.label}</span>
-          <span style={{ fontSize: 13, color: '#1d1d1f', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{request.description || 'No description yet'}</span>
+          <span style={{ fontSize: 13, color: '#16121d', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{request.description || 'No description yet'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           {canRemove && (
@@ -11338,7 +10966,7 @@ function VibeCoachRequestCard({ index, request, onChange, onRemove, onGenerate, 
         <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 12, borderTop: `1px solid ${BORDER}` }}>
           <div style={{ paddingTop: 12 }}>
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, color: T2, textTransform: 'uppercase' as const, marginBottom: 6 }}>What kind of change?</div>
-            <select value={request.category} onChange={e => onChange({ category: e.target.value as ChangeCategory })} style={{ ...inp, padding: '9px 10px', fontSize: 13, color: '#1d1d1f', cursor: 'pointer', border: `1.5px solid ${color}40`, width: 'auto' }}>
+            <select value={request.category} onChange={e => onChange({ category: e.target.value as ChangeCategory })} style={{ ...inp, padding: '9px 10px', fontSize: 13, color: '#16121d', cursor: 'pointer', border: `1.5px solid ${color}40`, width: 'auto' }}>
               {CHANGE_CATEGORY_OPTS.map(c => <option key={c} value={c}>{CHANGE_CATEGORY_META[c].icon} {CHANGE_CATEGORY_META[c].label}</option>)}
             </select>
           </div>
@@ -11409,7 +11037,7 @@ function ShipVibeCoachPanel({ requests, genContext, buildTool, onSave, color }: 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
         <SageAvatar size={78} />
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your change requests</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Your change requests</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{generatedCount} / {list.length} turned into prompts</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
@@ -11540,7 +11168,7 @@ function QACheckpointCard({ checkpoint, prompt, status, onStatusChange, buildToo
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <span style={{ fontSize: 14 }}>{meta.icon}</span>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1d1d1f' }}>{meta.label}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#16121d' }}>{meta.label}</div>
             <div style={{ fontSize: 11.5, color: T2 }}>{meta.desc}</div>
           </div>
         </div>
@@ -11556,7 +11184,7 @@ function QACheckpointCard({ checkpoint, prompt, status, onStatusChange, buildToo
           </div>
           <div>
             <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, color: T2, textTransform: 'uppercase' as const, marginBottom: 6 }}>Status</div>
-            <select value={status} onChange={e => onStatusChange(e.target.value as QACheckpointStatus)} style={{ ...inp, padding: '9px 10px', fontSize: 13, color: '#1d1d1f', cursor: 'pointer', border: `1.5px solid ${statusMeta.color}60`, width: 'auto' }}>
+            <select value={status} onChange={e => onStatusChange(e.target.value as QACheckpointStatus)} style={{ ...inp, padding: '9px 10px', fontSize: 13, color: '#16121d', cursor: 'pointer', border: `1.5px solid ${statusMeta.color}60`, width: 'auto' }}>
               {QA_CHECKPOINT_STATUS_OPTS.map(s => <option key={s} value={s}>{QA_CHECKPOINT_STATUS_META[s].icon} {QA_CHECKPOINT_STATUS_META[s].label}</option>)}
             </select>
           </div>
@@ -11590,7 +11218,7 @@ function ShipQACheckpointsPanel({ statuses, ideaName, spec, screens, featureCard
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
         <SageAvatar size={78} />
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your QA checkpoints</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Your QA checkpoints</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{reviewedCount} / {QA_CHECKPOINT_OPTS.length} reviewed</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
@@ -11697,7 +11325,7 @@ function ShipLaunchChecklistPanel({ checked, onToggle, launched, onLaunch, color
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
         <SageAvatar size={78} />
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: T1 }}>Your launch readiness</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: T1 }}>Your launch readiness</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: T2 }}>{doneCount} / {allItems.length} ready</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10, marginTop: 6 }}>
@@ -12056,17 +11684,15 @@ function InterviewScriptStep({ stored, framework, onSave, genContext }: {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <InterviewGuidePanel stored={parsed.ai ? JSON.stringify(parsed.ai) : ''} onSave={aiOnSave} genContext={genContext} />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '6px 0' }}>
-        <div style={{ flex: 1, height: 1, background: BORDER }} />
-        <span style={{ fontSize: 11, fontWeight: 800, color: STAGE_COLORS.validate, textTransform: 'uppercase' as const, letterSpacing: 0.6, display: 'flex', alignItems: 'center', gap: 6 }}>
-          ✍️ Add your own
-        </span>
-        <div style={{ flex: 1, height: 1, background: BORDER }} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: 20, alignItems: 'start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <span style={{ ...eyebrow(ACCENT), padding: '0 4px' }}>✍ Add your own</span>
+          <QuestionEditor stored={JSON.stringify(parsed.manual)} framework={framework} onSave={manualOnSave} problemDomain={genContext.oneLiner || genContext.problemSentence} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, position: 'sticky' as const, top: 80 }}>
+          <MergedInterviewLog manual={parsed.manual} ai={parsed.ai} framework={framework} title={genContext.ideaName ? `${genContext.ideaName} — Interview Script` : 'Interview Script'} />
+        </div>
       </div>
-
-      <QuestionEditor stored={JSON.stringify(parsed.manual)} framework={framework} onSave={manualOnSave} problemDomain={genContext.oneLiner || genContext.problemSentence} />
-
-      <MergedInterviewLog manual={parsed.manual} ai={parsed.ai} framework={framework} title={genContext.ideaName ? `${genContext.ideaName} — Interview Script` : 'Interview Script'} />
     </div>
   );
 }
@@ -12088,7 +11714,7 @@ const HYP_META: Record<HypType, { label: string; icon: string; color: string; ta
   value: {
     label:   'Value assumption',
     icon:    '💎',
-    color:   '#2563eb',
+    color:   '#7c3aed',
     tagline: 'Would they actually value what you\'re planning to build?',
     focus:   'Test whether your approach, value prop, and price point resonate with their real needs.',
   },
@@ -12103,12 +11729,12 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
       q:    'Tell me about the last time you ran into this kind of problem. What exactly happened?',
       hint: 'You want a specific incident with detail. A vivid story means the pain is memorable and real. A vague or distant answer is a weak signal.',
       chips: [
-        { k: 'Vivid specific story', icon: '💬', color: '#2563eb' },
+        { k: 'Vivid specific story', icon: '💬', color: '#7c3aed' },
         { k: 'Recent (< 1 month)',   icon: '🕐', color: '#059669' },
         { k: 'Happens repeatedly',   icon: '🔁', color: '#d97706' },
         { k: 'Emotional reaction',   icon: '😤', color: '#dc2626' },
-        { k: 'Vague / fuzzy recall', icon: '🤷', color: '#b0b0b8' },
-        { k: 'One-off event',        icon: '📅', color: '#6e6e73' },
+        { k: 'Vague / fuzzy recall', icon: '🤷', color: '#8a8299' },
+        { k: 'One-off event',        icon: '📅', color: '#4a4357' },
       ],
     },
     {
@@ -12117,10 +11743,10 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
       chips: [
         { k: 'Scored 8–10',          icon: '🔥', color: '#dc2626' },
         { k: 'Scored 5–7',           icon: '⚡', color: '#d97706' },
-        { k: 'Scored 1–4',           icon: '💤', color: '#6e6e73' },
+        { k: 'Scored 1–4',           icon: '💤', color: '#4a4357' },
         { k: 'Strong emotion in why',icon: '😰', color: '#dc2626' },
-        { k: 'Mild annoyance only',  icon: '😒', color: '#b0b0b8' },
-        { k: 'Indifferent',          icon: '😐', color: '#6e6e73' },
+        { k: 'Mild annoyance only',  icon: '😒', color: '#8a8299' },
+        { k: 'Indifferent',          icon: '😐', color: '#4a4357' },
       ],
     },
     {
@@ -12130,8 +11756,8 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
         { k: 'Pays for a workaround',  icon: '💳', color: '#059669' },
         { k: 'Built own workaround',   icon: '🔧', color: '#d97706' },
         { k: 'Juggles multiple tools', icon: '🔀', color: '#d97706' },
-        { k: 'Delegates to someone',   icon: '🤝', color: '#2563eb' },
-        { k: 'Just ignores it',        icon: '🙈', color: '#b0b0b8' },
+        { k: 'Delegates to someone',   icon: '🤝', color: '#7c3aed' },
+        { k: 'Just ignores it',        icon: '🙈', color: '#8a8299' },
         { k: 'No workaround exists',   icon: '🚫', color: '#dc2626' },
       ],
     },
@@ -12142,9 +11768,9 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
         { k: 'Named a $ figure',   icon: '💰', color: '#059669' },
         { k: 'Named hours lost',   icon: '⏱️', color: '#dc2626' },
         { k: 'Missed revenue',     icon: '📉', color: '#dc2626' },
-        { k: 'Emotional / stress', icon: '😔', color: '#2563eb' },
-        { k: 'Low / no real cost', icon: '🤷', color: '#b0b0b8' },
-        { k: 'Couldn\'t quantify', icon: '❓', color: '#6e6e73' },
+        { k: 'Emotional / stress', icon: '😔', color: '#7c3aed' },
+        { k: 'Low / no real cost', icon: '🤷', color: '#8a8299' },
+        { k: 'Couldn\'t quantify', icon: '❓', color: '#4a4357' },
       ],
     },
     {
@@ -12155,8 +11781,8 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
         { k: 'Tried multiple things', icon: '🔍', color: '#059669' },
         { k: 'Tried & abandoned',     icon: '❌', color: '#d97706' },
         { k: 'It\'s on their to-do',  icon: '📋', color: '#d97706' },
-        { k: 'Accepted as normal',    icon: '😞', color: '#b0b0b8' },
-        { k: 'Nothing tried',         icon: '🚫', color: '#6e6e73' },
+        { k: 'Accepted as normal',    icon: '😞', color: '#8a8299' },
+        { k: 'Nothing tried',         icon: '🚫', color: '#4a4357' },
       ],
     },
     {
@@ -12166,9 +11792,9 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
         { k: 'Business at risk',       icon: '⚠️', color: '#dc2626' },
         { k: 'Ongoing $ loss',         icon: '💸', color: '#d97706' },
         { k: 'Growth blocked',         icon: '🛑', color: '#d97706' },
-        { k: 'Frustrating but ok',     icon: '😐', color: '#b0b0b8' },
-        { k: 'Someone else handles it',icon: '👋', color: '#b0b0b8' },
-        { k: 'Not a big deal',         icon: '🤷', color: '#6e6e73' },
+        { k: 'Frustrating but ok',     icon: '😐', color: '#8a8299' },
+        { k: 'Someone else handles it',icon: '👋', color: '#8a8299' },
+        { k: 'Not a big deal',         icon: '🤷', color: '#4a4357' },
       ],
     },
   ],
@@ -12181,9 +11807,9 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
       chips: [
         { k: 'Speed / saves time',   icon: '⚡', color: '#d97706' },
         { k: 'Saves money',          icon: '💰', color: '#059669' },
-        { k: 'Ease / simplicity',    icon: '✨', color: '#2563eb' },
-        { k: 'Reliability',          icon: '🔒', color: '#2563eb' },
-        { k: 'Fits existing tools',  icon: '🔌', color: '#2563eb' },
+        { k: 'Ease / simplicity',    icon: '✨', color: '#7c3aed' },
+        { k: 'Reliability',          icon: '🔒', color: '#7c3aed' },
+        { k: 'Fits existing tools',  icon: '🔌', color: '#7c3aed' },
         { k: 'Control / ownership',  icon: '🎛️', color: '#d97706' },
       ],
     },
@@ -12193,7 +11819,7 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
       chips: [
         { k: 'Immediate excitement',    icon: '🚀', color: '#059669' },
         { k: 'Curious, asked questions',icon: '🔍', color: '#059669' },
-        { k: 'Polite but neutral',      icon: '😐', color: '#b0b0b8' },
+        { k: 'Polite but neutral',      icon: '😐', color: '#8a8299' },
         { k: 'Pointed out gaps',        icon: '🔧', color: '#d97706' },
         { k: 'Skeptical',               icon: '🤨', color: '#dc2626' },
         { k: 'Didn\'t get the value',   icon: '❓', color: '#dc2626' },
@@ -12207,7 +11833,7 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
         { k: 'Minor adjustment',     icon: '🔧', color: '#d97706' },
         { k: 'Complex workflow',     icon: '🌀', color: '#d97706' },
         { k: 'Major change needed',  icon: '⚠️', color: '#dc2626' },
-        { k: 'Team needs to agree',  icon: '👥', color: '#b0b0b8' },
+        { k: 'Team needs to agree',  icon: '👥', color: '#8a8299' },
         { k: 'Resistant to change',  icon: '🔒', color: '#dc2626' },
       ],
     },
@@ -12220,7 +11846,7 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
         { k: 'Would pay (vague)',      icon: '💭', color: '#d97706' },
         { k: 'Needs to see ROI first', icon: '📊', color: '#d97706' },
         { k: 'Free only',             icon: '🚫', color: '#dc2626' },
-        { k: 'Deflected the question',icon: '↩️', color: '#b0b0b8' },
+        { k: 'Deflected the question',icon: '↩️', color: '#8a8299' },
       ],
     },
     {
@@ -12231,7 +11857,7 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
         { k: 'Needs boss/team ok',   icon: '📝', color: '#d97706' },
         { k: 'Privacy concern',      icon: '🔐', color: '#d97706' },
         { k: 'Timing not right',     icon: '⏳', color: '#d97706' },
-        { k: 'Too complex to adopt', icon: '🌀', color: '#b0b0b8' },
+        { k: 'Too complex to adopt', icon: '🌀', color: '#8a8299' },
         { k: 'No blockers at all',   icon: '✅', color: '#059669' },
       ],
     },
@@ -12242,8 +11868,8 @@ const HYP_QUESTIONS: Record<HypType, HypQuestion[]> = {
         { k: 'Would start today',   icon: '🚀', color: '#059669' },
         { k: 'Within a month',      icon: '✅', color: '#059669' },
         { k: 'Need to evaluate',    icon: '⏳', color: '#d97706' },
-        { k: 'After a few months',  icon: '📅', color: '#b0b0b8' },
-        { k: 'Not urgently',        icon: '😴', color: '#6e6e73' },
+        { k: 'After a few months',  icon: '📅', color: '#8a8299' },
+        { k: 'Not urgently',        icon: '😴', color: '#4a4357' },
         { k: 'Not interested',      icon: '❌', color: '#dc2626' },
       ],
     },
@@ -12305,7 +11931,7 @@ function QuestionPatternsCard({ interviews, interviewQA }: {
         onClick={() => setOpen(o => !o)}
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#fafafa', border: 'none', cursor: 'pointer', textAlign: 'left' as const }}
       >
-        <span style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 20, fontWeight: 700, color: T1 }}>📋 What people said, question by question</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 20, fontWeight: 700, color: T1 }}>📋 What people said, question by question</span>
         <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
           {open ? 'collapse' : 'click to expand'}
           <span style={{ fontSize: 13, transition: 'transform .2s', display: 'inline-block', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
@@ -12329,7 +11955,7 @@ function QuestionPatternsCard({ interviews, interviewQA }: {
                     {topSigs.map(([sig, n]) => {
                       const opt = ALL_SIGNAL_OPTS.find(o => o.k === sig);
                       return (
-                        <span key={sig} style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: opt ? `${opt.color}14` : '#f0f0f0', color: opt?.color || '#6e6e73' }}>
+                        <span key={sig} style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: opt ? `${opt.color}14` : '#f0f0f0', color: opt?.color || '#4a4357' }}>
                           {opt?.icon} {sig} · {n}
                         </span>
                       );
@@ -12338,7 +11964,7 @@ function QuestionPatternsCard({ interviews, interviewQA }: {
                 )}
                 {quotedAnswers.slice(0, 2).map((a, ai) => (
                   <div key={ai} style={{ marginLeft: 30, fontSize: 12, color: '#444', fontStyle: 'italic', lineHeight: 1.5, borderLeft: `2px solid ${ac}40`, paddingLeft: 8, marginTop: 4 }}>
-                    "{a.quote}" <span style={{ fontStyle: 'normal', color: '#b0b0b8' }}>— {a.name}</span>
+                    "{a.quote}" <span style={{ fontStyle: 'normal', color: '#8a8299' }}>— {a.name}</span>
                   </div>
                 ))}
               </div>
@@ -12523,7 +12149,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
       confirmed:     { label: 'Confirmed ✅',     bg: '#f0fdf4', fg: '#059669', br: '#86efac' },
       partial:       { label: 'Partial signal ◐', bg: '#fffbeb', fg: '#d97706', br: '#fcd34d' },
       not_confirmed: { label: 'Not confirmed ❌',  bg: '#fef2f2', fg: '#dc2626', br: '#fca5a5' },
-      pending:       { label: 'Not started',        bg: '#f5f5f7', fg: '#b0b0b8', br: BORDER },
+      pending:       { label: 'Not started',        bg: '#f3f0e8', fg: '#8a8299', br: BORDER },
     }[status];
 
     // (negSignalKeys defined above with posKeys)
@@ -12541,7 +12167,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
               {intervieweeName || 'New interview'}
             </div>
             {intervieweeRole && (
-              <div style={{ fontSize: 11, color: '#6e6e73', marginTop: 1 }}>
+              <div style={{ fontSize: 11, color: '#4a4357', marginTop: 1 }}>
                 {intervieweeRole}
               </div>
             )}
@@ -12553,7 +12179,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
             </button>
           )}
           {(status !== 'pending' || open) && (
-            <button onClick={() => setOpen(o => !o)} style={{ padding: '7px 12px', borderRadius: 8, border: `1.5px solid ${BORDER}`, background: '#f5f5f7', color: '#6e6e73', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={() => setOpen(o => !o)} style={{ padding: '7px 12px', borderRadius: 8, border: `1.5px solid ${BORDER}`, background: '#f3f0e8', color: '#4a4357', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               {open ? 'Close' : 'View'}
             </button>
           )}
@@ -12569,7 +12195,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
 
                 {/* Who are you speaking with */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase' as const, color: '#b0b0b8' }}>Who are you speaking with?</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase' as const, color: '#8a8299' }}>Who are you speaking with?</div>
                   <input
                     autoFocus
                     type="text"
@@ -12603,8 +12229,8 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                     real interview script exists yet (steps 7-8 skipped) */}
                 {!hasScript && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase' as const, color: '#b0b0b8' }}>What assumption are you testing?</div>
-                    <div style={{ fontSize: 11, color: '#6e6e73', lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: 'uppercase' as const, color: '#8a8299' }}>What assumption are you testing?</div>
+                    <div style={{ fontSize: 11, color: '#4a4357', lineHeight: 1.5 }}>
                       Each interview tests <em>one specific hypothesis</em>. Choose what you want to confirm or disprove in this conversation.
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -12622,7 +12248,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                               transition: 'all .12s', boxShadow: selected ? `0 0 0 3px ${meta.color}22` : 'none',
                             }}
                           >
-                            <div style={{ width: 36, height: 36, borderRadius: 10, background: selected ? `${meta.color}20` : '#f0f0f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, marginTop: 1 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: selected ? `${meta.color}20` : '#e8e3d7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, marginTop: 1 }}>
                               {meta.icon}
                             </div>
                             <div style={{ flex: 1 }}>
@@ -12630,7 +12256,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                                 <span style={{ fontSize: 13, fontWeight: 800, color: selected ? meta.color : T1 }}>{meta.label}</span>
                                 {selected && <span style={{ fontSize: 10, fontWeight: 800, background: meta.color, color: '#fff', borderRadius: 6, padding: '2px 7px' }}>Selected</span>}
                               </div>
-                              <div style={{ fontSize: 12, color: '#6e6e73', lineHeight: 1.45 }}>{meta.tagline}</div>
+                              <div style={{ fontSize: 12, color: '#4a4357', lineHeight: 1.45 }}>{meta.tagline}</div>
                               {selected && <div style={{ marginTop: 6, fontSize: 11, color: meta.color, lineHeight: 1.45, fontStyle: 'italic' }}>💡 {meta.focus}</div>}
                             </div>
                           </button>
@@ -12657,8 +12283,8 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                   disabled={!intervieweeName.trim() || (!hasScript && !hypothesisType)}
                   style={{
                     padding: '14px', borderRadius: 12, border: 'none',
-                    background: intervieweeName.trim() && (hasScript || hypothesisType) ? ac : '#e5e5ea',
-                    color: intervieweeName.trim() && (hasScript || hypothesisType) ? '#fff' : '#b0b0b8',
+                    background: intervieweeName.trim() && (hasScript || hypothesisType) ? ac : '#e2ddd1',
+                    color: intervieweeName.trim() && (hasScript || hypothesisType) ? '#fff' : '#8a8299',
                     fontSize: 14, fontWeight: 700,
                     cursor: intervieweeName.trim() && (hasScript || hypothesisType) ? 'pointer' : 'default',
                     fontFamily: 'inherit', transition: 'all .15s',
@@ -12682,7 +12308,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                   <div style={{ padding: '14px 20px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#6e6e73', flexShrink: 0 }}>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#4a4357', flexShrink: 0 }}>
                           With <span style={{ color: ac }}>{intervieweeName || 'them'}</span>
                         </span>
                         {hypothesisType && (
@@ -12691,7 +12317,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                           </span>
                         )}
                       </div>
-                      <div style={{ fontSize: 11, color: '#b0b0b8', flexShrink: 0 }}>{step} / {totalQ}</div>
+                      <div style={{ fontSize: 11, color: '#8a8299', flexShrink: 0 }}>{step} / {totalQ}</div>
                     </div>
                     {/* Dot progress */}
                     <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' as const }}>
@@ -12705,7 +12331,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                             title={`Q${i + 1}`}
                             style={{
                               width: isCur ? 28 : 10, height: 10, borderRadius: 5,
-                              background: isCur ? ac : hasAns ? `${ac}60` : '#e5e5ea',
+                              background: isCur ? ac : hasAns ? `${ac}60` : '#e2ddd1',
                               border: 'none', cursor: 'pointer', padding: 0, transition: 'all .2s',
                               flexShrink: 0,
                             }}
@@ -12735,27 +12361,27 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                       <div style={{ margin: '8px 20px 0', borderRadius: 10, background: `${ac}08`, border: `1.5px solid ${ac}25`, overflow: 'hidden' }}>
                         <div style={{ padding: '5px 10px', background: `${ac}15`, display: 'flex', alignItems: 'center', gap: 5 }}>
                           <span style={{ fontSize: 12 }}>🎯</span>
-                          <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.03em', color: '#dc2626', textTransform: 'uppercase' as const }}>Problem being validated</span>
+                          <span style={{ fontFamily: 'inherit', fontSize: 14, letterSpacing: '.03em', color: '#dc2626', textTransform: 'uppercase' as const }}>Problem being validated</span>
                         </div>
                         {isParsed ? (
                           <div style={{ padding: '7px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
                             <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                              <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.03em', color: ac, minWidth: 62, paddingTop: 1 }}>WHO</span>
-                              <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#2563eb', lineHeight: 1.4 }}>{who}</span>
+                              <span style={{ fontFamily: 'inherit', fontSize: 12, letterSpacing: '.03em', color: ac, minWidth: 62, paddingTop: 1 }}>WHO</span>
+                              <span style={{ fontFamily: 'inherit', fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#7c3aed', lineHeight: 1.4 }}>{who}</span>
                             </div>
                             <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                              <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.03em', color: ac, minWidth: 62, paddingTop: 1 }}>STRUGGLE</span>
-                              <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#2563eb', lineHeight: 1.4 }}>{prob}</span>
+                              <span style={{ fontFamily: 'inherit', fontSize: 12, letterSpacing: '.03em', color: ac, minWidth: 62, paddingTop: 1 }}>STRUGGLE</span>
+                              <span style={{ fontFamily: 'inherit', fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#7c3aed', lineHeight: 1.4 }}>{prob}</span>
                             </div>
                             {root && (
                               <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                                <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 12, letterSpacing: '.03em', color: ac, minWidth: 62, paddingTop: 1 }}>WHY</span>
-                                <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#2563eb', lineHeight: 1.4 }}>{root}{cons ? `, resulting in ${cons}` : ''}</span>
+                                <span style={{ fontFamily: 'inherit', fontSize: 12, letterSpacing: '.03em', color: ac, minWidth: 62, paddingTop: 1 }}>WHY</span>
+                                <span style={{ fontFamily: 'inherit', fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#7c3aed', lineHeight: 1.4 }}>{root}{cons ? `, resulting in ${cons}` : ''}</span>
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div style={{ padding: '7px 10px', fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#2563eb', lineHeight: 1.4 }}>{problemContext}</div>
+                          <div style={{ padding: '7px 10px', fontFamily: 'inherit', fontStyle: 'italic' as const, fontSize: 14, fontWeight: 600, color: '#7c3aed', lineHeight: 1.4 }}>{problemContext}</div>
                         )}
                       </div>
                     );
@@ -12763,10 +12389,10 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
 
                   {/* Question card */}
                   <div style={{ margin: '10px 20px 0', padding: '12px 14px', borderRadius: 12, background: `${ac}08`, border: `1.5px solid ${ac}25` }}>
-                    <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.04em', textTransform: 'uppercase' as const, color: ac, marginBottom: 6 }}>
+                    <div style={{ fontFamily: 'inherit', fontSize: 13, letterSpacing: '.04em', textTransform: 'uppercase' as const, color: ac, marginBottom: 6 }}>
                       Ask them →
                     </div>
-                    <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 18, fontWeight: 600, color: T1, lineHeight: 1.4, marginBottom: 8 }}>
+                    <div style={{ fontFamily: 'inherit', fontStyle: 'italic' as const, fontSize: 18, fontWeight: 600, color: T1, lineHeight: 1.4, marginBottom: 8 }}>
                       "{q.q}"
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, padding: '5px 8px', borderRadius: 7, background: 'rgba(255,255,255,.7)', border: `1px solid ${ac}20` }}>
@@ -12791,7 +12417,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                     return (
                       <div style={{ margin: '10px 20px 0' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6, flexWrap: 'wrap' as const }}>
-                          <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#8a8a90' }}>
+                          <div style={{ fontFamily: 'inherit', fontSize: 13, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#8a8a90' }}>
                             What did you observe?
                           </div>
                           {isGenerating && <span style={{ fontSize: 10, fontWeight: 700, color: '#b45309' }}>🤖 tailoring options to this question…</span>}
@@ -12821,11 +12447,11 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
 
                   {/* Quote / note */}
                   <div style={{ margin: '10px 20px 0' }}>
-                    <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#8a8a90', marginBottom: 5 }}>
+                    <div style={{ fontFamily: 'inherit', fontSize: 13, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#8a8a90', marginBottom: 5 }}>
                       Their words (optional)
                     </div>
                     <div style={{ position: 'relative' as const }}>
-                      <span style={{ position: 'absolute' as const, top: 5, left: 10, fontSize: 20, color: `${ac}40`, fontFamily: "'Playfair Display', Georgia, serif", lineHeight: 1 }}>"</span>
+                      <span style={{ position: 'absolute' as const, top: 5, left: 10, fontSize: 20, color: `${ac}40`, fontFamily: 'inherit', lineHeight: 1 }}>"</span>
                       <textarea
                         value={ans.quote}
                         onChange={e => setQuote(qi, e.target.value)}
@@ -12836,7 +12462,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                           padding: '7px 10px 7px 26px',
                           border: `1.5px solid ${ans.quote ? ac + '60' : BORDER}`,
                           borderRadius: 8, fontSize: 15, fontWeight: 600, resize: 'vertical' as const,
-                          fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, outline: 'none', lineHeight: 1.4,
+                          fontFamily: 'inherit', fontStyle: 'italic' as const, outline: 'none', lineHeight: 1.4,
                           color: USER_INPUT_COLOR, background: ans.quote ? `${ac}04` : '#fff',
                           transition: 'border-color .15s',
                         }}
@@ -12848,13 +12474,13 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                   <div style={{ display: 'flex', gap: 8, padding: '10px 20px 14px' }}>
                     <button
                       onClick={() => setStep(s => s > 1 ? s - 1 : 0)}
-                      style={{ padding: '8px 14px', borderRadius: 9, border: `1.5px solid ${BORDER}`, background: '#f5f5f7', color: '#525257', fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, fontSize: 13, cursor: 'pointer' }}
+                      style={{ padding: '8px 14px', borderRadius: 9, border: `1.5px solid ${BORDER}`, background: '#f3f0e8', color: '#525257', fontFamily: 'inherit', letterSpacing: '.02em', textTransform: 'uppercase' as const, fontSize: 13, cursor: 'pointer' }}
                     >
                       ← Back
                     </button>
                     <button
                       onClick={() => setStep(s => s + 1)}
-                      style={{ flex: 1, padding: '8px 14px', borderRadius: 9, border: 'none', background: ac, color: '#fff', fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, fontSize: 13, cursor: 'pointer' }}
+                      style={{ flex: 1, padding: '8px 14px', borderRadius: 9, border: 'none', background: ac, color: '#fff', fontFamily: 'inherit', letterSpacing: '.02em', textTransform: 'uppercase' as const, fontSize: 13, cursor: 'pointer' }}
                     >
                       {step === totalQ ? 'Finish & review →' : `Next question →`}
                     </button>
@@ -12871,7 +12497,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                 <div style={{ textAlign: 'center' as const, paddingBottom: 4 }}>
                   <div style={{ fontSize: 32, marginBottom: 6 }}>🎉</div>
                   <div style={{ fontSize: 17, fontWeight: 800, color: T1 }}>Interview complete</div>
-                  <div style={{ fontSize: 13, color: '#6e6e73', marginTop: 2 }}>
+                  <div style={{ fontSize: 13, color: '#4a4357', marginTop: 2 }}>
                     With <strong>{intervieweeName || 'your interviewee'}</strong> — {allSigs.length} signal{allSigs.length !== 1 ? 's' : ''} captured
                   </div>
                 </div>
@@ -12882,7 +12508,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                   if (!a?.signals?.length && !a?.quote) return null;
                   return (
                     <div key={i} style={{ background: '#f9f9fb', borderRadius: 10, padding: '12px 14px', border: `1px solid ${BORDER}` }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: '#b0b0b8', letterSpacing: 1.1, marginBottom: 6 }}>Q{i + 1}</div>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: '#8a8299', letterSpacing: 1.1, marginBottom: 6 }}>Q{i + 1}</div>
                       <div style={{ fontSize: 12, fontWeight: 600, color: T1, marginBottom: 8, lineHeight: 1.4 }}>"{q.q}"</div>
                       {a.signals.length > 0 && (
                         <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 5, marginBottom: a.quote ? 8 : 0 }}>
@@ -12897,7 +12523,7 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
                                 {opt.icon} {sig}
                               </span>
                             ) : (
-                              <span key={sig} style={{ padding: '3px 9px', borderRadius: 12, background: '#f0f0f0', color: '#6e6e73', fontSize: 11, fontWeight: 700 }}>
+                              <span key={sig} style={{ padding: '3px 9px', borderRadius: 12, background: '#f0f0f0', color: '#4a4357', fontSize: 11, fontWeight: 700 }}>
                                 {sig}
                               </span>
                             );
@@ -12933,10 +12559,10 @@ function PersonaInterviewCard({ index, existingInterview, onSave, problemContext
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <button onClick={() => setStep(totalQ)} style={{ padding: '11px 16px', borderRadius: 10, border: `1.5px solid ${BORDER}`, background: '#f5f5f7', color: '#6e6e73', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <button onClick={() => setStep(totalQ)} style={{ padding: '11px 16px', borderRadius: 10, border: `1.5px solid ${BORDER}`, background: '#f3f0e8', color: '#4a4357', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                     ← Review
                   </button>
-                  <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '13px', borderRadius: 10, border: 'none', background: saving ? '#d2d2d7' : '#059669', color: '#fff', fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                  <button onClick={handleSave} disabled={saving} style={{ flex: 1, padding: '13px', borderRadius: 10, border: 'none', background: saving ? '#d9d3c5' : '#059669', color: '#fff', fontSize: 14, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
                     {saving ? 'Saving…' : 'Save interview →'}
                   </button>
                 </div>
@@ -13007,7 +12633,11 @@ function StepIntro({ mod, step }: { mod: Mod; step: number }) {
     return () => clearTimeout(t);
   }, [phase]);
 
-  if (phase === 'gone' || !text) return null;
+  // 2026-10 redesign: the step header now shows this same goal text as the
+  // H1's subtitle (StepGoal), so flashing it a second time here read as a
+  // duplicate. Retired to a no-op — the storage/animation plumbing above is
+  // kept so this is restorable in one line if the beat is wanted back.
+  if (phase === 'gone' || !text || true) return null;
   const c = STAGE_COLORS[mod];
 
   return (
@@ -13022,7 +12652,7 @@ function StepIntro({ mod, step }: { mod: Mod; step: number }) {
       }}
     >
       <span style={{ fontSize: 19, flexShrink: 0 }}>{icon}</span>
-      <span style={{ fontSize: 16, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.45 }}>{text}</span>
+      <span style={{ fontSize: 16, fontWeight: 600, color: '#16121d', lineHeight: 1.45 }}>{text}</span>
     </div>
   );
 }
@@ -13735,9 +13365,9 @@ export default function WorkPage() {
   if (!activeIdea) return (
     <div style={{ maxWidth: 640, margin: '0 auto', padding: '80px 24px', textAlign: 'center' }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>💡</div>
-      <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6, fontFamily: "'Playfair Display', Georgia, serif", color: T1 }}>No active idea</div>
+      <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 6, fontFamily: 'inherit', color: T1 }}>No active idea</div>
       <div style={{ fontSize: 14, color: T2, marginBottom: 24 }}>Go to My Idea Vault to create or select an idea first.</div>
-      <button onClick={() => navigate('/progress')} style={{ background: '#1d1d1f', color: '#fff', border: 'none', borderRadius: 999, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+      <button onClick={() => navigate('/progress')} style={{ background: '#16121d', color: '#fff', border: 'none', borderRadius: 999, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
         ← Go to My Idea Vault
       </button>
     </div>
@@ -13865,9 +13495,11 @@ export default function WorkPage() {
   };
 
   // ── Sidebar ────────────────────────────────────────────────────────────
+  // 2026-10 redesign: a floating cream rail — "Working on" card with the
+  // three core-stage segments, the journey list (core + optional), the
+  // active stage's step list, and quick tools. No borders, no boxes-in-boxes.
   const Sidebar = () => {
     const ivTotal     = interviews.length;
-    const ivScored    = interviews.filter(iv => iv.alignment_score).length;
     const ivConfirmed = interviews.filter(iv => iv.alignment_score === 3).length;
     // Which stages have their steps expanded — active stage always starts open
     const [expandedStages, setExpandedStages] = useState<Record<string, boolean>>(() => ({ [mod]: true }));
@@ -13884,502 +13516,220 @@ export default function WorkPage() {
       return '';
     };
 
+    const coreDone = (['idea', 'hone', 'validate'] as const).filter(m => !!completed[m]).length;
+    const optionalDone = (['shape', 'done'] as const).filter(m => !!completed[m]).length;
+    const progressLabel = coreDone === 0 ? '0 of 3 core stages'
+      : coreDone < 3 ? `${coreDone} of 3 core stages`
+      : optionalDone > 0 ? `Core complete ✓ · ${optionalDone} of 2 optional done` : 'Core complete ✓';
+
+    const jumpToStep = (m: Mod, si: number) => {
+      // The sidebar lets founders jump straight to any step, which used to
+      // skip right past the "have you talked to enough people yet?" gate that
+      // the Analyse step's own Next button enforces. Route this jump through
+      // the same check so there's no back-door around it.
+      const target = si + 1;
+      if (m === 'validate' && target === VALIDATE_ANALYSE_STEP) {
+        const goal = Math.max(parseInt(get('valGoalConvos') || '0', 10) || 0, 3);
+        if (interviews.length < goal) {
+          setMod('validate');
+          setUnderAnalysedModal({ done: interviews.length, goal });
+          return;
+        }
+      }
+      setMod(m); setStep(target);
+    };
+
+    const railLabel: React.CSSProperties = { ...eyebrow(T3, 10), padding: '0 4px' };
+
     if (sidebarCollapsed) return (
       <aside style={{
         width: 64, flexShrink: 0,
-        background: '#f8f8fa',
-        borderRight: `1px solid ${BORDER}`,
         height: 'calc(100vh - 64px)', position: 'sticky', top: 64,
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         paddingTop: 12, gap: 8, transition: 'width 0.2s',
       }}>
-        {/* Expand toggle */}
         <button
           onClick={() => setSidebarCollapsed(false)}
           title="Expand sidebar"
-          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${BORDER}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, marginBottom: 6 }}
+          style={{ width: 36, height: 36, borderRadius: 10, border: `1px solid ${BORDER2}`, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, marginBottom: 6 }}
         >›</button>
-        {/* Stage icons — count-forward hierarchy: step count leads, icon, micro-label */}
-        {MODULES.map(m => {
-          const isActive   = mod === m;
-          const isDone     = !!completed[m];
-          const isLocked   = !unlocked[m];
-          const c          = STAGE_COLORS[m];
-          const total      = META[m].steps;
-          const doneSteps  = isDone ? total : isActive ? Math.max(0, Math.min(step - 1, total)) : 0;
-          const showCount  = !isLocked;
-          const emphasize  = isDone || isActive;
-          const shortLabel = m === 'validate' ? 'VAL' : META[m].label.toUpperCase();
+        {MODULES.map((m, idx) => {
+          const isActive = mod === m;
+          const isDone   = !!completed[m];
+          const isLocked = !unlocked[m];
           return (
             <button
               key={m}
               onClick={() => { if (unlocked[m]) { goMod(m); setSidebarCollapsed(false); } else { setLockedNudge(m); } }}
-              title={`${META[m].label}${showCount ? ` — ${doneSteps}/${total} steps` : ' — locked'}`}
+              title={META[m].label}
               style={{
-                width: 46, background: 'none', border: 'none', padding: '2px 0',
-                cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                opacity: unlocked[m] ? 1 : 0.35,
+                width: 34, height: 34, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                fontFamily: MONO, fontSize: 11, fontWeight: 700,
+                background: isDone ? LIME : isActive ? ACCENT : '#fff',
+                color: isDone ? INK : isActive ? '#fff' : T3,
+                opacity: isLocked ? 0.35 : 1, display: 'grid', placeItems: 'center',
               }}
             >
-              <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: -.2, lineHeight: 1, height: 11, color: emphasize ? c : '#b0b0b8' }}>
-                {showCount ? `${doneSteps}/${total}` : ''}
-              </span>
-              <span style={{
-                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                border: `1.5px solid ${isActive ? c : BORDER}`,
-                background: isActive ? `${c}18` : '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
-              }}>
-                {isDone ? '✅' : META[m].icon}
-              </span>
-              <span style={{
-                fontSize: 8, fontWeight: 800, letterSpacing: .3, textTransform: 'uppercase' as const,
-                color: emphasize ? c : '#b0b0b8',
-              }}>
-                {shortLabel}
-              </span>
+              {isDone ? '✓' : String(idx + 1).padStart(2, '0')}
             </button>
           );
         })}
       </aside>
     );
 
-    return (
-      <aside style={{
-        width: 272, flexShrink: 0,
-        background: '#f8f8fa',
-        borderRight: `1px solid ${BORDER}`,
-        height: 'calc(100vh - 64px)', position: 'sticky', top: 64, overflowY: 'auto',
-        display: 'flex', flexDirection: 'column',
-        transition: 'width 0.2s',
-      }}>
-
-        {/* ── Back nav ─────────────────────────────────────────────── */}
-        <div style={{ padding: '14px 20px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    const stageRow = (m: Mod, idx: number) => {
+      const isActive   = mod === m;
+      const iterative  = m === 'hone' || m === 'validate';
+      const isDone     = !iterative && !!completed[m];
+      const hasContent = iterative && !!completed[m];
+      const isLocked   = !unlocked[m];
+      const isNavActive = isActive && !(m === 'validate' && step === 10);
+      const mark = isDone ? '✓' : String(idx + 1).padStart(2, '0');
+      const nodeBg = isDone ? LIME : isNavActive ? ACCENT : hasContent ? '#ede9fe' : CREAM2;
+      const nodeFg = isDone ? INK : isNavActive ? '#fff' : hasContent ? ACCENT_DEEP : T3;
+      const tag = isLocked ? 'LOCKED' : isNavActive ? 'NOW' : isDone ? 'DONE' : hasContent ? 'ACTIVE' : '';
+      const tagFg = isNavActive ? ACCENT : isDone ? '#15803d' : hasContent ? ACCENT_DEEP : INK_MUTE;
+      const titles = STEP_TITLES[m] || [];
+      const showSteps = !isLocked && expandedStages[m];
+      return (
+        <div key={m} style={{ display: 'flex', flexDirection: 'column' }}>
           <button
-            onClick={() => navigate('/progress')}
+            onClick={() => { if (isLocked) { setLockedNudge(m); return; } if (isActive) { toggleExpand(m); } else { goMod(m); setExpandedStages(prev => ({ ...prev, [m]: true })); } }}
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 12, fontWeight: 600, color: '#8e8e93', padding: 0,
-              display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'inherit',
+              width: '100%', display: 'flex', alignItems: 'center', gap: 14,
+              padding: 12, border: 'none', borderRadius: 14, cursor: 'pointer',
+              background: isNavActive ? '#fff' : 'transparent',
+              opacity: isLocked ? 0.45 : 1, transition: 'background .15s',
+              textAlign: 'left' as const, fontFamily: 'inherit',
             }}
           >
-            <span style={{ fontSize: 14 }}>‹</span> All Ideas
+            <div style={{
+              width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+              display: 'grid', placeItems: 'center', fontFamily: MONO, fontSize: 12, fontWeight: 700,
+              background: nodeBg, color: nodeFg,
+            }}>
+              {isLocked ? '🔒' : mark}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontWeight: 700, fontSize: 16, color: T1 }}>{META[m].label}</span>
+                {tag && <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: tagFg }}>{tag}</span>}
+              </div>
+              <span style={{ fontSize: 13, color: T3, lineHeight: 1.3 }}>{stageHint(m)}</span>
+            </div>
+          </button>
+
+          {showSteps && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '6px 0 8px 54px' }}>
+              {titles.map((title, si) => {
+                const isCurrentStep = isActive && si === step - 1;
+                const isPastStep    = isActive ? si < step - 1 : !!completed[m];
+                return (
+                  <button
+                    key={si}
+                    onClick={() => jumpToStep(m, si)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', borderRadius: 8,
+                      border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit',
+                      fontSize: 13, lineHeight: 1.3,
+                      color: isCurrentStep ? T1 : isPastStep ? T2 : T3,
+                      fontWeight: isCurrentStep ? 700 : 500,
+                    }}
+                  >
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: isCurrentStep ? ACCENT : isPastStep ? INK : BORDER2 }} />
+                    <span style={{ flex: 1 }}>{title}</span>
+                  </button>
+                );
+              })}
+              {m === 'validate' && (() => {
+                const isSumActive = isActive && step === 10;
+                return (
+                  <button
+                    onClick={() => { setMod('validate'); setStep(VALIDATE_VERDICT_STEP); }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', borderRadius: 8,
+                      border: 'none', background: 'transparent', cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit',
+                      fontSize: 13, lineHeight: 1.3, color: isSumActive ? T1 : T3, fontWeight: isSumActive ? 700 : 500,
+                    }}
+                  >
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: isSumActive ? ACCENT : BORDER2 }} />
+                    <span style={{ flex: 1 }}>Validation Summary</span>
+                    {ivConfirmed > 0 && (
+                      <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, background: LIME, color: INK, borderRadius: 999, padding: '2px 6px' }}>{ivConfirmed}✓</span>
+                    )}
+                  </button>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const toolLink = (label: string, onClick: () => void) => (
+      <button key={label} onClick={onClick} style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+        padding: '12px 14px', borderRadius: 12, border: 'none', background: '#fff',
+        color: T1, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' as const,
+      }}>
+        <span>{label}</span>
+        <span style={{ color: ACCENT }}>↗</span>
+      </button>
+    );
+
+    return (
+      <aside style={{
+        width: 290, flexShrink: 0,
+        height: 'calc(100vh - 64px)', position: 'sticky', top: 64, overflowY: 'auto',
+        display: 'flex', flexDirection: 'column', gap: 22,
+        padding: '4px 0 24px', transition: 'width 0.2s',
+      }}>
+        {/* ── Back nav ─────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
+          <button
+            onClick={() => navigate('/progress')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: T3, padding: 0, fontFamily: 'inherit' }}
+          >
+            ‹ All Ideas
           </button>
           <button
             onClick={() => setSidebarCollapsed(true)}
             title="Collapse sidebar"
-            style={{
-              background: 'none', border: `1px solid ${BORDER}`, borderRadius: 8,
-              cursor: 'pointer', width: 28, height: 28,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 13, color: '#8e8e93', flexShrink: 0,
-            }}
+            style={{ background: 'none', border: `1px solid ${BORDER2}`, borderRadius: 8, cursor: 'pointer', width: 28, height: 28, display: 'grid', placeItems: 'center', fontSize: 13, color: T3, flexShrink: 0 }}
           >‹</button>
         </div>
 
-        {/* ── Idea card ────────────────────────────────────────────── */}
-        <div style={{ padding: '0 12px 16px' }}>
-          <div style={{
-            background: '#fff',
-            border: `1.5px solid ${BORDER}`,
-            borderRadius: 16,
-            padding: '14px 16px 12px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.8, textTransform: 'uppercase' as const, color: '#b0b0b8', marginBottom: 6 }}>
-              Working on
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#1d1d1f', letterSpacing: -.3, lineHeight: 1.35, marginBottom: 12 }}>
-              {activeIdea.name}
-            </div>
-            {/* Stage progress pills */}
-            <div style={{ display: 'flex', gap: 3, marginBottom: 6 }}>
-              {MODULES.map(m => (
-                <div
-                  key={m}
-                  title={META[m].label}
-                  style={{
-                    flex: 1, height: 5, borderRadius: 999,
-                    background: completed[m] ? STAGE_COLORS[m]
-                               : mod === m   ? `${STAGE_COLORS[m]}60`
-                               : '#e5e5ea',
-                    transition: 'background .3s',
-                  }}
-                />
-              ))}
-            </div>
-            <div style={{ fontSize: 11, color: '#8e8e93' }}>
-              {(() => {
-                const coreDone = (['idea', 'hone', 'validate'] as const).filter(m => !!completed[m]).length;
-                const optionalDone = (['shape', 'done'] as const).filter(m => !!completed[m]).length;
-                if (coreDone === 0) return 'Just getting started';
-                if (coreDone < 3) return `${coreDone} of 3 core stages`;
-                return optionalDone > 0
-                  ? `Core complete ✓ · ${optionalDone} of 2 optional done`
-                  : 'Core complete ✓';
-              })()}
-            </div>
+        {/* ── Working on card ──────────────────────────────────────── */}
+        <div style={{ background: '#fff', borderRadius: 18, padding: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={eyebrow(T3, 10)}>Working on</div>
+          <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1, color: T1 }}>{activeIdea.name}</div>
+          <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+            {(['idea', 'hone', 'validate'] as const).map(m => (
+              <div key={m} title={META[m].label} style={{ flex: 1, height: 6, borderRadius: 3, background: completed[m] ? ACCENT : mod === m ? `${ACCENT}66` : BORDER, transition: 'background .3s' }} />
+            ))}
           </div>
+          <div style={{ fontSize: 13, color: T3 }}>{progressLabel}</div>
         </div>
 
-        {/* ── Journey timeline ─────────────────────────────────────── */}
-        <div style={{ padding: '0 12px', flex: 1 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.8, textTransform: 'uppercase' as const, color: '#b0b0b8', marginBottom: 10, paddingLeft: 4 }}>
-            Your Journey
+        {/* ── Journey ──────────────────────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={railLabel}>Your journey · Core — iterate in any order</div>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {(['idea', 'hone', 'validate'] as const).map((m, i) => stageRow(m, i))}
           </div>
-
-          {/* Timeline container — iteration arrows between nodes */}
-          <div style={{ position: 'relative' }}>
-
-            {MODULES.map((m, idx) => {
-              const isActive    = mod === m;
-              // Hone/Validate are the true "iterate in any order" pair — Shape is
-              // a hard gate behind a strong Validate signal (see the unlock-derivation
-              // comment above), not something you bounce between with the other two.
-              // Keeping Shape out of `iterative` here is what makes it show a DONE
-              // checkmark like a normal stage, instead of being stuck on ACTIVE forever.
-              const iterative   = m === 'hone' || m === 'validate';
-              const isDone      = !iterative && !!completed[m];
-              const hasContent  = iterative && !!completed[m];
-              const isLocked    = !unlocked[m];
-              const c           = STAGE_COLORS[m];
-              const stepsTotal  = META[m].steps;
-              const isSummaryActive = mod === 'validate' && step === 10;
-              const isNavActive = isActive && !(m === 'validate' && step === 10);
-              // Two visual groups (2026-08-24): Idea/Hone/Validate is the
-              // required core — iterate freely once Idea unlocks Hone+Validate.
-              // Shape/Ship is a second, separate box — the optional continuation,
-              // entered only on a strong Validate signal. Two boxes, not one,
-              // so the sidebar doesn't imply Shape is just a third thing you
-              // bounce between with Hone/Validate.
-              const inCoreGroup     = m === 'idea' || m === 'hone' || m === 'validate';
-              const inOptionalGroup = m === 'shape' || m === 'done';
-              const isGroupTop      = m === 'idea' || m === 'shape';
-              const isGroupBottom   = m === 'validate' || m === 'done';
-              const inGroup         = inCoreGroup || inOptionalGroup;
-              const groupBorder     = inOptionalGroup ? `1.5px dashed ${STAGE_COLORS.shape}90` : '1.5px dashed #cbd5e1';
-              const groupBg         = inOptionalGroup ? `${STAGE_COLORS.shape}14` : '#eef2ff';
-
-              return (
-                <React.Fragment key={m}>
-                  {isGroupTop && (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 5,
-                      margin: '2px 0 4px 4px', fontSize: 9.5, fontWeight: 800,
-                      letterSpacing: 0.4, textTransform: 'uppercase' as const,
-                      color: inOptionalGroup ? STAGE_COLORS.shape : '#94a3b8',
-                    }}>
-                      {inOptionalGroup
-                        ? <><span style={{ fontSize: 11 }}>✦</span> Optional — build &amp; ship if you want</>
-                        : <><span style={{ fontSize: 11 }}>⇄</span> Core — iterate in any order</>}
-                    </div>
-                  )}
-                  <div style={{
-                    position: 'relative', marginBottom: 2,
-                    background: inGroup ? groupBg : 'transparent',
-                    borderLeft: inGroup ? groupBorder : 'none',
-                    borderRight: inGroup ? groupBorder : 'none',
-                    borderTop: isGroupTop ? groupBorder : 'none',
-                    borderBottom: isGroupBottom ? groupBorder : 'none',
-                    borderTopLeftRadius: isGroupTop ? 12 : 0,
-                    borderTopRightRadius: isGroupTop ? 12 : 0,
-                    borderBottomLeftRadius: isGroupBottom ? 12 : 0,
-                    borderBottomRightRadius: isGroupBottom ? 12 : 0,
-                    paddingLeft: inGroup ? 5 : 0,
-                    paddingRight: inGroup ? 5 : 0,
-                    paddingTop: isGroupTop ? 7 : 0,
-                    paddingBottom: isGroupBottom ? 7 : 0,
-                  }}>
-                    <button
-                      onClick={() => { if (isLocked) { setLockedNudge(m); return; } if (isActive) { toggleExpand(m); } else { goMod(m); setExpandedStages(prev => ({ ...prev, [m]: true })); } }}
-                      style={{
-                        width: '100%', display: 'flex', alignItems: 'flex-start', gap: 12,
-                        padding: '9px 10px 9px 0', border: 'none',
-                        background: isNavActive ? `${c}0d` : 'transparent',
-                        borderRadius: 12, cursor: 'pointer',
-                        opacity: isLocked ? 0.4 : 1, transition: 'background .15s',
-                        textAlign: 'left' as const, fontFamily: 'inherit',
-                      }}
-                    >
-                      {/* Timeline node */}
-                      <div style={{
-                        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                        background: isDone ? '#059669'
-                                  : isNavActive ? c
-                                  : hasContent  ? `${c}22`
-                                  : '#fff',
-                        border: `2px solid ${isDone ? '#059669'
-                                            : isNavActive ? c
-                                            : hasContent  ? c
-                                            : '#e5e5ea'}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: isDone ? 15 : 18, zIndex: 1,
-                        boxShadow: isNavActive ? `0 0 0 4px ${c}20` : 'none',
-                        transition: 'all .2s',
-                      }}>
-                        {isDone ? '✓' : isLocked ? '🔒' : META[m].icon}
-                      </div>
-
-                      {/* Content */}
-                      <div style={{ flex: 1, minWidth: 0, paddingTop: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                          <span style={{
-                            fontSize: 13, fontWeight: 700,
-                            color: isNavActive ? c : isDone ? '#059669' : hasContent ? c : '#1d1d1f',
-                          }}>
-                            {META[m].label}
-                          </span>
-                          {/* Status badge */}
-                          {isDone && (
-                            <span style={{
-                              fontSize: 9, fontWeight: 800, letterSpacing: .3,
-                              background: '#dcfce7', color: '#059669',
-                              borderRadius: 999, padding: '2px 7px',
-                            }}>DONE</span>
-                          )}
-                          {isNavActive && (
-                            <span style={{
-                              fontSize: 9, fontWeight: 800, letterSpacing: .3,
-                              background: `${c}18`, color: c,
-                              borderRadius: 999, padding: '2px 7px',
-                            }}>NOW</span>
-                          )}
-                          {!isNavActive && hasContent && !isDone && (
-                            <span style={{
-                              fontSize: 9, fontWeight: 700,
-                              background: `${c}15`, color: c,
-                              borderRadius: 999, padding: '2px 7px',
-                            }}>ACTIVE</span>
-                          )}
-                          {isLocked && !isDone && (
-                            <span style={{
-                              fontSize: 9, fontWeight: 700,
-                              background: '#f5f5f7', color: '#b0b0b8',
-                              borderRadius: 999, padding: '2px 7px',
-                            }}>LOCKED</span>
-                          )}
-                          {!isLocked && (m === 'shape' || m === 'done') && (
-                            <span
-                              title="Idea, Hone, and Validate are the core MVP Club journey. Shape and Ship are here if you want to keep going."
-                              style={{
-                                fontSize: 9, fontWeight: 700,
-                                background: '#fff', color: '#8e8e93',
-                                border: '1px solid #e5e5ea',
-                                borderRadius: 999, padding: '2px 7px',
-                              }}>OPTIONAL</span>
-                          )}
-                        </div>
-                        <div style={{ fontSize: 11, color: '#8e8e93', lineHeight: 1.4 }}>
-                          {stageHint(m)}
-                        </div>
-                        {/* Expand toggle hint */}
-                        {!isLocked && (
-                          <div style={{ marginTop: 5, fontSize: 10, color: expandedStages[m] ? c : '#b0b0b8', fontWeight: 600 }}>
-                            {expandedStages[m] ? '▾ steps' : '▸ steps'}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-
-                    {/* ── Per-step sub-items ── */}
-                    {!isLocked && expandedStages[m] && (() => {
-                      const titles = STEP_TITLES[m as Mod] || [];
-                      const icons  = STEP_ICONS[m as Mod]  || [];
-                      return (
-                        <div style={{ paddingLeft: 48, paddingBottom: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          {titles.map((title, si) => {
-                            // step 0 is always stageIntro, actual steps start at index 1
-                            const isCurrentStep = isActive && si === step - 1;
-                            const isPastStep    = isActive ? si < step - 1 : !!completed[m];
-                            return (
-                              <button
-                                key={si}
-                                onClick={() => {
-                                  // The sidebar lets founders jump straight to any step,
-                                  // which used to skip right past the "have you talked to
-                                  // enough people yet?" gate that the Analyse step's own
-                                  // Next button enforces. Route this jump through the same
-                                  // check so there's no back-door around it.
-                                  const target = si + 1;
-                                  if (m === 'validate' && target === VALIDATE_ANALYSE_STEP) {
-                                    const goal = Math.max(parseInt(get('valGoalConvos') || '0', 10) || 0, 3);
-                                    if (interviews.length < goal) {
-                                      setMod('validate');
-                                      setUnderAnalysedModal({ done: interviews.length, goal });
-                                      return;
-                                    }
-                                  }
-                                  setMod(m as Mod); setStep(target);
-                                }}
-                                style={{
-                                  width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                                  padding: '5px 8px', border: 'none', borderRadius: 8,
-                                  background: isCurrentStep ? `${c}14` : 'transparent',
-                                  cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit',
-                                  transition: 'background .12s',
-                                }}
-                              >
-                                <span style={{
-                                  width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-                                  background: isCurrentStep ? c : isPastStep ? `${c}20` : '#f0f0f5',
-                                  border: `1px solid ${isCurrentStep ? c : isPastStep ? `${c}40` : '#e5e5ea'}`,
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  fontSize: isPastStep && !isCurrentStep ? 10 : 11,
-                                }}>
-                                  {isPastStep && !isCurrentStep ? '✓' : icons[si] || '·'}
-                                </span>
-                                <span style={{
-                                  fontSize: 11, lineHeight: 1.35,
-                                  fontWeight: isCurrentStep ? 700 : 500,
-                                  color: isCurrentStep ? c : isPastStep ? T2 : '#b0b0b8',
-                                  flex: 1,
-                                }}>
-                                  {title}
-                                </span>
-                                {isCurrentStep && (
-                                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: c, flexShrink: 0 }} />
-                                )}
-                              </button>
-                            );
-                          })}
-
-                          {/* Validation Summary extra item */}
-                          {m === 'validate' && (() => {
-                            const isSumActive = isActive && step === 10;
-                            return (
-                              <button
-                                onClick={() => { setMod('validate'); setStep(VALIDATE_VERDICT_STEP); }}
-                                style={{
-                                  width: '100%', display: 'flex', alignItems: 'center', gap: 8,
-                                  padding: '5px 8px', border: 'none', borderRadius: 8,
-                                  background: isSumActive ? '#f0fdf4' : 'transparent',
-                                  cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit',
-                                }}
-                              >
-                                <span style={{
-                                  width: 20, height: 20, borderRadius: 5, flexShrink: 0,
-                                  background: isSumActive ? '#059669' : '#f0fdf4',
-                                  border: `1px solid ${isSumActive ? '#059669' : '#bbf7d0'}`,
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
-                                }}>📊</span>
-                                <span style={{ fontSize: 11, fontWeight: isSumActive ? 700 : 500, color: isSumActive ? '#059669' : '#6e6e73' }}>
-                                  Validation Summary
-                                </span>
-                                {ivConfirmed > 0 && (
-                                  <span style={{ marginLeft: 'auto', background: '#059669', color: '#fff', fontSize: 9, fontWeight: 800, borderRadius: 999, padding: '2px 5px' }}>
-                                    {ivConfirmed}✓
-                                  </span>
-                                )}
-                              </button>
-                            );
-                          })()}
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/* ── Connector between stages ── */}
-                  {idx < MODULES.length - 1 && (() => {
-                    const nextM = MODULES[idx + 1];
-                    const nextInCoreGroup     = nextM === 'idea' || nextM === 'hone' || nextM === 'validate';
-                    const nextInOptionalGroup = nextM === 'shape' || nextM === 'done';
-                    const sameGroupPair = (inCoreGroup && nextInCoreGroup) || (inOptionalGroup && nextInOptionalGroup);
-                    // Both boxes read as "any order" visually — Idea↔Hone↔Validate
-                    // AND Shape↔Ship all get the dot connector. Note this is a
-                    // display choice only: Ship still has a real code-level gate
-                    // (stays locked until Shape is done, same as Shape's own gate
-                    // behind a strong Validate signal) — the dot doesn't change
-                    // that, it just keeps the two boxes visually consistent.
-                    const dotConnector = sameGroupPair;
-                    // The Validate → Shape hop is the one connector between the
-                    // two boxes — the actual mandatory/optional fork — so it gets
-                    // its own dashed marker instead of a dot.
-                    const isOptionalFork = m === 'validate' && nextM === 'shape';
-                    return (
-                      <div style={{
-                        paddingLeft: 9, paddingTop: 2, paddingBottom: 2,
-                        display: 'flex', flexDirection: 'column' as const, alignItems: 'flex-start',
-                        background: sameGroupPair ? groupBg : 'transparent',
-                        borderLeft: sameGroupPair ? groupBorder : 'none',
-                        borderRight: sameGroupPair ? groupBorder : 'none',
-                      }}>
-                        {dotConnector ? (
-                          /* No arrow here on purpose — even a paired ↑↓ still reads as
-                             "flow between steps." Both neighbours sit inside the same
-                             "any order" box, so this connector just keeps the dashed
-                             box visually unbroken instead of implying a direction. */
-                          <div style={{ width: 18, display: 'flex', justifyContent: 'center' }}>
-                            <span style={{ fontSize: 11, color: inOptionalGroup ? `${STAGE_COLORS.shape}90` : '#cbd5e1', lineHeight: 1 }}>•</span>
-                          </div>
-                        ) : isOptionalFork ? (
-                          <div style={{ width: 18, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 2, paddingTop: 1 }}>
-                            <div style={{ width: 0, height: 9, borderLeft: `1.5px dashed ${STAGE_COLORS.shape}90` }} />
-                            <span style={{ fontSize: 7, fontWeight: 700, color: STAGE_COLORS.shape, fontStyle: 'italic' as const, letterSpacing: 0.2 }}>opt</span>
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })()}
-                </React.Fragment>
-              );
-            })}
+          <div style={{ ...railLabel, color: '#b45309', marginTop: 6 }}>+ Optional — build &amp; ship if you want</div>
+          <div style={{ borderRadius: 14, padding: 4, border: `1.5px dashed ${BORDER2}`, display: 'flex', flexDirection: 'column' }}>
+            {(['shape', 'done'] as const).map((m, i) => stageRow(m, 3 + i))}
           </div>
         </div>
 
         {/* ── Quick tools ──────────────────────────────────────────── */}
-        <div style={{ padding: '12px', borderTop: `1px solid ${BORDER}` }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.8, textTransform: 'uppercase' as const, color: '#b0b0b8', marginBottom: 8, paddingLeft: 2 }}>
-            Quick Tools
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
-            <button onClick={() => setShowBMCDraft(true)} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 12px', borderRadius: 10,
-              border: '1.5px solid #ede9fe', background: '#faf5ff',
-              color: '#7c3aed', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' as const,
-            }}>
-              <span style={{ fontSize: 16 }}>🧩</span>
-              <span>Business Model Canvas</span>
-            </button>
-            <button onClick={() => setShowPitchDraft(true)} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 12px', borderRadius: 10,
-              border: '1.5px solid #dbeafe', background: '#eff6ff',
-              color: '#2563eb', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' as const,
-            }}>
-              <span style={{ fontSize: 16 }}>🎯</span>
-              <span>Pitch Draft</span>
-            </button>
-            {unlocked['validate'] && (
-              <button
-                onClick={() => { setMod('validate'); setStep(7); }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '9px 12px', borderRadius: 10,
-                  border: '1.5px solid #d1fae5', background: '#f0fdf4',
-                  color: '#059669', fontSize: 12, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' as const,
-                }}
-              >
-                <span style={{ fontSize: 16 }}>🗣️</span>
-                <span>Interview Script</span>
-              </button>
-            )}
-            <button onClick={() => setShowPrivacy(true)} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 12px', borderRadius: 10,
-              border: '1.5px solid #e5e7eb', background: '#f9fafb',
-              color: '#4b5563', fontSize: 12, fontWeight: 600,
-              cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' as const,
-            }}>
-              <span style={{ fontSize: 16 }}>🔒</span>
-              <span>Privacy</span>
-            </button>
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={railLabel}>Quick tools</div>
+          {toolLink('Business Model Canvas', () => setShowBMCDraft(true))}
+          {toolLink('Pitch Draft', () => setShowPitchDraft(true))}
+          {unlocked['validate'] && toolLink("Interview Script", () => { setMod("validate"); setStep(4); })}
+          {toolLink('Privacy', () => setShowPrivacy(true))}
         </div>
       </aside>
     );
@@ -14389,27 +13739,25 @@ export default function WorkPage() {
 
   // Step title — mirrors explainer's bold title style but at 26px (vs 38px in explainer).
   // The softer "Step N of M" pill + smaller size is the deliberate difference.
-  const H = ({ children, accent, underline }: { children: React.ReactNode; accent?: string; underline?: boolean }) => (
-    accent ? (
-      <h2 style={{ margin: '0 0 8px', display: 'inline-block' }}>
-        <MarkerQuestion accent={accent} underline={underline}>{children}</MarkerQuestion>
-      </h2>
-    ) : (
-      <h2 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -.5, lineHeight: 1.25, margin: '0 0 8px', color: T1, fontFamily: "'Playfair Display', Georgia, serif" }}>{children}</h2>
-    )
+  // 2026-10 redesign: every step title is the same big display H1
+  // (clamp 34–64px, weight 800). `accent`/`underline` are accepted for the
+  // dozens of existing call sites but no longer change the rendering.
+  const H = ({ children }: { children: React.ReactNode; accent?: string; underline?: boolean }) => (
+    <h1 style={{ fontSize: 'clamp(34px, 5vw, 64px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.02, margin: 0, color: T1, fontFamily: 'inherit', maxWidth: 820 }}>{children}</h1>
   );
 
   // ── Stage intro screen (shown as step 0 before any real steps) ────────────
+  // 2026-10 redesign: an ink hero with a giant watermark numeral, mono meta
+  // pills, the stage name with a lime full stop, a "you're working on" quote
+  // of what the founder has so far, a "What you'll do" card grid, and the
+  // Back / Start CTA row — then Outcome / Remember cards on the cream page.
   const stageIntro = (mod: Mod): JSX.Element => {
     const meta     = META[mod];
-    const color    = STAGE_COLORS[mod];
     const titles   = STEP_TITLES[mod];
     const goals    = STEP_GOALS[mod];
     const modIndex = MODULES.indexOf(mod);
     const coreIndex = ['idea', 'hone', 'validate'].indexOf(mod);
     const isOptionalStage = mod === 'shape' || mod === 'done';
-    // Idea has no earlier stage; every other explainer can step back into
-    // whatever stage precedes it.
     const prevMod: Mod | null = modIndex > 0 ? MODULES[modIndex - 1] : null;
     const goToPrevStage = () => {
       if (!prevMod) return;
@@ -14423,206 +13771,111 @@ export default function WorkPage() {
       setShowLI(false);
     };
 
-    // ── Blackboard palette ───────────────────────────────────
-    // Explainer screens are intentionally dark/chalk so they read as distinct
-    // from the white step screens that follow each intro.
-    const WB_BG   = '#17160f';
-    const WB_TEXT = '#FFFFFF';
-    const WB_DIM  = '#F3F4F6';
-    const WB_RULE = '#3a372a';
+    const numeral = String(modIndex + 1).padStart(2, '0');
+    const oneLiner = (get('oneLiner') || '').trim();
+    const problem  = (get('problemSentence') || get('validatedProblem') || '').split(MULTI_SEP).filter(Boolean)[0] || '';
+    const quote: { label: string; text: string } | null =
+      mod === 'hone' && oneLiner ? { label: "You're honing", text: `“${oneLiner}”` }
+      : mod === 'validate' && (problem || oneLiner) ? { label: "You're testing · from Hone", text: `“${problem || oneLiner}”` }
+      : (mod === 'shape' || mod === 'done') && oneLiner ? { label: 'Building on', text: `“${oneLiner}”` }
+      : null;
 
+    const pill = (text: string, filled = false) => (
+      <span key={text} style={{
+        fontFamily: MONO, fontSize: 11, fontWeight: 700, padding: filled ? '6px 12px' : '5px 12px', borderRadius: 999,
+        background: filled ? ACCENT : 'transparent', color: filled ? '#fff' : INK_DIM,
+        border: filled ? 'none' : `1px solid #3a3148`, letterSpacing: '0.08em', textTransform: 'uppercase' as const,
+      }}>{text}</span>
+    );
+
+    // Sized to fit the viewport without scrolling (desktop): the hero flexes
+    // to the available height, type scales with vh, and the step grid
+    // scrolls internally only when a stage has more cards than fit.
     return (
-      <div key={`${mod}-intro`} style={{
-        display: 'flex', flexDirection: 'column', gap: 0,
-        fontFamily: 'inherit',
-        background: WB_BG,
-        borderRadius: 16,
-        overflow: 'hidden',
-        border: '2.5px solid #332f22',
-        boxShadow: '0 4px 28px rgba(0,0,0,0.45)',
-      }}>
-
-        {/* ── Font injection ───────────────────────────────── */}
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Walter+Turncoat&display=swap');`}</style>
-
-        {/* ── Marker-cap header strip — condensed (Direction A resize) so the
-              whole explainer, including the step grid below, fits one screen
-              without scrolling. Dropped the decorative "Stage explainer"
-              sticky note entirely to reclaim vertical space; the badge above
-              the title already signals this is a guide, not a fillable step. */}
-        <div style={{
-          position: 'relative',
-          background: `${color}22`,
-          borderBottom: `3px solid ${color}`,
-          padding: '16px 22px 12px',
-        }}>
-          {/* Stage badge */}
-          <div style={{ marginBottom: 7 }}>
-            <span style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: color, color: '#fff',
-              fontSize: 11, fontWeight: 700,
-              letterSpacing: '.06em', textTransform: 'uppercase' as const,
-              padding: '3px 11px', borderRadius: 4,
-            }}>
-              {isOptionalStage ? <>{meta.icon} Optional</> : <>{meta.icon} Core · Stage {coreIndex + 1} of 3</>}
-            </span>
-          </div>
-
-          {/* Title — big marker lettering */}
-          <h1 style={{ fontSize: 30, fontWeight: 700, color: WB_TEXT, margin: '0 0 3px', letterSpacing: '0.01em', lineHeight: 1.0, fontFamily: "'Kalam', cursive" }}>
-            {meta.label}
-          </h1>
-
-          <p style={{ fontSize: 13, color: WB_DIM, lineHeight: 1.4, margin: '0 0 8px', maxWidth: 500 }}>{meta.desc}</p>
-
-          {/* Meta tags */}
-          <div style={{ display: 'flex', gap: 7 }}>
-            {[`${meta.steps} steps`, STAGE_TIME[mod]].map(tag => (
-              <span key={tag} style={{
-                fontSize: 11, color: WB_DIM, fontWeight: 600,
-                border: `1.5px solid #4a4636`,
-                padding: '2px 10px', borderRadius: 5,
-                background: '#211f16',
-              }}>
-                {tag}
-              </span>
-            ))}
-          </div>
+      <div key={`${mod}-intro`} style={{ display: 'flex', flexDirection: 'column', gap: 12, fontFamily: 'inherit', height: isMobile ? 'auto' : 'calc(100vh - 64px - 2 * clamp(14px, 2.5vw, 32px))', minHeight: 0 }}>
+        {/* Explainer banner — tells the founder this page is an overview of
+            the stage (read it, then Start), not a step with inputs. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderRadius: 14, background: '#fff', flexShrink: 0, flexWrap: 'wrap' as const }}>
+          <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const, background: LIME, color: INK, padding: '5px 10px', borderRadius: 999, flexShrink: 0 }}>
+            Stage explainer
+          </span>
+          <span style={{ fontSize: 14, color: T2, lineHeight: 1.4 }}>
+            <strong style={{ color: T1, fontWeight: 700 }}>What {meta.label} is and why it matters.</strong> Nothing to fill in on this page — read it once, then hit <strong style={{ color: T1, fontWeight: 700 }}>Start {meta.label}</strong> to begin step 1 of {meta.steps}.
+          </span>
         </div>
-
-        {/* ── Body ─────────────────────────────────────────── */}
-        <div style={{ padding: '14px 22px 18px', display: 'flex', flexDirection: 'column' }}>
-
-          {/* What you'll do — a single compact step grid for every stage
-              (Direction A resize, one-page-no-scroll pass). Validate used to
-              have its own five-phase "How it works" infographic here instead
-              of a step list; removed — it was the tallest thing on any
-              explainer and the main reason Validate alone couldn't fit one
-              screen. Per-step callout tags dropped too (title + goal only)
-              to keep every row short enough that even Ship's 11 steps wrap
-              into a couple of rows instead of forcing a scroll. */}
-          <p style={{ fontSize: 12, fontWeight: 700, color: '#a29d8c', letterSpacing: '.1em', textTransform: 'uppercase' as const, margin: '0 0 8px' }}>
-            What you'll do
-          </p>
-
-          <div style={{
-            display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fill, minmax(128px, 1fr))',
-            gap: 5, marginBottom: 10,
-          }}>
-            {titles.map((title, i) => (
-              <div
-                key={i}
-                style={{
-                  border: '1px solid transparent', borderRadius: 8,
-                  padding: '6px 9px', display: 'flex', flexDirection: 'column', gap: 2,
-                  minWidth: 0, background: `${WB_RULE}66`,
-                  transition: 'background .15s, border-color .15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = `${color}22`; e.currentTarget.style.borderColor = `${color}80`; }}
-                onMouseLeave={e => { e.currentTarget.style.background = `${WB_RULE}66`; e.currentTarget.style.borderColor = 'transparent'; }}
-              >
-                <div style={{
-                  width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                  border: `2px solid ${color}`,
-                  color, fontSize: 10, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: `${color}0f`,
-                }}>
-                  {i + 1}
-                </div>
-                <div style={{
-                  fontSize: 12, fontWeight: 700, color: WB_TEXT, lineHeight: 1.25,
-                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
-                }}>{title}</div>
-                <div style={{
-                  fontSize: 10.5, color: WB_DIM, lineHeight: 1.35,
-                  display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
-                }}>{goals[i]}</div>
-              </div>
-            ))}
+        <section style={{ background: INK, color: INK_TXT, borderRadius: 'clamp(20px, 2.5vw, 32px)', position: 'relative', overflow: 'hidden', flex: 1, minHeight: 0, display: 'flex' }}>
+          {/* watermark numeral */}
+          <div aria-hidden style={{ position: 'absolute', right: -10, top: -30, fontSize: 'clamp(160px, 34vh, 400px)', fontWeight: 800, color: '#211a2d', lineHeight: 1, letterSpacing: '-0.06em', pointerEvents: 'none', userSelect: 'none' as const }}>
+            {numeral}
           </div>
+          <div style={{ position: 'relative', padding: 'clamp(18px, 3vh, 40px) clamp(18px, 3vw, 48px)', display: 'flex', flexDirection: 'column', gap: 'clamp(12px, 2.2vh, 28px)', flex: 1, minHeight: 0 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, alignItems: 'center' }}>
+              {isOptionalStage ? pill('Optional', true) : pill(`Core · Stage ${coreIndex + 1} of 3`, true)}
+              {pill(`${meta.steps} step${meta.steps !== 1 ? 's' : ''}`)}
+              {pill(STAGE_TIME[mod])}
+            </div>
+            <div>
+              <h1 style={{ margin: 0, fontSize: mod === 'validate' ? 'clamp(48px, 11vh, 132px)' : 'clamp(56px, 13vh, 150px)', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 0.9, color: INK_TXT }}>
+                {meta.label}<span style={{ color: LIME }}>.</span>
+              </h1>
+              <p style={{ margin: '8px 0 0', fontSize: 'clamp(16px, 2.2vh, 22px)', color: INK_DIM, maxWidth: 560, lineHeight: 1.3 }}>{meta.desc}</p>
+            </div>
 
-          {/* Outcome / Remember — marker-bordered boxes (condensed) */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8, marginBottom: 10 }}>
-            {[
-              { label: 'Outcome', text: STAGE_OUTCOME[mod], italic: false },
-              { label: 'Remember', text: STAGE_TIP[mod], italic: true },
-            ].map(card => (
-              <div key={card.label} style={{
-                borderLeft: `3px solid ${color}`,
-                borderRadius: 7, padding: '8px 11px',
-                background: `${color}0d`,
-              }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '.1em', textTransform: 'uppercase' as const, marginBottom: 3 }}>{card.label}</div>
-                <div style={{ fontSize: 11.5, color: WB_TEXT, lineHeight: 1.4, fontStyle: card.italic ? 'italic' : 'normal' }}>{card.text}</div>
+            {quote && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 14px', borderRadius: 14, background: INK2, border: '1px solid #2a2236', maxWidth: 820 }}>
+                <span style={eyebrow(INK_MUTE, 10)}>{quote.label}</span>
+                <p style={{ margin: 0, fontSize: 'clamp(14px, 1.8vh, 18px)', color: INK_TXT, lineHeight: 1.35, fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{quote.text}</p>
               </div>
-            ))}
-          </div>
-
-          {/* The "Validation Workspace" live-progress dashboard (confidence
-              score, checklist, risks, next action) used to render here on the
-              intro screen. Removed as part of the one-page-no-scroll resize —
-              even bounded to a small internal scroll region it was still the
-              single tallest thing keeping Validate's explainer alone from
-              fitting, the same problem the old five-phase infographic caused.
-              It's a "how am I doing" widget for someone already mid-flow, not
-              pre-start orientation content, so it belongs on the Validate step
-              pages themselves rather than this intro — flagged for the user
-              rather than silently dropped. */}
-
-          {/* CTA row — back into the previous stage (if any) + thick marker start button.
-              Idea-only: a spotlight sweeps across and settles on the Start
-              button once, on mount — the very first thing a new founder
-              sees, so it gets its own small "come on in" flourish that the
-              other four stage intros (already well-covered without it) don't. */}
-          <div style={{ display: 'flex', gap: 10, position: 'relative', overflow: mod === 'idea' ? 'hidden' : 'visible', borderRadius: 8 }}>
-            {mod === 'idea' && (
-              <div style={{
-                position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
-                background: `radial-gradient(ellipse 140px 60px at center, rgba(255,255,255,.22), transparent 70%)`,
-                animation: 'spotlightSweep 1.3s ease-out .3s 1 both',
-              }} />
             )}
-            {prevMod && (
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0 }}>
+              <span style={eyebrow(INK_MUTE)}>What you'll do</span>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(auto-fill, minmax(min(100%, ${titles.length > 6 ? 170 : 200}px), 1fr))`, gap: 8, overflowY: 'auto' as const, minHeight: 0, alignContent: 'start' }}>
+                {titles.map((title, i) => {
+                  const first = i === 0;
+                  return (
+                    <div key={i} style={{ borderRadius: 14, padding: 'clamp(10px, 1.6vh, 16px) 14px', display: 'flex', flexDirection: 'column', gap: 4, background: first ? ACCENT : '#2a2236', color: first ? '#fff' : INK_TXT }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                        <span style={{ fontSize: 'clamp(20px, 3vh, 30px)', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.04em', color: first ? '#fff' : LIME }}>{String(i + 1).padStart(2, '0')}</span>
+                        <span style={{ fontFamily: MONO, fontSize: 9, color: first ? '#e9ddff' : INK_MUTE, textTransform: 'uppercase' as const, letterSpacing: '0.1em' }}>Step</span>
+                      </div>
+                      <span style={{ fontSize: 'clamp(13px, 1.7vh, 16px)', fontWeight: 700, lineHeight: 1.2 }}>{title}</span>
+                      <span style={{ fontSize: 'clamp(11px, 1.4vh, 13px)', color: first ? '#e9ddff' : INK_DIM, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{goals[i]}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' as const }}>
+              {prevMod && (
+                <button
+                  onClick={goToPrevStage}
+                  style={{ display: 'grid', placeItems: 'center', borderRadius: 14, padding: 'clamp(12px, 1.8vh, 18px) 22px', color: INK_TXT, fontWeight: 700, fontSize: 16, background: 'transparent', border: '1.5px solid #3a3148', cursor: 'pointer', fontFamily: 'inherit' }}
+                >← Back</button>
+              )}
               <button
-                onClick={goToPrevStage}
-                style={{
-                  padding: '10px 16px',
-                  background: 'transparent', color: WB_DIM,
-                  border: `2px solid #4a4636`, borderRadius: 8,
-                  fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  letterSpacing: '.04em',
-                  flexShrink: 0,
-                  transition: 'opacity .15s, border-color .15s, color .15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = WB_TEXT; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#4a4636'; e.currentTarget.style.color = WB_DIM; }}
+                onClick={next}
+                style={{ flex: 1, minWidth: 200, borderRadius: 14, padding: 'clamp(12px, 1.8vh, 18px)', fontSize: 17, fontWeight: 800, background: ACCENT, color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit', transition: 'transform .15s, opacity .15s' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
               >
-                ← Back
+                Start {meta.label} →
               </button>
-            )}
-            <button
-              onClick={next}
-              style={{
-                flex: 1, padding: '10px 0',
-                background: color, color: '#fff',
-                border: 'none', borderRadius: 8,
-                fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                fontFamily: 'inherit',
-                letterSpacing: '.04em',
-                boxShadow: `0 4px 16px ${color}40`,
-                transition: 'opacity .15s, transform .15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '.88'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)'; }}
-            >
-              Start {meta.label} →
-            </button>
+            </div>
+          </div>
+        </section>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12, flexShrink: 0 }}>
+          <div style={{ background: '#fff', borderRadius: 18, padding: '12px 18px', display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' as const }}>
+            <span style={eyebrow(ACCENT, 10)}>Outcome</span>
+            <p style={{ margin: 0, fontSize: 'clamp(14px, 1.7vh, 17px)', lineHeight: 1.35, color: T1 }}>{STAGE_OUTCOME[mod]}</p>
+          </div>
+          <div style={{ background: ACCENT, color: '#fff', borderRadius: 18, padding: '12px 18px', display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' as const }}>
+            <span style={eyebrow('#e9ddff', 10)}>Remember</span>
+            <p style={{ margin: 0, fontSize: 'clamp(15px, 1.9vh, 19px)', fontWeight: 600, lineHeight: 1.3 }}>{STAGE_TIP[mod]}</p>
           </div>
         </div>
-
       </div>
     );
   };
@@ -14632,10 +13885,7 @@ export default function WorkPage() {
       <div><ModBadge mod="idea" /><StepBars mod="idea" step={0} /></div>
       <div>
         <H accent={STAGE_COLORS.idea}>What's your idea?</H>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <AgentAvatar size={36} />
-          <StepGoal text={STEP_GOALS.idea[0]} />
-        </div>
+        <StepGoal text={STEP_GOALS.idea[0]} />
       </div>
       {/* Split-pane workspace: a persistent AI chat (left) alongside a
           structured canvas (right) that fills in as the chat progresses —
@@ -14645,8 +13895,8 @@ export default function WorkPage() {
           app-wide 768px isMobile breakpoint -- a 40% column is too narrow
           for the chat's own header row anywhere in the 768-900px tablet
           range, so this split stacks earlier than the rest of the app. */}
-      <div style={{ display: 'flex', flexDirection: isIdeaSplitStacked ? 'column' as const : 'row' as const, gap: 20, alignItems: 'flex-start' }}>
-        <div style={{ flex: isIdeaSplitStacked ? undefined : '0 0 40%', width: isIdeaSplitStacked ? '100%' : undefined, minWidth: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isIdeaSplitStacked ? '1fr' : 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: 18, alignItems: 'stretch' }}>
+        <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           <IdeaOneLinerChat
             initialName={get('ideaName') || activeIdea.name}
             initialOneLiner={get('oneLiner')}
@@ -14654,7 +13904,7 @@ export default function WorkPage() {
             onChange={f => { set('ideaName', f.ideaName); set('oneLiner', f.oneLiner); }}
           />
         </div>
-        <div style={{ flex: isIdeaSplitStacked ? undefined : '0 0 60%', width: isIdeaSplitStacked ? '100%' : undefined, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
           {(() => {
             const publicSections = parsePublicSections(get('publicSections'));
             const setPublicSection = (key: keyof PublicSections, on: boolean) =>
@@ -14680,11 +13930,11 @@ export default function WorkPage() {
       {/* Pinned primary CTA — sticks to the bottom of the viewport while
           scrolling this step, so "Complete Idea" always stays in view
           instead of trailing off the end of a long right-hand canvas. */}
-      <div style={{ position: 'sticky' as const, bottom: 0, background: '#fff', paddingTop: 12, marginTop: 4, borderTop: `1px solid ${BORDER}`, zIndex: 2 }}>
+      <div style={{ position: 'sticky' as const, bottom: 0, background: CREAM, paddingTop: 12, marginTop: 4, zIndex: 2 }}>
         <NavRow onNext={async () => { await save('idea', { ideaName: get('ideaName') || activeIdea.name, oneLiner: get('oneLiner') }); unlock('hone'); mark('idea'); next(); }} nextLabel="Complete Idea →" disabled={!get('oneLiner').trim() || get('oneLiner').includes('___')} disabledReason="Finish your one-liner — every blank needs a real answer." stageColor={STAGE_COLORS.idea} stepTitle="What's your idea?" ideaId={activeIdea.id} />
       </div>
     </div>,
-    <CompleteBadge key="i-done" mod="idea" onContinue={() => goMod('hone')} onBack={back} />,
+    <CompleteBadge key="i-done" mod="idea" onContinue={() => goMod('hone')} onBack={back} statement={get('oneLiner')} />,
   ];
 
   const honeSteps: JSX.Element[] = [stageIntro('hone'),
@@ -14693,9 +13943,9 @@ export default function WorkPage() {
       <HoneRestartControl onRestart={resetHoneStage} />
       {/* ── Pivot carry-over: learnings brought back from Validate ── */}
       {get('pivotLearnings') && (
-        <div style={{ background: '#f0fdf4', border: '2px solid #34c759', borderRadius: 12, padding: '14px 16px' }}>
+        <div style={{ background: LIME, color: INK, borderRadius: 20, padding: '16px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#166534' }}>💪 You pivoted — that's a win, not a failure</div>
+            <div style={{ fontSize: 15, fontWeight: 800 }}>You pivoted — that's a win, not a failure</div>
             <button onClick={() => { set('pivotLearnings', ''); if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'pivotLearnings', content: '' }).catch(() => {}); }}
               style={{ border: 'none', background: 'none', color: '#166534', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Dismiss ✕</button>
           </div>
@@ -14709,7 +13959,6 @@ export default function WorkPage() {
           </div>
         </div>
       )}
-      <StepGoal text={STEP_GOALS.hone[0]} />
       <BMCLabel blocks={['Customer Segments']} />
       {/* M1 "ID / Contact Card" — split-panel layout (2026-09-04 UI/UX pick,
           merging Option 3 "Swap, Don't Stack" with Option 7 "Split Preview
@@ -14723,7 +13972,6 @@ export default function WorkPage() {
           launcher, primary-segment flag) is unchanged — only the layout and
           the sub-question navigation are new. */}
       {(() => {
-        const isMobileNow = useIsMobile();
         const hasPersona = get('whoExactly').split(MULTI_SEP).some(p => p.trim().length > 3);
         const draftValid = !!personaPickerRef.current?.isDraftValid();
         const [personaReopened, setPersonaReopened] = React.useState(false);
@@ -14740,86 +13988,21 @@ export default function WorkPage() {
           ? (primaryPersona.legacy ? { role: primaryPersona.role, detail: '' } : personaSegmentLabel(primaryPersona))
           : { role: '', detail: '' };
 
-        const tracker = (
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: showPersonaPanel ? STAGE_COLORS.hone : BORDER2, transition: 'background .2s' }} />
-            <span style={{ width: showPersonaPanel ? 7 : 20, height: 7, borderRadius: 4, background: showPersonaPanel ? BORDER2 : STAGE_COLORS.hone, transition: 'all .2s' }} />
-          </div>
+        const tabBtn = (on: boolean, label: string, onClick: () => void) => (
+          <button key={label} onClick={onClick} style={{ borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 600, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: on ? INK : '#fff', color: on ? '#fff' : T2, transition: 'all .15s' }}>
+            {label}
+          </button>
         );
-
-        const previewCard = (
-          <div style={{
-            background: '#1E1B2E', border: '1px solid #7C3AED55', borderRadius: 20,
-            padding: '22px 18px', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 10,
-            width: isMobileNow ? '100%' : 236, flexShrink: 0, boxSizing: 'border-box' as const,
-            boxShadow: '0 20px 50px -24px #0008, inset 0 1px 0 #ffffff08',
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' as const, color: '#a78bfa' }}>
-              🎯 Target archetype{primaryLabel.role && get('whoPays') ? ' unlocked' : ''}
-            </div>
-            {/* Dimmed while it's also visible in the working panel a few
-                inches to the left (personaPanel is currently showing) —
-                full weight once that panel's gone and this is the only
-                place the persona still shows. */}
-            <div style={{ opacity: showPersonaPanel ? 0.45 : 1, transition: 'opacity .2s', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 8, width: '100%' }}>
-              <div style={{ position: 'relative', width: 84, height: 84 }}>
-                <div style={{ width: 84, height: 84, borderRadius: '50%', background: 'linear-gradient(135deg, #7c3aed, #2563eb)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 3px #1E1B2E, 0 0 0 4px #7c3aed55' }}>
-                  <div style={{ width: 74, height: 74, borderRadius: '50%', background: '#241a3d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34 }}>
-                    {get('whoPays') === 'Same person' ? '🧑' : get('whoPays') ? '🧑‍💼' : '🙂'}
-                  </div>
-                </div>
-                {!!get('whoPays') && (
-                  <span style={{ position: 'absolute', bottom: -2, right: -2, width: 26, height: 26, borderRadius: '50%', background: get('whoPays') === 'Same person' ? '#059669' : '#d97706', border: '2px solid #1E1B2E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>
-                    {get('whoPays') === 'Same person' ? '👤' : '🏢'}
-                  </span>
-                )}
-              </div>
-              {primaryLabel.role ? (
-                <>
-                  <div style={{ fontFamily: 'inherit', fontWeight: 800, fontSize: 16, color: '#fff', textAlign: 'center' as const }}>{primaryLabel.role}</div>
-                  {primaryLabel.detail && <div style={{ fontFamily: 'inherit', fontSize: 11.5, color: '#a99fc9', fontStyle: 'italic' as const, textAlign: 'center' as const, lineHeight: 1.5 }}>{primaryLabel.detail}</div>}
-                  {primaryPersonaList.length > 1 && <div style={{ fontSize: 10.5, color: '#8b7fb3' }}>+{primaryPersonaList.length - 1} more segment{primaryPersonaList.length > 2 ? 's' : ''}</div>}
-                </>
-              ) : (
-                <div style={{ fontSize: 12.5, color: '#8b7fb3', fontStyle: 'italic' as const, textAlign: 'center' as const }}>Describe who has this problem to see them here</div>
-              )}
-            </div>
-            <div style={{ borderTop: '1px solid #ffffff14', width: '100%', margin: '2px 0' }} />
-            {/* Same logic in reverse: full weight while the pays question is
-                the one not currently on screen (personaPanel showing), dimmed
-                once paysPanel's own selection cards make it redundant. */}
-            <div style={{ opacity: showPersonaPanel ? 1 : 0.45, transition: 'opacity .2s', display: 'flex', flexDirection: 'column' as const, gap: 6, width: '100%' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: '#ffffff0a', border: '1px solid #ffffff14', borderRadius: 9, padding: '6px 10px' }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#a99fc9', textTransform: 'uppercase' as const, letterSpacing: '.04em' }}>💳 Payer</span>
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff' }}>
-                  {get('whoPays') ? (get('whoPays') === 'Same person' ? 'Direct / solo' : get('whoPays') === 'Someone else' ? 'Budget holder' : get('whoPays')) : '—'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: '#ffffff0a', border: '1px solid #ffffff14', borderRadius: 9, padding: '6px 10px' }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#a99fc9', textTransform: 'uppercase' as const, letterSpacing: '.04em' }}>⚡ Speed</span>
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: get('whoPays') === 'Same person' ? '#34d399' : get('whoPays') ? '#fbbf24' : '#8b7fb3' }}>
-                  {get('whoPays') === 'Same person' ? 'Fast' : get('whoPays') ? 'Moderate' : 'not yet answered'}
-                </span>
-              </div>
-            </div>
-            {!!get('whoPays') && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: '100%', marginTop: 2 }}>
-                <span style={{ fontSize: 10, fontWeight: 800, color: '#fbbf24', background: '#3d2e0f', border: '1px solid #7c5a12', borderRadius: 999, padding: '3px 9px' }}>⚡ +100 XP</span>
-                <button onClick={() => setPersonaReopened(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 10.5, fontWeight: 700, color: '#c4b5fd', fontFamily: 'inherit' }}>✏️ Edit</button>
-              </div>
-            )}
+        const tabs = (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+            {tabBtn(showPersonaPanel, 'a · Who is it?', () => setPersonaReopened(true))}
+            {tabBtn(!showPersonaPanel, 'b · Who pays?', () => { if (hasPersona || draftValid) { personaPickerRef.current?.flush(); setPersonaReopened(false); } })}
           </div>
         );
 
         const personaPanel = (
-          <div style={{ display: showPersonaPanel ? 'flex' : 'none', flexDirection: 'column' as const, gap: 14, flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, paddingBottom: 10, borderBottom: `1px solid ${BORDER}` }}>
-              <H accent={STAGE_COLORS.hone} underline={false}>Who do you think has this problem?</H>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                {!personaCtaOpen && <SageCtaLink onClick={() => setPersonaCtaOpen(true)} />}
-                {tracker}
-              </div>
-            </div>
+          <div style={{ display: showPersonaPanel ? 'flex' : 'none', flexDirection: 'column' as const, gap: 14, minWidth: 0 }}>
+            {!personaCtaOpen && <SageCtaLink onClick={() => setPersonaCtaOpen(true)} />}
             {personaCtaOpen && (
               <SageStepInterview
                 topic="persona"
@@ -14839,110 +14022,57 @@ export default function WorkPage() {
 
         const questSelected = get('whoPays') === 'Same person' || (!!get('whoPays') && get('whoPays') !== 'Same person');
         const paysPanel = (
-          <div style={{ display: showPersonaPanel ? 'none' : 'flex', flexDirection: 'column' as const, gap: 14, flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-              <H accent={STAGE_COLORS.hone}>Who actually pays?</H>
-              {tracker}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: -6 }}>
-              <div style={{ fontSize: 13, color: T1 }}>
-                For: <b style={{ color: T1 }}>{primaryLabel.role || 'your persona'}</b>{' '}
-                <button onClick={() => setPersonaReopened(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 12, fontWeight: 700, color: STAGE_COLORS.hone, textDecoration: 'underline', fontFamily: 'inherit' }}>
-                  · edit
-                </button>
+          <div style={{ display: showPersonaPanel ? 'none' : 'flex', flexDirection: 'column' as const, gap: 14, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
+              <div style={{ fontSize: 15, color: T2 }}>
+                Who actually pays, for <b style={{ color: T1 }}>{primaryLabel.role || 'your persona'}</b>?
               </div>
               <AskCommunityButton ask="Who pays for this?" compact />
             </div>
-            {/* Gamified "Persona Quest" card — a self-contained dark panel
-                just for this one sub-question, per an explicit ask to match
-                a reference mockup even though nothing else in the app looks
-                like this yet. Same underlying whoPays state/persistence as
-                before (Option A: persistent, clickable, re-clickable to
-                clear) — only the visual treatment and the added feedback
-                (tag/bonus text, "unlocked" confirmation strip) are new. */}
-            <div style={{
-              position: 'relative', borderRadius: 20, overflow: 'hidden',
-              background: 'linear-gradient(160deg, #1b1330 0%, #241a42 55%, #1a1330 100%)',
-              border: '1px solid #3d2e66', boxShadow: '0 20px 50px -20px #0006, inset 0 1px 0 #ffffff10',
-              padding: isMobileNow ? '18px 16px 20px' : '22px 24px 24px',
-            }}>
-              <style>{`
-                @keyframes questCardPop { 0% { opacity: 0; transform: translateY(6px) scale(.97); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
-                @keyframes questBadgePop { 0% { opacity: 0; transform: scale(.5) rotate(-8deg); } 60% { opacity: 1; transform: scale(1.12) rotate(3deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
-                .quest-card { animation: questCardPop .35s ease-out; }
-                .quest-pop { animation: questBadgePop .4s ease-out; }
-              `}</style>
-              <div style={{ position: 'absolute', top: -60, right: -40, width: 180, height: 180, borderRadius: '50%', background: '#7c3aed', opacity: .18, filter: 'blur(50px)', pointerEvents: 'none' as const }} />
-              <div style={{ position: 'absolute', bottom: -60, left: -30, width: 160, height: 160, borderRadius: '50%', background: STAGE_COLORS.hone, opacity: .16, filter: 'blur(50px)', pointerEvents: 'none' as const }} />
-
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, gap: 10, flexWrap: 'wrap' as const }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 15 }}>🎮</span>
-                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: '#c4b5fd' }}>Persona Quest · Choose your archetype</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#fbbf24', background: '#3d2e0f', border: '1px solid #7c5a12', borderRadius: 999, padding: '4px 10px' }}>
-                  ⚡ +100 XP on select
-                </div>
-              </div>
-
-              <div style={{ position: 'relative', display: 'flex', gap: 12, flexDirection: isMobileNow ? 'column' as const : 'row' as const }}>
-                {[
-                  { val: 'Same person', label: 'User is the Buyer', icon: '👤', tag: 'Direct Monetization', bonus: 'Fastest validation cycle. Shortest sales path.', desc: 'The person experiencing the pain pays directly (B2C, solopreneurs, dev tools).' },
-                  { val: 'Someone else', label: 'User & Buyer are Different', icon: '🏢', tag: 'High ACV Potential', bonus: 'Higher contract value. Requires budget-holder sign-off.', desc: 'The end-user needs internal approval or budget to buy (B2B, enterprise, healthcare).' },
-                ].map(opt => {
-                  const on = get('whoPays') === opt.val || (opt.val === 'Someone else' && !!get('whoPays') && get('whoPays') !== 'Same person');
-                  return (
-                    <button key={opt.val} className="quest-card" onClick={() => {
-                      const newVal = on ? '' : opt.val;
-                      set('whoPays', newVal);
-                      // Immediately persist button selection (don't rely solely on 1200ms debounce)
-                      if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: newVal }).catch(() => {});
-                    }}
-                      style={{
-                        position: 'relative', flex: 1, textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit',
-                        borderRadius: 16, padding: '18px 16px',
-                        border: on ? '1.5px solid #a78bfa' : '1.5px solid #3d2e66',
-                        background: on ? 'linear-gradient(160deg, #3b2a66, #2a1f52)' : 'linear-gradient(160deg, #241c3d, #1d1733)',
-                        boxShadow: on ? '0 0 0 1px #a78bfa55, 0 10px 30px -10px #7c3aed80' : 'none',
-                        transition: 'all .2s',
-                      }}>
-                      {on && (
-                        <span className="quest-pop" style={{
-                          position: 'absolute', top: 10, right: 10, fontSize: 10, fontWeight: 800, color: '#1b1330',
-                          background: '#a78bfa', borderRadius: 999, padding: '3px 8px',
-                        }}>✓ SELECTED</span>
-                      )}
-                      <div style={{ fontSize: 26, marginBottom: 8 }}>{opt.icon}</div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 3 }}>{opt.label}</div>
-                      <div style={{ fontSize: 11.5, color: '#b8adda', lineHeight: 1.45, marginBottom: 10 }}>{opt.desc}</div>
-                      <span style={{ display: 'inline-block', fontSize: 9.5, fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase' as const, color: '#c4b5fd', background: '#ffffff14', border: '1px solid #ffffff20', borderRadius: 999, padding: '3px 9px', marginBottom: 6 }}>{opt.tag}</span>
-                      <div style={{ fontSize: 11, color: '#8b7fb3', lineHeight: 1.4, fontStyle: 'italic' as const }}>{opt.bonus}</div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {questSelected && (
-                <div className="quest-pop" style={{
-                  position: 'relative', marginTop: 14, borderRadius: 12, padding: '12px 14px',
-                  background: '#1b1330', border: '1px solid #4c3a80',
-                  display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' as const,
-                }}>
-                  <span style={{ fontSize: 16 }}>🎯</span>
-                  <div style={{ flex: 1, minWidth: 160 }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 800, color: '#fff' }}>Persona card unlocked</div>
-                    <div style={{ fontSize: 11, color: '#a99fc9', marginTop: 1 }}>
-                      {get('whoPays') === 'Same person'
-                        ? 'Direct-pay path — expect a shorter sales cycle and faster validation loops.'
-                        : 'Budget-holder path — plan for a longer cycle, but a bigger deal once it lands.'}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 12 }}>
+              {[
+                { val: 'Same person', glyph: '1', title: 'User is the buyer', badge: 'Direct', desc: 'The person experiencing the pain pays directly (B2C, solopreneurs, dev tools).', tag: 'Fastest validation cycle', note: 'Shortest sales path — fewer conversations to a yes.' },
+                { val: 'Someone else', glyph: '2', title: 'User & buyer differ', badge: 'Budget holder', desc: 'The end-user needs internal approval or budget to buy (B2B, enterprise).', tag: 'Higher ACV potential', note: 'Plan for a longer cycle, but a bigger deal once it lands.' },
+              ].map(opt => {
+                const on = get('whoPays') === opt.val || (opt.val === 'Someone else' && !!get('whoPays') && get('whoPays') !== 'Same person');
+                return (
+                  <button key={opt.val} onClick={() => {
+                    const newVal = on ? '' : opt.val;
+                    set('whoPays', newVal);
+                    if (activeIdea) ideasApi.upsertEntry(activeIdea.id, { stage: 'hone', field_key: 'whoPays', content: newVal }).catch(() => {});
+                  }}
+                    style={{
+                      textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit', border: 'none',
+                      borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column' as const, gap: 12,
+                      background: on ? INK : '#fff', color: on ? INK_TXT : T1, transition: 'all .2s',
+                    }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                      <span style={{ fontSize: 44, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.04em', color: on ? LIME : ACCENT }}>{opt.glyph}</span>
+                      <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, padding: '5px 10px', borderRadius: 999, background: on ? LIME : CREAM2, color: INK, letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>{on ? '✓ Selected' : opt.badge}</span>
                     </div>
-                  </div>
-                  <span style={{ fontSize: 10.5, fontWeight: 800, color: '#34d399', background: '#0f2e22', border: '1px solid #1c5a41', borderRadius: 999, padding: '4px 10px', whiteSpace: 'nowrap' as const }}>
-                    {get('whoPays') === 'Same person' ? '⚡ High Validation Speed' : '💼 Higher Deal Size'}
+                    <span style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em' }}>{opt.title}</span>
+                    <span style={{ fontSize: 15, lineHeight: 1.45, color: on ? INK_DIM : T2 }}>{opt.desc}</span>
+                    <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: on ? LIME : ACCENT_DEEP }}>{opt.tag}</span>
+                    <span style={{ fontSize: 14, color: on ? INK_DIM : T3 }}>{opt.note}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {questSelected && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: INK, color: INK_TXT, borderRadius: 18, padding: '16px 20px', flexWrap: 'wrap' as const }}>
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2 }}>
+                  <span style={{ fontWeight: 700 }}>Persona card unlocked</span>
+                  <span style={{ fontSize: 14, color: INK_DIM }}>
+                    {get('whoPays') === 'Same person'
+                      ? 'Direct-pay path — expect a shorter sales cycle and faster validation loops.'
+                      : 'Budget-holder path — plan for a longer cycle, but a bigger deal once it lands.'}
                   </span>
                 </div>
-              )}
-            </div>
+                <span style={{ background: LIME, color: INK, borderRadius: 999, padding: '6px 12px', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' as const }}>
+                  ⚡ {get('whoPays') === 'Same person' ? 'High validation speed' : 'Higher deal size'}
+                </span>
+              </div>
+            )}
             {(get('whoPays') === 'Someone else' || (get('whoPays') && get('whoPays') !== 'Same person')) && (
               <input style={inp} placeholder="Who exactly? e.g. Their manager, IT / procurement, the company…" value={get('whoPays') === 'Someone else' ? '' : get('whoPays')} onChange={e => set('whoPays', e.target.value)} />
             )}
@@ -14951,17 +14081,14 @@ export default function WorkPage() {
 
         return (
           <>
-            <div style={{ display: 'flex', flexDirection: isMobileNow ? 'column' as const : 'row' as const, gap: 20, alignItems: isMobileNow ? 'stretch' : 'flex-start' }}>
-              {isMobileNow && previewCard}
-              {personaPanel}
-              {paysPanel}
-              {!isMobileNow && previewCard}
+            <div>
+              <H accent={STAGE_COLORS.hone} underline={false}>{showPersonaPanel ? 'Who do you think has this problem?' : 'Who actually pays?'}</H>
+              <StepGoal text={STEP_GOALS.hone[0]} />
             </div>
-            {/* Pinned CTA — this step's two-column layout (plus the ID-card
-                preview) runs tall enough that Continue was landing below the
-                fold on smaller laptop screens; sticking it keeps the
-                primary action reachable without scrolling. */}
-            <div style={{ position: 'sticky' as const, bottom: 0, background: '#fff', paddingTop: 12, marginTop: 4, borderTop: `1px solid ${BORDER}`, zIndex: 2 }}>
+            {tabs}
+            {personaPanel}
+            {paysPanel}
+            <div style={{ position: 'sticky' as const, bottom: 0, background: CREAM, paddingTop: 12, marginTop: 4, zIndex: 2 }}>
               <NavRow
                 onBack={showPersonaPanel ? undefined : () => setPersonaReopened(true)}
                 onNext={async () => {
@@ -14989,11 +14116,13 @@ export default function WorkPage() {
     <div key="h1" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={1} />
       <HoneRestartControl onRestart={resetHoneStage} />
-      <StepGoal text={STEP_GOALS.hone[1]} />
-      <StepQuestionBar blocks={['Value Proposition']}>
-        {!problemCtaOpen && <SageCtaLink onClick={() => setProblemCtaOpen(true)} />}
-      </StepQuestionBar>
-      <H accent={STAGE_COLORS.hone} underline={false}>What are the problems?</H>
+      <div>
+        <H accent={STAGE_COLORS.hone} underline={false}>What are the problems?</H>
+        <StepGoal text={STEP_GOALS.hone[1]} />
+        <StepQuestionBar blocks={['Value Proposition']}>
+          {!problemCtaOpen && <SageCtaLink onClick={() => setProblemCtaOpen(true)} />}
+        </StepQuestionBar>
+      </div>
       {problemCtaOpen && (
         <SageProblemInterview
           oneLiner={get('oneLiner')}
@@ -15061,11 +14190,13 @@ export default function WorkPage() {
     <div key="h3" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={2} />
       <HoneRestartControl onRestart={resetHoneStage} />
-      <StepGoal text={STEP_GOALS.hone[2]} />
-      <StepQuestionBar blocks={['Customer Relationships', 'Revenue Streams']}>
-        {!copingCtaOpen && <SageCtaLink onClick={() => setCopingCtaOpen(true)} />}
-      </StepQuestionBar>
-      <H accent={STAGE_COLORS.hone} underline={false}>What do you think people are doing to solve this?</H>
+      <div>
+        <H accent={STAGE_COLORS.hone} underline={false}>What do you think people are doing to solve this?</H>
+        <StepGoal text={STEP_GOALS.hone[2]} />
+        <StepQuestionBar blocks={['Customer Relationships', 'Revenue Streams']}>
+          {!copingCtaOpen && <SageCtaLink onClick={() => setCopingCtaOpen(true)} />}
+        </StepQuestionBar>
+      </div>
 
       {/* ── Context reminder ── */}
       <ProblemContextCard
@@ -15075,10 +14206,6 @@ export default function WorkPage() {
         problemCount={get('problemSentence').split(MULTI_SEP).filter(Boolean).length}
       />
 
-      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#475569', marginBottom: 10, lineHeight: 1.5 }}>
-        List the ways you <em>think</em> people cope with this today — then rank them from most to least common.
-        The #1 approach becomes your primary hypothesis to test.
-      </div>
       {copingCtaOpen && (
         <SageStepInterview
           topic="coping"
@@ -15107,7 +14234,7 @@ export default function WorkPage() {
         genChipsValue={get('solutionChipsGen')}
         onGenChipsChange={v => set('solutionChipsGen', v)}
       />
-      <div style={{ position: 'sticky' as const, bottom: 0, background: '#fff', paddingTop: 12, marginTop: 4, borderTop: `1px solid ${BORDER}`, zIndex: 2 }}>
+      <div style={{ position: 'sticky' as const, bottom: 0, background: CREAM, paddingTop: 12, marginTop: 4, zIndex: 2 }}>
         <NavRow onBack={back} onNext={async () => { await save('hone', { solutionAlternatives: get('solutionAlternatives') }); next(); }} nextLabel="Next →" disabled={!get('solutionAlternatives').split('|||').filter(Boolean).length} disabledReason="List at least one way people cope with this today." stageColor={STAGE_COLORS.idea} stepTitle="What do you think people are doing to solve this?" ideaId={activeIdea.id} />
       </div>
     </div>,
@@ -15139,21 +14266,19 @@ export default function WorkPage() {
     <div key="h4" style={col}>
       <ModBadge mod="hone" /><StepBars mod="hone" step={4} />
       <HoneRestartControl onRestart={resetHoneStage} />
-      <StepGoal text={STEP_GOALS.hone[4]} />
       <BMCLabel blocks={['Key Metrics']} />
-      <H accent={STAGE_COLORS.hone}>How strong is your idea?</H>
-      <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 500, color: '#334155', marginTop: -14, marginBottom: 18 }}>Rate each 0–5. You need 20+ to move forward.</div>
+      <div>
+        <H accent={STAGE_COLORS.hone}>How strong is your idea?</H>
+        <StepGoal text={STEP_GOALS.hone[4]} />
+      </div>
       <HoneScorecard values={fields} onChange={(k, v) => set(k, v)} />
       {honeScore >= 20 ? (
         <>
-          <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: 10, padding: '16px 18px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
-              <div>
-                <div style={{
-                  fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 13,
-                  letterSpacing: '.04em', textTransform: 'uppercase' as const, color: '#059669',
-                }}>Summarise in one paragraph</div>
-                <div style={{ borderTop: '2px solid #059669', marginTop: 3, maxWidth: 130 }} />
+          <section style={{ background: LIME, color: INK, borderRadius: 24, padding: 'clamp(20px, 3vw, 30px)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' as const }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'baseline', fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>
+                <span>Summarise in one paragraph</span>
+                <span style={{ fontWeight: 500, opacity: .7 }}>{get('founderStatement').trim() ? `${get('founderStatement').trim().split(/\s+/).length} words` : 'your idea, in your words'}</span>
               </div>
               {/* Easier-input option: rather than facing a blank textarea for a
                   synthesis question, stitch a starter draft together from
@@ -15171,16 +14296,16 @@ export default function WorkPage() {
                     alternative: (get('solutionAlternatives') || '').split(MULTI_SEP).filter(Boolean)[0] || '',
                     founderFit: get('founderFit').trim(),
                   }))}
-                  style={{ borderColor: '#86efac', color: '#059669', flexShrink: 0 }}
+                  style={{ borderColor: INK, color: INK, flexShrink: 0, background: 'transparent' }}
                 >
                   ✨ Draft it for me
                 </Button>
               )}
             </div>
             <textarea
-              style={{ ...ta(90), fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600 }}
+              style={{ ...ta(110), fontFamily: 'inherit', fontSize: 'clamp(16px, 1.6vw, 19px)', fontWeight: 500, background: 'rgba(255,255,255,.55)', border: 'none', color: INK, padding: 18 }}
               value={get('founderStatement')} onChange={e => set('founderStatement', e.target.value)} placeholder="Early-stage founders pre-seed struggle with knowing what to do next…" />
-          </div>
+          </section>
           <NavRow onBack={back} onNext={async () => {
             const sc: Record<string, string> = {}; SCORE_DIMS.forEach(d => { sc[d.key] = get(d.key) || '0'; });
             await save('hone', { ...sc, founderStatement: get('founderStatement'), honeScore: String(honeScore) });
@@ -15188,10 +14313,10 @@ export default function WorkPage() {
           }} nextLabel="Continue →" disabled={!get('founderStatement').trim()} disabledReason="Add your founder statement to continue." stepTitle="Idea Interrogation Scorecard" ideaId={activeIdea.id} />
         </>
       ) : (
-        <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', borderRadius: 10, padding: '20px' }}>
-          <div style={{ fontSize: 22, marginBottom: 8 }}>💡</div>
-          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 18, fontWeight: 700, color: '#d97706', marginBottom: 6 }}>Score below 20 — consider refining further</div>
-          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#92400e', lineHeight: 1.45, marginBottom: 14 }}>You can still continue to validate and shape — but a stronger foundation here will sharpen everything downstream.</div>
+        <div style={{ background: '#fff', borderRadius: 24, padding: 'clamp(20px, 3vw, 30px)' }}>
+          <div style={eyebrow('#b45309')}>Score below 20</div>
+          <div style={{ fontFamily: 'inherit', fontSize: 22, fontWeight: 800, color: T1, margin: '8px 0 6px', letterSpacing: '-0.02em' }}>Consider refining further before you validate</div>
+          <div style={{ fontFamily: 'inherit', fontSize: 15, color: T2, lineHeight: 1.5, marginBottom: 14 }}>You can still continue to validate and shape — but a stronger foundation here will sharpen everything downstream.</div>
           <NavRow onBack={back} onNext={async () => {
             const sc: Record<string, string> = {}; SCORE_DIMS.forEach(d => { sc[d.key] = get(d.key) || '0'; });
             await save('hone', { ...sc, founderStatement: get('founderStatement'), honeScore: String(honeScore) });
@@ -15205,8 +14330,7 @@ export default function WorkPage() {
       <HoneRestartControl onRestart={resetHoneStage} />
       <div>
         <H accent={STAGE_COLORS.hone}>Where does your idea stand in the market?</H>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <AgentAvatar size={36} />
+        <div>
           <StepGoal text={STEP_GOALS.hone[5]} />
         </div>
       </div>
@@ -15249,11 +14373,11 @@ export default function WorkPage() {
           />
         );
       })()}
-      <div style={{ position: 'sticky' as const, bottom: 0, background: '#fff', paddingTop: 12, marginTop: 4, borderTop: `1px solid ${BORDER}`, zIndex: 2 }}>
+      <div style={{ position: 'sticky' as const, bottom: 0, background: CREAM, paddingTop: 12, marginTop: 4, zIndex: 2 }}>
         <NavRow onBack={back} onNext={async () => { unlock('validate'); unlock('shape'); mark('hone'); next(); }} nextLabel="Continue →" disabled={!parseMarketSnapshot(get('marketSnapshot'))} disabledReason="Waiting on Sage's Market Snapshot (domain, TAM/SAM, competitors) — it unlocks automatically once that finishes generating." stageColor={STAGE_COLORS.hone} stepTitle="Where does your idea stand in the market?" ideaId={activeIdea.id} />
       </div>
     </div>,
-    <CompleteBadge key="h-done" mod="hone" onContinue={() => goMod('validate')} onBack={back} />,
+    <CompleteBadge key="h-done" mod="hone" onContinue={() => goMod('validate')} onBack={back} statement={get('oneLiner')} />,
   ];
 
 
@@ -15262,7 +14386,7 @@ export default function WorkPage() {
   const QUESTION_FRAMEWORK = [
     {
       cat: '🔍 Problem exploration',
-      color: '#2563eb',
+      color: '#7c3aed',
       desc: 'Understand the real story, not the surface complaint',
       questions: [
         { q: 'Take me back to the last time.', hint: 'Let them narrate — don\'t prompt.' },
@@ -15273,7 +14397,7 @@ export default function WorkPage() {
     },
     {
       cat: '🔄 Current behaviour',
-      color: '#2563eb',
+      color: '#7c3aed',
       desc: 'What they actually do today to cope',
       questions: [
         { q: 'What do you do when it hits?', hint: 'Their workaround is your competition.' },
@@ -15336,25 +14460,12 @@ export default function WorkPage() {
   // straight to editing availability, no matter which of those steps they're
   // currently on -- not just the one dedicated Schedule step.
   const renderAvailabilityButton = () => (
-    <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, alignSelf: 'flex-start' }}>
-      <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 22, fontStyle: 'italic', fontWeight: 700, color: STAGE_COLORS.validate, lineHeight: 1.2 }}>
-        Don't forget to clear your calendar!
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' as const }}>
-        <button onClick={() => setShowAvail(true)} title="Set or edit the weekly hours contacts can book you for"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0,
-            padding: '10px 18px', borderRadius: 12, border: 'none',
-            background: `linear-gradient(135deg, ${STAGE_COLORS.validate}, #4f46e5)`,
-            color: '#fff', fontSize: 13.5, fontWeight: 800, cursor: 'pointer',
-            fontFamily: 'inherit', boxShadow: `0 6px 16px ${STAGE_COLORS.validate}40`,
-          }}>
-          🗓️ Availability
-        </button>
-        <span style={{ fontSize: 12, fontWeight: 600, color: T2, lineHeight: 1.4 }}>
-          Free up your calendar so you're actually available to speak with people.
-        </span>
-      </div>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', borderRadius: 16, background: '#fff', flexWrap: 'wrap' as const }}>
+      <span style={{ fontSize: 15, color: T1 }}><strong style={{ fontWeight: 800 }}>Don't forget to clear your calendar!</strong> Free up your calendar so you're actually available to speak with people.</span>
+      <button onClick={() => setShowAvail(true)} title="Set or edit the weekly hours contacts can book you for"
+        style={{ borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 700, background: INK, color: LIME, border: 'none', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const, flexShrink: 0 }}>
+        Set availability
+      </button>
     </div>
   );
 
@@ -15377,9 +14488,9 @@ export default function WorkPage() {
       });
     if (!rows.length) return null;
     return (
-      <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 14, background: '#f9f9f5', padding: '12px 14px' }}>
-        <div style={{ fontSize: 12.5, fontWeight: 800, color: '#0f172a', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-          🎙️ Interview status <span style={{ fontSize: 10, fontWeight: 700, color: T3 }}>({rows.length})</span>
+      <div style={{ borderRadius: 20, background: '#fff', padding: '16px 18px' }}>
+        <div style={{ fontSize: 18, fontWeight: 800, color: T1, marginBottom: 10, display: 'flex', alignItems: 'baseline', gap: 8, letterSpacing: '-0.01em' }}>
+          Interview status <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: T3 }}>{rows.length}</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, maxHeight: 230, overflowY: 'auto' as const }}>
           {rows.map((iv: any) => {
@@ -15393,8 +14504,8 @@ export default function WorkPage() {
             const label = hasSchedule ? 'Booked' : awaiting ? 'Awaiting response' : logged ? 'Logged' : 'Not scheduled';
             const labelColor = hasSchedule ? '#15803d' : awaiting ? '#b45309' : logged ? '#4f46e5' : T3;
             return (
-              <div key={iv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, fontSize: 11.5, padding: '6px 9px', borderRadius: 8, background: '#fff', border: `1px solid ${BORDER}` }}>
-                <span style={{ fontWeight: 700, color: '#1d1d1f', flexShrink: 0 }}>{iv.interviewee_name || 'Someone'}</span>
+              <div key={iv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const, fontSize: 13, padding: '8px 12px', borderRadius: 12, background: CREAM }}>
+                <span style={{ fontWeight: 700, color: '#16121d', flexShrink: 0 }}>{iv.interviewee_name || 'Someone'}</span>
                 <span style={{ color: labelColor, fontWeight: 600 }}>
                   {icon} {label}{start ? ` — ${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at ${start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}` : ''}
                 </span>
@@ -15430,67 +14541,34 @@ export default function WorkPage() {
 
     // ── v1: Goal Builder ─────────────────────────────────────────────────
     (() => {
-      const VC = STAGE_COLORS.validate;
-
       return (
         <div key="vA" style={col}>
           <ModBadge mod="validate" /><StepBars mod="validate" step={0} />
           <StepIntro mod="validate" step={0} />
-          <StepGoal text={STEP_GOALS.validate[0]} />
+          <div>
+            <H accent={STAGE_COLORS.validate}>Set your success bar.</H>
+            <StepGoal text={STEP_GOALS.validate[0]} />
+          </div>
 
-          {/* ── Validation Goal Builder ───────────────────────────── */}
-          <div style={{ border: `2px solid ${VC}25`, borderRadius: 14, overflow: 'hidden', marginBottom: 4 }}>
-            {/* ── Header row: goal builder title + WTP/ICP/Pain-confirm terms,
-                one row / four columns, whiteboard sticky-note style (no
-                borders — background tint + shadow + slight rotation only,
-                same as the sticky notes used elsewhere in this step). ── */}
-            <div style={{ padding: '16px 18px', background: `${VC}08`, borderBottom: `1px solid ${VC}18`, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)', gap: 16, alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 22 }}>🎯</span>
-                <div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: '#1d6fce', letterSpacing: -0.5 }}>Validation Goal Builder</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#334155', marginTop: 2 }}>Set your bar in 3 taps. No typing needed.</div>
+          {/* ── Validation Goal Builder (2026-10 redesign) ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 10 }}>
+            {[
+              { term: 'WTP', full: 'Willingness to pay', def: 'Someone asks how to sign up, offers to pre-pay, or puts money down.' },
+              { term: 'ICP', full: 'Ideal customer profile', def: 'The specific person most likely to have the problem and pay to fix it.' },
+              { term: 'Pain confirm', full: 'Real, unprompted pain', def: 'They describe the problem in their own words before you mention it.' },
+            ].map(g => (
+              <div key={g.term} style={{ borderRadius: 18, padding: '16px 18px', background: '#fff', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' as const }}>
+                  <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em' }}>{g.term}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: T3, letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>{g.full}</span>
                 </div>
+                <span style={{ fontSize: 14, color: T2, lineHeight: 1.45 }}>{g.def}</span>
               </div>
-              {[
-                { term: 'WTP', name: 'Willingness to pay', icon: '💰', full: 'Someone asks how to sign up, offers to pre-pay, or puts money down.', bg: '#fef3c7', color: '#92400e', rotate: -1.5 },
-                { term: 'ICP', name: 'Ideal Customer Profile', icon: '🎯', full: 'The specific person most likely to have the problem and pay to fix it.', bg: '#dbeafe', color: '#1e40af', rotate: 1 },
-                { term: 'Pain confirm', name: 'Real, unprompted pain', icon: '🔥', full: 'They describe the problem in their own words, unprompted, before you mention it.', bg: '#dcfce7', color: '#166534', rotate: -1 },
-              ].map(({ term, name, icon, full, bg, color, rotate }) => (
-                <KeyTermCard key={term} term={term} name={name} icon={icon} full={full} bg={bg} color={color} rotate={rotate} />
-              ))}
-            </div>
-
-            {/* ── Whiteboard scrapbook wall (2026-08-04, layout option #1) ──
-                Everything below — all 5 questions and the recap — sits on ONE
-                continuous whiteboard surface (a single faint grid backdrop
-                spanning the whole card) instead of five separate per-question
-                grid+background sections. The growing bubble pickers are
-                replaced with flat chip rows; the question headlines use the
-                Bebas Neue kicker + ink-rule treatment (Magazine Cover
-                Feature, Direction 13), and the recap uses Playfair Display
-                italic. The WTP/ICP/Pain-confirm key-terms sticky notes
-                that used to open this section now live in the header row
-                above instead, so they don't repeat further down. ── */}
-            <div style={{ position: 'relative', background: '#f9f9f5' }}>
-              <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.06 }} preserveAspectRatio="none">
-                {Array.from({ length: 26 }).map((_, i) => (
-                  <line key={i} x1="0" y1={`${i * 4}%`} x2="100%" y2={`${i * 4}%`} stroke="#334155" strokeWidth="1" />
-                ))}
-              </svg>
-              <div style={{ position: 'relative', padding: '18px 18px 20px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-                {/* Q1-Q5: one at a time, slider-style — see ValidationGoalBuilder */}
-                <ValidationGoalBuilder get={get} set={set} />
-
-              </div>
-            </div>
-
-            {/* ── Nav ── */}
-            <div style={{ padding: '14px 18px' }}>
+            ))}
+          </div>
+          <ValidationGoalBuilder get={get} set={set} />
+          <div>
               <NavRow onBack={back} onNext={async () => { await save('validate', { valGoalSuccess: get('valGoalSuccess'), valGoalConvos: get('valGoalConvos'), valGoalRate: get('valGoalRate'), valGoalSignal: get('valGoalSignal'), valGoalICP: get('valGoalICP'), valGoalTime: get('valGoalTime') }); next(); }} nextLabel="Set your priorities →" disabled={!get('valGoalConvos') || !get('valGoalRate') || !get('valGoalSignal') || !get('valGoalICP') || !get('valGoalTime')} disabledReason="Answer all 5 questions above to set your winning condition." ideaId={activeIdea.id} />
-            </div>
-
           </div>
         </div>
       );
@@ -15498,127 +14576,106 @@ export default function WorkPage() {
 
     // ── v2: Priorities ────────────────────────────────────────────────────
     (() => {
-      const VC = STAGE_COLORS.validate;
+      const PROVE_CHIPS = [
+        'This is a real, recurring problem',
+        'People would pay for a solution',
+        'I\'ve found the right customer',
+        'No competitor fully solves this',
+        'The pain is urgent enough to act on',
+      ];
+      const STOP_RULES = [
+        'If fewer than 3 people confirm the pain → pivot',
+        'If zero willingness-to-pay signals in 10 conversations → stop',
+        'If a competitor already solves this well → pivot',
+        'If the pain is mild or infrequent → stop',
+      ];
+      const rawProve = get('valGoalProve') || '';
+      const ranked: string[] = rawProve ? rawProve.split('\n').map((l: string) => l.replace(/^#\d+: /, '')).filter(Boolean) : [];
+      const writeRanked = (next: string[]) => set('valGoalProve', next.map((c: string, i: number) => `#${i + 1}: ${c}`).join('\n'));
+      const moveRanked = (item: string, dir: -1 | 1) => {
+        const i = ranked.indexOf(item); const j = i + dir;
+        if (i < 0 || j < 0 || j >= ranked.length) return;
+        const next = ranked.slice(); [next[i], next[j]] = [next[j], next[i]]; writeRanked(next);
+      };
+      const rawStop = get('valGoalStop') || '';
+      const accepted: string[] = rawStop ? rawStop.split('\n').filter(Boolean) : [];
+      const writeAccepted = (next: string[]) => set('valGoalStop', next.join('\n'));
+      const topProve = ranked[0] || '';
+      const firstWire = (accepted[0] || '').replace(/^If\s+/i, '').replace(/\s*→.*$/, '');
+      const signed = !!topProve && accepted.length > 0;
       return (
         <div key="vB" style={col}>
           <ModBadge mod="validate" /><StepBars mod="validate" step={1} />
           <StepIntro mod="validate" step={1} />
-          <StepGoal text={STEP_GOALS.validate[1]} />
-
-          <div style={{ border: `2px solid ${VC}25`, borderRadius: 14, overflow: 'hidden', marginBottom: 4 }}>
-            <div style={{ padding: '16px 18px 14px', background: `linear-gradient(135deg, ${VC}18 0%, #f0f7ff 100%)`, borderBottom: `1px solid ${VC}25` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <span style={{ fontSize: 24 }}>📋</span>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: '#0f172a', letterSpacing: -0.3 }}>Pick your battles</div>
-                  <div style={{ fontSize: 12, color: T2, marginTop: 2 }}>What matters most — and when you'd walk away.</div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-
-              {/* Q2 + Q3: Sticky-note tag chips (2026-08-05, two-column layout) */}
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20 }}>
-
-                {/* Column 1: Most important thing to prove — one candidate at a time, tap Add to lock in its rank */}
-                {(() => {
-                  const PROVE_CHIPS = [
-                    'This is a real, recurring problem',
-                    'People would pay for a solution',
-                    'I\'ve found the right customer',
-                    'No competitor fully solves this',
-                    'The pain is urgent enough to act on',
-                  ];
-                  const raw = get('valGoalProve') || '';
-                  const ranked: string[] = raw
-                    ? raw.split('\n').map((l: string) => l.replace(/^#\d+: /, '')).filter(Boolean)
-                    : [];
-                  const writeRanked = (next: string[]) => set('valGoalProve', next.map((c: string, i: number) => `#${i + 1}: ${c}`).join('\n'));
-                  return (
-                    <div>
-                      <div style={{ marginBottom: 12 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div>
-                            <div style={{ fontSize: 16, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.25 }}>
-                              What's the single most important thing to prove?
-                            </div>
-                            <div style={{ borderTop: '2px solid #6366f1', marginTop: 3, maxWidth: 150 }} />
-                          </div>
-                          <span style={{ fontSize: 18 }}>🎯</span>
-                        </div>
-                        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 5 }}>One at a time — add it to your ranking, or skip and come back.</div>
-                      </div>
-                      <RankedPickQueue
-                        items={PROVE_CHIPS}
-                        ranked={ranked}
-                        accent="#6366f1"
-                        emoji="🎯"
-                        onAdd={chip => writeRanked([...ranked, chip])}
-                        onRemove={chip => writeRanked(ranked.filter(c => c !== chip))}
-                      />
-                    </div>
-                  );
-                })()}
-
-                {/* Column 2: What would tell you this idea isn't working — one rule at a time, Accept or Skip */}
-                {(() => {
-                  const STOP_RULES = [
-                    'If fewer than 3 people confirm the pain → pivot',
-                    'If zero willingness-to-pay signals in 10 conversations → stop',
-                    'If a competitor already solves this well → pivot',
-                    'If the pain is mild or infrequent → stop',
-                  ];
-                  const raw = get('valGoalStop') || '';
-                  const accepted: string[] = raw ? raw.split('\n').filter(Boolean) : [];
-                  const writeAccepted = (next: string[]) => set('valGoalStop', next.join('\n'));
-                  return (
-                    <div>
-                      <div style={{ marginBottom: 12 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div>
-                            <div style={{ fontSize: 16, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.25 }}>
-                              What would tell you this idea isn't working?
-                            </div>
-                            <div style={{ borderTop: '2px solid #ef4444', marginTop: 3, maxWidth: 150 }} />
-                          </div>
-                          <span style={{ fontSize: 18 }}>🛑</span>
-                        </div>
-                        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 13, fontStyle: 'italic', color: '#7a7a7a', marginTop: 5 }}>One at a time — accept the rules that apply to you.</div>
-                      </div>
-                      <AcceptQueue
-                        items={STOP_RULES}
-                        accepted={accepted}
-                        accent="#ef4444"
-                        emoji="🛑"
-                        onAccept={rule => writeAccepted([...accepted, rule])}
-                        onRemove={rule => writeAccepted(accepted.filter(r => r !== rule))}
-                      />
-                    </div>
-                  );
-                })()}
-
-              </div>
-
-              {/* ── Nav ── */}
-              <div style={{ padding: '14px 18px' }}>
-                <NavRow onBack={back} onNext={async () => {
-                  // Silently seed + save the starter assumptions here — this
-                  // used to be its own "Name your assumptions" step; removed
-                  // 2026-09-05 since it never actually required any input,
-                  // but the interview-script step and later verdict/progress
-                  // screens still read this field, so it still needs to exist.
-                  const updates: Record<string, string> = { valGoalProve: get('valGoalProve'), valGoalStop: get('valGoalStop') };
-                  if (!get('assumptions')) {
-                    updates.assumptions = JSON.stringify(deriveSeedAssumptions(get('problemSentence'), get('whoExactly')));
-                  }
-                  await save('validate', updates);
-                  next();
-                }} nextLabel="Choose who to talk to →" disabled={!get('valGoalProve').trim() || !get('valGoalStop').trim()} disabledReason="Pick at least one thing to prove, and one stop rule." ideaId={activeIdea.id} />
-              </div>
-
-            </div>
+          <div>
+            <H accent={STAGE_COLORS.validate}>Pick your battles.</H>
+            <StepGoal text={STEP_GOALS.validate[1]} />
           </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20, alignItems: 'start' }}>
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={eyebrow(ACCENT)}>A · What to prove</span>
+                <span style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2, letterSpacing: '-0.01em' }}>What's the single most important thing to prove?</span>
+              </div>
+              <span style={{ fontSize: 14, color: T2 }}>One at a time — add it to your ranking, or skip and come back.</span>
+              <RankedPickQueue
+                items={PROVE_CHIPS}
+                ranked={ranked}
+                accent={ACCENT}
+                emoji="🎯"
+                onAdd={chip => writeRanked([...ranked, chip])}
+                onRemove={chip => writeRanked(ranked.filter(c => c !== chip))}
+                onMove={moveRanked}
+              />
+            </section>
+
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={eyebrow('#d4401d')}>B · Tripwires</span>
+                <span style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2, letterSpacing: '-0.01em' }}>What would tell you this idea isn't working?</span>
+              </div>
+              <span style={{ fontSize: 14, color: T2 }}>One at a time — accept the rules that apply to you.</span>
+              <AcceptQueue
+                items={STOP_RULES}
+                accepted={accepted}
+                accent="#d4401d"
+                emoji="🛑"
+                onAccept={rule => writeAccepted([...accepted, rule])}
+                onRemove={rule => writeAccepted(accepted.filter(r => r !== rule))}
+              />
+            </section>
+          </div>
+
+          <section style={{ background: LIME, color: INK, borderRadius: 28, padding: 'clamp(20px, 3vw, 32px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 20, alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: '0.12em' }}>THE PACT</span>
+              <p style={{ margin: 0, fontSize: 'clamp(20px, 2.2vw, 28px)', fontWeight: 600, lineHeight: 1.3 }}>
+                I'm here to prove <span style={{ background: INK, color: LIME, padding: '0 8px', borderRadius: 8 }}>{topProve ? topProve.charAt(0).toLowerCase() + topProve.slice(1) : '…'}</span>. I'll walk away the moment <span style={{ background: INK, color: LIME, padding: '0 8px', borderRadius: 8 }}>{firstWire ? firstWire.charAt(0).toLowerCase() + firstWire.slice(1) : '…'}</span>.
+              </p>
+              <span style={{ fontSize: 14 }}>{ranked.length} thing{ranked.length !== 1 ? 's' : ''} to prove · {accepted.length} tripwire{accepted.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ borderRadius: 16, padding: 16, background: signed ? INK : 'rgba(255,255,255,.5)', color: signed ? LIME : INK, display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center', textAlign: 'center' as const }}>
+                <span style={{ fontSize: signed ? 22 : 16, fontWeight: 800 }}>{signed ? 'Pact signed ✓' : 'Not signed yet'}</span>
+                <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', opacity: .8 }}>{signed ? 'CONTINUE WHEN READY' : 'ADD ONE OF EACH ABOVE'}</span>
+              </div>
+            </div>
+          </section>
+
+          <NavRow onBack={back} onNext={async () => {
+            // Silently seed + save the starter assumptions here — this
+            // used to be its own "Name your assumptions" step; removed
+            // 2026-09-05 since it never actually required any input,
+            // but the interview-script step and later verdict/progress
+            // screens still read this field, so it still needs to exist.
+            const updates: Record<string, string> = { valGoalProve: get('valGoalProve'), valGoalStop: get('valGoalStop') };
+            if (!get('assumptions')) {
+              updates.assumptions = JSON.stringify(deriveSeedAssumptions(get('problemSentence'), get('whoExactly')));
+            }
+            await save('validate', updates);
+            next();
+          }} nextLabel="Choose who to talk to →" disabled={!get('valGoalProve').trim() || !get('valGoalStop').trim()} disabledReason="Pick at least one thing to prove, and one stop rule." ideaId={activeIdea.id} />
         </div>
       );
     })(),
@@ -15629,157 +14686,167 @@ export default function WorkPage() {
           <StepIntro mod="validate" step={2} />
       <ValidateHero step={1} />
 
-      {/* Target customer — confirmed from Hone */}
-      <div style={{ background: `${STAGE_COLORS.validate}08`, border: `1.5px solid ${STAGE_COLORS.validate}22`, borderRadius: 14, padding: '16px 18px' }}>
-        <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2, marginBottom: 8 }}>Who you're targeting · from Hone</div>
-        {get('whoExactly') ? (
-          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, fontWeight: 600, fontStyle: 'italic', color: '#15803d', lineHeight: 1.45 }}>{parseWhoDisplay(get('whoExactly'))}</div>
-        ) : (
-          <div style={{ fontSize: 13, color: T2, fontStyle: 'italic' }}>Not defined yet — go back to Hone to describe your target customer.</div>
-        )}
-      </div>
-
-      {/* ── ICP Depth ─────────────────────────────────────────────────── */}
-      <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 14 }}>
-        <div style={{ padding: '20px 20px 18px', borderBottom: `1px solid #f0f0f2`, background: '#f9f9f5', position: 'relative', borderRadius: '14px 14px 0 0' }}>
-          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.06 }} preserveAspectRatio="none">
-            {[0,1,2,3,4,5,6,7,8,9,10].map(i => <line key={i} x1="0" y1={`${i*10}%`} x2="100%" y2={`${i*10}%`} stroke="#334155" strokeWidth="1" />)}
-          </svg>
-          <div style={{ position: 'relative', marginBottom: 2 }}>
-            <div>
-              <div style={{ fontSize: 22, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
-                Ideal Customer Profile
-              </div>
-              <div style={{ borderTop: '2px solid #0ea5e9', marginTop: 4, maxWidth: 220 }} />
-            </div>
-            <span style={{ fontSize: 20, marginLeft: 10, verticalAlign: 'middle' }}>🎯</span>
-          </div>
-          <div style={{ fontSize: 12, color: T3, marginTop: 4 }}>Go deeper on who you're targeting before you reach out.</div>
-        </div>
-        <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {([
-            {
-              key: 'icpJobs' as const,
-              label: 'Who exactly is this person?',
-              sub: 'Their role, responsibility, or situation — not their personality',
-              layout: 'grid' as const,
-              chips: [
-                'An individual contributor doing the work themselves',
-                'A manager or team lead responsible for outcomes',
-                'A business owner or decision-maker',
-                'An executive with budget authority',
-                'A freelancer or independent professional',
-                'A consumer or individual (not a business)',
-                'Someone at a small company (under 50 people)',
-                'Someone at a larger organisation (50+ people)',
-              ],
-            },
-            {
-              key: 'icpFrustrations' as const,
-              label: 'When does this problem hit them hardest?',
-              sub: 'The trigger moment that makes it urgent — not background noise',
-              layout: 'grid' as const,
-              chips: [
-                'When they are starting something new',
-                'When a deadline or launch is approaching fast',
-                'When their current approach has clearly broken down',
-                'When they are about to spend significant time or money',
-                'When they have just taken on a new role or responsibility',
-                'When they are being measured or evaluated on results',
-                'When they are comparing options and need to decide',
-                'When they have just experienced a costly failure',
-              ],
-            },
-            {
-              key: 'icpAlternatives' as const,
-              label: 'Who would be the wrong person to talk to?',
-              sub: 'Disqualifiers — people who look right but are not your customer',
-              layout: 'grid' as const,
-              chips: [
-                'People who have already solved this and moved on',
-                'People without authority to make or influence a purchase',
-                'People who do not feel this problem frequently enough',
-                'People who tolerate the pain rather than actively fix it',
-                'Professionals who solve this problem for others as their job',
-                'People in an industry or geography you cannot serve',
-                'People whose situation is too large or too small to fit',
-                'Researchers or observers who study the problem but do not live it',
-              ],
-            },
-          ] as { key: 'icpJobs' | 'icpFrustrations' | 'icpAlternatives'; label: string; sub: string; chips: string[]; layout?: 'grid' }[]).map(({ key, label, sub, chips }) => {
-            const raw = get(key) || '';
-            const selected: string[] = raw ? raw.split('|||').filter(Boolean) : [];
-            const toggle = (chip: string) => {
-              const next = selected.includes(chip)
-                ? selected.filter(c => c !== chip)
-                : [...selected, chip];
-              set(key, next.join('|||'));
-            };
-            const Q_CONFIG: Record<string, { accent: string; emoji: string; selectedBg: string; selectedText: string }> = {
-              icpJobs:         { accent: '#6366f1', emoji: '🎯', selectedBg: '#6366f1', selectedText: '#fff' },
-              icpFrustrations: { accent: '#f59e0b', emoji: '⚡', selectedBg: '#f59e0b', selectedText: '#fff' },
-              icpAlternatives: { accent: '#ef4444', emoji: '🚫', selectedBg: '#ef4444', selectedText: '#fff' },
-            };
-            const qc = Q_CONFIG[key];
-            return (
-              <div key={key} style={{ borderBottom: `1px solid #f0f0f2`, paddingBottom: 16, marginBottom: 2 }}>
-                {/* Whiteboard question header */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontSize: 20, lineHeight: 1 }}>{qc.emoji}</span>
-                  <div>
-                    <div>
-                      <div style={{ fontSize: 15, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
-                        {label}
-                      </div>
-                      <div style={{ borderTop: `2px solid ${qc.accent}`, marginTop: 3, maxWidth: 150 }} />
-                    </div>
-                    <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 14, fontStyle: 'italic', color: '#7a7a7a', marginTop: 5 }}>{sub}</div>
-                  </div>
-                </div>
-                <div style={{ marginBottom: selected.length ? 8 : 0 }}>
-                  <JengaTower
-                    items={chips}
-                    color={qc.accent}
-                    isSelected={chip => selected.includes(chip)}
-                    onToggle={toggle}
-                  />
-                </div>
-                {selected.length > 0 && (
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 14, color: '#7a7a7a', marginBottom: 6 }}>
-                    Selected: {selected.map((c, i) => (
-                      <span key={i} style={{ color: qc.accent, fontWeight: 700 }}>{c}{i < selected.length - 1 ? ' · ' : ''}</span>
-                    ))}
-                  </div>
+      {(() => {
+        const ICP_SECTIONS: { key: 'icpJobs' | 'icpFrustrations' | 'icpAlternatives'; n: string; title: string; sub: string; dossier: string; dark: boolean; chips: string[] }[] = [
+          {
+            key: 'icpJobs', n: '01', title: 'Who exactly is this person?', sub: 'Their role, responsibility, or situation — not their personality', dossier: 'Who', dark: true,
+            chips: [
+              'An individual contributor doing the work themselves',
+              'A manager or team lead responsible for outcomes',
+              'A business owner or decision-maker',
+              'An executive with budget authority',
+              'A freelancer or independent professional',
+              'A consumer or individual (not a business)',
+              'Someone at a small company (under 50 people)',
+              'Someone at a larger organisation (50+ people)',
+            ],
+          },
+          {
+            key: 'icpFrustrations', n: '02', title: 'When does this problem hit them hardest?', sub: 'The trigger moment that makes it urgent — not background noise', dossier: 'When it hurts', dark: false,
+            chips: [
+              'When they are starting something new',
+              'When a deadline or launch is approaching fast',
+              'When their current approach has clearly broken down',
+              'When they are about to spend significant time or money',
+              'When they have just taken on a new role or responsibility',
+              'When they are being measured or evaluated on results',
+              'When they are comparing options and need to decide',
+              'When they have just experienced a costly failure',
+            ],
+          },
+          {
+            key: 'icpAlternatives', n: '03', title: 'Who would be the wrong person to talk to?', sub: 'Disqualifiers — people who look right but are not your customer', dossier: 'Not them', dark: false,
+            chips: [
+              'People who have already solved this and moved on',
+              'People without authority to make or influence a purchase',
+              'People who do not feel this problem frequently enough',
+              'People who tolerate the pain rather than actively fix it',
+              'Professionals who solve this problem for others as their job',
+              'People in an industry or geography you cannot serve',
+              'People whose situation is too large or too small to fit',
+              'Researchers or observers who study the problem but do not live it',
+            ],
+          },
+        ];
+        const selectedOf = (key: string): string[] => {
+          const raw = get(key) || '';
+          const picked = raw ? raw.split('|||').filter(Boolean) : [];
+          const custom = (get(key + '_custom') || '').trim();
+          return custom ? [...picked, custom] : picked;
+        };
+        const answered = ICP_SECTIONS.filter(s => selectedOf(s.key).length > 0).length;
+        const totalPicks = ICP_SECTIONS.reduce((n, s) => n + selectedOf(s.key).length, 0);
+        const focusLabel = totalPicks === 0 ? 'Not set' : totalPicks <= 4 ? 'Sharp' : totalPicks <= 8 ? 'Focused' : 'Broad';
+        const focusBars = totalPicks === 0 ? 0 : totalPicks <= 4 ? 5 : totalPicks <= 8 ? 3 : 1;
+        const who = parseWhoDisplay(get('whoExactly'));
+        const dossierLine = who ? `${who}${selectedOf('icpFrustrations')[0] ? ` — ${selectedOf('icpFrustrations')[0].replace(/^When /i, 'when ')}` : ''}` : 'Describe who you\'re hunting.';
+        const warn = totalPicks > 8 ? 'That is a wide net — more than 8 picks usually means two different customers. Trim to the ones you would actually message this week.' : '';
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: 20, alignItems: 'start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '12px 16px', borderRadius: 14, background: '#faf7ff', flexWrap: 'wrap' as const }}>
+                <span style={{ fontFamily: MONO, fontSize: 10, color: ACCENT_DEEP, fontWeight: 700, letterSpacing: '0.1em' }}>FROM HONE</span>
+                {who ? (
+                  <>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: T1 }}>{who}</span>
+                    <span style={{ fontSize: 13, color: T3 }}>— now sharpen it.</span>
+                  </>
+                ) : (
+                  <span style={{ fontSize: 13, color: T3 }}>Not defined yet — go back to Hone to describe your target customer.</span>
                 )}
-                <div style={{ position: 'relative' }}>
-                  <input
-                    placeholder="👉  Write your own…"
-                    style={{
-                      width: '100%',
-                      boxSizing: 'border-box' as const,
-                      padding: '10px 12px',
-                      borderRadius: 6,
-                      border: `none`,
-                      borderBottom: `2px solid ${qc.accent}`,
-                      background: 'transparent',
-                      fontSize: 18,
-                      fontFamily: "'Playfair Display', Georgia, serif",
-                      fontStyle: 'italic' as const,
-                      fontWeight: 600,
-                      color: '#1d4ed8',
-                      outline: 'none',
-                      letterSpacing: '0.3px',
-                      lineHeight: 1.4,
-                    }}
-                    value={get(key + '_custom') || ''}
-                    onChange={e => set(key + '_custom', e.target.value)}
-                  />
+              </div>
+              {ICP_SECTIONS.map(sec => {
+                const raw = get(sec.key) || '';
+                const selected: string[] = raw ? raw.split('|||').filter(Boolean) : [];
+                const toggle = (chip: string) => {
+                  const next = selected.includes(chip) ? selected.filter(c => c !== chip) : [...selected, chip];
+                  set(sec.key, next.join('|||'));
+                };
+                const count = selectedOf(sec.key).length;
+                const dark = sec.dark;
+                return (
+                  <section key={sec.key} style={{ background: dark ? INK : '#fff', color: dark ? INK_TXT : T1, borderRadius: 24, padding: 'clamp(18px, 2.6vw, 26px)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                      <div style={{ display: 'flex', gap: 14 }}>
+                        <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: dark ? LIME : ACCENT, marginTop: 4 }}>{sec.n}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          <span style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.01em' }}>{sec.title}</span>
+                          <span style={{ fontSize: 14, color: dark ? INK_DIM : T2 }}>{sec.sub}</span>
+                        </div>
+                      </div>
+                      <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, padding: '5px 10px', borderRadius: 999, background: count ? LIME : (dark ? '#2a2236' : CREAM), color: count ? INK : (dark ? INK_MUTE : T3), flexShrink: 0 }}>
+                        {count ? `${count} picked` : 'pick 1+'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 230px), 1fr))', gap: 6 }}>
+                      {sec.chips.map(chip => {
+                        const on = selected.includes(chip);
+                        return (
+                          <button key={chip} type="button" onClick={() => toggle(chip)} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, borderRadius: 14, padding: '12px 14px', fontSize: 14, lineHeight: 1.35, textAlign: 'left' as const, border: 'none', cursor: 'pointer', fontFamily: 'inherit', background: on ? (dark ? LIME : INK) : (dark ? '#2a2236' : CREAM), color: on ? (dark ? INK : '#fff') : (dark ? INK_TXT : T1), transition: 'all .12s' }}>
+                            <span style={{ width: 18, height: 18, borderRadius: 5, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0, marginTop: 1, background: on ? INK : (dark ? '#3a3148' : '#fff'), color: on ? LIME : (dark ? INK_MUTE : T3) }}>{on ? '✓' : '+'}</span>
+                            <span>{chip}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input
+                        placeholder="Write your own…"
+                        style={{ flex: 1, minWidth: 0, borderRadius: 12, padding: '11px 14px', fontSize: 14, background: 'transparent', color: dark ? INK_TXT : T1, border: `1px solid ${dark ? '#3a3148' : BORDER}`, outline: 'none', fontFamily: 'inherit' }}
+                        value={get(sec.key + '_custom') || ''}
+                        onChange={e => set(sec.key + '_custom', e.target.value)}
+                      />
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+
+            <div style={{ position: 'sticky' as const, top: 80, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ background: LIME, color: INK, borderRadius: 28, padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em' }}>
+                  <span>TARGET DOSSIER</span>
+                  <span>{answered}/3</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{ width: 62, height: 62, borderRadius: '50%', border: `2px solid ${INK}`, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', border: `2px solid ${INK}`, display: 'grid', placeItems: 'center' }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: INK }} />
+                    </div>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 'clamp(18px, 1.8vw, 21px)', fontWeight: 700, lineHeight: 1.25 }}>{dossierLine}</p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {ICP_SECTIONS.map(sec => {
+                    const items = selectedOf(sec.key);
+                    return (
+                      <div key={sec.key} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '10px 0', borderTop: '1px solid #16121d22' }}>
+                        <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>{sec.dossier}</span>
+                        {items.length ? items.map((t, i) => <span key={i} style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{t}</span>) : <span style={{ fontSize: 13, opacity: .6 }}>—</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em' }}>
+                    <span>FOCUS</span>
+                    <span style={{ fontWeight: 700 }}>{focusLabel.toUpperCase()}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 3 }}>
+                    {[0, 1, 2, 3, 4].map(i => <div key={i} style={{ height: 8, borderRadius: 4, background: i < focusBars ? INK : '#16121d22' }} />)}
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
+              {warn && (
+                <div style={{ background: INK, color: INK_TXT, borderRadius: 18, padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ width: 26, height: 26, borderRadius: '50%', background: LIME, color: INK, display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 12, flexShrink: 0 }}>S</div>
+                  <span style={{ fontSize: 14, lineHeight: 1.45 }}>{warn}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       <NavRow onBack={back} onNext={() => {
         // Auto-generate Sage's interview guide one step ahead, if it isn't
@@ -15833,14 +14900,9 @@ export default function WorkPage() {
     <div key="v0b" style={col}>
       <ModBadge mod="validate" /><StepBars mod="validate" step={3} />
           <StepIntro mod="validate" step={3} />
-      <div style={{ padding: '18px 20px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}14 0%, #f0f7ff 100%)`, borderRadius: 16, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4, boxShadow: `0 4px 16px ${STAGE_COLORS.validate}0d` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#fff', border: `1.5px solid ${STAGE_COLORS.validate}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, flexShrink: 0, boxShadow: `0 2px 6px ${STAGE_COLORS.validate}15` }}>📝</div>
-          <div>
-            <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>Build your interview script</div>
-            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#475569', marginTop: 4 }}>The right questions unlock honest answers. Build them now.</div>
-          </div>
-        </div>
+      <div>
+        <H accent={STAGE_COLORS.validate}>The right questions unlock honest answers.</H>
+        <StepGoal text="Build them now. Pick from the bank, write your own, or let Sage draft a full guide." />
       </div>
 
       <InterviewScriptStep
@@ -15876,53 +14938,80 @@ export default function WorkPage() {
     // ── v0b: Add your contacts ──────────────────────────────────────────────
     (() => {
       const [ready, setReady] = React.useState(false);
+      // Hold-to-promise progress (0–100) for the interstitial's button.
+      const [holdProgress, setHoldProgress] = React.useState(0);
+      const holdTimer = React.useRef<number | null>(null);
+      const startHold = () => {
+        if (holdProgress >= 100) return;
+        if (holdTimer.current) window.clearInterval(holdTimer.current);
+        holdTimer.current = window.setInterval(() => {
+          setHoldProgress(p => {
+            if (p >= 100) { if (holdTimer.current) window.clearInterval(holdTimer.current); return 100; }
+            return p + 4;
+          });
+        }, 40);
+      };
+      const stopHold = () => {
+        if (holdTimer.current) { window.clearInterval(holdTimer.current); holdTimer.current = null; }
+        setHoldProgress(p => (p >= 100 ? 100 : 0));
+      };
 
       if (!ready) {
-        // Filler / interstitial page — shown the moment you step into
-        // "Add your contacts", before the actual contact-adding UI.
+        // "Talk first" interstitial (2026-10 redesign) — an ink screen with
+        // the mission from steps 1–4 and a hold-to-promise button that
+        // unlocks the contacts UI.
+        const convos = get('valGoalConvos') || '—';
+        const rate = get('valGoalRate') ? `${get('valGoalRate')}%` : '—';
+        const prove = (get('valGoalProve') || '').split('\n')[0]?.replace(/^#\d+: /, '') || '—';
+        const who = parseWhoDisplay(get('whoExactly')) || 'your target customer';
+        const holdPct = holdProgress;
         return (
           <div key="v0b" style={col}>
             <ModBadge mod="validate" /><StepBars mod="validate" step={4} />
             <StepIntro mod="validate" step={4} />
 
-            <div style={{ minHeight: '50vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32, padding: '24px 16px', textAlign: 'center' as const }}>
-
-              {/* Icon */}
-              <svg width="72" height="72" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Person 1 — speech bubble */}
-                <circle cx="13" cy="12" r="6" fill="#4f46e5" opacity="0.15" />
-                <circle cx="13" cy="12" r="4" fill="#4f46e5" />
-                {/* Speech bubble 1 */}
-                <rect x="3" y="20" width="20" height="11" rx="5" fill="#4f46e5" opacity="0.85" />
-                <path d="M10 31 L8 35 L14 31" fill="#4f46e5" opacity="0.85" />
-                {/* Person 2 — speech bubble */}
-                <circle cx="31" cy="12" r="6" fill={STAGE_COLORS.validate} opacity="0.15" />
-                <circle cx="31" cy="12" r="4" fill={STAGE_COLORS.validate} />
-                {/* Speech bubble 2 */}
-                <rect x="21" y="20" width="20" height="11" rx="5" fill={STAGE_COLORS.validate} opacity="0.85" />
-                <path d="M34 31 L36 35 L30 31" fill={STAGE_COLORS.validate} opacity="0.85" />
-                {/* Dots in bubbles */}
-                <circle cx="9" cy="25.5" r="1.2" fill="#fff" />
-                <circle cx="13" cy="25.5" r="1.2" fill="#fff" />
-                <circle cx="17" cy="25.5" r="1.2" fill="#fff" />
-                <circle cx="27" cy="25.5" r="1.2" fill="#fff" />
-                <circle cx="31" cy="25.5" r="1.2" fill="#fff" />
-                <circle cx="35" cy="25.5" r="1.2" fill="#fff" />
-              </svg>
-
-              {/* Big quote — each coloured part on its own line */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 20, fontWeight: 800, fontStyle: 'italic', lineHeight: 1.35, fontFamily: "'Playfair Display', Georgia, serif", letterSpacing: -0.2, maxWidth: 560 }}>
-                <div><span style={{ color: '#4f46e5' }}>"You don't need a product to validate.</span> <span style={{ color: STAGE_COLORS.validate }}>You need a conversation.</span></div>
-                <div style={{ color: '#0f172a' }}>Get out of your comfort zone — reach out to real people who you think feel this pain.</div>
-                <div style={{ color: '#dc2626' }}>Everything else is guesswork."</div>
+            <section style={{ background: INK, color: INK_TXT, borderRadius: 24, padding: 'clamp(20px, 2.5vw, 32px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 'clamp(18px, 3vw, 36px)', alignItems: 'start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+                <h1 style={{ margin: 0, fontSize: 'clamp(28px, 3.4vw, 46px)', fontWeight: 800, lineHeight: 1.02, letterSpacing: '-0.03em' }}>
+                  You don't need a product to validate. <span style={{ color: LIME }}>You need a conversation.</span>
+                </h1>
+                <p style={{ margin: 0, fontSize: 15, color: INK_DIM, lineHeight: 1.5 }}>Get out of your comfort zone — reach out to real people who you think feel this pain.</p>
+                <p style={{ margin: 0, fontSize: 'clamp(18px, 1.8vw, 24px)', fontWeight: 800, color: '#ff5a36', lineHeight: 1.1, letterSpacing: '-0.02em' }}>Everything else is guesswork.</p>
+                <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: LIME, letterSpacing: '0.12em' }}>REMEMBER — TALK FIRST. BUILD LATER.</span>
               </div>
-
-              {/* Footer */}
-              <div style={{ fontSize: 16, fontWeight: 900, color: STAGE_COLORS.validate, letterSpacing: 2, textTransform: 'uppercase' as const }}>
-                Remember — Talk first. Build later.
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+                <div style={{ background: INK2, borderRadius: 20, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: INK_MUTE, letterSpacing: '0.1em' }}>YOUR MISSION · FROM STEPS 1–4</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+                    {[
+                      { big: convos, small: 'real conversations', color: LIME },
+                      { big: rate, small: 'must confirm the pain', color: '#a78bfa' },
+                      { big: 'Prove', small: prove, color: '#fff' },
+                      { big: 'Who', small: who, color: '#fff' },
+                    ].map((m, i) => (
+                      <div key={i} style={{ borderRadius: 14, background: INK, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                        <span style={{ fontSize: 22, fontWeight: 800, color: m.color, lineHeight: 1.05, letterSpacing: '-0.02em' }}>{m.big}</span>
+                        <span style={{ fontSize: 11.5, color: INK_DIM, lineHeight: 1.35 }}>{m.small}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onMouseDown={startHold} onMouseUp={stopHold} onMouseLeave={stopHold}
+                  onTouchStart={startHold} onTouchEnd={stopHold}
+                  onClick={() => { if (holdPct >= 100) setReady(true); }}
+                  style={{ position: 'relative' as const, width: '100%', borderRadius: 16, padding: '14px 18px', background: 'transparent', color: holdPct >= 100 ? INK : INK_TXT, border: `2px solid ${LIME}`, cursor: 'pointer', fontFamily: 'inherit', overflow: 'hidden', textAlign: 'left' as const, userSelect: 'none' as const }}
+                >
+                  <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${holdPct}%`, background: LIME, transition: holdPct === 0 ? 'width .3s' : 'none' }} />
+                  <span style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <span style={{ fontSize: 16, fontWeight: 800 }}>{holdPct >= 100 ? 'Promise made ✓ — tap to continue' : 'Hold to promise: I\'ll talk to real people'}</span>
+                    <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em', opacity: .8 }}>{holdPct >= 100 ? 'TALK FIRST. BUILD LATER.' : 'PRESS AND HOLD FOR A SECOND'}</span>
+                  </span>
+                </button>
+                <span style={{ fontSize: 12, color: INK_MUTE }}>A small promise to yourself before you hit send.</span>
               </div>
-
-            </div>
+            </section>
 
             <NavRow onBack={back} onNext={() => setReady(true)} nextLabel="I'm ready — let's do this →" stageColor={STAGE_COLORS.validate} stepTitle="Add Contacts" ideaId={activeIdea.id} />
           </div>
@@ -15934,18 +15023,10 @@ export default function WorkPage() {
           <ModBadge mod="validate" /><StepBars mod="validate" step={4} />
             <StepIntro mod="validate" step={4} />
 
-          {/* Fun card header */}
-          <div style={{ padding: '16px 18px 14px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}18 0%, #f0f7ff 100%)`, borderRadius: 14, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 32 }}>🙋</span>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>Find the people you'll talk to</div>
-                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#475569', marginTop: 4 }}>Real names beat personas — round them up here, then reach out.</div>
-              </div>
-            </div>
+          <div>
+            <H accent={STAGE_COLORS.validate}>Find the people you'll talk to.</H>
+            <StepGoal text="Real names beat personas — round them up here, then reach out." />
           </div>
-
-          {renderAvailabilityButton()}
 
           {/* ── People outreach sub-workflow ── */}
           <OutreachTracker
@@ -16269,15 +15350,9 @@ export default function WorkPage() {
           <ModBadge mod="validate" /><StepBars mod="validate" step={5} />
       <StepIntro mod="validate" step={5} />
 
-          {/* Fun card header */}
-          <div style={{ padding: '16px 18px 14px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}18 0%, #f0f7ff 100%)`, borderRadius: 14, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 32 }}>🗓️</span>
-              <div>
-                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>Interview Summary Dashboard</div>
-                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, fontWeight: 600, color: '#475569', marginTop: 4 }}>Open your calendar, then offer a free video call — they pick a time themselves.</div>
-              </div>
-            </div>
+          <div>
+            <H accent={STAGE_COLORS.validate}>Open your calendar.</H>
+            <StepGoal text="Then offer a free video call — they pick a time themselves." />
           </div>
 
           {renderAvailabilityButton()}
@@ -16293,7 +15368,7 @@ export default function WorkPage() {
               <span style={{ fontSize: 22, flexShrink: 0 }}>🗓️</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 800, color: '#92400e' }}>Set your availability so contacts can book time</div>
-                <div style={{ fontSize: 12.5, color: '#6e6e73', marginTop: 2 }}>Nobody can schedule with you until this is done.</div>
+                <div style={{ fontSize: 12.5, color: '#4a4357', marginTop: 2 }}>Nobody can schedule with you until this is done.</div>
               </div>
               <button
                 onClick={() => setShowAvail(true)}
@@ -16307,7 +15382,7 @@ export default function WorkPage() {
           {/* Validation window: sticky-note trio (Target/Booked/Awaiting/Open days) — whiteboard style, matching the Assumptions cards' handwritten language */}
           {!schedLoading && schedContacts.length > 0 && (
             <div style={{ border: `1.5px solid ${BORDER}`, borderRadius: 14, padding: '14px 16px', background: '#fbfbf9' }}>
-              <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 18, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#1e293b' }}>
+              <div style={{ fontFamily: 'inherit', fontSize: 18, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#1e293b' }}>
                 Where your validation stands:
               </div>
               <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
@@ -16321,13 +15396,13 @@ export default function WorkPage() {
                       transform: `rotate(${rotations[i % rotations.length]}deg)`,
                       boxShadow: '1px 3px 7px rgba(0,0,0,.1)',
                     }}>
-                      <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 34, letterSpacing: '.01em', color: s2.c, lineHeight: 1 }}>{s2.n}</div>
+                      <div style={{ fontFamily: 'inherit', fontSize: 34, letterSpacing: '.01em', color: s2.c, lineHeight: 1 }}>{s2.n}</div>
                       <div style={{ fontSize: 11.5, color: '#7a7a7a', textTransform: 'uppercase' as const, letterSpacing: '0.04em', marginTop: 4 }}>{s2.l}</div>
                     </div>
                   );
                 })}
               </div>
-              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 15, color: '#7a7a7a', marginTop: 12 }}>
+              <div style={{ fontFamily: 'inherit', fontStyle: 'italic', fontSize: 15, color: '#7a7a7a', marginTop: 12 }}>
                 {valTarget > 0
                   ? `${Math.round(valProgressPct)}% of the way there — ${valProgressPct >= 50 ? 'nice pace!' : 'keep it going!'}`
                   : (timelineLabel ? (timelineVal === 'open' ? 'Open-ended — no fixed deadline' : `Aim to decide within ${timelineLabel}`) : 'Set a decision deadline in your validation goal')}
@@ -16345,18 +15420,18 @@ export default function WorkPage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
                   }}>
-                    <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 22, letterSpacing: '.01em', color: '#d1fae5' }}>{pacePerWeek}</span>
+                    <span style={{ fontFamily: 'inherit', fontSize: 22, letterSpacing: '.01em', color: '#d1fae5' }}>{pacePerWeek}</span>
                   </div>
                 )}
                 <div>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 22, fontWeight: 600, color: '#2d2d2a', lineHeight: 1.35 }}>
+                  <div style={{ fontFamily: 'inherit', fontStyle: 'italic', fontSize: 22, fontWeight: 600, color: '#2d2d2a', lineHeight: 1.35 }}>
                     {pacePerWeek !== null
                       ? `About ${pacePerWeek} a week keeps you on pace.`
                       : founderTimeLabel
                         ? <>You said you can commit {founderTimeLabel}.</>
                         : 'Open enough slots to fit everyone in.'}
                   </div>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 600, fontSize: 15, color: '#7a7a7a', marginTop: 4, lineHeight: 1.5 }}>
+                  <div style={{ fontFamily: 'inherit', fontStyle: 'italic', fontWeight: 600, fontSize: 15, color: '#7a7a7a', marginTop: 4, lineHeight: 1.5 }}>
                     {pacePerWeek !== null ? (
                       <>{paceRemaining} remain, {paceWeeksLeft} week{paceWeeksLeft !== 1 ? 's' : ''} to go — about {paceMinutesEach} minutes each, review included.</>
                     ) : valTarget > 0 && paceRemaining <= 0 ? (
@@ -16389,7 +15464,7 @@ export default function WorkPage() {
                   </svg>
                   <div style={{ position: 'relative' as const, padding: '11px 16px 3px' }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' as const }}>
-                      <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 19, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a' }}>🗓️ Confirmed schedule</span>
+                      <span style={{ fontFamily: 'inherit', fontSize: 19, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#16121d' }}>🗓️ Confirmed schedule</span>
                       {valStartDate && (
                         <span style={{ fontSize: 10.5, color: '#94a3b8', fontWeight: 600 }}>{ganttFmt(valStartDate)} – {ganttEnd ? ganttFmt(ganttEnd) : 'ongoing'}</span>
                       )}
@@ -16416,7 +15491,7 @@ export default function WorkPage() {
                             const rows = byDate[dk];
                             return (
                               <div key={dk}>
-                                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 14, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#475569', borderBottom: '1.5px dashed #cbd5e1', paddingBottom: 3, marginBottom: 6 }}>
+                                <div style={{ fontFamily: 'inherit', fontSize: 14, letterSpacing: '.03em', textTransform: 'uppercase' as const, color: '#475569', borderBottom: '1.5px dashed #cbd5e1', paddingBottom: 3, marginBottom: 6 }}>
                                   {rows[0].day}
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 5 }}>
@@ -16426,7 +15501,7 @@ export default function WorkPage() {
                                         {initialsOf(r.name)}
                                       </div>
                                       <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 12, fontWeight: 600, color: '#1d1d1f' }}>{r.name}</div>
+                                        <div style={{ fontSize: 12, fontWeight: 600, color: '#16121d' }}>{r.name}</div>
                                         <div style={{ fontSize: 10.5, color: T3, fontVariantNumeric: 'tabular-nums' as const }}>{r.time} – {r.endTime}</div>
                                       </div>
                                       {r.link ? (
@@ -16475,7 +15550,7 @@ export default function WorkPage() {
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(i => <line key={i} x1="0" y1={`${i * 7}%`} x2="100%" y2={`${i * 7}%`} stroke="#334155" strokeWidth="1" />)}
                 </svg>
                 <div style={{ position: 'relative' as const, padding: '11px 16px 3px' }}>
-                  <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 18, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a' }}>📨 Outreach pipeline</span>
+                  <span style={{ fontFamily: 'inherit', fontSize: 18, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#16121d' }}>📨 Outreach pipeline</span>
                   {/* This panel owns "who/status" -- invites, replies, nudges.
                       "When" (date/time + join link) lives in the Confirmed
                       schedule panel on the left, not repeated here. */}
@@ -16491,7 +15566,7 @@ export default function WorkPage() {
                       { l: 'Booked', n: ovBooked, c: '#15803d', bg: '#e9f7ef' },
                     ].map(s => (
                       <div key={s.l} style={{ flex: 1, minWidth: 70, background: s.bg, borderRadius: 8, padding: 7, textAlign: 'center' as const }}>
-                        <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 19, letterSpacing: '.01em', color: s.c }}>{s.n}</div>
+                        <div style={{ fontFamily: 'inherit', fontSize: 19, letterSpacing: '.01em', color: s.c }}>{s.n}</div>
                         <div style={{ fontSize: 9, color: T2, textTransform: 'uppercase' as const }}>{s.l}</div>
                       </div>
                     ))}
@@ -16500,7 +15575,7 @@ export default function WorkPage() {
 
                 {needsNudgeContacts.length > 0 && (
                   <div style={{ position: 'relative' as const, margin: '10px 16px 0', padding: '10px 12px', background: '#fffbeb', border: '1.5px solid #fde68a', borderRadius: 10 }}>
-                    <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 15, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#92400e' }}>
+                    <div style={{ fontFamily: 'inherit', fontSize: 15, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#92400e' }}>
                       🔔 {needsNudgeContacts.length} need{needsNudgeContacts.length === 1 ? 's' : ''} a nudge
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginTop: 8 }}>
@@ -16558,7 +15633,7 @@ export default function WorkPage() {
                                   onChange={e => setSelectedIds(s => ({ ...s, [c.id]: e.target.checked }))}
                                   style={{ width: 16, height: 16, accentColor: STAGE_COLORS.validate, flexShrink: 0 }} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: 12.5, fontWeight: 600, color: '#1d1d1f' }}>{c.name}</div>
+                                  <div style={{ fontSize: 12.5, fontWeight: 600, color: '#16121d' }}>{c.name}</div>
                                   <div style={{ fontSize: 10.5, color: T3 }}>{c.email || 'No email on file'}{c.phone ? ` · ${c.phone}` : ''}{sentInfo ? ` · sent ${sentInfo.daysSince}d ago` : ''}</div>
                                 </div>
                                 <span style={{ fontSize: 9.5, fontWeight: 700, color: st.c, background: st.bg, borderRadius: 20, padding: '3px 8px', flexShrink: 0, whiteSpace: 'nowrap' as const }}>{c.status}</span>
@@ -16620,7 +15695,7 @@ export default function WorkPage() {
                           ))}
                         </div>
                         <button onClick={sendRequests} disabled={sending || !selectedList.length}
-                          style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: !selectedList.length ? '#e5e5ea' : STAGE_COLORS.validate, color: !selectedList.length ? '#aaa' : '#fff', fontSize: 12.5, fontWeight: 700, cursor: !selectedList.length ? 'default' : 'pointer', fontFamily: 'inherit' }}>
+                          style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: !selectedList.length ? '#e2ddd1' : STAGE_COLORS.validate, color: !selectedList.length ? '#aaa' : '#fff', fontSize: 12.5, fontWeight: 700, cursor: !selectedList.length ? 'default' : 'pointer', fontFamily: 'inherit' }}>
                           {sending ? 'Sending…' : `Send ${selectedList.length || ''} interview request${selectedList.length === 1 ? '' : 's'}`}
                         </button>
                         <div style={{ fontSize: 10.5, color: T3 }}>Email sends automatically. For phone-only contacts, click WhatsApp after sending.</div>
@@ -16667,29 +15742,29 @@ export default function WorkPage() {
 
     <div key="v2b" style={col}>
       <StepIntro mod="validate" step={6} />
+      <div>
+        <H accent={STAGE_COLORS.validate}>Log every conversation.</H>
+        <StepGoal text="Come back after each call. One entry per person. Log everything." />
+      </div>
       {(() => {
-        const completed = interviews.filter(iv => iv.alignment_score).length;
+        const goal = Math.max(parseInt(get('valGoalConvos') || '0', 10) || 0, 1);
+        const logged = interviews.length;
         const confirmed = interviews.filter(iv => iv.alignment_score === 3).length;
         const partial   = interviews.filter(iv => iv.alignment_score === 2).length;
+        const tiles = [
+          { label: 'LOGGED', val: logged, of: goal, bg: INK, fg: INK_TXT, track: '#2a2236', fill: LIME },
+          { label: 'CONFIRMED', val: confirmed, of: logged || goal, bg: LIME, fg: INK, track: 'rgba(22,18,29,.15)', fill: INK },
+          { label: 'PARTIAL', val: partial, of: logged || goal, bg: '#fff', fg: T1, track: CREAM, fill: ACCENT },
+        ];
         return (
-          <div style={{ padding: '12px 14px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}18 0%, #f0f7ff 100%)`, borderRadius: 14, border: `2px solid ${STAGE_COLORS.validate}25` }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: STAGE_COLORS.validate, letterSpacing: 0.6, textTransform: 'uppercase' as const }}>Step 7 of {META.validate.steps}</div>
-              {interviews.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>
-                  <span style={{ color: '#1d1d1f' }}>{completed} Completed</span>
-                  <span style={{ color: '#059669' }}>{confirmed} Confirmed</span>
-                  <span style={{ color: '#d97706' }}>{partial} Partial</span>
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <span style={{ fontSize: 20 }}>🎤</span>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', letterSpacing: -0.2 }}>Log every conversation</div>
-                <div style={{ fontSize: 10.5, color: T2, marginTop: 1, lineHeight: 1.35 }}>Come back after each call. One entry per person. Log everything.</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+            {tiles.map(t => (
+              <div key={t.label} style={{ borderRadius: 18, padding: '12px 16px', background: t.bg, color: t.fg, display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 140 }}>
+                <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.1em', opacity: .75 }}>{t.label}</span>
+                <span style={{ fontSize: 28, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.03em' }}>{t.val}<span style={{ opacity: .45, fontSize: 18 }}>/{t.of}</span></span>
+                <div style={{ height: 6, borderRadius: 3, background: t.track, overflow: 'hidden' }}><div style={{ height: '100%', background: t.fill, width: `${Math.min(100, (t.val / t.of) * 100)}%` }} /></div>
               </div>
-            </div>
+            ))}
           </div>
         );
       })()}
@@ -16716,12 +15791,12 @@ export default function WorkPage() {
                 <span>{remaining} more to go</span>
               </div>
               <div style={{ height: 6, borderRadius: 999, background: '#dbeafe', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: '#2563eb', borderRadius: 999, transition: 'width .3s ease' }} />
+                <div style={{ height: '100%', width: `${pct}%`, background: '#7c3aed', borderRadius: 999, transition: 'width .3s ease' }} />
               </div>
             </div>
             <button
               onClick={() => setStep(VALIDATE_FIND_PEOPLE_STEP)}
-              style={{ flexShrink: 0, padding: '10px 16px', borderRadius: 9, border: 'none', background: '#2563eb', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}
+              style={{ flexShrink: 0, padding: '10px 16px', borderRadius: 9, border: 'none', background: '#7c3aed', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' as const }}
             >
               + Find more people to talk to →
             </button>
@@ -16764,7 +15839,7 @@ export default function WorkPage() {
           score === 3 ? { icon: '✅', label: 'Confirmed',     color: '#059669', bg: '#f0fdf4', br: '#86efac' }
           : score === 2 ? { icon: '◐', label: 'Partial',       color: '#d97706', bg: '#fffbeb', br: '#fcd34d' }
           : score === 1 ? { icon: '❌', label: 'Not confirmed', color: '#dc2626', bg: '#fef2f2', br: '#fca5a5' }
-          :               { icon: '⬜', label: 'Not started',   color: '#b0b0b8', bg: '#f5f5f7', br: '#e5e5ea' };
+          :               { icon: '⬜', label: 'Not started',   color: '#8a8299', bg: '#f3f0e8', br: '#e2ddd1' };
 
         return (
           <>
@@ -16779,22 +15854,22 @@ export default function WorkPage() {
                     <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16 }}>
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 4 }}>ICP</div>
-                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5 }}>{focus.icpSummary}</div>
+                        <div style={{ fontSize: 16, fontFamily: 'inherit', fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5 }}>{focus.icpSummary}</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 4 }}>Problem domain</div>
-                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5 }}>{focus.problemDomain}</div>
+                        <div style={{ fontSize: 16, fontFamily: 'inherit', fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5 }}>{focus.problemDomain}</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 4 }}>Business process</div>
-                        <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5 }}>{focus.businessProcess}</div>
+                        <div style={{ fontSize: 16, fontFamily: 'inherit', fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5 }}>{focus.businessProcess}</div>
                       </div>
                       {focus.keyAssumptions?.length > 0 && (
                         <div>
                           <div style={{ fontSize: 11, fontWeight: 800, color: '#92400e', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: 6 }}>Assumptions to explore indirectly</div>
                           <ul style={{ margin: 0, paddingLeft: 20 }}>
                             {focus.keyAssumptions.map((a: string, i: number) => (
-                              <li key={i} style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5, marginBottom: 6 }}>{a}</li>
+                              <li key={i} style={{ fontSize: 16, fontFamily: 'inherit', fontStyle: 'italic' as const, color: '#78350f', lineHeight: 1.5, marginBottom: 6 }}>{a}</li>
                             ))}
                           </ul>
                         </div>
@@ -16886,11 +15961,11 @@ export default function WorkPage() {
                       <div style={{ padding: '13px 18px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: `linear-gradient(135deg, ${ac}12 0%, #fefaf0 100%)` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                           <span style={{ fontSize: 22 }}>🎙️</span>
-                          <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.15 }}>
+                          <span style={{ fontFamily: 'inherit', fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#16121d', lineHeight: 1.15 }}>
                             {pendingInterviewName.trim() ? `Recording the interview with ${pendingInterviewName.trim()}` : 'Recording a new interview'}
                           </span>
                         </div>
-                        <button onClick={() => { setExpandedIvId(null); setPendingInterviewName(''); }} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: '#6e6e73', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Close</button>
+                        <button onClick={() => { setExpandedIvId(null); setPendingInterviewName(''); }} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: '#4a4357', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Close</button>
                       </div>
                       <div style={{ padding: 16 }}>
                         <PersonaInterviewCard
@@ -16940,7 +16015,7 @@ export default function WorkPage() {
                               <span style={{ fontSize: 22, flexShrink: 0 }}>🎙️</span>
                               <div style={{ minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-                                  <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.15 }}>
+                                  <span style={{ fontFamily: 'inherit', fontSize: 20, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#16121d', lineHeight: 1.15 }}>
                                     Recording the interview with {pName}
                                   </span>
                                   {isEditing && <span style={{ fontSize: 10, fontWeight: 800, color: ac, background: `${ac}18`, borderRadius: 8, padding: '2px 8px', flexShrink: 0 }}>✎ Editing</span>}
@@ -16948,7 +16023,7 @@ export default function WorkPage() {
                                 {pRole && <div style={{ fontSize: 11, color: T2, marginTop: 1 }}>{pRole}</div>}
                               </div>
                             </div>
-                            <button onClick={() => { setExpandedIvId(null); setEditingIvId(null); }} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: '#6e6e73', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Close ↑</button>
+                            <button onClick={() => { setExpandedIvId(null); setEditingIvId(null); }} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: '#4a4357', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Close ↑</button>
                           </div>
                           <div style={{ padding: 16 }}>
                             <PersonaInterviewCard
@@ -16982,7 +16057,7 @@ export default function WorkPage() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
                             <span style={{ fontSize: 20, flexShrink: 0 }}>📝</span>
                             <div style={{ minWidth: 0 }}>
-                              <span style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 18, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.15 }}>
+                              <span style={{ fontFamily: 'inherit', fontSize: 18, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#16121d', lineHeight: 1.15 }}>
                                 Reviewing the interview with {pName}
                               </span>
                               {pRole && <div style={{ fontSize: 11, color: T2, marginTop: 1 }}>{pRole}</div>}
@@ -16990,7 +16065,7 @@ export default function WorkPage() {
                           </div>
                           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
                             <button onClick={() => setEditingIvId(existing.id)} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${ac}40`, background: `${ac}0c`, color: ac, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>✎ Edit</button>
-                            <button onClick={() => setExpandedIvId(null)} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: '#6e6e73', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Close ↑</button>
+                            <button onClick={() => setExpandedIvId(null)} style={{ padding: '4px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: '#4a4357', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Close ↑</button>
                           </div>
                         </div>
                         <div style={{ padding: '16px 16px', display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
@@ -17027,7 +16102,7 @@ export default function WorkPage() {
                                         const opt = ALL_SIGNAL_OPTS.find(o => o.k === sig);
                                         return opt
                                           ? <span key={sig} style={{ fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: `${opt.color}12`, color: opt.color, border: `1px solid ${opt.color}25` }}>{opt.icon} {sig}</span>
-                                          : <span key={sig} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 999, background: '#f0f0f0', color: '#6e6e73' }}>{sig}</span>;
+                                          : <span key={sig} style={{ fontSize: 11, padding: '3px 9px', borderRadius: 999, background: '#f0f0f0', color: '#4a4357' }}>{sig}</span>;
                                       })}
                                     </div>
                                   )}
@@ -17039,7 +16114,7 @@ export default function WorkPage() {
                                 </div>
                               )}
                               {qa.signals.length === 0 && !qa.quote && (
-                                <div style={{ padding: '8px 14px 10px 46px', fontSize: 11, color: '#b0b0b8', fontStyle: 'italic' }}>No signals or notes recorded for this question.</div>
+                                <div style={{ padding: '8px 14px 10px 46px', fontSize: 11, color: '#8a8299', fontStyle: 'italic' }}>No signals or notes recorded for this question.</div>
                               )}
                             </div>
                           )) : (
@@ -17105,20 +16180,6 @@ export default function WorkPage() {
       <ModBadge mod="validate" /><StepBars mod="validate" step={7} />
       <StepIntro mod="validate" step={7} />
       <ValidateHero step={3} />
-
-      {/* Fun card header */}
-      <div style={{ padding: '16px 18px 14px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}18 0%, #f0f7ff 100%)`, borderRadius: 14, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 24 }}>🔍</span>
-          <div>
-            <div>
-              <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>Find the patterns</div>
-              <div style={{ borderTop: `2px solid ${STAGE_COLORS.validate}`, marginTop: 3, maxWidth: 130 }} />
-            </div>
-            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 15, fontStyle: 'italic', color: '#7a7a7a', marginTop: 4 }}>What did the data actually tell you?</div>
-          </div>
-        </div>
-      </div>
 
       {renderAvailabilityButton()}
       {renderInterviewStatusPanel()}
@@ -17221,37 +16282,51 @@ export default function WorkPage() {
 
         return (
           <>
-            {/* ── KPI tiles header ── */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.2, color: '#b0b0b8', textTransform: 'uppercase' as const }}>Validation Summary</div>
-            </div>
-
-            {/* ── Parent KPI tiles ─────────────────────────────────────────── */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: 8 }}>
-              {kpiTiles.map(kpi => {
-                const isActive = v3Drill === kpi.key;
-                return (
-                  <button key={kpi.key}
-                    onClick={() => { setV3Drill(isActive ? null : kpi.key); setV3ExpandedCard(null); }}
-                    style={{ background: isActive ? `${kpi.color}10` : '#fff',
-                      border: `2px solid ${isActive ? kpi.color : kpi.color + '30'}`,
-                      borderRadius: 12, padding: '12px 8px', textAlign: 'center' as const,
-                      cursor: 'pointer', fontFamily: 'inherit', transition: 'all .15s',
-                      boxShadow: isActive ? `0 0 0 3px ${kpi.color}20` : 'none',
-                      position: 'relative' as const }}>
-                    <div style={{ fontSize: 18, marginBottom: 2 }}>{kpi.icon}</div>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: kpi.color, lineHeight: 1 }}>{kpi.value}</div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: T3, letterSpacing: 0.5, marginTop: 3, textTransform: 'uppercase' as const }}>{kpi.label}</div>
-                    <div style={{ fontSize: 9, color: '#c0c0c8', marginTop: 2 }}>{kpi.sub}</div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Reconciliation note */}
-            <div style={{ fontSize: 11, color: T3, textAlign: 'center' as const, marginTop: -4 }}>
-              {`All Inputs (${totalAll}) = Confirmed (${totalConfirmed}) + Partial (${totalPartial}) + Not Aligned (${totalNotConf}) + Unscored (${totalUnscored}) · tap a tile to drill down`}
-            </div>
+            {/* ── Validation summary — ink hero (2026-10 redesign): the read
+                on the left, the stacked share bar + KPI tiles on the right.
+                Tapping a tile still drills down below. ── */}
+            {(() => {
+              const scored = totalConfirmed + totalPartial + totalNotConf;
+              const confPct = scored ? Math.round((totalConfirmed / scored) * 100) : 0;
+              const verdictTag = scored === 0 ? 'NO SCORES YET' : confPct >= 60 ? 'STRONG SIGNAL' : confPct >= 35 ? 'MIXED SIGNAL' : 'WEAK SIGNAL';
+              const verdictColor = scored === 0 ? INK_MUTE : confPct >= 60 ? LIME : confPct >= 35 ? '#fbbf24' : '#f87171';
+              const verdictLine = scored === 0 ? 'Score your conversations to see the read.'
+                : confPct >= 60 ? `${confPct}% confirmed the pain.` : confPct >= 35 ? `${confPct}% confirmed — it's mixed.` : `Only ${confPct}% confirmed the pain.`;
+              const verdictSub = scored === 0 ? 'Each logged conversation gets a verdict in the log step.'
+                : confPct >= 60 ? 'Strong enough to build on — check the pain points below.' : confPct >= 35 ? 'Worth refining who you target before you commit.' : 'Probably a pivot — look at what people said instead.';
+              const shares = kpiTiles.filter(k => k.key !== 'all');
+              const totalForBar = Math.max(1, shares.reduce((n, k) => n + k.value, 0));
+              const barColor: Record<string, string> = { confirmed: LIME, partial: '#fbbf24', unaligned: '#f87171', unscored: '#5c5368' };
+              return (
+                <section style={{ background: INK, color: INK_TXT, borderRadius: 28, padding: 'clamp(20px, 3vw, 32px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 24, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: verdictColor, letterSpacing: '0.1em' }}>{verdictTag}</span>
+                    <span style={{ fontSize: 'clamp(28px, 3.4vw, 46px)', fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.03em' }}>{verdictLine}</span>
+                    <span style={{ fontSize: 15, color: INK_DIM }}>{verdictSub}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', borderRadius: 9, overflow: 'hidden', background: '#2a2236', height: 18 }}>
+                      {shares.map(k => k.value > 0 && <div key={k.key} style={{ width: `${(k.value / totalForBar) * 100}%`, background: barColor[k.key] || INK_MUTE }} />)}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(5, minmax(0, 1fr))', gap: 6 }}>
+                      {kpiTiles.map(kpi => {
+                        const isActive = v3Drill === kpi.key;
+                        return (
+                          <button key={kpi.key}
+                            onClick={() => { setV3Drill(isActive ? null : kpi.key); setV3ExpandedCard(null); }}
+                            title={kpi.sub}
+                            style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start', background: isActive ? '#2a2236' : 'transparent', border: `1px solid ${isActive ? (barColor[kpi.key] || INK_MUTE) : 'transparent'}`, borderRadius: 12, padding: '8px 10px', cursor: 'pointer', fontFamily: 'inherit', color: INK_TXT, textAlign: 'left' as const }}>
+                            <span style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, color: barColor[kpi.key] || INK_TXT }}>{kpi.value}</span>
+                            <span style={{ fontFamily: MONO, fontSize: 9, color: INK_MUTE, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>{kpi.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <span style={{ fontSize: 12, color: INK_MUTE }}>From {totalAll} logged input{totalAll !== 1 ? 's' : ''} · tap a tile to drill down</span>
+                  </div>
+                </section>
+              );
+            })()}
             {/* ── Per-pain-point verdicts ───────────────────────────────────── */}
             {(() => {
               const painPoints = get('problemSentence').split(MULTI_SEP).map(parseProblemText).filter(s => s.trim() && !s.includes('___'));
@@ -17302,12 +16377,12 @@ export default function WorkPage() {
               };
 
               return (
-                <div style={{ border: `2px solid ${STAGE_COLORS.validate}30`, borderRadius: 16, overflow: 'hidden' }}>
+                <div style={{ background: '#fff', borderRadius: 24, overflow: 'hidden' }}>
                   {/* Header */}
-                  <div style={{ padding: '16px 20px', background: `${STAGE_COLORS.validate}08`, borderBottom: `1.5px solid ${STAGE_COLORS.validate}20`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: 8 }}>
+                  <div style={{ padding: '18px 20px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' as const, gap: 8 }}>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: STAGE_COLORS.validate }}>🎯 Pain point verdicts</div>
-                      <div style={{ fontSize: 11, color: '#8e8e93', marginTop: 2 }}>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: T1, letterSpacing: '-0.01em' }}>Pain point verdicts</div>
+                      <div style={{ fontSize: 14, color: T2, marginTop: 2 }}>
                         Based on your interviews, rate each pain point individually
                       </div>
                     </div>
@@ -17331,8 +16406,8 @@ export default function WorkPage() {
                   <style>{`
                     input.pp-verdict-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 999px; outline: none; cursor: pointer;
                       background: linear-gradient(to right, #dc2626 0%, #dc2626 33%, #d97706 33%, #d97706 66%, #059669 66%, #059669 100%); }
-                    input.pp-verdict-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid var(--thumb-color, #b0b0b8); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
-                    input.pp-verdict-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid var(--thumb-color, #b0b0b8); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+                    input.pp-verdict-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid var(--thumb-color, #8a8299); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+                    input.pp-verdict-slider::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid var(--thumb-color, #8a8299); cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
                     input.pp-verdict-slider::-moz-range-track { background: transparent; }
                   `}</style>
 
@@ -17348,14 +16423,14 @@ export default function WorkPage() {
                           {/* Pain point label */}
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
                             <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                              background: vConf ? vConf.color : '#e5e5ea',
+                              background: vConf ? vConf.color : '#e2ddd1',
                               color: '#fff', fontSize: 10, fontWeight: 800,
                               display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .2s' }}>
                               {vConf ? vConf.icon : idx + 1}
                             </div>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' as const, color: '#b0b0b8', marginBottom: 3 }}>Pain point {idx + 1}</div>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.45 }}>
+                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' as const, color: '#8a8299', marginBottom: 3 }}>Pain point {idx + 1}</div>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#16121d', lineHeight: 1.45 }}>
                                 {shortPain(pp)}
                               </div>
                             </div>
@@ -17372,20 +16447,20 @@ export default function WorkPage() {
                                 step={1}
                                 value={sliderPos(verdict)}
                                 onChange={e => setVerdict(idx, SLIDER_ORDER[Number(e.target.value)])}
-                                style={{ flex: 1, ['--thumb-color' as any]: vConf ? vConf.color : '#b0b0b8' }}
+                                style={{ flex: 1, ['--thumb-color' as any]: vConf ? vConf.color : '#8a8299' }}
                               />
                               <div style={{ minWidth: 96, textAlign: 'right' as const, flexShrink: 0 }}>
                                 {vConf ? (
                                   <span style={{ fontSize: 11, fontWeight: 700, color: vConf.color }}>{vConf.icon} {vConf.label}</span>
                                 ) : (
-                                  <span style={{ fontSize: 11, color: '#b0b0b8', fontStyle: 'italic' }}>Not yet rated</span>
+                                  <span style={{ fontSize: 11, color: '#8a8299', fontStyle: 'italic' }}>Not yet rated</span>
                                 )}
                               </div>
                               {verdict && (
-                                <button onClick={() => setVerdict(idx, verdict)} title="Clear rating" style={{ border: 'none', background: 'none', color: '#b0b0b8', fontSize: 13, cursor: 'pointer', padding: '2px 4px', fontFamily: 'inherit', flexShrink: 0 }}>✕</button>
+                                <button onClick={() => setVerdict(idx, verdict)} title="Clear rating" style={{ border: 'none', background: 'none', color: '#8a8299', fontSize: 13, cursor: 'pointer', padding: '2px 4px', fontFamily: 'inherit', flexShrink: 0 }}>✕</button>
                               )}
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#b0b0b8', marginTop: 3 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#8a8299', marginTop: 3 }}>
                               <span>Not confirmed</span>
                               <span>Partial</span>
                               <span>Confirmed</span>
@@ -17399,7 +16474,7 @@ export default function WorkPage() {
                                 <span style={{ fontSize: 10.5, fontWeight: 700, color: vOpt.color, background: vOpt.bg, border: `1px solid ${vOpt.border}`, borderRadius: 20, padding: '2px 9px', whiteSpace: 'nowrap' as const }}>
                                   ✨ Sage reads: {vOpt.label}
                                 </span>
-                                <span style={{ fontSize: 10.5, color: '#8e8e93' }}>{v.reason}</span>
+                                <span style={{ fontSize: 10.5, color: '#6f6880' }}>{v.reason}</span>
                                 {verdict !== v.verdict && (
                                   <button onClick={() => setVerdict(idx, v.verdict as string)} style={{ fontSize: 10.5, fontWeight: 700, color: STAGE_COLORS.validate, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', textDecoration: 'underline' }}>
                                     Use this →
@@ -17407,7 +16482,7 @@ export default function WorkPage() {
                                 )}
                               </div>
                             ) : (
-                              <div style={{ fontSize: 10.5, color: '#b0b0b8', fontStyle: 'italic' }}>
+                              <div style={{ fontSize: 10.5, color: '#8a8299', fontStyle: 'italic' }}>
                                 ✨ No Sage-tagged evidence yet — rate manually, or run "Analyze with Sage" on more interviews.
                               </div>
                             )}
@@ -17503,7 +16578,7 @@ export default function WorkPage() {
               const displayPoly = displayPts.map(p => `${p.x},${p.y}`).join(' ');
               return (
                 <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 14, padding: '18px 20px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, color: '#b0b0b8', textTransform: 'uppercase' as const, marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, color: '#8a8299', textTransform: 'uppercase' as const, marginBottom: 14 }}>
                     BMC Signal Map · {signalBase} interview{signalBase !== 1 ? 's' : ''} · {hasSignals ? `${allCompletedSigs.length} chips captured` : 'score-based estimate'}
                   </div>
                   {!hasSignals && (
@@ -17517,10 +16592,10 @@ export default function WorkPage() {
                       {[25, 50, 75, 100].map(pct => (
                         <polygon key={pct}
                           points={radarAxes.map((_, i) => { const p = rPt(i, pct); return `${p.x},${p.y}`; }).join(' ')}
-                          fill="none" stroke="#e5e5ea" strokeWidth={1} />
+                          fill="none" stroke="#e2ddd1" strokeWidth={1} />
                       ))}
                       {radarAxes.map((_, i) => (
-                        <line key={i} x1={CX} y1={CY} x2={outerPts[i].x} y2={outerPts[i].y} stroke="#e5e5ea" strokeWidth={1} />
+                        <line key={i} x1={CX} y1={CY} x2={outerPts[i].x} y2={outerPts[i].y} stroke="#e2ddd1" strokeWidth={1} />
                       ))}
                       <polygon points={displayPoly} fill={`${STAGE_COLORS.validate}28`} stroke={STAGE_COLORS.validate} strokeWidth={2.5} />
                       {displayPts.map((p, i) => (
@@ -17530,7 +16605,7 @@ export default function WorkPage() {
                         const lp = rPt(i, 130);
                         return (
                           <text key={i} x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="middle"
-                            style={{ fontSize: 9, fontWeight: 700, fill: '#6e6e73', fontFamily: 'inherit' }}>
+                            style={{ fontSize: 9, fontWeight: 700, fill: '#4a4357', fontFamily: 'inherit' }}>
                             {a.label.split('\n').map((line, li) => (
                               <tspan key={li} x={lp.x} dy={li === 0 ? 0 : 12}>{line}</tspan>
                             ))}
@@ -17551,7 +16626,7 @@ export default function WorkPage() {
                           </div>
                         </div>
                       ))}
-                      <div style={{ fontSize: 10, color: '#b0b0b8', fontStyle: 'italic', marginTop: 4 }}>
+                      <div style={{ fontSize: 10, color: '#8a8299', fontStyle: 'italic', marginTop: 4 }}>
                         {hasSignals ? `Radar from ${signalBase} interview${signalBase !== 1 ? 's' : ''} with signal chips.` : 'Add signal chips during interviews for per-axis detail.'}
                       </div>
                     </div>
@@ -17568,7 +16643,7 @@ export default function WorkPage() {
               const notPct   = Math.round((totalNotConf   / scored_total) * 100);
               return (
                 <div style={{ background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 18px' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#b0b0b8', marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#8a8299', marginBottom: 10 }}>
                     Alignment · of {scored_total} scored ({totalUnscored} pending)
                   </div>
                   <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 18, marginBottom: 10 }}>
@@ -17595,8 +16670,8 @@ export default function WorkPage() {
             {/* Pivot gate */}
             {pivot && (
               <div style={{ background: '#fffbeb', border: '2px solid #f59e0b', borderRadius: 12, padding: '16px 18px' }}>
-                <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 16, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#92400e', marginBottom: 6 }}>⚠️ Mixed signals — consider refining before building</div>
-                <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 16, color: '#78350f', lineHeight: 1.5, marginBottom: 10 }}>Less than half your conversations confirmed the problem. Before committing to building, consider:</div>
+                <div style={{ fontFamily: 'inherit', fontSize: 16, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#92400e', marginBottom: 6 }}>⚠️ Mixed signals — consider refining before building</div>
+                <div style={{ fontFamily: 'inherit', fontStyle: 'italic', fontSize: 16, color: '#78350f', lineHeight: 1.5, marginBottom: 10 }}>Less than half your conversations confirmed the problem. Before committing to building, consider:</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                   {['Narrow the audience', 'Reframe the problem', 'Talk to 3 more people', 'Pivot the idea'].map((opt, oi) => (
                     <WobbleChip key={opt} index={oi} active={get('pivotOption') === opt} color="#d97706" onClick={() => set('pivotOption', opt)}>
@@ -17614,7 +16689,7 @@ export default function WorkPage() {
                   onClick={() => setInsightsWallOpen(o => !o)}
                   style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' as const, marginBottom: insightsWallOpen ? 12 : 0 }}
                 >
-                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#b0b0b8' }}>Key quotes & insights</span>
+                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1.3, textTransform: 'uppercase' as const, color: '#8a8299' }}>Key quotes & insights</span>
                   <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                     {insightsWallOpen ? 'collapse' : `show ${insights.length}`}
                     <span style={{ fontSize: 12, transition: 'transform .2s', display: 'inline-block', transform: insightsWallOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
@@ -17646,7 +16721,7 @@ export default function WorkPage() {
         const BUCKETS: { key: InsightBucket; label: string; icon: string; color: string; bg: string; desc: string }[] = [
           { key: 'confirmed',  label: 'Pain confirmed',    icon: '🔥', color: '#059669', bg: '#f0fdf4', desc: 'Things multiple people confirmed as real pain' },
           { key: 'surprising', label: 'Surprising finds',  icon: '💡', color: '#d97706', bg: '#fffbeb', desc: 'Things you didn\'t expect to hear' },
-          { key: 'unclear',    label: 'Still unclear',     icon: '❓', color: '#2563eb', bg: '#eff6ff', desc: 'Questions that came up repeatedly' },
+          { key: 'unclear',    label: 'Still unclear',     icon: '❓', color: '#7c3aed', bg: '#eff6ff', desc: 'Questions that came up repeatedly' },
           { key: 'busted',     label: 'Assumption busted', icon: '❌', color: '#dc2626', bg: '#fef2f2', desc: 'Things that turned out wrong' },
         ];
         const BUCKET_SUGGESTIONS: Record<InsightBucket, string[]> = {
@@ -17704,7 +16779,7 @@ export default function WorkPage() {
               </svg>
               <div style={{ position: 'relative', marginBottom: 10 }}>
                 <div>
-                  <div style={{ fontSize: 22, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
+                  <div style={{ fontSize: 22, fontFamily: 'inherit', letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#16121d', lineHeight: 1.2 }}>
                     What patterns are you seeing?
                   </div>
                   <div style={{ borderTop: '2px solid #10b981', marginTop: 4, maxWidth: 240 }} />
@@ -17828,20 +16903,6 @@ export default function WorkPage() {
       <StepIntro mod="validate" step={8} />
       <ValidateHero step={4} />
 
-      {/* Fun card header */}
-      <div style={{ padding: '16px 18px 14px', background: `linear-gradient(135deg, ${STAGE_COLORS.validate}18 0%, #f0f7ff 100%)`, borderRadius: 14, border: `2px solid ${STAGE_COLORS.validate}25`, marginBottom: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 24 }}>✅</span>
-          <div>
-            <div>
-              <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>What's your verdict?</div>
-              <div style={{ borderTop: `2px solid ${STAGE_COLORS.validate}`, marginTop: 3, maxWidth: 130 }} />
-            </div>
-            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 15, fontStyle: 'italic', color: '#7a7a7a', marginTop: 4 }}>Make a call. Proceed, refine, or pivot.</div>
-          </div>
-        </div>
-      </div>
-
       {renderAvailabilityButton()}
       {renderInterviewStatusPanel()}
 
@@ -17864,46 +16925,46 @@ export default function WorkPage() {
           : composite >= 40
           ? 'Good progress, but not ready to build. Focus on what\'s still unclear.'
           : 'Significant gaps remain — consider talking to more people or going back to Hone.';
+        void VC; void scoreBg; void scoreColor;
+        const inkScore = composite >= 70 ? LIME : composite >= 40 ? '#fbbf24' : '#f87171';
+        const scoreTag = composite >= 70 ? 'STRONG' : composite >= 40 ? 'MIXED' : 'WEAK';
+        const painCount = get('problemSentence').split(MULTI_SEP).map(parseProblemText).filter(x => x.trim() && !x.includes('___')).length;
         return (
-          <div style={{ border: `2px solid ${scoreColor}30`, borderRadius: 14, overflow: 'hidden' }}>
-            <div style={{ padding: '14px 18px', background: `${VC}08`, borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ textAlign: 'center' as const, minWidth: 72 }}>
-                <div style={{ fontSize: 36, fontWeight: 800, color: scoreColor, lineHeight: 1 }}>{composite}</div>
-                <div style={{ fontSize: 10, color: T3, letterSpacing: 1, fontWeight: 700, textTransform: 'uppercase' as const }}>/ 100</div>
+          <section style={{ background: INK, color: INK_TXT, borderRadius: 28, padding: 'clamp(20px, 3vw, 32px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 24, alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' as const }}>
+              <div style={{ width: 150, height: 150, borderRadius: '50%', background: `conic-gradient(${inkScore} ${composite * 3.6}deg, #2a2236 0)`, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                <div style={{ width: 118, height: 118, borderRadius: '50%', background: INK, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                  <span style={{ fontSize: 52, fontWeight: 800, color: inkScore, letterSpacing: '-0.04em' }}>{composite}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 10, color: INK_MUTE, marginTop: 4 }}>/ 100</span>
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: scoreColor, marginBottom: 3 }}>Validation score</div>
-                <div style={{ fontSize: 12, color: T2, lineHeight: 1.5 }}>{recommendation}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 180, flex: 1 }}>
+                <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: inkScore, letterSpacing: '0.1em' }}>VALIDATION SCORE · {scoreTag}</span>
+                <span style={{ fontSize: 'clamp(20px, 2.2vw, 28px)', fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.02em' }}>{recommendation}</span>
+                <span style={{ fontSize: 13, color: INK_DIM }}>{painCount} pain point{painCount !== 1 ? 's' : ''} · {interviews.length} conversation{interviews.length !== 1 ? 's' : ''} · tap the bars to adjust</span>
               </div>
             </div>
-            <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {DIMS.map((d, i) => {
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {DIMS.map(d => {
                 const val = parseInt(get(d.key) || '0') || 0;
+                const c = val >= 7 ? LIME : val >= 4 ? '#fbbf24' : val > 0 ? '#f87171' : INK_MUTE;
                 return (
-                  <div key={d.key}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <div>
-                        <span style={{ fontSize: 14 }}>{d.icon}</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: T1, marginLeft: 6 }}>{d.label}</span>
-                        <div style={{ fontSize: 11, color: T3, marginTop: 1 }}>{d.desc}</div>
-                      </div>
-                      <span style={{ fontSize: 16, fontWeight: 700, color: val >= 7 ? '#059669' : val >= 4 ? '#d97706' : '#dc2626', minWidth: 28, textAlign: 'right' as const }}>{val}/10</span>
+                  <div key={d.key} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700 }}>{d.label} <span style={{ fontWeight: 400, color: INK_MUTE, fontSize: 12 }}>{d.desc}</span></span>
+                      <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: c, flexShrink: 0 }}>{val}/10</span>
                     </div>
-                    <div style={{ display: 'flex', gap: 5 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: 3 }}>
                       {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                        <button key={n} onClick={() => { set(d.key, String(n)); }}
-                          style={{ flex: 1, height: 28, borderRadius: 5, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, transition: 'all .1s',
-                            background: n <= val ? (val >= 7 ? '#059669' : val >= 4 ? '#d97706' : '#dc2626') : '#f1f5f9',
-                            color: n <= val ? '#fff' : T3 }}>
-                          {n}
-                        </button>
+                        <button key={n} onClick={() => { set(d.key, String(n)); }} title={`${n}/10`}
+                          style={{ height: 14, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0, background: n <= val ? c : '#2a2236', transition: 'background .1s' }} />
                       ))}
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </section>
         );
       })()}
 
@@ -17929,97 +16990,60 @@ export default function WorkPage() {
         const confirmedPPs = painPoints.filter((_, i) => effective[i] === 'confirmed');
         const cutPPs       = painPoints.filter((_, i) => effective[i] === 'not_confirmed');
 
+        void confirmedPPs; void cutPPs;
         return (
-          <div style={{ border: `2px solid ${STAGE_COLORS.validate}30`, borderRadius: 14, overflow: 'hidden' }}>
-            <div style={{ padding: '14px 18px', background: `${STAGE_COLORS.validate}08`, borderBottom: `1px solid ${BORDER}` }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: STAGE_COLORS.validate }}>🎯 Pain point verdicts</div>
-              {confirmedPPs.length > 0 && <div style={{ fontSize: 11, color: '#059669', marginTop: 3 }}>Build for: {confirmedPPs.map(shortPain).join(' · ')}</div>}
-              {cutPPs.length > 0      && <div style={{ fontSize: 11, color: '#dc2626', marginTop: 2 }}>Cut from MVP: {cutPPs.map(shortPain).join(' · ')}</div>}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+            <span style={{ fontFamily: MONO, fontSize: 10, color: T3, letterSpacing: '0.1em' }}>PAIN POINT VERDICTS · FROM STEP 8</span>
             {painPoints.map((pp, i) => {
               const founderSet = !!verdicts[i];
               const v = VMAP[effective[i]] ?? null;
+              const bg = effective[i] === 'confirmed' ? LIME : effective[i] === 'partial' ? '#fde7b0' : effective[i] === 'not_confirmed' ? INK : '#fff';
+              const fg = effective[i] === 'not_confirmed' ? INK_TXT : INK;
               return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderBottom: i < painPoints.length - 1 ? `1px solid ${BORDER}` : 'none', background: v ? v.bg + '60' : '#fff' }}>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>{v ? v.icon : '⏳'}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#b0b0b8', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 2 }}>Pain point {i + 1}</div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: v ? v.color : '#6e6e73' }}>{shortPain(pp)}</div>
-                  </div>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: v?.color ?? '#b0b0b8', background: v ? v.bg : '#f5f5f7', padding: '3px 10px', borderRadius: 20, flexShrink: 0, whiteSpace: 'nowrap' as const }}>
-                    {v ? (founderSet ? v.label : `🤖 ${v.label}`) : 'Not rated'}
-                  </span>
-                </div>
+                <span key={i} title={pp} style={{ fontSize: 12, fontWeight: 700, padding: '6px 10px', borderRadius: 999, background: bg, color: fg, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+                  {v ? `${v.icon} ` : '⏳ '}{shortPain(pp)}{v && !founderSet ? ' · 🤖' : ''}
+                </span>
               );
             })}
           </div>
         );
       })()}
 
-      <div>
-        <div style={{ padding: '20px 20px 18px', borderBottom: `1px solid #f0f0f2`, background: '#f9f9f5', position: 'relative', borderRadius: 14, marginBottom: 10 }}>
-          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.06 }} preserveAspectRatio="none">
-            {[0,1,2,3,4,5,6,7,8,9,10].map(i => <line key={i} x1="0" y1={`${i*10}%`} x2="100%" y2={`${i*10}%`} stroke="#334155" strokeWidth="1" />)}
-          </svg>
-          <div style={{ position: 'relative', marginBottom: 14 }}>
-            <div>
-              <div style={{ fontSize: 22, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
-                What did you find?
-              </div>
-              <div style={{ borderTop: '2px solid #6366f1', marginTop: 4, maxWidth: 220 }} />
-            </div>
-            <span style={{ fontSize: 20, marginLeft: 10, verticalAlign: 'middle' }}>📝</span>
-          </div>
-          <ValidationLearningsBuilder value={get('interviewResults')} onChange={v => set('interviewResults', v)} />
-        </div>
-      </div>
+      <section style={{ background: '#fff', borderRadius: 24, padding: 'clamp(18px, 2.6vw, 26px)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <span style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.01em', color: T1 }}>What did you find?</span>
+        <ValidationLearningsBuilder value={get('interviewResults')} onChange={v => set('interviewResults', v)} />
+      </section>
 
-      <div>
-        <div style={{ padding: '20px 20px 18px', borderBottom: `1px solid #f0f0f2`, background: '#f9f9f5', position: 'relative', borderRadius: '14px 14px 0 0' }}>
-          <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', opacity: 0.06 }} preserveAspectRatio="none">
-            {[0,1,2,3,4,5,6,7,8,9,10].map(i => <line key={i} x1="0" y1={`${i*10}%`} x2="100%" y2={`${i*10}%`} stroke="#334155" strokeWidth="1" />)}
-          </svg>
-          <div style={{ position: 'relative' }}>
-            <div>
-              <div style={{ fontSize: 22, fontFamily: "'Bebas Neue', 'Inter', sans-serif", letterSpacing: '.02em', textTransform: 'uppercase' as const, color: '#0f172a', lineHeight: 1.2 }}>
-                Did the problem get confirmed?
-              </div>
-              <div style={{ borderTop: '2px solid #6366f1', marginTop: 4, maxWidth: 280 }} />
-            </div>
-            <span style={{ fontSize: 20, marginLeft: 10, verticalAlign: 'middle' }}>✅</span>
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.01em', color: T1 }}>Did the problem get confirmed?</span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 12 }}>
           {[
-            { k: 'Yes — strong signal',       icon: '✅', desc: 'Multiple people expressed real pain and urgency.',       color: '#059669' },
-            { k: 'Partially — needs refining', icon: '◐', desc: 'Real but I need to narrow my audience or reframe.',     color: '#d97706' },
-            { k: 'No — time to pivot',         icon: '↩️', desc: "The pain isn't strong enough. Back to Hone.",           color: '#dc2626' },
+            { k: 'Yes — strong signal',       glyph: '✓', tag: 'BUILD', title: 'Yes — strong signal', desc: 'Multiple people expressed real pain and urgency.', dest: 'Continue to Shape →', color: LIME, fg: INK },
+            { k: 'Partially — needs refining', glyph: '◐', tag: 'REFINE', title: 'Partially', desc: 'Real but I need to narrow my audience or reframe.', dest: 'Refine, then talk to more people', color: '#fde7b0', fg: INK },
+            { k: 'No — time to pivot',         glyph: '↩', tag: 'PIVOT', title: 'No — time to pivot', desc: "The pain isn't strong enough. Back to Hone.", dest: 'Back to Hone with what you learned', color: INK, fg: INK_TXT },
           ].map((opt) => {
             const sel = get('validationSignal') === opt.k;
             return (
               <button type="button" key={opt.k} onClick={() => set('validationSignal', opt.k)} style={{
-                display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px',
-                border: `${sel ? 2.5 : 2}px solid ${sel ? opt.color : '#d8d8d8'}`,
-                background: sel ? `${opt.color}0c` : '#fffdf8',
-                borderRadius: 10,
-                boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
+                position: 'relative' as const, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 10, padding: 24,
+                border: sel ? `3px solid ${ACCENT}` : '3px solid transparent',
+                background: opt.color, color: opt.fg,
+                borderRadius: 26,
                 cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit', transition: 'all .15s',
               }}>
-                <span style={{ fontSize: 22, flexShrink: 0 }}>{opt.icon}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Bebas Neue', 'Inter', sans-serif", fontSize: 17, letterSpacing: '.02em', textTransform: 'uppercase' as const, color: sel ? opt.color : '#1e293b' }}>{opt.k}</div>
-                  <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 14, color: '#7a7a7a', marginTop: 2 }}>{opt.desc}</div>
-                </div>
-                <div style={{ width: 20, height: 20, borderRadius: '50% 48% 52% 46% / 46% 52% 48% 54%', border: `2.5px solid ${sel ? opt.color : '#ccc'}`, background: sel ? opt.color : 'transparent', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {sel && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff' }} />}
-                </div>
+                {sel && <span style={{ position: 'absolute' as const, top: 14, right: 14, background: ACCENT, color: '#fff', fontFamily: MONO, fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 999 }}>YOUR CALL</span>}
+                <span style={{ fontSize: 56, fontWeight: 800, lineHeight: 1, letterSpacing: '-0.04em' }}>{opt.glyph}</span>
+                <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', opacity: .8 }}>{opt.tag}</span>
+                <span style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em' }}>{opt.title}</span>
+                <span style={{ fontSize: 15, lineHeight: 1.4 }}>{opt.desc}</span>
+                <span style={{ fontSize: 13, fontWeight: 700 }}>{opt.dest}</span>
               </button>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* ── Your call — handwritten postcard style ── */}
+      {/* ── Your call ── */}
       {get('validationSignal') && (() => {
         const VERDICT_META: Record<string, { icon: string; color: string }> = {
           'Yes — strong signal':        { icon: '✅', color: '#059669' },
@@ -18027,11 +17051,12 @@ export default function WorkPage() {
           'No — time to pivot':         { icon: '↩️', color: '#dc2626' },
         };
         const vm = VERDICT_META[get('validationSignal')] || { icon: '📌', color: STAGE_COLORS.validate };
+        const isYes = get('validationSignal') === 'Yes — strong signal';
+        const isPartial = get('validationSignal') === 'Partially — needs refining';
         return (
-          <div style={{ ...postcardStyle(-1), borderTop: `4px solid ${vm.color}`, padding: '14px 18px' }}>
-            <PostcardStamp />
-            <div style={{ ...TYPE.postcardLabel, color: vm.color, marginBottom: 4 }}>YOUR CALL</div>
-            <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic' as const, fontSize: 18, fontWeight: 600, color: '#1e293b', lineHeight: 1.5 }}>{vm.icon} {get('validationSignal')}</div>
+          <div style={{ background: isYes ? LIME : isPartial ? '#fde7b0' : INK, color: isYes || isPartial ? INK : INK_TXT, borderRadius: 24, padding: 'clamp(18px, 2.6vw, 26px)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: '0.1em' }}>YOUR CALL · {vm.icon} {get('validationSignal').toUpperCase()}</div>
+            <div style={{ fontFamily: 'inherit', fontSize: 20, fontWeight: 700, lineHeight: 1.4 }}>{isYes ? 'Strong signal. On to Shape.' : isPartial ? 'Refine the problem below, then go talk to more people.' : 'Back to Hone with everything you learned.'}</div>
           </div>
         );
       })()}
@@ -18269,7 +17294,7 @@ export default function WorkPage() {
               const report = generateReport();
               return (
                 <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <pre style={{ background: '#f8fafc', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px', fontSize: 12, lineHeight: 1.7, color: T1, whiteSpace: 'pre-wrap' as const, fontFamily: "'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace", overflowX: 'auto' as const, margin: 0, maxHeight: 400, overflowY: 'auto' as const }}>
+                  <pre style={{ background: '#f8fafc', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 16px', fontSize: 12, lineHeight: 1.7, color: T1, whiteSpace: 'pre-wrap' as const, fontFamily: MONO, overflowX: 'auto' as const, margin: 0, maxHeight: 400, overflowY: 'auto' as const }}>
                     {report}
                   </pre>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -18309,7 +17334,7 @@ export default function WorkPage() {
             <div style={{ padding: '16px 20px', borderBottom: `1px solid ${SC}20`, display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${VC}, ${SC})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🚀</div>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#1d1d1f' }}>Ready to Shape your MVP</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#16121d' }}>Ready to Shape your MVP</div>
                 <div style={{ fontSize: 12, color: T2, marginTop: 2 }}>You've validated the problem. Here's what you're carrying forward.</div>
               </div>
             </div>
@@ -18318,14 +17343,14 @@ export default function WorkPage() {
               {get('validatedProblem') && (
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, color: VC, textTransform: 'uppercase' as const, marginBottom: 5 }}>Validated problem</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.5, background: '#fff', borderRadius: 8, padding: '10px 14px', border: `1px solid ${VC}25` }}>{get('validatedProblem')}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#16121d', lineHeight: 1.5, background: '#fff', borderRadius: 8, padding: '10px 14px', border: `1px solid ${VC}25` }}>{get('validatedProblem')}</div>
                 </div>
               )}
               {/* Target customer */}
               {get('whoExactly') && (
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, color: VC, textTransform: 'uppercase' as const, marginBottom: 5 }}>Build for</div>
-                  <div style={{ fontSize: 13, color: '#1d1d1f', background: '#fff', borderRadius: 8, padding: '8px 14px', border: `1px solid ${VC}25` }}>{parseWhoDisplay(get('whoExactly'))}</div>
+                  <div style={{ fontSize: 13, color: '#16121d', background: '#fff', borderRadius: 8, padding: '8px 14px', border: `1px solid ${VC}25` }}>{parseWhoDisplay(get('whoExactly'))}</div>
                 </div>
               )}
               {/* Confirmed pain points */}
@@ -18418,7 +17443,7 @@ export default function WorkPage() {
       <ModBadge mod="shape" /><StepBars mod="shape" step={0} />
       <StepGoal text={STEP_GOALS.shape[0]} />
       <div style={{ display: 'inline-block', marginBottom: 8 }}>
-        <span style={{ fontFamily: "'Kalam', cursive", fontSize: 25, fontWeight: 700, color: '#1f2937', lineHeight: 1.25 }}>What did you learn from users?</span>
+        <span style={{ fontFamily: 'inherit', fontSize: 25, fontWeight: 700, color: '#1f2937', lineHeight: 1.25 }}>What did you learn from users?</span>
         <svg viewBox="0 0 400 8" width="100%" height="8" style={{ display: 'block', marginTop: 3, maxWidth: 380 }}>
           <path d="M0,4 C40,1 80,7 120,4 C160,1 200,7 240,4 C280,1 320,7 360,4 C380,2 395,5 400,4" fill="none" stroke="#111827" strokeWidth="2.5" strokeLinecap="round" />
         </svg>
@@ -18485,7 +17510,7 @@ export default function WorkPage() {
           <>
             {hasCarryForward && (
               <div style={{ border: '2px solid #111827', borderRadius: '225px 15px 220px 18px / 18px 220px 15px 225px', transform: 'rotate(-0.4deg)', padding: '20px 22px', background: '#fffef9', boxShadow: '2px 3px 0 rgba(17,24,39,0.15)', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: VC, letterSpacing: 0.3, fontFamily: "'Kalam', cursive" }}>📋 What you found in Validate</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: VC, letterSpacing: 0.3, fontFamily: 'inherit' }}>📋 What you found in Validate</div>
                 {/* Shape is now gated behind this exact verdict (2026-08-08) — shown up
                     front so it's obvious *why* this founder is allowed to be in Shape,
                     not just what their score was. Grandfathered ideas may have no verdict
@@ -18500,7 +17525,7 @@ export default function WorkPage() {
                   const vm = VERDICT_META[signal];
                   if (!vm) return null;
                   return (
-                    <div style={{ display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: vm.color, background: `${vm.color}12`, border: `1.5px solid ${vm.color}40`, borderRadius: 999, padding: '4px 12px', fontFamily: "'Kalam', cursive" }}>
+                    <div style={{ display: 'inline-flex', alignSelf: 'flex-start', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: vm.color, background: `${vm.color}12`, border: `1.5px solid ${vm.color}40`, borderRadius: 999, padding: '4px 12px', fontFamily: 'inherit' }}>
                       {vm.icon} You confirmed: {signal}
                     </div>
                   );
@@ -18508,7 +17533,7 @@ export default function WorkPage() {
                 {hasScores && (
                   <div style={{ textAlign: 'center' as const }}>
                     <svg width="140" height="76" viewBox="0 0 140 80">
-                      <path d="M10,70 A60,60 0 0,1 130,70" fill="none" stroke="#e5e5ea" strokeWidth="12" strokeLinecap="round" />
+                      <path d="M10,70 A60,60 0 0,1 130,70" fill="none" stroke="#e2ddd1" strokeWidth="12" strokeLinecap="round" />
                       <path d="M10,70 A60,60 0 0,1 130,70" fill="none" stroke={scoreColor} strokeWidth="12" strokeLinecap="round"
                         strokeDasharray={`${(composite / 100) * GAUGE_HALF_C} ${GAUGE_HALF_C}`} />
                     </svg>
@@ -18528,14 +17553,14 @@ export default function WorkPage() {
                         placeholder="Refined problem statement"
                         accent={VC}
                         multiline
-                        textStyle={{ fontSize: 15, fontWeight: 700, color: '#1d1d1f', lineHeight: 1.5 }}
+                        textStyle={{ fontSize: 15, fontWeight: 700, color: '#16121d', lineHeight: 1.5 }}
                         onSave={v => set('validatedProblem', v)}
                       />
                     )}
                     {get('whoExactly') && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <div style={{ fontSize: 12, color: T3, flex: 1 }}>
-                          for <span style={{ color: '#1d1d1f', fontWeight: 600 }}>{parseWhoDisplay(get('whoExactly'))}</span>
+                          for <span style={{ color: '#16121d', fontWeight: 600 }}>{parseWhoDisplay(get('whoExactly'))}</span>
                         </div>
                         {/* whoExactly is a serialised multi-persona value (MULTI_SEP/FIELD_SEP) —
                             edit it via the persona picker back in Hone, not as raw text here.
@@ -18597,7 +17622,7 @@ export default function WorkPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {LEARN_OPTS.map(group => (
                   <div key={group.group}>
-                    <div style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 12, fontWeight: 900, color: '#94a3b8', letterSpacing: -0.1, marginBottom: 6 }}>{group.group}</div>
+                    <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 900, color: '#94a3b8', letterSpacing: -0.1, marginBottom: 6 }}>{group.group}</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
                       {group.items.map((opt, oi) => {
                         const on = learnList.includes(opt);
@@ -18709,12 +17734,12 @@ export default function WorkPage() {
             {n !== undefined && (
               <span style={{
                 width: 24, height: 24, borderRadius: '50%', border: `2px dashed ${SC}`,
-                color: SC, fontSize: 12, fontWeight: 800, fontFamily: "'Kalam', cursive",
+                color: SC, fontSize: 12, fontWeight: 800, fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                 transform: 'rotate(-3deg)',
               }}>{n}</span>
             )}
-            <span style={{ fontFamily: "'Kalam', cursive", fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{children}</span>
+            <span style={{ fontFamily: 'inherit', fontSize: 15, fontWeight: 700, color: '#1e293b' }}>{children}</span>
           </div>
         );
 
@@ -18740,7 +17765,7 @@ export default function WorkPage() {
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => set('hypothesisMode', 'chips')} style={{
-                padding: '7px 16px', borderRadius: 999, cursor: 'pointer', fontFamily: "'Kalam', cursive",
+                padding: '7px 16px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
                 fontSize: 13.5, fontWeight: 700,
                 border: `2px ${hypoMode === 'chips' ? 'solid' : 'dashed'} ${SC}`,
                 background: hypoMode === 'chips' ? SC : '#fff',
@@ -18751,7 +17776,7 @@ export default function WorkPage() {
                 🧩 Pick from options
               </button>
               <button onClick={() => set('hypothesisMode', 'manual')} style={{
-                padding: '7px 16px', borderRadius: 999, cursor: 'pointer', fontFamily: "'Kalam', cursive",
+                padding: '7px 16px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
                 fontSize: 13.5, fontWeight: 700,
                 border: `2px ${hypoMode === 'manual' ? 'solid' : 'dashed'} ${SC}`,
                 background: hypoMode === 'manual' ? SC : '#fff',
@@ -18769,7 +17794,7 @@ export default function WorkPage() {
                 <textarea
                   style={{
                     ...ta(100),
-                    fontFamily: "'Kalam', cursive",
+                    fontFamily: 'inherit',
                     border: `2px dashed ${SC}`,
                     borderRadius: '14px 8px 14px 8px',
                     background: '#fffefb',
@@ -18780,7 +17805,7 @@ export default function WorkPage() {
                   value={get('simplestVersion')}
                   onChange={e => set('simplestVersion', e.target.value)}
                 />
-                <div style={{ fontSize: 12, fontFamily: "'Kalam', cursive", color: T2, marginTop: 6, lineHeight: 1.4 }}>
+                <div style={{ fontSize: 12, fontFamily: 'inherit', color: T2, marginTop: 6, lineHeight: 1.4 }}>
                   Write it however makes sense to you — no need to follow the sentence template above.
                 </div>
               </div>
@@ -18811,7 +17836,7 @@ export default function WorkPage() {
                       </WhiteboardChip>
                     ))}
                   </div>
-                  <input style={{ ...inp, fontFamily: "'Kalam', cursive", border: `2px dashed ${SC}55`, borderRadius: 10, background: '#fffefb' }} placeholder="Or describe your user (e.g. founding engineer at a 10-person startup)" value={USER_CHIPS.includes(get('primaryUser')) || get('primaryUser') === personaChip ? '' : get('primaryUser')} onChange={e => set('primaryUser', e.target.value)} />
+                  <input style={{ ...inp, fontFamily: 'inherit', border: `2px dashed ${SC}55`, borderRadius: 10, background: '#fffefb' }} placeholder="Or describe your user (e.g. founding engineer at a 10-person startup)" value={USER_CHIPS.includes(get('primaryUser')) || get('primaryUser') === personaChip ? '' : get('primaryUser')} onChange={e => set('primaryUser', e.target.value)} />
                 </div>
                 <div>
                   <WLabel n={3}>What does it help them do? (pick all that apply)</WLabel>
@@ -18854,8 +17879,8 @@ export default function WorkPage() {
                   if (get('simplestVersion') !== h) set('simplestVersion', h);
                   return (
                     <div style={whiteboardBoxStyle(SC, -0.6, { padding: '16px 20px' })}>
-                      <div style={{ fontFamily: "'Kalam', cursive", fontSize: 11, fontWeight: 800, letterSpacing: 0.5, color: SC, marginBottom: 6, textTransform: 'uppercase' as const }}>✏️ Your hypothesis</div>
-                      <div style={{ fontFamily: "'Kalam', cursive", fontSize: 20, fontWeight: 700, color: '#1e293b', lineHeight: 1.5 }}>"{h}"</div>
+                      <div style={{ fontFamily: 'inherit', fontSize: 11, fontWeight: 800, letterSpacing: 0.5, color: SC, marginBottom: 6, textTransform: 'uppercase' as const }}>✏️ Your hypothesis</div>
+                      <div style={{ fontFamily: 'inherit', fontSize: 20, fontWeight: 700, color: '#1e293b', lineHeight: 1.5 }}>"{h}"</div>
                       {swooshUnderline(SC, 140)}
                     </div>
                   );
@@ -18871,10 +17896,10 @@ export default function WorkPage() {
           background: shapeHypothesisPosted ? '#f0fdf4' : '#fffefb',
         }}>
           {shapeHypothesisPosted ? (
-            <div style={{ fontSize: 14, fontFamily: "'Kalam', cursive", color: '#15803d', fontWeight: 700 }}>✓ Posted to community — check replies before committing to features.</div>
+            <div style={{ fontSize: 14, fontFamily: 'inherit', color: '#15803d', fontWeight: 700 }}>✓ Posted to community — check replies before committing to features.</div>
           ) : (
             <>
-              <div style={{ fontSize: 14, fontFamily: "'Kalam', cursive", fontWeight: 700, color: T1 }}>🤔 Not sure if this is right?</div>
+              <div style={{ fontSize: 14, fontFamily: 'inherit', fontWeight: 700, color: T1 }}>🤔 Not sure if this is right?</div>
               <button disabled={!get('simplestVersion').trim() || shapeHypothesisPosting} onClick={async () => {
                 if (!activeIdea?.id || !get('simplestVersion').trim()) return;
                 setShapeHypothesisPosting(true);
@@ -18888,7 +17913,7 @@ export default function WorkPage() {
                 border: `2px ${get('simplestVersion').trim() ? 'solid' : 'dashed'} ${get('simplestVersion').trim() ? '#d97706' : '#cbd5e1'}`,
                 background: get('simplestVersion').trim() ? '#d97706' : '#fff',
                 color: get('simplestVersion').trim() ? '#fff' : '#9ca3af',
-                fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: "'Kalam', cursive",
+                fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                 boxShadow: get('simplestVersion').trim() ? '1.5px 2px 0 rgba(0,0,0,.12)' : 'none',
               }}>
                 {shapeHypothesisPosting ? 'Posting…' : 'Ask community for feedback →'}
@@ -18928,19 +17953,19 @@ export default function WorkPage() {
         const hasPositiveSignal = fbList.some(t => POSITIVE_TAGS.includes(t));
         return (
           <div style={{
-            border: `2px solid ${hasFeedback ? SC + '40' : '#e5e5ea'}`,
+            border: `2px solid ${hasFeedback ? SC + '40' : '#e2ddd1'}`,
             borderRadius: 16, padding: '20px 22px',
             background: hasFeedback ? `${SC}05` : '#fafafa',
             transition: 'border-color .2s, background .2s',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 10, background: hasFeedback ? SC : '#e5e5ea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, transition: 'background .2s' }}>💬</div>
+              <div style={{ width: 32, height: 32, borderRadius: 10, background: hasFeedback ? SC : '#e2ddd1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, transition: 'background .2s' }}>💬</div>
               <div>
                 <div style={{ display: 'inline-block' }}>
-                  <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 15, fontWeight: 900, color: hasFeedback ? SC : '#1d1d1f', letterSpacing: -0.2 }}>Community feedback</span>
+                  <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 900, color: hasFeedback ? SC : '#16121d', letterSpacing: -0.2 }}>Community feedback</span>
                   <svg viewBox="0 0 200 6" width="150" height="6" style={{ display: 'block', marginTop: 2 }}><path d="M0,3 C20,1 40,5 60,3 C80,1 100,5 120,3 C140,1 160,5 180,3 C190,1 197,4 200,3" fill="none" stroke={hasFeedback ? SC : '#c8c8c8'} strokeWidth="2" strokeLinecap="round" /></svg>
                 </div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', marginTop: 1 }}>What did people say when you shared your hypothesis?</div>
+                <div style={{ fontFamily: 'inherit', fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', marginTop: 1 }}>What did people say when you shared your hypothesis?</div>
               </div>
               {shapeHypothesisPosted && <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: '#15803d', background: '#f0fdf4', border: '1.5px solid #bbf7d0', padding: '3px 10px', borderRadius: 20 }}>✓ Posted</span>}
             </div>
@@ -18948,7 +17973,7 @@ export default function WorkPage() {
               <div style={{ ...postcardStyle(1), marginBottom: 12, padding: '10px 14px' }}>
                 <PostcardStamp top={8} right={10} />
                 <div style={{ ...TYPE.postcardLabel, color: '#4338ca', marginBottom: 3 }}>Your hypothesis</div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700, color: '#1e1b4b', lineHeight: 1.5 }}>"{get('simplestVersion')}"</div>
+                <div style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700, color: '#1e1b4b', lineHeight: 1.5 }}>"{get('simplestVersion')}"</div>
               </div>
             )}
             {!shapeHypothesisPosted && (
@@ -18993,19 +18018,19 @@ export default function WorkPage() {
 
         return (
           <div style={{
-            border: `2px solid ${featuresDone ? SC + '40' : '#e5e5ea'}`,
+            border: `2px solid ${featuresDone ? SC + '40' : '#e2ddd1'}`,
             borderRadius: 16, padding: '20px 22px',
             background: featuresDone ? `${SC}05` : '#fafafa',
             transition: 'border-color .2s, background .2s',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 10, background: featuresDone ? SC : '#e5e5ea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, transition: 'background .2s' }}>⚡</div>
+              <div style={{ width: 32, height: 32, borderRadius: 10, background: featuresDone ? SC : '#e2ddd1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, transition: 'background .2s' }}>⚡</div>
               <div>
                 <div style={{ display: 'inline-block' }}>
-                  <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 15, fontWeight: 900, color: featuresDone ? SC : '#1d1d1f', letterSpacing: -0.2 }}>Your top 5.</span>
+                  <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 900, color: featuresDone ? SC : '#16121d', letterSpacing: -0.2 }}>Your top 5.</span>
                   <svg viewBox="0 0 200 6" width="90" height="6" style={{ display: 'block', marginTop: 2 }}><path d="M0,3 C20,1 40,5 60,3 C80,1 100,5 120,3 C140,1 160,5 180,3 C190,1 197,4 200,3" fill="none" stroke={featuresDone ? SC : '#c8c8c8'} strokeWidth="2" strokeLinecap="round" /></svg>
                 </div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', marginTop: 1 }}>4 and 5 are optional. Drag ⠿ to reorder, or add more if you need to.</div>
+                <div style={{ fontFamily: 'inherit', fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', marginTop: 1 }}>4 and 5 are optional. Drag ⠿ to reorder, or add more if you need to.</div>
               </div>
             </div>
 
@@ -19021,15 +18046,15 @@ export default function WorkPage() {
         const outList = (get('outOfScope') || '').split('|').filter(Boolean);
         const toggleOut = (v: string) => { const next = outList.includes(v) ? outList.filter(s => s !== v) : [...outList, v]; set('outOfScope', next.join('|')); };
         return (
-          <div style={{ border: `2px solid ${outList.length > 0 ? '#dc262640' : '#e5e5ea'}`, borderRadius: 16, padding: '20px 22px', background: outList.length > 0 ? '#fff5f5' : '#fafafa', transition: 'border-color .2s, background .2s' }}>
+          <div style={{ border: `2px solid ${outList.length > 0 ? '#dc262640' : '#e2ddd1'}`, borderRadius: 16, padding: '20px 22px', background: outList.length > 0 ? '#fff5f5' : '#fafafa', transition: 'border-color .2s, background .2s' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 10, background: outList.length > 0 ? '#dc2626' : '#e5e5ea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, transition: 'background .2s' }}>🚫</div>
+              <div style={{ width: 32, height: 32, borderRadius: 10, background: outList.length > 0 ? '#dc2626' : '#e2ddd1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, transition: 'background .2s' }}>🚫</div>
               <div>
                 <div style={{ display: 'inline-block' }}>
-                  <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 15, fontWeight: 900, color: outList.length > 0 ? '#dc2626' : '#1d1d1f', letterSpacing: -0.2 }}>Not in v1</span>
+                  <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 900, color: outList.length > 0 ? '#dc2626' : '#16121d', letterSpacing: -0.2 }}>Not in v1</span>
                   <svg viewBox="0 0 200 6" width="90" height="6" style={{ display: 'block', marginTop: 2 }}><path d="M0,3 C20,1 40,5 60,3 C80,1 100,5 120,3 C140,1 160,5 180,3 C190,1 197,4 200,3" fill="none" stroke={outList.length > 0 ? '#dc2626' : '#c8c8c8'} strokeWidth="2" strokeLinecap="round" /></svg>
                 </div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', marginTop: 1 }}>Be explicit. Saying "no" now saves you weeks later.</div>
+                <div style={{ fontFamily: 'inherit', fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', marginTop: 1 }}>Be explicit. Saying "no" now saves you weeks later.</div>
               </div>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
@@ -19052,15 +18077,15 @@ export default function WorkPage() {
       })()}
 
       {/* ── Build approach card ──────────────────────────────── */}
-      <div style={{ border: `2px solid ${get('buildApproach') ? STAGE_COLORS.shape + '40' : '#e5e5ea'}`, borderRadius: 16, padding: '20px 22px', background: get('buildApproach') ? `${STAGE_COLORS.shape}05` : '#fafafa', transition: 'border-color .2s, background .2s' }}>
+      <div style={{ border: `2px solid ${get('buildApproach') ? STAGE_COLORS.shape + '40' : '#e2ddd1'}`, borderRadius: 16, padding: '20px 22px', background: get('buildApproach') ? `${STAGE_COLORS.shape}05` : '#fafafa', transition: 'border-color .2s, background .2s' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: get('buildApproach') ? STAGE_COLORS.shape : '#e5e5ea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, transition: 'background .2s' }}>🔧</div>
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: get('buildApproach') ? STAGE_COLORS.shape : '#e2ddd1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0, transition: 'background .2s' }}>🔧</div>
           <div>
             <div style={{ display: 'inline-block' }}>
-              <span style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 15, fontWeight: 900, color: get('buildApproach') ? STAGE_COLORS.shape : '#1d1d1f', letterSpacing: -0.2 }}>How will you build it?</span>
+              <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 900, color: get('buildApproach') ? STAGE_COLORS.shape : '#16121d', letterSpacing: -0.2 }}>How will you build it?</span>
               <svg viewBox="0 0 200 6" width="150" height="6" style={{ display: 'block', marginTop: 2 }}><path d="M0,3 C20,1 40,5 60,3 C80,1 100,5 120,3 C140,1 160,5 180,3 C190,1 197,4 200,3" fill="none" stroke={get('buildApproach') ? STAGE_COLORS.shape : '#c8c8c8'} strokeWidth="2" strokeLinecap="round" /></svg>
             </div>
-            <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', marginTop: 1 }}>There's no wrong answer — just be honest with yourself.</div>
+            <div style={{ fontFamily: 'inherit', fontSize: 16, fontStyle: 'italic', color: '#7a7a7a', marginTop: 1 }}>There's no wrong answer — just be honest with yourself.</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -19077,8 +18102,8 @@ export default function WorkPage() {
                 boxShadow: '1px 2px 0 rgba(0,0,0,0.05)',
               }}>
                 <div style={{ fontSize: 20, marginBottom: 4 }}>{opt.icon}</div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 19, fontWeight: 700 }}>{opt.label}</div>
-                <div style={{ fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui", fontSize: 14, color: on ? STAGE_COLORS.shape + 'aa' : '#7a7a7a', marginTop: 2, fontWeight: 600 }}>{opt.desc}</div>
+                <div style={{ fontFamily: 'inherit', fontSize: 19, fontWeight: 700 }}>{opt.label}</div>
+                <div style={{ fontFamily: 'inherit', fontSize: 14, color: on ? STAGE_COLORS.shape + 'aa' : '#7a7a7a', marginTop: 2, fontWeight: 600 }}>{opt.desc}</div>
               </button>
             );
           })}
@@ -19165,7 +18190,7 @@ export default function WorkPage() {
               )}
             </div>
             <div style={{ borderTop: `1.5px solid ${BORDER}`, paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ fontFamily: '"Arial Black", "Arial Bold", Gadget, sans-serif', fontSize: 12, fontWeight: 900, color: T2, letterSpacing: 0.3, textTransform: 'uppercase' as const }}>Revenue basics</div>
+              <div style={{ fontFamily: MONO, fontSize: 12, fontWeight: 900, color: T2, letterSpacing: 0.3, textTransform: 'uppercase' as const }}>Revenue basics</div>
               <div>
                 <FieldLabel n={2} accent={STAGE_COLORS.shape}>Who pays?</FieldLabel>
                 <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginBottom: 8 }}>
@@ -19362,7 +18387,7 @@ export default function WorkPage() {
                               {PRI_LABEL[it.priority]}
                             </button>
                             <button onClick={() => updateItem(it.id, { effort: cycle(EFF_ORDER, it.effort) })}
-                              style={{ ...serif, fontSize: 11, padding: '2px 9px', borderRadius: 3, border: `1px solid ${BORDER2}`, background: '#f5f5f7', color: T2, cursor: 'pointer' }}>
+                              style={{ ...serif, fontSize: 11, padding: '2px 9px', borderRadius: 3, border: `1px solid ${BORDER2}`, background: '#f3f0e8', color: T2, cursor: 'pointer' }}>
                               {it.effort}
                             </button>
                             <button onClick={() => updateItem(it.id, { status: cycle(STATUS_ORDER, it.status) })}
@@ -19429,16 +18454,16 @@ export default function WorkPage() {
               <div style={{ padding: '16px 20px', borderBottom: `1px solid ${SC}20`, display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${SC}, ${DC})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🧭</div>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: '#1d1d1f' }}>Everything you've validated, in one place</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#16121d' }}>Everything you've validated, in one place</div>
                   <div style={{ fontSize: 12, color: T2, marginTop: 2 }}>This is what Sage uses to draft your build specification below.</div>
                 </div>
               </div>
               <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {genContext.validatedProblem && <div style={{ fontSize: 13, color: '#1d1d1f' }}><b>Problem:</b> {genContext.validatedProblem}</div>}
-                {persona && <div style={{ fontSize: 13, color: '#1d1d1f' }}><b>Customer:</b> {persona}</div>}
-                {genContext.mvpHypothesis && <div style={{ fontSize: 13, color: '#1d1d1f' }}><b>MVP hypothesis:</b> {genContext.mvpHypothesis}</div>}
-                {features.length > 0 && <div style={{ fontSize: 13, color: '#1d1d1f' }}><b>Planned features:</b> {features.join(', ')}</div>}
-                {outOfScope.length > 0 && <div style={{ fontSize: 13, color: '#1d1d1f' }}><b>Out of scope:</b> {outOfScope.join(', ')}</div>}
+                {genContext.validatedProblem && <div style={{ fontSize: 13, color: '#16121d' }}><b>Problem:</b> {genContext.validatedProblem}</div>}
+                {persona && <div style={{ fontSize: 13, color: '#16121d' }}><b>Customer:</b> {persona}</div>}
+                {genContext.mvpHypothesis && <div style={{ fontSize: 13, color: '#16121d' }}><b>MVP hypothesis:</b> {genContext.mvpHypothesis}</div>}
+                {features.length > 0 && <div style={{ fontSize: 13, color: '#16121d' }}><b>Planned features:</b> {features.join(', ')}</div>}
+                {outOfScope.length > 0 && <div style={{ fontSize: 13, color: '#16121d' }}><b>Out of scope:</b> {outOfScope.join(', ')}</div>}
                 {!genContext.validatedProblem && !persona && !genContext.mvpHypothesis && features.length === 0 && (
                   <div style={{ fontSize: 13, color: T2, fontStyle: 'italic' as const }}>Not much validated yet — Sage will still draft a cautious starting spec.</div>
                 )}
@@ -20009,7 +19034,7 @@ export default function WorkPage() {
                 <div style={{ padding: '16px 20px', borderBottom: `1px solid ${SC}20`, display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg, ${SC}, ${DC})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>📐</div>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: '#1d1d1f' }}>What you planned in Shape</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: '#16121d' }}>What you planned in Shape</div>
                     <div style={{ fontSize: 12, color: T2, marginTop: 2 }}>Compare it to what actually shipped below.</div>
                   </div>
                 </div>
@@ -20017,7 +19042,7 @@ export default function WorkPage() {
                   {get('simplestVersion').trim() && (
                     <div>
                       <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, color: SC, textTransform: 'uppercase' as const, marginBottom: 5 }}>You planned to build</div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1d1d1f', lineHeight: 1.5, background: '#fff', borderRadius: 8, padding: '10px 14px', border: `1px solid ${SC}25` }}>{get('simplestVersion')}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#16121d', lineHeight: 1.5, background: '#fff', borderRadius: 8, padding: '10px 14px', border: `1px solid ${SC}25` }}>{get('simplestVersion')}</div>
                     </div>
                   )}
                   {plannedFeatures.length > 0 && (
@@ -20025,7 +19050,7 @@ export default function WorkPage() {
                       <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.2, color: SC, textTransform: 'uppercase' as const, marginBottom: 5 }}>Your planned features</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {plannedFeatures.map((f, i) => (
-                          <div key={i} style={{ fontSize: 13, color: '#1d1d1f', background: '#fff', borderRadius: 7, padding: '7px 12px', border: `1px solid ${SC}25` }}>{i + 1}. {f}</div>
+                          <div key={i} style={{ fontSize: 13, color: '#16121d', background: '#fff', borderRadius: 7, padding: '7px 12px', border: `1px solid ${SC}25` }}>{i + 1}. {f}</div>
                         ))}
                       </div>
                     </div>
@@ -20085,10 +19110,10 @@ export default function WorkPage() {
     </div>,
     <div key="launch" style={{ textAlign: 'center', padding: '48px 24px' }}>
       <div style={{ fontSize: 56, marginBottom: 16 }}>🚀</div>
-      <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -1, marginBottom: 8, fontFamily: "'Playfair Display', Georgia, serif", color: T1 }}>You shipped an MVP.</div>
-      <div style={{ fontSize: 15, color: T2, lineHeight: 1.7, maxWidth: 360, margin: '0 auto 32px', fontStyle: 'italic', fontFamily: "'Playfair Display', Georgia, serif" }}>From idea to launch — that's what MVP Club is for.</div>
+      <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -1, marginBottom: 8, fontFamily: 'inherit', color: T1 }}>You shipped an MVP.</div>
+      <div style={{ fontSize: 15, color: T2, lineHeight: 1.7, maxWidth: 360, margin: '0 auto 32px', fontStyle: 'italic', fontFamily: 'inherit' }}>From idea to launch — that's what MVP Club is for.</div>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-        <button onClick={() => window.location.href = '/community'} style={{ padding: '12px 28px', borderRadius: 999, border: 'none', background: '#1d1d1f', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Share in Community →</button>
+        <button onClick={() => window.location.href = '/community'} style={{ padding: '12px 28px', borderRadius: 999, border: 'none', background: '#16121d', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Share in Community →</button>
         <button onClick={() => { setMod('idea'); setStep(0); }} style={{ padding: '12px 28px', borderRadius: 999, border: `1.5px solid ${BORDER2}`, background: '#fff', color: T2, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Start another idea</button>
       </div>
     </div>,
@@ -20101,199 +19126,102 @@ export default function WorkPage() {
 
   // ── Mobile stage tab strip ────────────────────────────────────────────────
   const MobileStageTabs = () => (
-    <div style={{
-      display: 'flex', overflowX: 'auto', borderBottom: `1px solid ${BORDER}`,
-      background: '#fff', WebkitOverflowScrolling: 'touch' as unknown as undefined,
-      scrollbarWidth: 'none' as unknown as undefined,
-    }}>
-      {MODULES.map(m => {
-        const isActive = mod === m;
-        // Same fix as the desktop sidebar: Shape is hard-gated behind Validate,
-        // not freely iterated with Hone/Validate, so it should show a DONE
-        // checkmark like a normal stage instead of being stuck on its icon.
-        const iterative = m === 'hone' || m === 'validate';
-        const isDone   = !iterative && !!completed[m];
-        const isLocked = !unlocked[m];
-        const c = STAGE_COLORS[m];
-        return (
-          <button
-            key={m}
-            onClick={() => goMod(m)}
-            style={{
-              flex: '0 0 auto', display: 'flex', flexDirection: 'column',
-              alignItems: 'center', gap: 3, padding: '10px 16px',
-              border: 'none', background: 'transparent', cursor: isLocked ? 'default' : 'pointer',
-              borderBottom: `3px solid ${isActive ? c : 'transparent'}`,
-              opacity: isLocked ? 0.4 : 1, transition: 'all .15s',
-            }}
-          >
-            <span style={{ fontSize: 18 }}>
-              {isDone ? '✅' : isLocked ? '🔒' : META[m].icon}
-            </span>
-            <span style={{ fontSize: 11, fontWeight: isActive ? 700 : 500, color: isActive ? c : T2, whiteSpace: 'nowrap' as const }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, padding: '0 2px' }}>
+        <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', color: T1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{activeIdea.name}</span>
+        <span style={{ fontFamily: MONO, fontSize: 11, color: T3, flexShrink: 0 }}>{(['idea', 'hone', 'validate'] as const).filter(m => !!completed[m]).length} of 3 core</span>
+      </div>
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '0 2px 4px', scrollbarWidth: 'none' as unknown as undefined }}>
+        {MODULES.map((m, idx) => {
+          const isActive = mod === m;
+          const iterative = m === 'hone' || m === 'validate';
+          const isDone   = !iterative && !!completed[m];
+          const isLocked = !unlocked[m];
+          return (
+            <button
+              key={m}
+              onClick={() => goMod(m)}
+              style={{
+                flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 14px 8px 8px', borderRadius: 999, border: 'none', cursor: isLocked ? 'default' : 'pointer',
+                background: isActive ? INK : '#fff', color: isActive ? '#fff' : T1,
+                fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
+                opacity: isLocked ? 0.4 : 1, transition: 'all .15s',
+              }}
+            >
+              <span style={{ width: 24, height: 24, borderRadius: '50%', display: 'grid', placeItems: 'center', fontFamily: MONO, fontSize: 10, fontWeight: 700, background: isDone ? LIME : isActive ? ACCENT : CREAM2, color: isDone ? INK : isActive ? '#fff' : T3 }}>
+                {isDone ? '✓' : isLocked ? '🔒' : String(idx + 1).padStart(2, '0')}
+              </span>
               {META[m].label}
-            </span>
-          </button>
-        );
-      })}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 
   return (
     <>
-      <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)', background: '#f5f5f7', fontFamily: 'inherit' }}>
+      {/* 2026-10 redesign: cream page, floating left rail, open main column —
+          the step content sits directly on the page instead of inside a
+          bordered white card. */}
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)', background: CREAM, fontFamily: 'var(--font-ui)', color: T1, gap: 'clamp(16px, 2.5vw, 32px)', padding: isMobile ? '14px 14px 90px' : 'clamp(14px, 2.5vw, 32px)' }}>
 
         {/* Col 1 — Stage nav sidebar (desktop only) */}
         {!isMobile && <Sidebar />}
 
-        {/* Col 2 + 3 — Center wizard + right summary */}
+        {/* Col 2 — main column */}
         <IdeaIdCtx.Provider value={activeIdea.id}>
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
 
-          {/* Mobile stage tabs */}
+          {/* Mobile stage chips */}
           {isMobile && <MobileStageTabs />}
 
           <div style={{
-            flex: 1, overflowY: 'auto',
-            padding: isMobile ? '16px 14px 80px' : '36px 28px 80px',
+            flex: 1,
             display: 'flex', gap: 20, alignItems: 'flex-start',
           }}>
             {/* Center: guided wizard */}
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ flex: 1, minWidth: 0, maxWidth: 1180 }}>
               {showLI ? (
-                <div style={{ background: '#fff', borderRadius: 14, border: `1.5px solid ${BORDER}`, padding: isMobile ? '18px' : '28px', boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}>
+                <div style={{ background: '#fff', borderRadius: 24, padding: isMobile ? '18px' : '28px' }}>
                   <LinkedInHub eWho={get('whoExactly')} eProblem={get('problemSentence') || get('validatedProblem')} eWhat={get('oneLiner') || get('what')} ideaName={activeIdea.name} onBack={() => setShowLI(false)} />
                 </div>
               ) : (mod === 'validate' && step >= 1 && !isMobile) ? (() => {
                 // ── Validate: sidebar nav + detail panel ─────────────────────────
                 const VC = STAGE_COLORS.validate;
-                const sidebarSteps: { idx: number; icon: string; label: string; summary: string | null }[] = [
-                  {
-                    idx: 0, icon: '🎯', label: 'Goal',
-                    summary: (() => {
-                      const goal = get('valGoalSuccess');
-                      if (goal) return goal.length > 42 ? goal.slice(0, 42) + '…' : goal;
-                      return null;
-                    })(),
-                  },
-                  {
-                    idx: 1, icon: '📋', label: 'Priorities',
-                    summary: (() => {
-                      const prove = get('valGoalProve');
-                      const stop = (get('valGoalStop') || '').split('\n').filter(Boolean).length;
-                      if (prove) { const first = prove.split('\n')[0].replace(/^#\d+: /, ''); return first.length > 36 ? first.slice(0, 36) + '…' : first; }
-                      if (stop > 0) return `${stop} stop rule${stop !== 1 ? 's' : ''} set`;
-                      return null;
-                    })(),
-                  },
-                  {
-                    idx: 2, icon: '💭', label: 'Assumptions',
-                    summary: (() => {
-                      const count = (() => { try { return JSON.parse(get('assumptions') || '[]').length; } catch { return 0; } })();
-                      if (count > 0) return `${count} assumption${count !== 1 ? 's' : ''} listed`;
-                      return null;
-                    })(),
-                  },
-                  {
-                    idx: 3, icon: '🧬', label: 'Prepare',
-                    summary: (() => {
-                      const q = get('keyQuestion') || get('keyQStarter');
-                      const icp = (get('icpJobs') || '').split('|||').filter(Boolean);
-                      if (q) { const s = q.length > 38 ? q.slice(0, 38) + '…' : q; return `"${s}"`; }
-                      if (icp.length) return `ICP: ${icp.length} role${icp.length !== 1 ? 's' : ''} defined`;
-                      return null;
-                    })(),
-                  },
-                  {
-                    idx: 7, icon: '🎙️', label: 'Conversations',
-                    summary: (() => {
-                      const total = interviews.length;
-                      const scored = interviews.filter((iv: any) => iv.alignment_score).length;
-                      if (total > 0) return `${total} logged · ${scored} scored`;
-                      return null;
-                    })(),
-                  },
-                  {
-                    idx: 8, icon: '🔍', label: 'Research',
-                    summary: (() => {
-                      let demandCount = 0;
-                      try { demandCount = JSON.parse(get('demandSignals') || '[]').length; } catch { /* empty */ }
-                      if (demandCount > 0) return `${demandCount} demand signal${demandCount !== 1 ? 's' : ''}`;
-                      return null;
-                    })(),
-                  },
-                  {
-                    idx: 9, icon: '📊', label: 'Analyse',
-                    summary: (() => {
-                      const scores = ['valScoreProblem','valScoreCustomer','valScoreCompetitor','valScoreWtp']
-                        .map(k => parseInt(get(k) || '0'));
-                      const filled = scores.filter(s => s > 0).length;
-                      if (filled === 4) { const pct = Math.round((scores.reduce((a,b) => a+b,0) / 20) * 100); return `Score: ${pct}/100`; }
-                      if (filled > 0) return `${filled} of 4 dimensions rated`;
-                      return null;
-                    })(),
-                  },
-                  {
-                    idx: 10, icon: '✅', label: 'Decision',
-                    summary: (() => {
-                      const sig = get('validationSignal');
-                      if (sig) return sig.length > 42 ? sig.slice(0, 42) + '…' : sig;
-                      return null;
-                    })(),
-                  },
+                // Short tab labels, one per real Validate step (index i+1 in
+                // validateSteps, since index 0 is the explainer), plus the
+                // Validation Summary that lives at VALIDATE_VERDICT_STEP + 1.
+                const VALIDATE_TAB_LABELS = ['Goal', 'Priorities', 'Who', 'Script', 'Contacts', 'Dashboard', 'Log', 'Analyse', 'Decision'];
+                const sidebarSteps = [
+                  ...VALIDATE_TAB_LABELS.map((label, i) => ({ idx: i + 1, label, done: step > i + 1 })),
+                  { idx: VALIDATE_VERDICT_STEP + 1, label: 'Summary', done: false },
                 ];
                 return (
-                  <div key={`validate-panel-${step}`} style={{ display: 'flex', flexDirection: 'column', borderRadius: 16, border: `1.5px solid ${BORDER}`, overflow: 'hidden', boxShadow: '0 2px 16px rgba(0,0,0,.07)', animation: 'wup .2s ease', minHeight: 600 }}>
+                  <div key={`validate-panel-${step}`} style={{ display: 'flex', flexDirection: 'column', gap: 18, animation: 'wup .2s ease' }}>
 
-                    {/* ── Rainbow wavy path nav ── */}
-                    <div style={{ background: '#F7F9FC', borderBottom: `1px solid ${BORDER}`, flexShrink: 0, padding: '8px 12px 2px' }}>
-                      {(() => {
-                        const WXS  = [40, 120, 200, 280, 360, 440, 520, 600];
-                        const WYS  = [22, 8, 36, 22, 8, 36, 22, 8];
-                        const WCOLS = ['#e74c3c','#e67e22','#f39c12','#2ecc71','#1abc9c','#3498db','#9b59b6','#f43f5e'];
-                        const wavePath = 'M40,22 C80,22 80,8 120,8 C160,8 160,36 200,36 C240,36 240,22 280,22 C320,22 320,8 360,8 C400,8 400,36 440,36 C480,36 480,22 520,22 C560,22 560,8 600,8';
-                        const segPaths = [
-                          'M40,22 C80,22 80,8 120,8',
-                          'M120,8 C160,8 160,36 200,36',
-                          'M200,36 C240,36 240,22 280,22',
-                          'M280,22 C320,22 320,8 360,8',
-                          'M360,8 C400,8 400,36 440,36',
-                          'M440,36 C480,36 480,22 520,22',
-                          'M520,22 C560,22 560,8 600,8',
-                        ];
-                        const labelY = 54;
+                    {/* ── Segmented step tabs (2026-10 redesign) ── */}
+                    <div style={{ display: 'flex', gap: 4, padding: '0 4px 12px', borderBottom: `1px solid ${BORDER}` }}>
+                      {sidebarSteps.map(({ idx, label, done }, i) => {
+                        const isActive = step === idx;
+                        const isPast   = done && !isActive;
                         return (
-                          <svg viewBox="0 0 640 62" width="100%" style={{ display: 'block', overflow: 'visible' }}>
-                            {/* Base grey track */}
-                            <path d={wavePath} fill="none" stroke="#dde1e8" strokeWidth="2" />
-                            {/* Coloured segment overlays */}
-                            {segPaths.map((d, i) => (
-                              <path key={i} d={d} fill="none" stroke={WCOLS[i]} strokeWidth="2" opacity={0.55} />
-                            ))}
-                            {/* Dots and labels */}
-                            {sidebarSteps.map(({ idx, label, summary }, i) => {
-                              const x   = WXS[i];
-                              const y   = WYS[i];
-                              const isActive = step === idx;
-                              const hasFill  = summary !== null;
-                              const col = WCOLS[i];
-                              const r   = isActive ? 9 : 6;
-                              return (
-                                <g key={idx} onClick={() => setStep(idx)} style={{ cursor: 'pointer' }}>
-                                  {isActive && <circle cx={x} cy={y} r={r + 4} fill={col} opacity={0.15} />}
-                                  <circle cx={x} cy={y} r={r} fill={col} stroke="#fff" strokeWidth={isActive ? 2 : 1.5} />
-                                  {hasFill && !isActive && (
-                                    <circle cx={x + r} cy={y - r} r={3.5} fill="#22c55e" stroke="#fff" strokeWidth={1} />
-                                  )}
-                                  <text x={x} y={y + (isActive ? 3.5 : 2.5)} textAnchor="middle" fontSize={isActive ? 7 : 6} fill="#fff" fontWeight="700">{i + 1}</text>
-                                  <text x={x} y={labelY} textAnchor="middle" fontSize={9} fill={isActive ? col : '#9ca3af'} fontWeight={isActive ? '700' : '400'}>{label}</text>
-                                </g>
-                              );
-                            })}
-                          </svg>
+                          <button
+                            key={idx}
+                            onClick={() => setStep(idx)}
+                            title={label}
+                            style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit' }}
+                          >
+                            <div style={{ height: 6, borderRadius: 3, background: isActive ? ACCENT : isPast ? INK : BORDER, transition: 'background .2s' }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 13, fontWeight: isActive ? 700 : 500, color: isActive ? T1 : isPast ? T2 : T3, overflow: 'hidden' }}>
+                              <span style={{ fontFamily: MONO, fontSize: 10 }}>{String(i + 1).padStart(2, '0')}</span>
+                              <span style={{ whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+                            </div>
+                          </button>
                         );
-                      })()}
-                      {saving && <div style={{ fontSize: 10, color: T3, textAlign: 'center' as const, marginTop: 2 }}>Saving…</div>}
+                      })}
+                      {saving && <div style={{ fontFamily: MONO, fontSize: 10, color: T3, alignSelf: 'flex-end' }}>Saving…</div>}
                     </div>
 
                     {/* ── Detail panel ── */}
@@ -20301,7 +19229,7 @@ export default function WorkPage() {
                       key={`${mod}-${step}`}
                       className="step-nav"
                       style={{
-                        flex: 1, minWidth: 0, background: '#fff', padding: '40px', overflowY: 'auto' as const, position: 'relative',
+                        flex: 1, minWidth: 0, position: 'relative',
                         animation: `${navDir === 'fwd' ? 'stepFwdIn' : 'stepBackIn'} .28s cubic-bezier(.16,1,.3,1)`,
                       }}
                     >
@@ -20314,9 +19242,9 @@ export default function WorkPage() {
                 <div
                   key={`${mod}-${step}`}
                   className="step-nav"
-                  style={{ background: '#fff', borderRadius: isMobile ? 12 : 16, border: `1.5px solid ${BORDER}`, padding: isMobile ? '20px 18px' : '40px', boxShadow: '0 2px 16px rgba(0,0,0,.07)', animation: `${navDir === 'fwd' ? 'stepFwdIn' : 'stepBackIn'} .28s cubic-bezier(.16,1,.3,1)`, position: 'relative' }}
+                  style={{ animation: `${navDir === 'fwd' ? 'stepFwdIn' : 'stepBackIn'} .28s cubic-bezier(.16,1,.3,1)`, position: 'relative' }}
                 >
-                  {saving && <div style={{ position: 'absolute', top: 16, right: 16, fontSize: 11, color: T3 }}>Saving…</div>}
+                  {saving && <div style={{ position: 'absolute', top: 0, right: 0, fontFamily: MONO, fontSize: 10, color: T3 }}>Saving…</div>}
                   {currentStep}
                 </div>
               )}
@@ -20358,7 +19286,7 @@ export default function WorkPage() {
                     {iv.interviewee_role && <div style={{ fontSize: 12, color: T3, marginTop: 2 }}>{iv.interviewee_role}</div>}
                   </div>
                   <span style={{ fontSize: 11, fontWeight: 700, color: ivBadge.color, background: ivBadge.bg, border: `1.5px solid ${ivBadge.br}`, padding: '4px 12px', borderRadius: 999 }}>{ivBadge.icon} {ivBadge.label}</span>
-                  <button onClick={() => setV3ModalIv(null)} style={{ width: 32, height: 32, borderRadius: '50%', border: `1.5px solid ${BORDER}`, background: '#f5f5f7', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T2, fontFamily: 'inherit', flexShrink: 0 }}>✕</button>
+                  <button onClick={() => setV3ModalIv(null)} style={{ width: 32, height: 32, borderRadius: '50%', border: `1.5px solid ${BORDER}`, background: '#f3f0e8', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T2, fontFamily: 'inherit', flexShrink: 0 }}>✕</button>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {(['transcript', 'edit'] as const).map(tab => (
@@ -20393,14 +19321,14 @@ export default function WorkPage() {
                                     const opt = ALL_SIGNAL_OPTS.find(o => o.k === sig);
                                     return opt
                                       ? <span key={sig} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: `${opt.color}12`, color: opt.color, border: `1px solid ${opt.color}25` }}>{opt.icon} {sig}</span>
-                                      : <span key={sig} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 999, background: '#f0f0f0', color: '#6e6e73' }}>{sig}</span>;
+                                      : <span key={sig} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 999, background: '#f0f0f0', color: '#4a4357' }}>{sig}</span>;
                                   })}
                                 </div>
                               )}
                               {qa.quote && <div style={{ borderLeft: `3px solid ${STAGE_COLORS.validate}50`, paddingLeft: 12, fontSize: 13, color: '#333', fontStyle: 'italic', lineHeight: 1.7 }}>"{qa.quote}"</div>}
                             </div>
                           )}
-                          {!qa.signals.length && !qa.quote && <div style={{ padding: '8px 16px 12px 50px', fontSize: 11, color: '#b0b0b8', fontStyle: 'italic' }}>No signals recorded.</div>}
+                          {!qa.signals.length && !qa.quote && <div style={{ padding: '8px 16px 12px 50px', fontSize: 11, color: '#8a8299', fontStyle: 'italic' }}>No signals recorded.</div>}
                         </div>
                       )) : cleanNotes ? (
                         <div>
@@ -20408,7 +19336,7 @@ export default function WorkPage() {
                             <div style={{ marginBottom: 12 }}>
                               <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', letterSpacing: 1, textTransform: 'uppercase' as const, marginBottom: 8 }}>Signals captured</div>
                               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
-                                {allSigs.map((sig: string) => { const opt = ALL_SIGNAL_OPTS.find(o => o.k === sig); return opt ? <span key={sig} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: `${opt.color}12`, color: opt.color, border: `1px solid ${opt.color}25` }}>{opt.icon} {sig}</span> : <span key={sig} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 999, background: '#f0f0f0', color: '#6e6e73' }}>{sig}</span>; })}
+                                {allSigs.map((sig: string) => { const opt = ALL_SIGNAL_OPTS.find(o => o.k === sig); return opt ? <span key={sig} style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: `${opt.color}12`, color: opt.color, border: `1px solid ${opt.color}25` }}>{opt.icon} {sig}</span> : <span key={sig} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 999, background: '#f0f0f0', color: '#4a4357' }}>{sig}</span>; })}
                               </div>
                             </div>
                           )}
@@ -20531,7 +19459,7 @@ export default function WorkPage() {
             style={{
               position: 'fixed', top: 24, left: '50%',
               zIndex: 9999, cursor: 'pointer',
-              background: '#1d1d1f', color: '#fff', borderRadius: 16,
+              background: '#16121d', color: '#fff', borderRadius: 16,
               padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10,
               fontSize: 13.5, fontWeight: 700, width: 'max-content', maxWidth: 'calc(100vw - 40px)',
               boxShadow: '0 12px 32px rgba(0,0,0,.28)',
@@ -20573,18 +19501,18 @@ export default function WorkPage() {
             }}
           >
             <div style={{ fontSize: 40, marginBottom: 14 }}>🐢</div>
-            <h3 style={{ fontSize: 19, fontWeight: 800, color: '#1d1d1f', margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+            <h3 style={{ fontSize: 19, fontWeight: 800, color: '#16121d', margin: '0 0 10px', letterSpacing: '-0.02em' }}>
               Not yet — and that's on purpose
             </h3>
-            <p style={{ fontSize: 14, color: '#6e6e73', lineHeight: 1.65, margin: '0 0 14px' }}>
+            <p style={{ fontSize: 14, color: '#4a4357', lineHeight: 1.65, margin: '0 0 14px' }}>
               {META[lockedNudge].label} unlocks once you finish {META[mod].label}. Skipping ahead is the most common reason startups fail — not a bad idea, but a foundation nobody checked first.
             </p>
-            <p style={{ fontSize: 17, color: '#aeaeb2', lineHeight: 1.6, margin: '0 0 24px', fontFamily: "'Caveat', 'Comic Sans MS', cursive, system-ui" }}>
+            <p style={{ fontSize: 17, color: '#aeaeb2', lineHeight: 1.6, margin: '0 0 24px', fontFamily: 'inherit' }}>
               Slow is the fast way. Promise.
             </p>
             <button
               onClick={() => setLockedNudge(null)}
-              style={{ background: '#1d1d1f', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+              style={{ background: '#16121d', color: '#fff', border: 'none', borderRadius: 12, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
             >
               Got it — back to {META[mod].label} →
             </button>

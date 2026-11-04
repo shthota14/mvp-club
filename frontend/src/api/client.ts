@@ -47,6 +47,57 @@ export const ideasApi = {
   upsertEntry: (id: string, data: Record<string, unknown>) => api.put(`/ideas/${id}/entries`, data),
 };
 
+// AI content tools -- social posts, WhatsApp/email, event copy, product descriptions
+export const contentToolsApi = {
+  generate: (data: {
+    type: 'social' | 'message' | 'event' | 'product';
+    format: string;
+    topic: string;
+    audience?: string;
+    callToAction?: string;
+    tone: 'friendly' | 'professional' | 'bold' | 'playful';
+  }) => api.post('/content-tools/generate', data),
+};
+
+// Grafter -- standalone entry point (GRF-4/5/6) + Brian (GRF-7/8/9/10)
+export const grafterApi = {
+  status: () => api.get('/grafter/status'),
+  start: (data: { name?: string; website: string }) => api.post('/grafter/start', data),
+  getBrain: () => api.get('/grafter/brain'),
+  buildBrain: () => api.post('/grafter/brain/build'),
+  editBrain: (data: { what_you_sell?: string; who_its_for?: string; pricing?: string }) => api.patch('/grafter/brain', data),
+  approveBrain: () => api.post('/grafter/brain/approve'),
+  getIcp: () => api.get('/grafter/icp'),
+  buildIcp: () => api.post('/grafter/icp/build'),
+  editIcp: (data: { target_profile?: string; jobs_to_be_done?: string; frustrations?: string; current_alternatives?: string }) =>
+    api.patch('/grafter/icp', data),
+  approveIcp: () => api.post('/grafter/icp/approve'),
+  startProspecting: () => api.post('/grafter/prospect'),
+  getCandidates: () => api.get('/grafter/candidates'),
+  getOutreachStatus: () => api.get('/grafter/outreach/status'),
+  pauseOutreach: (reason?: string) => api.post('/grafter/outreach/pause', { reason }),
+  resumeOutreach: () => api.post('/grafter/outreach/resume'),
+};
+
+// Grafter mailbox connection (GRF-21) -- the founder's own Gmail, connected
+// via OAuth, is what outreach sends through. Never MVP Club's own mailer.
+export const mailboxApi = {
+  init: () => api.get('/grafter/mailbox/init'),
+  status: () => api.get('/grafter/mailbox/status'),
+  disconnect: () => api.delete('/grafter/mailbox/disconnect'),
+};
+
+// Per-candidate contact lookup + outreach draft/approve/send (GRF-22-25).
+export const outreachApi = {
+  findContact: (prospectId: string) => api.post(`/grafter/candidates/${prospectId}/contact`),
+  draft: (prospectId: string) => api.post(`/grafter/candidates/${prospectId}/draft`),
+  editDraft: (prospectId: string, data: { subject?: string; body?: string }) =>
+    api.patch(`/grafter/candidates/${prospectId}/draft`, data),
+  approveDraft: (prospectId: string) => api.post(`/grafter/candidates/${prospectId}/draft/approve`),
+  send: (prospectId: string) => api.post(`/grafter/candidates/${prospectId}/send`),
+  optOut: (prospectId: string) => api.post(`/grafter/candidates/${prospectId}/opt-out`),
+};
+
 // Validation
 export const validationApi = {
   listContacts: (ideaId: string, source?: string) =>

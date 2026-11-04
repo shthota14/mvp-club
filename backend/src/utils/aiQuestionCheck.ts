@@ -4003,6 +4003,8 @@ export interface MarketCompetitor {
   // never a bare precise number. The frontend always renders this with an
   // "AI estimate, unverified" affordance rather than as a stated fact.
   marketShare?: string;
+  // Official website (https://...) when known, else "". Never guessed.
+  url?: string;
   // Aligned 1:1 with MarketSnapshot.differentiators — features[i] describes
   // this competitor's coverage of differentiators[i].
   features?: FeatureCoverage[];
@@ -4030,7 +4032,7 @@ export interface MarketSnapshot {
 const MARKET_SNAPSHOT_SYSTEM_PROMPT = `You are a cautious startup market-research analyst helping a founder get a rough first read on their idea. You do not have live web access or real market databases — you are working from general knowledge only, so be honest about that limitation rather than inventing false precision.
 
 Respond with ONLY a JSON object, no other text, in this exact shape:
-{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "differentiators": ["<short capability>", ...], "yourCoverage": ["yes" | "partial" | "no", ...], "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>", "price": "<e.g. \\"$5.99/mo\\" or \\"Free\\", or \\"\\" if unknown>", "area": "<their market segment in a few words, or \\"\\">", "rating": "<e.g. \\"4.6\\", or \\"\\" if unknown>", "users": "<e.g. \\"1M+\\", or \\"\\" if unknown>", "founded": "<year, or \\"\\" if unknown>", "marketShare": "<rough estimate ONLY if you have a real basis, e.g. \\"~5-10%\\" or \\"small niche player\\" — or \\"\\" if you're just guessing>", "features": ["yes" | "partial" | "no", ...], "featureList": ["<short feature phrase>", ...]}]}
+{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "differentiators": ["<short capability>", ...], "yourCoverage": ["yes" | "partial" | "no", ...], "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>", "price": "<e.g. \\"$5.99/mo\\" or \\"Free\\", or \\"\\" if unknown>", "area": "<their market segment in a few words, or \\"\\">", "rating": "<e.g. \\"4.6\\", or \\"\\" if unknown>", "users": "<e.g. \\"1M+\\", or \\"\\" if unknown>", "founded": "<year, or \\"\\" if unknown>", "url": "<official website URL starting with https://, or \\"\\" if unsure>", "marketShare": "<rough estimate ONLY if you have a real basis, e.g. \\"~5-10%\\" or \\"small niche player\\" — or \\"\\" if you're just guessing>", "features": ["yes" | "partial" | "no", ...], "featureList": ["<short feature phrase>", ...]}]}
 
 Rules:
 - domain: pick exactly 1 key from this list (verbatim, case-sensitive): ${MARKET_DOMAIN_KEYS.map(v => `"${v}"`).join(', ')}
@@ -4051,7 +4053,7 @@ Rules:
 const MARKET_SNAPSHOT_SYSTEM_PROMPT_CLAUDE = `You are a startup market-research analyst helping a founder get a first read on their idea. You have live web search — use it to find real, current information: companies actually operating in this specific niche, real signals about market size (industry reports, recent funding rounds, adjacent public-company revenue if relevant), and — for each named competitor — their actual pricing, app-store rating, rough user/install base, and founding year where those are publicly findable. Search enough to ground your answer before responding; a handful of targeted searches is usually enough, including at least one aimed at pricing/reviews for your top 1-2 competitors.
 
 Once you're done searching, respond with ONLY a JSON object as your final message — no narration, no markdown code fences, nothing before or after the JSON — in this exact shape:
-{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this, referencing what you found>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "differentiators": ["<short capability>", ...], "yourCoverage": ["yes" | "partial" | "no", ...], "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>", "price": "<e.g. \\"$5.99/mo\\" or \\"Free\\", from what you found, or \\"\\" if you couldn't confirm it>", "area": "<their market segment in a few words>", "rating": "<e.g. \\"4.6\\", from what you found, or \\"\\" if unconfirmed>", "users": "<e.g. \\"1M+\\", from what you found, or \\"\\" if unconfirmed>", "founded": "<year, or \\"\\" if unconfirmed>", "marketShare": "<rough estimate from what you found, e.g. \\"~5-10%\\" or \\"small niche player\\" — or \\"\\" if you couldn't find a real basis>", "features": ["yes" | "partial" | "no", ...], "featureList": ["<short feature phrase>", ...]}]}
+{"domain": "<one key>", "tam": {"value": "<rough $ figure, e.g. \\"$2B+\\">", "basis": "<one short sentence on how you're estimating this, referencing what you found>"}, "sam": {"value": "<rough $ figure, smaller than TAM>", "basis": "<one short sentence>"}, "differentiators": ["<short capability>", ...], "yourCoverage": ["yes" | "partial" | "no", ...], "competitors": [{"name": "<company name>", "note": "<under 12 words on what they do>", "price": "<e.g. \\"$5.99/mo\\" or \\"Free\\", from what you found, or \\"\\" if you couldn't confirm it>", "area": "<their market segment in a few words>", "rating": "<e.g. \\"4.6\\", from what you found, or \\"\\" if unconfirmed>", "users": "<e.g. \\"1M+\\", from what you found, or \\"\\" if unconfirmed>", "founded": "<year, or \\"\\" if unconfirmed>", "url": "<official website URL starting with https://, from what you found, or \\"\\" if unconfirmed>", "marketShare": "<rough estimate from what you found, e.g. \\"~5-10%\\" or \\"small niche player\\" — or \\"\\" if you couldn't find a real basis>", "features": ["yes" | "partial" | "no", ...], "featureList": ["<short feature phrase>", ...]}]}
 
 Rules:
 - domain: pick exactly 1 key from this list (verbatim, case-sensitive): ${MARKET_DOMAIN_KEYS.map(v => `"${v}"`).join(', ')}
@@ -4075,6 +4077,11 @@ function sanitizeMarketSnapshot(parsed: any): MarketSnapshot {
     basis: sanitizeStr(v?.basis, 200),
   });
   const sanitizeCoverage = (v: any): FeatureCoverage => (v === 'yes' || v === 'partial' || v === 'no') ? v : 'no';
+  // Only keep a real http(s) URL — bare names, javascript:, "" all drop to "".
+  const sanitizeUrl = (v: any): string => {
+    const t = typeof v === 'string' ? v.trim() : '';
+    return /^https?:\/\/[^\s"'<>]{3,200}$/i.test(t) ? t : '';
+  };
   // Every coverage array (yourCoverage and each competitor's features) gets
   // padded/truncated to exactly differentiators.length so every array in
   // the response stays index-aligned, even if the model returned a
@@ -4110,6 +4117,7 @@ function sanitizeMarketSnapshot(parsed: any): MarketSnapshot {
       users: sanitizeStr(c.users, 20),
       founded: sanitizeStr(c.founded, 10),
       marketShare: sanitizeStr(c.marketShare, 40),
+      url: sanitizeUrl(c.url),
       features: sanitizeCoverageArr(c.features, differentiators.length),
       featureList: sanitizeStrArr(c.featureList, 60, 8),
     }))

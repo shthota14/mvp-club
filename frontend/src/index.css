@@ -1,67 +1,85 @@
-/* ── Apple Design System ──────────────────────────────────────────────────── */
+/* ── MVP Club design system (2026-10 redesign) ────────────────────────────
+   Cream paper, ink, one violet accent and a lime highlight. Type is
+   Bricolage Grotesque for everything readable and JetBrains Mono for
+   eyebrows / counters / labels. Stage colours are collapsed to the single
+   violet accent on purpose — the redesign reads as one product, not five
+   colour-coded modules. The legacy aliases at the bottom keep old call
+   sites compiling while they are migrated. */
 :root {
   /* Surfaces */
-  --bg:          #f5f5f7;   /* page background — Apple off-white */
+  --bg:          #f3f0e8;   /* page background — warm cream */
   --surface:     #ffffff;   /* card / panel surface */
-  --surface-alt: #f5f5f7;   /* inset / secondary surface */
+  --surface-alt: #e8e3d7;   /* inset / pill-track surface */
+  --ink:         #16121d;   /* dark hero panels, primary buttons */
+  --ink-2:       #1c1726;   /* dark band on the ink hero */
+  --ink-3:       #211a2d;   /* giant watermark numeral on ink */
 
   /* Text */
-  --text-primary:   #1d1d1f; /* Apple headline black */
-  --text-secondary: #6e6e73; /* Apple secondary label */
-  --text-tertiary:  #86868b; /* Apple tertiary label */
-  --text-link:      #0066cc; /* Apple blue link */
+  --text-primary:   #16121d;
+  --text-secondary: #4a4357;
+  --text-tertiary:  #6f6880;
+  --text-faint:     #8a8299;
+  --text-on-ink:    #f5f2ff;
+  --text-on-ink-2:  #c9c0da;
+  --text-link:      #6d28d9;
 
   /* Separators */
-  --sep:      #d2d2d7; /* standard separator */
-  --sep-soft: #e8e8ed; /* softer separator */
+  --sep:      #d9d3c5;
+  --sep-soft: #e2ddd1;
 
-  /* Stage accent colours (unchanged) */
-  --idea:     #6366f1;
-  --hone:     #0066cc;
-  --validate: #34c759;
-  --shape:    #ff9500;
-  --done:     #ff3b30;
+  /* Accent */
+  --accent:       #7c3aed;  /* violet */
+  --accent-deep:  #6d28d9;
+  --accent-soft:  #faf7ff;
+  --accent-tint:  #ede9fe;
+  --lime:         #d6ff3d;  /* highlight / success-ish */
+  --lime-ink:     #16121d;
+
+  /* Stage accent colours — all collapsed to the one accent */
+  --idea:     #7c3aed;
+  --hone:     #7c3aed;
+  --validate: #7c3aed;
+  --shape:    #7c3aed;
+  --done:     #7c3aed;
 
   /* Legacy aliases — kept so existing pages don't break */
-  --black: #1d1d1f;
+  --black: #16121d;
   --white: #ffffff;
-  --g50:  #f5f5f7;
-  --g100: #d2d2d7;
-  --g300: #86868b;
-  --g500: #6e6e73;
-  --g700: #1d1d1f;
-  --dark: #1d1d1f;
-  --dark2: #2d2d2f;
-  --dark3: #3d3d3f;
+  --g50:  #f3f0e8;
+  --g100: #d9d3c5;
+  --g300: #8a8299;
+  --g500: #6f6880;
+  --g700: #16121d;
+  --dark: #16121d;
+  --dark2: #1c1726;
+  --dark3: #2a2236;
 
   /* Radius */
-  --r:  16px;
-  --rs: 10px;
+  --r:  18px;
+  --rs: 12px;
 
   /* Shadow */
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 2px rgba(22,18,29,0.06);
+  --shadow-md: 0 8px 24px rgba(22,18,29,0.08);
+  --shadow-lg: 0 20px 60px rgba(22,18,29,0.12);
 
-  /* Status (semantic — not for use as a 5th stage colour) */
-  --good:      #059669;
+  /* Status (semantic) */
+  --good:      #15803d;
   --good-soft: #ecfdf5;
-  --warn:      #d97706;
+  --warn:      #b45309;
   --warn-soft: #fffbeb;
 
   /* Spacing scale (4px base) */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-12: 48px;
 
-  /* Radius scale — --r / --rs above stay as-is for existing call sites;
-     these are the finer-grained steps for new/updated components. */
-  --r-sm: 8px;
+  --r-sm: 12px;
   --r-pill: 999px;
 
-  /* Type system — "Gazette": Source Sans 3 for UI, Playfair Display for
-     headings, Caveat for Sage's handwritten asides. */
-  --font-ui:      'Source Sans 3', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
-  --font-display: 'Playfair Display', Georgia, serif;
+  /* Type system */
+  --font-ui:      'Bricolage Grotesque', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-hand:    'Caveat', cursive;
 }
 
@@ -71,14 +89,6 @@
 /* ── Base ──────────────────────────────────────────────────────────────────── */
 html {
   font-size: 16px;
-  /* Global legibility bump (2026-09-04): almost every fontSize in
-     WorkPage.tsx is a raw px number, not rem, so a root font-size change
-     alone wouldn't cascade into them. `zoom` scales the whole rendered
-     page -- type, icons, spacing, borders -- together, reflows layout
-     normally, and (verified) keeps position:fixed overlays like modals
-     covering the true viewport correctly. Bump this single number to
-     make the whole app bigger or smaller everywhere at once. */
-  zoom: 1.15;
 }
 
 body {
@@ -89,6 +99,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.01em;
 }
+
+h1, h2, h3 { letter-spacing: -0.02em; line-height: 1.02; }
+.mono { font-family: var(--font-mono); }
+input::placeholder, textarea::placeholder { color: #8a8299; }
 
 button  { font-family: inherit; cursor: pointer; }
 input, textarea, select { font-family: inherit; }

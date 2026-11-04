@@ -66,8 +66,48 @@ services:
       MS_TENANT_ID: ${MS_TENANT_ID:-}
       MS_CLIENT_ID: ${MS_CLIENT_ID:-}
       MS_CLIENT_SECRET: ${MS_CLIENT_SECRET:-}
+      # Grafter (AI sales module): company/contact search via Hunter.io, the
+      # founder's own Gmail via Google OAuth (gmail.send + gmail.metadata),
+      # optional Tavily web search. All optional — Grafter reports "not
+      # configured" in the UI when blank.
+      HUNTER_API_KEY: ${HUNTER_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_MAILBOX_REDIRECT_URI: https://${DOMAIN}/api/grafter/mailbox/callback
     volumes:
       - backend_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+
+  # Grafter background worker: polls grafter_run for queued prospecting jobs
+  # (Postgres SELECT ... FOR UPDATE SKIP LOCKED, no Redis) and sweeps sent
+  # outreach threads for replies every 5 min. Same image as the backend;
+  # runs the compiled worker entrypoint instead of the API.
+  grafter-worker:
+    build:
+      context: ./backend
+      target: production
+    restart: unless-stopped
+    command: ["node", "dist/grafter/worker.js"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-mvpclub}
+      FRONTEND_URL: https://${DOMAIN}
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+      ANTHROPIC_MODEL_CHEAP: ${ANTHROPIC_MODEL_CHEAP:-claude-haiku-4-5}
+      HUNTER_API_KEY: ${HUNTER_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      # Reply detection refreshes the founder's Gmail token, so the worker
+      # needs the OAuth client too (not only the API container).
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     depends_on:
       db:
         condition: service_healthy

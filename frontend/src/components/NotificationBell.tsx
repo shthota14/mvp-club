@@ -107,11 +107,11 @@ export default function NotificationBell() {
   };
 
   const iconBtn: React.CSSProperties = {
-    width: 34, height: 34, borderRadius: '50%',
-    background: 'transparent', border: '1px solid #d2d2d7',
+    width: 38, height: 38, borderRadius: '50%',
+    background: 'transparent', border: '1px solid #d9d3c5',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', transition: 'all .18s', flexShrink: 0,
-    color: '#6e6e73', fontSize: 15, position: 'relative',
+    color: '#16121d', fontSize: 15, position: 'relative',
   };
 
   return (
@@ -121,18 +121,18 @@ export default function NotificationBell() {
         onClick={handleOpen}
         title="Notifications"
         style={iconBtn}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#f5f5f7'; }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#e8e3d7'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
       >
-        🔔
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16121d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
         {unread > 0 && (
           <span style={{
-            position: 'absolute', top: -2, right: -2,
+            position: 'absolute', top: 2, right: 2,
             minWidth: 15, height: 15, borderRadius: 8,
-            background: '#ff3b30', color: '#fff',
+            background: '#7c3aed', color: '#fff',
             fontSize: 9, fontWeight: 700,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: '1.5px solid #fff',
+            border: '2px solid #f3f0e8',
             padding: '0 3px',
           }}>
             {unread > 9 ? '9+' : unread}

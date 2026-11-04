@@ -30,10 +30,9 @@ export default function Card({
       className={interactive ? ['mvpc-card-interactive', className].filter(Boolean).join(' ') : className}
       style={{
         background: 'var(--surface)',
-        border: '1.5px solid var(--sep)',
-        borderRadius: 'var(--r)',
+        border: 'none',
+        borderRadius: 20,
         padding: PADDING[padding],
-        boxShadow: 'var(--shadow-sm)',
         ...style,
       }}
       {...rest}

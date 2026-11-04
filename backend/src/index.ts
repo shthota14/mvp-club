@@ -21,6 +21,9 @@ import schedulingRouter from './routes/scheduling';
 import feedbackRouter from './routes/feedback';
 import publicPainPointsRouter from './routes/publicPainPoints';
 import analyticsEventsRouter from './routes/analyticsEvents';
+import grafterRouter from './routes/grafter';
+import grafterMailboxRouter from './routes/grafterMailbox';
+import contentToolsRouter from './routes/contentTools';
 import { runWeeklyDigest } from './jobs/weeklyDigest';
 import { runReEngagement } from './jobs/reEngagement';
 import { runStartupNewsDigest } from './jobs/startupNewsDigest';
@@ -60,6 +63,9 @@ app.use('/api/notifications', notificationsRouter);
 app.use('/api/donations', donationsRouter);
 app.use('/api/challenges', challengesRouter);
 app.use('/api/feedback', feedbackRouter);
+app.use('/api/content-tools', contentToolsRouter);
+app.use('/api/grafter/mailbox', grafterMailboxRouter);
+app.use('/api/grafter', grafterRouter);
 // Mounted at bare /api — scheduling.ts defines its own full paths
 // (/availability, /book/:token) since it mixes authed founder endpoints with
 // public token-based ones, unlike the other routers here.

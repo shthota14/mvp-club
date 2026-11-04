@@ -29,15 +29,15 @@ const BASE: React.CSSProperties = {
 };
 
 const SIZES: Record<ButtonSize, React.CSSProperties> = {
-  sm: { padding: '5px 12px', borderRadius: 'var(--r-sm)', fontSize: 11 },
-  md: { padding: '9px 18px', borderRadius: 'var(--r-sm)', fontSize: 13 },
-  lg: { padding: '13px 20px', borderRadius: 'var(--r-sm)', fontSize: 15 },
+  sm: { padding: '6px 12px', borderRadius: 999, fontSize: 12 },
+  md: { padding: '10px 18px', borderRadius: 999, fontSize: 14 },
+  lg: { padding: '14px 22px', borderRadius: 14, fontSize: 16 },
 };
 
 const VARIANTS: Record<ButtonVariant, React.CSSProperties> = {
-  primary:   { background: 'var(--text-primary)', color: '#fff' },
-  secondary: { background: '#fff', color: 'var(--text-secondary)', border: '1.5px solid var(--sep)' },
-  ghost:     { background: 'none', color: 'var(--text-secondary)' },
+  primary:   { background: 'var(--ink)', color: '#fff' },
+  secondary: { background: 'transparent', color: 'var(--text-primary)', border: '1.5px solid var(--sep)' },
+  ghost:     { background: 'none', color: 'var(--text-tertiary)' },
 };
 
 export default function Button({

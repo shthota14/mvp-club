@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import HeroPage from '@/pages/HeroPage';
 import AppShell from '@/components/AppShell';
 import MyProgressPage from '@/pages/MyProgressPage';
+import GrafterPage from '@/pages/GrafterPage';
+import ContentToolsPage from '@/pages/ContentToolsPage';
 import CommunityPage from '@/pages/CommunityPage';
 import IdeaDetailPage from '@/pages/IdeaDetailPage';
 import AdminPage from '@/pages/AdminPage';
@@ -89,6 +91,8 @@ export default function App() {
         <Route path="/community/:id" element={<AdminRedirect><IdeaDetailPage /></AdminRedirect>} />
         <Route path="/community/:id/scratchpad" element={<AdminRedirect><DiagramPage /></AdminRedirect>} />
         <Route path="/progress" element={<AdminRedirect><MyProgressPage /></AdminRedirect>} />
+        <Route path="/grafter" element={<AdminRedirect><GrafterPage /></AdminRedirect>} />
+        <Route path="/content" element={<AdminRedirect><ContentToolsPage /></AdminRedirect>} />
         <Route path="/work" element={<AdminRedirect><WorkPage /></AdminRedirect>} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/help" element={<HelpPage />} />

@@ -33,11 +33,15 @@ services:
       LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID:-}
       LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET:-}
       LINKEDIN_REDIRECT_URI: ${LINKEDIN_REDIRECT_URI:-http://localhost:4001/api/linkedin/callback}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_MAILBOX_REDIRECT_URI: ${GOOGLE_MAILBOX_REDIRECT_URI:-http://localhost:4001/api/grafter/mailbox/callback}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
       ZOOM_OAUTH_CLIENT_ID: ${ZOOM_OAUTH_CLIENT_ID:-}
       ZOOM_OAUTH_CLIENT_SECRET: ${ZOOM_OAUTH_CLIENT_SECRET:-}
       ZOOM_OAUTH_REDIRECT_URI: ${ZOOM_OAUTH_REDIRECT_URI:-http://localhost:4001/api/zoom/callback}
+      HUNTER_API_KEY: ${HUNTER_API_KEY:-}
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
       # See docker-compose.prod.yml — optional Claude path for specific features.
@@ -49,6 +53,32 @@ services:
     volumes:
       - ./backend/src:/app/src
       - backend_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+
+  grafter-worker:
+    build:
+      context: ./backend
+      target: development
+    restart: unless-stopped
+    command: npm run worker
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://${POSTGRES_USER:-mvpclub}:${POSTGRES_PASSWORD:-mvpclub_secret}@db:5432/${POSTGRES_DB:-mvpclub}
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+      ANTHROPIC_MODEL_CHEAP: ${ANTHROPIC_MODEL_CHEAP:-claude-haiku-4-5}
+      HUNTER_API_KEY: ${HUNTER_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    volumes:
+      - ./backend/src:/app/src
     depends_on:
       db:
         condition: service_healthy
