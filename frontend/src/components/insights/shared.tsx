@@ -124,7 +124,9 @@ export function Eyebrow({ children, style }: { children: ReactNode; style?: CSSP
 // `takeaway` is the one plain-English sentence a reader should leave with —
 // computed from the data by the caller, shown in lime at the bottom so every
 // chart answers "so what?" without the reader having to decode it.
-export function Panel({ title, sub, kind, note, children, right, span = 1, minHeight, takeaway }: { title: string; sub?: string; kind: DataKind; note?: string; children: ReactNode; right?: ReactNode; span?: 1 | 2 | 3; minHeight?: number; takeaway?: ReactNode }) {
+// `story` is a tweet-length lede written from the live numbers — the panel
+// reads like a news item (headline, standfirst, chart) rather than a bare chart.
+export function Panel({ title, sub, kind, note, children, right, span = 1, minHeight, takeaway, story }: { title: string; sub?: string; kind: DataKind; note?: string; children: ReactNode; right?: ReactNode; span?: 1 | 2 | 3; minHeight?: number; takeaway?: ReactNode; story?: ReactNode }) {
   const [ref, inView] = useInView<HTMLElement>();
   return (
     <section ref={ref} className={`ins-panel ins-span-${span} ${inView ? 'ins-in' : ''}`} style={{ minHeight, display: 'flex', flexDirection: 'column' }}>
@@ -135,6 +137,9 @@ export function Panel({ title, sub, kind, note, children, right, span = 1, minHe
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>{right}<KindBadge kind={kind} note={note} /></div>
       </header>
+      {story && (
+        <p style={{ margin: '-4px 0 14px', paddingLeft: 12, borderLeft: `3px solid ${INK.lime}`, fontFamily: INK.ui, fontSize: 14.5, lineHeight: 1.45, color: INK.text2, maxWidth: 720 }}>{story}</p>
+      )}
       <div style={{ flex: 1 }}>{children}</div>
       {takeaway && (
         <div style={{ marginTop: 16, padding: '10px 12px', borderRadius: 12, background: `${INK.lime}12`, border: `1px solid ${INK.lime}33`, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
