@@ -5,6 +5,7 @@ import PayItForwardModal from '@/components/PayItForwardModal';
 import LogPainPointModal from '@/components/LogPainPointModal';
 import { trackPageView, trackClick } from '@/utils/analytics';
 import { publicApi } from '@/api/client';
+import { HomePulseStrip, HomePulseSection } from '@/components/insights/HomePulse';
 
 // Caveat (marker handwriting font) — same id/pattern as StageCompleteModal.tsx so it's loaded once app-wide
 if (typeof document !== 'undefined' && !document.getElementById('caveat-font')) {
@@ -294,15 +295,8 @@ export default function HeroPage() {
           </svg>
         </div>
 
-        {/* Social proof strip */}
-        <div style={{ display: 'flex', gap: 32, alignItems: 'center', padding: '0 24px 60px', opacity: .3, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {['Idea stage', 'Validation', 'MVP build', 'First customers', 'Scale'].map((s, i) => (
-            <span key={s} style={{ fontSize: 13, fontWeight: 600, letterSpacing: 1, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
-              {i > 0 && <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />}
-              {s}
-            </span>
-          ))}
-        </div>
+        {/* Live market pulse (replaces the old static stage-name strip, 2026-11-07) */}
+        <HomePulseStrip />
       </section>
 
       {/* ── About ── */}
@@ -345,6 +339,9 @@ export default function HeroPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Market pulse (live external signals, links to /insights) ── */}
+      <HomePulseSection />
 
       {/* ── Journey section ── */}
       <section className="hp-section-pad" style={{ borderTop: '1px solid rgba(255,255,255,.06)', padding: '96px 40px' }}>
@@ -682,6 +679,7 @@ export default function HeroPage() {
           {([
             ['Our Story', 'footer_story', () => navigate('/story')],
             ['Log a pain point', 'footer_painpoints', () => navigate('/pain-points')],
+            ['Insights', 'footer_insights', () => navigate('/insights')],
             ['Support MVP Club', 'footer_support', () => setShowPayItForward(true)],
             ['Cookie Policy', 'footer_cookies', () => navigate('/cookies')],
             ['Sign in', 'footer_signin', () => open('login')],

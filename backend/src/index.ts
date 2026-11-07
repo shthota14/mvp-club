@@ -21,6 +21,9 @@ import schedulingRouter from './routes/scheduling';
 import feedbackRouter from './routes/feedback';
 import publicPainPointsRouter from './routes/publicPainPoints';
 import analyticsEventsRouter from './routes/analyticsEvents';
+import insightsRouter from './routes/insights';
+import insightsMarketRouter from './routes/insightsMarket';
+import insightsSocialRouter from './routes/insightsSocial';
 import grafterRouter from './routes/grafter';
 import grafterMailboxRouter from './routes/grafterMailbox';
 import contentToolsRouter from './routes/contentTools';
@@ -28,6 +31,7 @@ import { runWeeklyDigest } from './jobs/weeklyDigest';
 import { runReEngagement } from './jobs/reEngagement';
 import { runStartupNewsDigest } from './jobs/startupNewsDigest';
 import { runAnalyticsRollup } from './jobs/analyticsRollup';
+import { runMarketRefresh } from './jobs/marketRefresh';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -51,6 +55,9 @@ app.use('/api/ideas', ideasRouter);
 app.use('/api/validation', validationRouter);
 app.use('/api/community', communityRouter);
 app.use('/api/public/pain-points', publicPainPointsRouter);
+app.use('/api/public/insights/social', insightsSocialRouter);
+app.use('/api/public/insights/market', insightsMarketRouter);
+app.use('/api/public/insights', insightsRouter);
 app.use('/api/analytics', analyticsEventsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/network', networkRouter);
@@ -131,5 +138,15 @@ cron.schedule('15 3 * * *', () => {
   runAnalyticsRollup().catch(err => console.error('[cron] analyticsRollup crashed:', err));
 });
 console.log('[cron] Analytics rollup scheduled — daily at 03:15 UTC');
+
+// Public market insights (/insights, home-page pulse, social feed) — every
+// 4 hours at :05, plus a warm-up 20s after boot so the caches are never cold.
+// See jobs/marketRefresh.ts. Can be triggered on demand with
+// GET /api/public/insights/market/refresh?key=<CRON_SECRET> (admin use).
+cron.schedule('5 */4 * * *', () => {
+  runMarketRefresh('scheduled').catch(err => console.error('[cron] marketRefresh crashed:', err));
+});
+setTimeout(() => runMarketRefresh('boot warm-up').catch(err => console.error('[cron] marketRefresh warm-up crashed:', err)), 20_000);
+console.log('[cron] Market insights refresh scheduled — every 4 hours at :05 (plus boot warm-up)');
 
 export default app;

@@ -28,8 +28,15 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-mvpclub}:${POSTGRES_PASSWORD:-mvpclub_secret}@db:5432/${POSTGRES_DB:-mvpclub}
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_change_in_prod}
       FRONTEND_URL: http://localhost:3001
+      # Full SMTP config — without SMTP_HOST, mailer.ts falls back to a bare
+      # Gmail login and password-reset emails silently fail (same trap as prod).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-}
       LINKEDIN_CLIENT_ID: ${LINKEDIN_CLIENT_ID:-}
       LINKEDIN_CLIENT_SECRET: ${LINKEDIN_CLIENT_SECRET:-}
       LINKEDIN_REDIRECT_URI: ${LINKEDIN_REDIRECT_URI:-http://localhost:4001/api/linkedin/callback}
@@ -42,6 +49,8 @@ services:
       ZOOM_OAUTH_CLIENT_SECRET: ${ZOOM_OAUTH_CLIENT_SECRET:-}
       ZOOM_OAUTH_REDIRECT_URI: ${ZOOM_OAUTH_REDIRECT_URI:-http://localhost:4001/api/zoom/callback}
       HUNTER_API_KEY: ${HUNTER_API_KEY:-}
+      # Optional: raises GitHub search rate limits for /insights market signals
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
       # See docker-compose.prod.yml — optional Claude path for specific features.

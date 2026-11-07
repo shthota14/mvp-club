@@ -155,12 +155,15 @@ router.patch('/me', requireAuth, async (req: Request, res: Response) => {
 
 // ── Forgot password ───────────────────────────────────────────────────────────
 router.post('/forgot-password', async (req: Request, res: Response) => {
-  const { email } = req.body;
+  const email = String(req.body?.email ?? '').trim();
   if (!email) { res.status(400).json({ error: 'Email required' }); return; }
 
   try {
-    const result = await query<{ id: string; name: string }>(
-      'SELECT id, name FROM users WHERE email = $1', [email]
+    // Case-insensitive: accounts were never lower-cased on signup, so a
+    // founder typing shyam@ for an account stored as Shyam@ used to get a
+    // silent "ok" with no email.
+    const result = await query<{ id: string; name: string; email: string }>(
+      'SELECT id, name, email FROM users WHERE LOWER(email) = LOWER($1)', [email]
     );
 
     // Always return 200 — don't reveal whether the email exists
@@ -168,7 +171,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       res.json({ ok: true }); return;
     }
 
-    const { id, name } = result.rows[0];
+    const { id, name, email: storedEmail } = result.rows[0];
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
@@ -180,7 +183,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     const appUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
     const resetLink = `${appUrl}/reset-password?token=${token}`;
 
-    await sendPasswordResetEmail({ toEmail: email, toName: name, resetLink });
+    await sendPasswordResetEmail({ toEmail: storedEmail, toName: name, resetLink });
 
     res.json({ ok: true });
   } catch (err) {

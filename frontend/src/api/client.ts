@@ -496,6 +496,14 @@ export const donationsApi = {
 // no auth token attached (there may not be one). Separate from communityApi's
 // pain-points (which are member-authenticated) since these hit their own
 // unauthenticated backend router.
+// Public, unauthenticated aggregate payload for the /insights page.
+export const insightsApi = {
+  get: (range?: number) => api.get('/public/insights', { params: { range } }),
+  market: (range?: number) => api.get('/public/insights/market', { params: { range } }),
+  marketGithubCurve: () => api.get('/public/insights/market/github-curve'),
+  social: () => api.get('/public/insights/social'),
+};
+
 export const publicApi = {
   createPainPoint: (data: Record<string, unknown>) => api.post('/public/pain-points', data),
   listPainPoints: (limit?: number, offset?: number) => api.get('/public/pain-points', { params: { limit, offset } }),

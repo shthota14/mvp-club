@@ -11,6 +11,7 @@ function getTransporter() {
   const { SMTP_USER, SMTP_PASS, SMTP_HOST, SMTP_PORT, SMTP_SECURE } = process.env;
   if (!SMTP_USER || !SMTP_PASS) return null;
 
+  console.log(`[mailer] transport: ${SMTP_HOST ? `${SMTP_HOST}:${SMTP_PORT || 587}` : 'gmail fallback (SMTP_HOST not set)'} as ${SMTP_USER}`);
   if (SMTP_HOST) {
     // Any SMTP provider — Brevo, Zoho, Postmark, Resend, Google Workspace, etc.
     transporter = nodemailer.createTransport({

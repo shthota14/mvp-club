@@ -54,6 +54,9 @@ services:
       LINKEDIN_REDIRECT_URI: https://${DOMAIN}/api/linkedin/callback
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      # Optional: raises GitHub search rate limits for the public /insights
+      # market signals (10 → 30 search requests/min). Blank is fine.
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       # Zoom — per-user OAuth connect (Profile panel / Schedule step)
       ZOOM_OAUTH_CLIENT_ID: ${ZOOM_OAUTH_CLIENT_ID:-}
       ZOOM_OAUTH_CLIENT_SECRET: ${ZOOM_OAUTH_CLIENT_SECRET:-}
