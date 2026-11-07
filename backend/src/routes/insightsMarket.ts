@@ -188,7 +188,7 @@ async function hackerNews(rangeDays: number, buckets: string[]) {
     const w = idx.get(weekOf(h.created_at_i * 1000));
     if (w !== undefined) { weekdayWeekly[wd][w]++; if (bi >= 0) pointsHistWeekly[bi][w]++; }
   }
-  const top = [...show].sort((a, b) => b.points - a.points).slice(0, 8).map(h => ({
+  const top = [...show].sort((a, b) => b.points - a.points).slice(0, 30).map(h => ({
     id: h.objectID, title: h.title.replace(/^show hn:?\s*/i, ''), url: h.url || `https://news.ycombinator.com/item?id=${h.objectID}`,
     hnUrl: `https://news.ycombinator.com/item?id=${h.objectID}`, points: h.points, comments: h.num_comments, at: new Date(h.created_at_i * 1000).toISOString(), ai: AI_RE.test(h.title), category: classify(h.title),
   }));
@@ -261,7 +261,7 @@ async function github(rangeDays: number, buckets: string[]) {
     }
     return { key: t.key, label: t.label, total: r.value.total };
   });
-  const top = [...seen.values()].sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, 8).map(r => ({
+  const top = [...seen.values()].sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, 30).map(r => ({
     name: r.full_name, url: r.html_url, description: (r.description ?? '').slice(0, 140), stars: r.stargazers_count, forks: r.forks_count, language: r.language, topic: r._topic, createdAt: r.created_at,
   }));
   const langCount = new Map<string, number>();
@@ -348,12 +348,13 @@ async function ycombinator() {
     const grp = (r: Row) => { const t = r.regions.join(' '); return /united states|usa|canada/i.test(t) ? 'North America' : /united kingdom|europe|germany|france|spain|netherlands|sweden|switzerland|ireland|portugal|italy|poland|denmark|finland|norway|estonia/i.test(t) ? 'UK & Europe' : /india|singapore|china|japan|korea|indonesia|vietnam|australia|israel|pakistan|philippines|taiwan|hong kong|asia/i.test(t) ? 'Asia-Pacific & ME' : /brazil|mexico|argentina|colombia|chile|latin|africa|nigeria|kenya|egypt/i.test(t) ? 'LatAm & Africa' : 'Remote / unknown'; };
     const regionGroups = ['North America', 'UK & Europe', 'Asia-Pacific & ME', 'LatAm & Africa', 'Remote / unknown'].map(label => ({ label, count: bs.filter(r => grp(r) === label).length }));
     // Industry bubbles: size = companies, x = average team size, y = AI share.
-    const industryBubbles = [...treeMap.keys()].map(label => { const rows = bs.filter(r => r.industry === label); const sized = rows.filter(r => r.teamSize !== null); return { label, count: rows.length, aiShare: Math.round((rows.filter(r => r.ai).length / rows.length) * 100), avgTeam: sized.length ? Math.round((sized.reduce((a, r) => a + (r.teamSize ?? 0), 0) / sized.length) * 10) / 10 : 0 }; }).filter(b => b.count >= 2);
+    // avgTeam is the MEDIAN founding-team size: one government contractor with a 20-person team shouldn't drag the axis.
+    const industryBubbles = [...treeMap.keys()].map(label => { const rows = bs.filter(r => r.industry === label); const sized = rows.map(r => r.teamSize).filter((t): t is number => t !== null).sort((a, b) => a - b); const med = sized.length ? (sized.length % 2 ? sized[(sized.length - 1) / 2] : (sized[sized.length / 2 - 1] + sized[sized.length / 2]) / 2) : 0; return { label, count: rows.length, aiShare: Math.round((rows.filter(r => r.ai).length / rows.length) * 100), avgTeam: Math.round(med * 10) / 10 }; }).filter(b => b.count >= 2);
     return {
       teamSizes, tree, regions, regionGroups, industryBubbles,
       label, companies: bs.length, aiShare: bs.length ? Math.round((bs.filter(r => r.ai).length / bs.length) * 100) : 0,
       industries: [...ind.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([label, count]) => ({ label, count })),
-      topTags: [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([label, count]) => ({ label, count })),
+      topTags: [...tagCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 16).map(([label, count]) => ({ label, count })),
       ukOrEurope: uk,
       sample: bs.filter(r => r.oneLiner).slice(0, 6).map(r => ({ name: r.name, oneLiner: r.oneLiner.slice(0, 120), url: r.url, ai: r.ai })),
     };

@@ -83,7 +83,7 @@ export function RadialBars({ items, unit, color = INK.lime, center }: { items: {
   const p = useReveal(inView, 1400);
   const [hover, setHover] = useState<number | null>(null);
   const w = Math.max(240, Math.min(size.width || 320, 360)), h = w;
-  const cx = w / 2, cy = h / 2, r0 = w * 0.22, r1 = w * 0.46;
+  const cx = w / 2, cy = h / 2, r0 = w * 0.2, r1 = w * 0.4;
   const max = Math.max(1, ...items.map(i => i.value));
   const n = items.length || 1, step = (Math.PI * 2) / n, gap = step * 0.14;
   const arc = (a0: number, a1: number, ri: number, ro: number) => { const sx = (a: number, r: number) => [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; const [x0, y0] = sx(a0, ro), [x1, y1] = sx(a1, ro), [x2, y2] = sx(a1, ri), [x3, y3] = sx(a0, ri); const large = a1 - a0 > Math.PI ? 1 : 0; return `M${x0},${y0} A${ro},${ro} 0 ${large} 1 ${x1},${y1} L${x2},${y2} A${ri},${ri} 0 ${large} 0 ${x3},${y3} Z`; };
@@ -91,7 +91,7 @@ export function RadialBars({ items, unit, color = INK.lime, center }: { items: {
   return (
     <div ref={box} style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
       <div ref={ref} style={{ position: 'relative' }}>
-        <svg width={w} height={h} onMouseLeave={() => setHover(null)}>
+        <svg width={w} height={h} style={{ overflow: 'visible' }} onMouseLeave={() => setHover(null)}>
           {[0.25, 0.5, 0.75, 1].map(t => <circle key={t} cx={cx} cy={cy} r={r0 + (r1 - r0) * t} fill="none" stroke={INK.border} strokeDasharray="2 4" />)}
           {items.map((it, i) => { const a0 = -Math.PI / 2 + i * step + gap / 2, a1 = a0 + step - gap; const ro = r0 + (r1 - r0) * (it.value / max) * p; const on = hover === null || hover === i; return (
             <g key={it.label} onMouseEnter={() => setHover(i)}>
@@ -171,7 +171,7 @@ export function Lollipop({ items, color = INK.amber, height = 200 }: { items: { 
 }
 
 // ── 5. Beeswarm / log scatter with click-through ────────────────────────────
-export function Beeswarm({ points, xLabel, yLabel, height = 300, colorKey }: { points: { label: string; x: number; y: number; href?: string; tag?: string; meta?: string }[]; xLabel: string; yLabel: string; height?: number; colorKey?: (tag?: string) => string }) {
+export function Beeswarm({ points, xLabel, yLabel, height = 300, colorKey, labelTop = 0 }: { points: { label: string; x: number; y: number; href?: string; tag?: string; meta?: string }[]; xLabel: string; yLabel: string; height?: number; colorKey?: (tag?: string) => string; labelTop?: number }) {
   const [box, size] = useSize<HTMLDivElement>();
   const [ref, inView] = useInView<HTMLDivElement>();
   const p = useReveal(inView, 1300);
@@ -179,21 +179,30 @@ export function Beeswarm({ points, xLabel, yLabel, height = 300, colorKey }: { p
   const width = Math.max(320, size.width);
   const pad = { l: 46, r: 16, t: 14, b: 36 };
   const lx = (v: number) => Math.log10(v + 1), ly = (v: number) => Math.log10(v + 1);
-  const maxX = Math.max(1, ...points.map(pt => lx(pt.x))), maxY = Math.max(1, ...points.map(pt => ly(pt.y)));
-  const x = linear([0, maxX], [pad.l, width - pad.r]), y = linear([0, maxY], [height - pad.b, pad.t]);
+  // Axes fit the data (log), with a little headroom, so a tight cluster of
+  // leaders fills the box instead of hugging one corner.
+  const xs = points.map(pt => lx(pt.x)), ys = points.map(pt => ly(pt.y));
+  const maxX = Math.max(1, ...xs), maxY = Math.max(1, ...ys);
+  const minX = points.length ? Math.max(0, Math.min(...xs) - (maxX - Math.min(...xs)) * 0.08) : 0;
+  const minY = points.length ? Math.max(0, Math.min(...ys) - (maxY - Math.min(...ys)) * 0.1) : 0;
+  const x = linear([minX, maxX + (maxX - minX) * 0.08], [pad.l, width - pad.r]), y = linear([minY, maxY + (maxY - minY) * 0.12], [height - pad.b, pad.t]);
+  const logTicks = (lo: number, hi: number) => { const out: number[] = []; for (const base of [1, 10, 100, 1000, 10000, 100000, 1000000]) for (const m of [1, 2, 5]) { const v = base * m; const l = lx(v); if (l >= lo && l <= hi) out.push(v); } return out.length >= 3 ? out.filter((_, i, a) => a.length <= 6 || i % Math.ceil(a.length / 6) === 0) : out; };
+  const xTicks = logTicks(minX, maxX + (maxX - minX) * 0.08), yTicks = logTicks(minY, maxY + (maxY - minY) * 0.12);
   const tagColors = useMemo(() => { const tags = [...new Set(points.map(pt => pt.tag ?? ''))]; return new Map(tags.map((t, i) => [t, SERIES_COLORS[i % SERIES_COLORS.length]])); }, [points]);
+  const labelled = useMemo(() => new Set([...points].sort((a, b) => b.x - a.x).slice(0, labelTop).map(pt => pt.label)), [points, labelTop]);
   if (!points.length) return <div ref={box}><EmptyNote>No data.</EmptyNote></div>;
   return (
     <div ref={box} style={{ position: 'relative' }}>
       <div ref={ref}>
         <svg width={width} height={height} onMouseLeave={() => setHover(null)}>
-          {[1, 10, 100, 1000, 10000, 100000, 1000000].filter(t => lx(t) <= maxX * 1.05).map(t => <g key={`x${t}`}><line x1={x(lx(t))} x2={x(lx(t))} y1={pad.t} y2={height - pad.b} stroke={INK.border} /><text x={x(lx(t))} y={height - pad.b + 14} textAnchor="middle" fontFamily={INK.mono} fontSize={10} fill={INK.text3}>{fmtShort(t)}</text></g>)}
-          {[1, 10, 100, 1000, 10000, 100000].filter(t => ly(t) <= maxY * 1.05).map(t => <g key={`y${t}`}><line x1={pad.l} x2={width - pad.r} y1={y(ly(t))} y2={y(ly(t))} stroke={INK.border} /><text x={pad.l - 8} y={y(ly(t))} dy="0.35em" textAnchor="end" fontFamily={INK.mono} fontSize={10} fill={INK.text3}>{fmtShort(t)}</text></g>)}
+          {xTicks.map(t => <g key={`x${t}`}><line x1={x(lx(t))} x2={x(lx(t))} y1={pad.t} y2={height - pad.b} stroke={INK.border} /><text x={x(lx(t))} y={height - pad.b + 14} textAnchor="middle" fontFamily={INK.mono} fontSize={10} fill={INK.text3}>{fmtShort(t)}</text></g>)}
+          {yTicks.map(t => <g key={`y${t}`}><line x1={pad.l} x2={width - pad.r} y1={y(ly(t))} y2={y(ly(t))} stroke={INK.border} /><text x={pad.l - 8} y={y(ly(t))} dy="0.35em" textAnchor="end" fontFamily={INK.mono} fontSize={10} fill={INK.text3}>{fmtShort(t)}</text></g>)}
           <text x={(pad.l + width - pad.r) / 2} y={height - 4} textAnchor="middle" fontFamily={INK.mono} fontSize={10} fill={INK.text2}>{xLabel} (log) →</text>
           <text transform={`translate(12,${(pad.t + height - pad.b) / 2}) rotate(-90)`} textAnchor="middle" fontFamily={INK.mono} fontSize={10} fill={INK.text2}>{yLabel} (log) →</text>
           {points.map((pt, i) => { const c = colorKey ? colorKey(pt.tag) : tagColors.get(pt.tag ?? '') ?? INK.lime; const on = hover === null || hover === i; return (
             <g key={`${pt.label}-${i}`} style={{ cursor: pt.href ? 'pointer' : 'default', opacity: on ? 1 : 0.25, transition: 'opacity .2s' }} onMouseEnter={() => setHover(i)} onClick={() => { if (pt.href) window.open(pt.href, '_blank', 'noopener'); }}>
-              <circle cx={x(lx(pt.x))} cy={y(ly(pt.y))} r={(hover === i ? 11 : 7) * p} fill={c} fillOpacity={0.45} stroke={c} strokeWidth={1.5} style={{ filter: `drop-shadow(0 0 8px ${c}77)`, transition: 'r .2s' }} />
+              <circle cx={x(lx(pt.x))} cy={y(ly(pt.y))} r={(hover === i ? 12 : 8) * p} fill={c} fillOpacity={0.45} stroke={c} strokeWidth={1.5} style={{ filter: `drop-shadow(0 0 8px ${c}77)`, transition: 'r .2s' }} />
+              {labelled.has(pt.label) && <text x={x(lx(pt.x))} y={y(ly(pt.y)) + (i % 2 ? 22 : -13)} textAnchor="middle" fontFamily={INK.ui} fontSize={10.5} fontWeight={600} fill={INK.text2} style={{ paintOrder: 'stroke', stroke: INK.bg, strokeWidth: 3, pointerEvents: 'none' }}>{pt.label.length > 28 ? pt.label.slice(0, 27) + '…' : pt.label}</text>}
             </g>); })}
         </svg>
       </div>

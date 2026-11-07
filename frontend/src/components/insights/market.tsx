@@ -129,7 +129,7 @@ export default function MarketPulse({ range }: { range: number }) {
     team: batch?.teamSizes?.length ? (() => { const tot = batch.teamSizes.reduce((a, b) => a + b.count, 0) || 1; const top = [...batch.teamSizes].sort((a, b) => b.count - a.count)[0]; const solo = batch.teamSizes.find(t => t.label === '1'); return `${Math.round((top.count / tot) * 100)}% of ${batch.label} companies have ${top.label} founder${top.label === '1' ? '' : 's'}; solo founders are ${Math.round(((solo?.count ?? 0) / tot) * 100)}%. YC still prefers pairs.`; })() : undefined,
     treemap: batch?.tree?.length ? `${batch.tree[0].label} is the biggest slice (${fmt(batch.tree[0].count)} companies)${batch.tree[0].children?.[0] ? `; its busiest niche is ${batch.tree[0].children[0].label}` : ''}. Hover any tile for the count.` : undefined,
     regionBubbles: batch?.regions?.length ? `${batch.regions[0].label} dominates with ${fmt(batch.regions[0].count)}${batch.regions[1] ? `; ${batch.regions[1].label} is next at ${fmt(batch.regions[1].count)}` : ''}.` : undefined,
-    bubbles: batch?.industryBubbles?.length ? (() => { const ai = [...batch.industryBubbles].sort((a, b) => b.aiShare - a.aiShare)[0]; const avg = batch.industryBubbles.reduce((a, b) => a + b.avgTeam * b.count, 0) / Math.max(1, batch.industryBubbles.reduce((a, b) => a + b.count, 0)); return `${ai.label} is the most AI-heavy industry (${ai.aiShare}%). Teams average ${avg.toFixed(1)} founders; bigger bubbles are bigger industries.`; })() : undefined,
+    bubbles: batch?.industryBubbles?.length ? (() => { const ai = [...batch.industryBubbles].sort((a, b) => b.aiShare - a.aiShare)[0]; const avg = batch.industryBubbles.reduce((a, b) => a + b.avgTeam * b.count, 0) / Math.max(1, batch.industryBubbles.reduce((a, b) => a + b.count, 0)); return `${ai.label} is the most AI-heavy industry (${ai.aiShare}%). Typical teams are ${avg.toFixed(1)} founders; bigger bubbles are bigger industries.`; })() : undefined,
   };
   return (
     <>
@@ -167,7 +167,7 @@ export default function MarketPulse({ range }: { range: number }) {
       </Panel>
 
       <Panel span={2} title="Opportunity quadrant — attention vs. competition" story={S.quadrant} kind={hnKind} note="x = launches in the category (competition); y = average upvotes + comments per launch (attention); bubble = AI share" right={<>{filterChip}{hnChip}</>}>
-        <QuadrantScatter xLabel="Launches" yLabel="Attention per launch" sizeLabel="AI share %" quadrantLabels={['Underserved · high attention', 'Hot · crowded', 'Quiet', 'Crowded · low attention']}
+        <QuadrantScatter height={440} xSqrt fit xLabel="Launches (√ scale)" yLabel="Attention per launch" sizeLabel="AI share %" quadrantLabels={['Underserved · high attention', 'Hot · crowded', 'Quiet', 'Crowded · low attention']}
           points={(hn?.categoryStats ?? []).map(c => ({ label: c.label, x: c.launches, y: c.attention, size: Math.max(1, c.aiShare), color: cat && cat !== c.key ? '#4a4357' : catColor.get(c.key) }))} />
       </Panel>
 
@@ -176,7 +176,7 @@ export default function MarketPulse({ range }: { range: number }) {
       </Panel>
 
       <Panel span={2} title="Most-upvoted launches — hover, click to open" story={S.topLaunches} kind={hnKind} note="Upvotes vs. comments, log scales" right={hnChip}>
-        <Beeswarm xLabel="Upvotes" yLabel="Comments" points={(hn?.top ?? []).map(t => ({ label: t.title, x: t.points, y: t.comments, href: t.hnUrl, tag: t.ai ? 'AI' : 'Not AI' }))} colorKey={t => (t === 'AI' ? INK.lime : INK.violetHi)} />
+        <Beeswarm height={400} labelTop={6} xLabel="Upvotes" yLabel="Comments" points={(hn?.top ?? []).map(t => ({ label: t.title, x: t.points, y: t.comments, href: t.hnUrl, tag: t.ai ? 'AI' : 'Not AI' }))} colorKey={t => (t === 'AI' ? INK.lime : INK.violetHi)} />
       </Panel>
 
       <Panel title="What founders are asking" story={S.questions} kind={hnKind} note="Ask HN threads sized by replies · click to read" right={<SourceChip name="Ask HN" url="https://news.ycombinator.com/ask" />}>
@@ -212,8 +212,8 @@ export default function MarketPulse({ range }: { range: number }) {
         <Donut items={(gh?.languages ?? []).map(l => ({ label: l.label, value: l.count }))} center={<><div style={{ fontSize: 22, fontWeight: 800 }}>{fmt(gh?.sampled ?? 0)}</div><div style={{ fontFamily: INK.mono, fontSize: 9, letterSpacing: 1, color: INK.text3 }}>REPOS</div></>} />
       </Panel>
 
-      <Panel title="Breakout repositories — click to open" story={S.breakout} kind={ghKind} note="Stars vs. forks, log scales, colour = topic" right={ghChip}>
-        <Beeswarm xLabel="Stars" yLabel="Forks" height={260} points={(gh?.top ?? []).map(r => ({ label: r.name, x: r.stars, y: r.forks, href: r.url, tag: r.topic, meta: r.language ?? undefined }))} />
+      <Panel span={2} title="Breakout repositories — click to open" story={S.breakout} kind={ghKind} note="Stars vs. forks, log scales, colour = topic" right={ghChip}>
+        <Beeswarm xLabel="Stars" yLabel="Forks" height={380} labelTop={7} points={(gh?.top ?? []).map(r => ({ label: r.name, x: r.stars, y: r.forks, href: r.url, tag: r.topic, meta: r.language ?? undefined }))} />
       </Panel>
 
       <Panel span={3} title="Technology adoption curves — press play" story={S.curve} kind={curve?.kind === 'live' ? 'live' : 'sample'} note={curve?.note ?? curve?.api ?? 'GitHub search is rate-limited, first load can take ~2 minutes'} right={ghChip}>
@@ -244,8 +244,8 @@ export default function MarketPulse({ range }: { range: number }) {
         <RadialBars items={(batch?.industries ?? []).slice(0, 8).map(i => ({ label: i.label.length > 11 ? i.label.slice(0, 10) + '…' : i.label, value: i.count }))} color={INK.amber} center={<><div style={{ fontSize: 24, fontWeight: 800 }}>{fmt(batch?.companies ?? 0)}</div><div style={{ fontFamily: INK.mono, fontSize: 9, letterSpacing: 1, color: INK.text3 }}>{batch?.label.toUpperCase()}</div></>} />
       </Panel>
 
-      <Panel title="Most common tags" story={S.tags} kind={ycKind} note={`${batch?.label ?? ''} · sized by count`} right={ycChip}>
-        <TagCloud items={(batch?.topTags ?? []).map(t => ({ label: t.label, value: t.count }))} color={INK.violetHi} minSize={12} maxSize={28} />
+      <Panel title="Most common tags" story={S.tags} kind={ycKind} note={`${batch?.label ?? ''} · bubble = companies carrying the tag`} right={ycChip}>
+        <PackedBubbles items={(batch?.topTags ?? []).map(t => ({ label: t.label, count: t.count }))} height={380} color={INK.violetHi} />
       </Panel>
 
       <Panel title="Founding team size" story={S.team} kind={ycKind} note={`${batch?.label ?? ''} · each square is 1% of companies`} right={ycChip}>
@@ -260,8 +260,8 @@ export default function MarketPulse({ range }: { range: number }) {
         <PackedBubbles items={batch?.regions ?? []} height={360} />
       </Panel>
 
-      <Panel span={3} title={`Industry bubble chart — ${batch?.label ?? ''}`} story={S.bubbles} kind={ycKind} note="x = average founding-team size; y = share of companies that are AI-related; bubble = number of companies · hover" right={ycChip}>
-        <QuadrantScatter xLabel="Avg team size" yLabel="AI share %" sizeLabel="companies" height={320}
+      <Panel span={3} title={`Industry bubble chart — ${batch?.label ?? ''}`} story={S.bubbles} kind={ycKind} note="x = median founding-team size; y = share of companies that are AI-related; bubble = number of companies · hover" right={ycChip}>
+        <QuadrantScatter xLabel="Typical team size (median)" yLabel="AI share %" sizeLabel="companies" height={460} fit quadrantLabels={['Small teams · AI-heavy', 'Big teams · AI-heavy', 'Small teams · less AI', 'Big teams · less AI']}
           points={(batch?.industryBubbles ?? []).map(b => ({ label: b.label, x: b.avgTeam, y: b.aiShare, size: b.count }))} />
       </Panel>
     </div>

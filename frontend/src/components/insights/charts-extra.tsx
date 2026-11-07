@@ -127,26 +127,35 @@ export function PackedBubbles({ items, height = 320, color = INK.sky }: { items:
 }
 
 // ── Quadrant scatter ────────────────────────────────────────────────────────
-export function QuadrantScatter({ points, xLabel, yLabel, height = 340, sizeLabel, quadrantLabels }: { points: { label: string; x: number; y: number; size: number; color?: string }[]; xLabel: string; yLabel: string; height?: number; sizeLabel?: string; quadrantLabels?: [string, string, string, string] }) {
+// `xSqrt` spreads a long-tailed x (e.g. launch counts) with a square-root
+// axis; `fit` starts both axes at the data's minimum instead of zero so a
+// tight cluster fills the box. Mean lines split the quadrants either way.
+export function QuadrantScatter({ points, xLabel, yLabel, height = 340, sizeLabel, quadrantLabels, xSqrt = false, fit = false }: { points: { label: string; x: number; y: number; size: number; color?: string }[]; xLabel: string; yLabel: string; height?: number; sizeLabel?: string; quadrantLabels?: [string, string, string, string]; xSqrt?: boolean; fit?: boolean }) {
   const [box, size] = useSize<HTMLDivElement>();
   const [ref, inView] = useInView<HTMLDivElement>();
   const p = useReveal(inView, 1300);
   const [hover, setHover] = useState<{ x: number; y: number; text: string } | null>(null);
   const width = Math.max(320, size.width);
   const pad = { l: 46, r: 18, t: 18, b: 40 };
-  const maxX = niceMax(Math.max(1, ...points.map(pt => pt.x))), maxY = niceMax(Math.max(1, ...points.map(pt => pt.y)));
-  const x = linear([0, maxX], [pad.l, width - pad.r]), y = linear([0, maxY], [height - pad.b, pad.t]);
+  const tx = (v: number) => (xSqrt ? Math.sqrt(Math.max(0, v)) : v);
+  const rawMaxX = Math.max(1, ...points.map(pt => pt.x)), rawMaxY = Math.max(1, ...points.map(pt => pt.y));
+  const rawMinX = fit ? Math.min(...points.map(pt => pt.x)) : 0, rawMinY = fit ? Math.min(...points.map(pt => pt.y)) : 0;
+  const maxX = fit ? rawMaxX + (rawMaxX - rawMinX) * 0.12 : niceMax(rawMaxX), maxY = fit ? rawMaxY + (rawMaxY - rawMinY) * 0.15 : niceMax(rawMaxY);
+  const minX = fit ? Math.max(0, rawMinX - (rawMaxX - rawMinX) * 0.12) : 0, minY = fit ? Math.max(0, rawMinY - (rawMaxY - rawMinY) * 0.15) : 0;
+  const x = linear([tx(minX), tx(maxX)], [pad.l, width - pad.r]), y = linear([minY, maxY], [height - pad.b, pad.t]);
   const maxS = Math.max(1, ...points.map(pt => pt.size));
   const midX = points.length ? points.reduce((s, pt) => s + pt.x, 0) / points.length : maxX / 2;
   const midY = points.length ? points.reduce((s, pt) => s + pt.y, 0) / points.length : maxY / 2;
+  const xTicks = (fit ? [minX, minX + (maxX - minX) / 3, minX + ((maxX - minX) * 2) / 3, maxX] : ticks(maxX, 4)).map(t => Math.round(t * 10) / 10);
+  const yTicks = (fit ? [minY, minY + (maxY - minY) / 3, minY + ((maxY - minY) * 2) / 3, maxY] : ticks(maxY, 4)).map(t => Math.round(t * 10) / 10);
   if (!points.length) return <div ref={box}><EmptyNote>No data.</EmptyNote></div>;
   return (
     <div ref={box} style={{ position: 'relative' }}>
       <div ref={ref}>
         <svg width={width} height={height} style={{ display: 'block' }} onMouseLeave={() => setHover(null)}>
-          {ticks(maxX, 4).map(t => <g key={`x${t}`}><line x1={x(t)} x2={x(t)} y1={pad.t} y2={height - pad.b} stroke={INK.border} /><text x={x(t)} y={height - pad.b + 14} textAnchor="middle" fontFamily={INK.mono} fontSize={10} fill={INK.text3}>{fmtShort(t)}</text></g>)}
-          {ticks(maxY, 4).map(t => <g key={`y${t}`}><line x1={pad.l} x2={width - pad.r} y1={y(t)} y2={y(t)} stroke={INK.border} /><text x={pad.l - 8} y={y(t)} dy="0.35em" textAnchor="end" fontFamily={INK.mono} fontSize={10} fill={INK.text3}>{fmtShort(t)}</text></g>)}
-          <line x1={x(midX)} x2={x(midX)} y1={pad.t} y2={height - pad.b} stroke={INK.violetHi} strokeOpacity={0.5} strokeDasharray="4 4" />
+          {xTicks.map(t => <g key={`x${t}`}><line x1={x(tx(t))} x2={x(tx(t))} y1={pad.t} y2={height - pad.b} stroke={INK.border} /><text x={x(tx(t))} y={height - pad.b + 14} textAnchor="middle" fontFamily={INK.mono} fontSize={10} fill={INK.text3}>{fmtShort(t)}</text></g>)}
+          {yTicks.map(t => <g key={`y${t}`}><line x1={pad.l} x2={width - pad.r} y1={y(t)} y2={y(t)} stroke={INK.border} /><text x={pad.l - 8} y={y(t)} dy="0.35em" textAnchor="end" fontFamily={INK.mono} fontSize={10} fill={INK.text3}>{fmtShort(t)}</text></g>)}
+          <line x1={x(tx(midX))} x2={x(tx(midX))} y1={pad.t} y2={height - pad.b} stroke={INK.violetHi} strokeOpacity={0.5} strokeDasharray="4 4" />
           <line x1={pad.l} x2={width - pad.r} y1={y(midY)} y2={y(midY)} stroke={INK.violetHi} strokeOpacity={0.5} strokeDasharray="4 4" />
           {quadrantLabels && [[pad.l + 6, pad.t + 12, quadrantLabels[0]], [width - pad.r - 6, pad.t + 12, quadrantLabels[1]], [pad.l + 6, height - pad.b - 8, quadrantLabels[2]], [width - pad.r - 6, height - pad.b - 8, quadrantLabels[3]]].map(([qx, qy, t], i) => (
             <text key={i} x={Number(qx)} y={Number(qy)} textAnchor={i % 2 ? 'end' : 'start'} fontFamily={INK.mono} fontSize={9} letterSpacing={1.2} fill={INK.text3}>{String(t).toUpperCase()}</text>
@@ -154,12 +163,12 @@ export function QuadrantScatter({ points, xLabel, yLabel, height = 340, sizeLabe
           <text x={(pad.l + width - pad.r) / 2} y={height - 6} textAnchor="middle" fontFamily={INK.mono} fontSize={10} fill={INK.text2}>{xLabel} →</text>
           <text transform={`translate(12,${(pad.t + height - pad.b) / 2}) rotate(-90)`} textAnchor="middle" fontFamily={INK.mono} fontSize={10} fill={INK.text2}>{yLabel} →</text>
           {points.map((pt, i) => {
-            const r = (6 + 22 * Math.sqrt(pt.size / maxS)) * p;
+            const r = (8 + 30 * Math.sqrt(pt.size / maxS)) * p;
             const c = pt.color ?? SERIES_COLORS[i % SERIES_COLORS.length];
             return (
               <g key={pt.label} onMouseMove={e => { const rr = (e.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect(); setHover({ x: e.clientX - rr.left, y: e.clientY - rr.top, text: `${pt.label} · ${xLabel}: ${fmt(pt.x)} · ${yLabel}: ${pt.y} · ${sizeLabel ?? 'size'}: ${fmt(pt.size)}` }); }}>
-                <circle cx={x(pt.x)} cy={y(pt.y)} r={r} fill={c} fillOpacity={0.35} stroke={c} strokeWidth={1.5} style={{ filter: `drop-shadow(0 0 8px ${c}66)` }} />
-                <text x={x(pt.x)} y={y(pt.y) - r - 4} textAnchor="middle" fontFamily={INK.ui} fontSize={10} fill={INK.text2} style={{ paintOrder: 'stroke', stroke: INK.bg, strokeWidth: 3, pointerEvents: 'none' }}>{pt.label}</text>
+                <circle cx={x(tx(pt.x))} cy={y(pt.y)} r={r} fill={c} fillOpacity={0.35} stroke={c} strokeWidth={1.5} style={{ filter: `drop-shadow(0 0 8px ${c}66)` }} />
+                <text x={x(tx(pt.x))} y={y(pt.y) - r - 4} textAnchor="middle" fontFamily={INK.ui} fontSize={11} fontWeight={600} fill={INK.text} style={{ paintOrder: 'stroke', stroke: INK.bg, strokeWidth: 3, pointerEvents: 'none' }}>{pt.label}</text>
               </g>
             );
           })}
